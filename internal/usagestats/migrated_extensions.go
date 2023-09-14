@@ -24,9 +24,6 @@ func GetMigratedExtensionsUsageStatistics(ctx context.Context, db database.DB) (
 		&stats.SearchExportPerformedUniqueUsers,
 		&stats.SearchExportFailed,
 		&stats.SearchExportFailedUniqueUsers,
-
-		&stats.GoImportsSearchQueryTransformed,
-		&stats.GoImportsSearchQueryTransformedUniqueUsers,
 	); err != nil {
 		return nil, err
 	}
@@ -77,10 +74,7 @@ var MigratedExtensionsUsageQuery = `
 			NULLIF(COUNT(*) FILTER (WHERE name = 'SearchExportPerformed'), 0) :: INT AS search_export_performed,
 			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'SearchExportPerformed'), 0) :: INT AS search_export_performed_unique_users,
 			NULLIF(COUNT(*) FILTER (WHERE name = 'SearchExportFailed'), 0) :: INT AS search_export_failed,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'SearchExportFailed'), 0) :: INT AS search_export_failed_unique_users,
-
-			NULLIF(COUNT(*) FILTER (WHERE name = 'GoImportsSearchQueryTransformed'), 0) :: INT AS go_imports_search_query_transformed,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'GoImportsSearchQueryTransformed'), 0) :: INT AS go_imports_search_query_transformed_unique_users
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'SearchExportFailed'), 0) :: INT AS search_export_failed_unique_users
 		FROM event_logs
 		WHERE
 			name IN (
@@ -90,9 +84,7 @@ var MigratedExtensionsUsageQuery = `
 				'GitBlamePopupClicked',
 
 				'SearchExportPerformed',
-				'SearchExportFailed',
-
-				'GoImportsSearchQueryTransformed'
+				'SearchExportFailed'
 			)
 	)
 	SELECT
@@ -109,10 +101,7 @@ var MigratedExtensionsUsageQuery = `
 		event_log_stats.search_export_performed,
 		event_log_stats.search_export_performed_unique_users,
 		event_log_stats.search_export_failed,
-		event_log_stats.search_export_failed_unique_users,
-
-		event_log_stats.go_imports_search_query_transformed,
-		event_log_stats.go_imports_search_query_transformed_unique_users
+		event_log_stats.search_export_failed_unique_users
 	FROM
 		event_log_stats;
 `

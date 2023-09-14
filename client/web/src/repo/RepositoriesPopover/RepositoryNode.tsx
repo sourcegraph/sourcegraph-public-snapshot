@@ -1,9 +1,9 @@
 import React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { RepositoryPopoverFields } from '../../graphql-operations'
+import type { RepositoryPopoverFields } from '../../graphql-operations'
 import { ConnectionPopoverNode, ConnectionPopoverNodeLink } from '../RevisionsPopover/components'
 
 interface RepositoryNodeProps {

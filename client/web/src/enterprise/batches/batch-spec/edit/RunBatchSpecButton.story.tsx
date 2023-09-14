@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
-import { ExecutionOptions } from '../BatchSpecContext'
+import type { ExecutionOptions } from '../BatchSpecContext'
 
 import { RunBatchSpecButton } from './RunBatchSpecButton'
 

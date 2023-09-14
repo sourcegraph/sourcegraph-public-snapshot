@@ -1,8 +1,8 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
 import classNames from 'classnames'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from '../../site-admin/WebhookInformation.module.scss'
@@ -17,10 +17,14 @@ interface ExternalServiceInformationProps {
     codeHostID: string
     reposNumber: number
     syncInProgress: boolean
+    gitHubApp?: {
+        id: string
+        name: string
+    } | null
 }
 
 export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = props => {
-    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress } = props
+    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress, gitHubApp } = props
 
     return (
         <table className={classNames(styles.table, 'table')}>
@@ -32,6 +36,16 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                         {kind}
                     </td>
                 </tr>
+                {gitHubApp && (
+                    <tr>
+                        <th className={styles.tableHeader}>GitHub App</th>
+                        <td>
+                            <Link to={`/site-admin/github-apps/${encodeURIComponent(gitHubApp.id)}`}>
+                                {gitHubApp.name}
+                            </Link>
+                        </td>
+                    </tr>
+                )}
                 <tr>
                     <th className={styles.tableHeader}>Display name</th>
                     <td>{displayName}</td>

@@ -1,0 +1,31 @@
+.root {
+    // This is important because progress bar is rendered within
+    // dynamic Setup wizard footer widget portal which sets background
+    // with positioned absolute pseudo after element, z-index here
+    // pull this on top of pseudo element (otherwise pseudo overlaps with
+    // progress bar and user sees nothing but white background)
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.loading {
+    min-width: 4rem;
+
+    &::after {
+        overflow: hidden;
+        display: inline-block;
+        vertical-align: bottom;
+        animation: ellipsis steps(4, end) 2000ms infinite;
+        content: '\2026'; /* ascii code for the ellipsis character */
+        width: 0;
+    }
+}
+
+@keyframes ellipsis {
+    to {
+        width: 0.75rem;
+    }
+}

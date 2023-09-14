@@ -1,9 +1,10 @@
 import { mutateSettings } from '@sourcegraph/shared/src/settings/edit'
 
-import { SettingsEdit } from '../../graphql-operations'
+import type { SettingsEdit } from '../../graphql-operations'
 
 import { getUser } from './api'
-import { GraphQLClient } from './GraphQlClient'
+import type { GraphQLClient } from './GraphQlClient'
+
 /**
  * Applies an edit to the user settings for the given username.
  */

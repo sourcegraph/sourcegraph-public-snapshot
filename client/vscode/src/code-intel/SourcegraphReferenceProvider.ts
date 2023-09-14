@@ -1,13 +1,13 @@
-import * as Comlink from 'comlink'
+import type * as Comlink from 'comlink'
 import { EMPTY, of } from 'rxjs'
 import { debounceTime, first, switchMap } from 'rxjs/operators'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 
 import { finallyReleaseProxy, wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { makeRepoURI, parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { SearchSidebarAPI } from '../contract'
-import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
+import type { SearchSidebarAPI } from '../contract'
+import type { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 
 export class SourcegraphReferenceProvider implements vscode.ReferenceProvider {
     constructor(

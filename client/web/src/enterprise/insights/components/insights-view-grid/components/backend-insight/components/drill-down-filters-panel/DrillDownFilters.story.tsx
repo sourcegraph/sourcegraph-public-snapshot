@@ -1,10 +1,10 @@
 import { useRef } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
-import { InsightFilters } from '../../../../../../core'
+import type { InsightFilters } from '../../../../../../core'
 import { DrillDownFiltersPopover } from '../drill-down-filters-popover/DrillDownFiltersPopover'
 
 const defaultStory: Meta = {

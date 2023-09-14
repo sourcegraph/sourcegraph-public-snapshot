@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lua",
+    srcs = ["embed.go"],
+    embedsrcs = [
+        ".stylua.toml",
+        "README.md",
+        "config.lua",
+        "embed.go",
+        "go.lua",
+        "indexes.lua",
+        "java.lua",
+        "patterns.lua",
+        "python.lua",
+        "recognizer.lua",
+        "recognizers.lua",
+        "ruby.lua",
+        "rust.lua",
+        "shared.lua",
+        "test.lua",
+        "typescript.lua",
+        "util.lua",
+        "BUILD.bazel",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua",
+    visibility = ["//:__subpackages__"],
+)

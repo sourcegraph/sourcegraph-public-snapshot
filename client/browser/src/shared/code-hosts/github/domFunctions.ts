@@ -1,7 +1,7 @@
-import { DiffPart } from '@sourcegraph/codeintellify'
+import type { DiffPart } from '@sourcegraph/codeintellify'
 
 import { querySelectorOrSelf } from '../../util/dom'
-import { DOMFunctions } from '../shared/codeViews'
+import type { DOMFunctions } from '../shared/codeViews'
 
 import { getSelectorFor, isDiffPageType, isNewGitHubUI, parseURL } from './util'
 

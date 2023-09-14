@@ -228,6 +228,9 @@ type MessageFlags struct {
 	// ForceReadyForReview, if true will skip the draft pull request check and run the Chromatic steps.
 	// This allows a user to run the job without marking their PR as ready for review
 	ForceReadyForReview bool
+
+	// NoBazel, if true prevents automatic replacement of job with their Bazel equivalents.
+	NoBazel bool
 }
 
 // parseMessageFlags gets MessageFlags from the given commit message.

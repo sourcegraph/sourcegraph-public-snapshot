@@ -1,26 +1,30 @@
 import React, { useMemo } from 'react'
 
 import { noop } from 'lodash'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Block, BlockInit } from '..'
-import { NotebookFields } from '../../graphql-operations'
-import { SearchStreamingProps } from '../../search'
-import { CopyNotebookProps } from '../notebook'
+import type { Block, BlockInit } from '..'
+import type { NotebookFields } from '../../graphql-operations'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
+import type { SearchStreamingProps } from '../../search'
+import type { CopyNotebookProps } from '../notebook'
 import { NotebookComponent } from '../notebook/NotebookComponent'
 
 export interface NotebookContentProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
+        Omit<
+            StreamingSearchResultsListProps,
+            'allExpanded' | 'platformContext' | 'executedQuery' | 'enableOwnershipSearch'
+        >,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     viewerCanManage: boolean
     blocks: NotebookFields['blocks']
     exportedFileName: string
@@ -37,10 +41,10 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
         exportedFileName,
         onCopyNotebook,
         onUpdateBlocks,
-        globbing,
         streamSearch,
         telemetryService,
         searchContextsEnabled,
+        ownEnabled,
         isSourcegraphDotCom,
         fetchHighlightedFileLineRanges,
         authenticatedUser,
@@ -76,10 +80,10 @@ export const NotebookContent: React.FunctionComponent<React.PropsWithChildren<No
 
         return (
             <NotebookComponent
-                globbing={globbing}
                 streamSearch={streamSearch}
                 telemetryService={telemetryService}
                 searchContextsEnabled={searchContextsEnabled}
+                ownEnabled={ownEnabled}
                 isSourcegraphDotCom={isSourcegraphDotCom}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 authenticatedUser={authenticatedUser}

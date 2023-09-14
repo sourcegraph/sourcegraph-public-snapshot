@@ -1,11 +1,11 @@
 import { compact, find, head } from 'lodash'
-import { interval, Observable, Subject } from 'rxjs'
+import { interval, type Observable, type Subject } from 'rxjs'
 import { filter, map, refCount, publishReplay } from 'rxjs/operators'
 
-import { MutationRecordLike } from '../../util/dom'
-import { CodeHost } from '../shared/codeHost'
-import { CodeView, DOMFunctions } from '../shared/codeViews'
-import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
+import type { MutationRecordLike } from '../../util/dom'
+import type { CodeHost } from '../shared/codeHost'
+import type { CodeView, DOMFunctions } from '../shared/codeViews'
+import { queryWithSelector, type ViewResolver, type CustomSelectorFunction } from '../shared/views'
 
 import styles from './codeHost.module.scss'
 
@@ -365,7 +365,6 @@ export const gerritCodeHost: CodeHost = {
     type: 'gerrit',
     name: 'Gerrit',
     codeViewResolvers,
-    nativeTooltipResolvers: [],
     codeViewsRequireTokenization: true,
     // This overrides the default observeMutations because we need to handle shadow DOMS.
     observeMutations,
@@ -378,7 +377,6 @@ export const gerritCodeHost: CodeHost = {
         })
     },
     check: checkIsGerrit,
-    notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     hoverOverlayClassProps: {
         className: styles.hoverOverlay,
     },

@@ -1,12 +1,12 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import {
+import type {
     FileDiffConnectionFields,
     RepositoryComparisonDiffResult,
     RepositoryComparisonDiffVariables,
@@ -55,7 +55,7 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                 if (!repository) {
                     throw new RepoNotFoundError(args.repo)
                 }
-                if (!repository.comparison || !repository.comparison.fileDiffs) {
+                if (!repository.comparison?.fileDiffs) {
                     throw new Error('empty fileDiffs')
                 }
                 return repository.comparison.fileDiffs

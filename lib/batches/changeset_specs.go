@@ -108,6 +108,8 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAu
 			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
 		}
 
+		fork := input.Template.Fork
+
 		version := 1
 		if binaryDiffs {
 			version = 2
@@ -122,6 +124,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAu
 			HeadRef: git.EnsureRefPrefix(branch),
 			Title:   title,
 			Body:    body,
+			Fork:    fork,
 			Commits: []GitCommitDescription{
 				{
 					Version:     version,

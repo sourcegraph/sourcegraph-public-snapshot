@@ -7,21 +7,21 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 	opts := GitTreeEntryResolverOpts{
-		commit: &GitCommitResolver{
+		Commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo("a/b", true),
+		Stat: CreateFileInfo("a/b", true),
 	}
 	got := NewGitTreeEntryResolver(db, gitserverClient, opts).RawZipArchiveURL()
 	want := "http://example.com/my/repo/-/raw/a/b?format=zip"
@@ -34,7 +34,7 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	wantPath := "foobar.md"
 	wantContent := "foobar"
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
 	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
@@ -44,10 +44,10 @@ func TestGitTreeEntry_Content(t *testing.T) {
 		return []byte(wantContent), nil
 	})
 	opts := GitTreeEntryResolverOpts{
-		commit: &GitCommitResolver{
+		Commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo(wantPath, true),
+		Stat: CreateFileInfo(wantPath, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
@@ -79,7 +79,7 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 5
 6`
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
 	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
@@ -133,10 +133,10 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 
 	for _, tc := range tests {
 		opts := GitTreeEntryResolverOpts{
-			commit: &GitCommitResolver{
+			Commit: &GitCommitResolver{
 				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 			},
-			stat: CreateFileInfo(wantPath, true),
+			Stat: CreateFileInfo(wantPath, true),
 		}
 		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
@@ -172,10 +172,10 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 
 	// Testing default (nils) for pagination.
 	opts := GitTreeEntryResolverOpts{
-		commit: &GitCommitResolver{
+		Commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo(wantPath, true),
+		Stat: CreateFileInfo(wantPath, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 

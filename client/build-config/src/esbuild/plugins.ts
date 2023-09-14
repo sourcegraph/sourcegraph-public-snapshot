@@ -1,4 +1,4 @@
-import * as esbuild from 'esbuild'
+import type * as esbuild from 'esbuild'
 import signale from 'signale'
 
 export * from './monacoPlugin'

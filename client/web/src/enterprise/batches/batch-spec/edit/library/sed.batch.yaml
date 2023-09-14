@@ -8,10 +8,10 @@ steps:
   # In each repo, iterate over search results files using templating
   # https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
   - run: |
-      for file in "${{ join repository.search_result_paths " " }}";
+      while read -r file
       do
-        sed -i 's/replace-me/by-me/g;' ${file}
-      done
+        sed -i 's/replace-me/by-me/g;' "${file}"
+      done < <(echo '${{ join repository.search_result_paths "\n" }}')
     container: alpine:3
 
 changesetTemplate:

@@ -1,14 +1,14 @@
-import { Duration } from 'date-fns'
+import type { Duration } from 'date-fns'
 
 import {
-    InsightViewNode,
-    TimeIntervalStepInput,
+    type InsightViewNode,
+    type TimeIntervalStepInput,
     SeriesSortDirection,
     SeriesSortMode,
     TimeIntervalStepUnit,
 } from '../../../../../../graphql-operations'
 import { MAX_NUMBER_OF_SAMPLES } from '../../../../constants'
-import { InsightFilters, InsightSeriesDisplayOptions } from '../../../types/insight/common'
+import type { InsightFilters, InsightSeriesDisplayOptions } from '../../../types/insight/common'
 
 export function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     switch (step.unit) {

@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { Scalars } from '../../../../graphql-operations'
+import type { Scalars } from '../../../../graphql-operations'
 import { detachChangesets as _detachChangesets } from '../backend'
 
 export interface DetachChangesetsModalProps extends TelemetryProps {

@@ -18,78 +18,93 @@ As a general rule of thumb, an indexer can be invoked successfully if the source
 
 For each directory containing a `go.mod` file, the following index job is scheduled.
 
-```yaml
-indexing_jobs:
-  - steps:
-      - root: <dir>
-        image: sourcegraph/lsif-go
-        commands:
-          - go mod download
-    root: <dir>
-    indexer: sourcegraph/lsif-go
-    indexer_args:
-      - lsif-go
-      - --no-animation
+```json
+{
+  "indexing_jobs": [
+    {
+      "steps": [
+        {
+          "root": "<dir>",
+          "image": "sourcegraph/lsif-go",
+          "commands": [
+            "go mod download"
+          ]
+        }
+      ],
+      "root": "<dir>",
+      "indexer": "sourcegraph/lsif-go",
+      "indexer_args": [
+        "lsif-go",
+        "--no-animation"
+      ]
+    }
+  ]
+}
 ```
 
 For every _other_ directory excluding `vendor/` directories and their children containing one or more `*.go` files, the following index job is scheduled.
 
-```yaml
-indexing_jobs:
-  - root: <dir>
-    indexer: sourcegraph/lsif-go
-    indexer_args:
-      - GO111MODULE=off
-      - lsif-go
-      - --no-animation
+```json
+{
+  "root": "<dir>",
+  "indexer": "sourcegraph/lsif-go",
+  "indexer_args": [
+    "GO111MODULE=off",
+    "lsif-go",
+    "--no-animation"
+  ]
+}
 ```
 
 ## TypeScript
 
 For each directory excluding `node_modules/` directories and their children containing a `tsconfig.json` file, the following index job is scheduled. Note that there are a dynamic number of pre-indexing steps used to resolve dependencies: for each ancestor directory `ancestor(dir)` containing a `package.json` file, the dependencies are installed via either `yarn` or `npm`. These steps run in order, depth-first.
 
-```yaml
-indexing_jobs:
-  - steps:
-      - root: <ancestor(dir)>
-        image: sourcegraph/scip-typescript:autoindex
-        commands:
-          # Yarn is used to resolve dependencies in an ancestor directory
-          # when lerna.json configuration specifies "yarn" as the npmClient
-          # or if the directory contains a yarn.lock file.
-          - yarn
-      - root: <ancestor(dir)>
-        image: sourcegraph/scip-typescript:autoindex
-        commands:
-          # npm is used to resolve dependencies otherwise.
-          - npm install
-      - ...
-    local_steps:
-      # This is run directly before indexing if a node version can be determined
-      # from the package.json "engines" field, or any of the files:
-      #   - .nvmrc
-      #   - .node-version
-      #   - .n-node-version
-      - N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl autol
-    root: <dir>
-    indexer: sourcegraph/scip-typescript:autoindex
-    indexer_args:
-      - scip-typescript
-      - index
+```json
+{
+  "steps": [
+    {
+      "root": "<ancestor(dir)>",
+      "image": "sourcegraph/scip-typescript:autoindex",
+      "commands": [
+        "yarn"
+      ]
+    },
+    {
+      "root": "<ancestor(dir)>",
+      "image": "sourcegraph/scip-typescript:autoindex",
+      "commands": [
+        "npm install"
+      ]
+    },
+    "..."
+  ],
+  "local_steps": [
+    "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl autol"
+  ],
+  "root": "<dir>",
+  "indexer": "sourcegraph/scip-typescript:autoindex",
+  "indexer_args": [
+    "scip-typescript",
+    "index"
+  ]
+}
 ```
 
 ## Rust
 
 If the repository contains a `Cargo.toml` file, the following index job is scheduled.
 
-```yaml
-indexing_jobs:
-  - root: ''
-    indexer: sourcegraph/lsif-rust
-    indexer_args:
-      - lsif-rust
-      - index
-    outfile: dump.lsif
+```json
+{
+  "root": "",
+  "indexer": "sourcegraph/lsif-rust",
+  "indexer_args": [
+    "lsif-rust",
+    "index"
+  ],
+  "outfile": "dump.lsif"
+}
 ```
 
 ## Java
@@ -98,13 +113,15 @@ indexing_jobs:
 
 If the repository contains both a `lsif-java.json` file as well as `*.java`, `*.scala`, or `*.kt` files, the following index job is scheduled.
 
-```yaml
-indexing_jobs:
-  - root: ''
-    indexer: sourcegraph/scip-java
-    indexer_args:
-      - scip-java
-      - index
-      - --build-tool=lsif
-    outfile: index.scip
+```json
+{
+  "root": "",
+  "indexer": "sourcegraph/scip-java",
+  "indexer_args": [
+    "scip-java",
+    "index",
+    "--build-tool=lsif"
+  ],
+  "outfile": "index.scip"
+}
 ```

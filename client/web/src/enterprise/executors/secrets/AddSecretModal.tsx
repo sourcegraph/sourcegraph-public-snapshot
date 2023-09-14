@@ -4,7 +4,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, Modal, Input, H3, Text, Alert, Link, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
+import type { ExecutorSecretScope, Scalars } from '../../../graphql-operations'
 
 import { useCreateExecutorSecret } from './backend'
 
@@ -89,7 +89,7 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                                 Must be uppercase characters, digits and underscores only. Must start with an uppercase
                                 character.{' '}
                                 <Link
-                                    to="/help/admin/deploy_executors#using-private-registries"
+                                    to="/help/admin/executors/deploy_executors#using-private-registries"
                                     rel="noopener"
                                     target="_blank"
                                 >

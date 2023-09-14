@@ -7,9 +7,9 @@ They are defined in the [`goroutine`](https://sourcegraph.com/github.com/sourceg
 Examples:
 
 - [`worker.NewWorker`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+worker.NewWorker&patternType=literal), for example, produces a background routine, which in this case is a background worker.
-- [`batches.newSpecExpireWorker`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/batches/background/spec_expire.go?subtree=true#L13-27) returns a [`goroutine.PeriodicGoroutine`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/internal/goroutine/periodic.go?subtree=true#L14:78), which means it's invoked periodically.
+- [`batches.newSpecExpireWorker`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/batches/background/spec_expire.go?subtree=true#L13-27) returns a [`goroutine.PeriodicGoroutine`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/internal/goroutine/periodic.go?subtree=true#L14:78), which means it's invoked periodically.
 - [out-of-band migrations](oobmigrations.md) are implemented as background routines.
-- [`HardDeleter`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/cmd/frontend/internal/codeintel/background/janitor/hard_delete.go?subtree=true#L33) is a periodic background routine that periodically hard-deletes soft-deleted upload records.
+- [`HardDeleter`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/cmd/frontend/internal/codeintel/background/janitor/hard_delete.go?subtree=true#L33) is a periodic background routine that periodically hard-deletes soft-deleted upload records.
 
 See also the [godocs.io examples for the `goroutine` package](https://godocs.io/github.com/sourcegraph/sourcegraph/internal/goroutine).
 

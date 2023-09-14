@@ -12,6 +12,13 @@ import (
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"
 
+func newDefaultSettingsResolver(db database.DB) *defaultSettingsResolver {
+	return &defaultSettingsResolver{
+		db:    db,
+		gqlID: singletonDefaultSettingsGQLID,
+	}
+}
+
 type defaultSettingsResolver struct {
 	db    database.DB
 	gqlID string
@@ -23,19 +30,22 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
-func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: `{"experimentalFeatures": {}}`}
-	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
+func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsResolver, error) {
+	settings := &api.Settings{
+		Subject:  api.SettingsSubject{Default: true},
+		Contents: `{"experimentalFeatures": {}}`,
+	}
+	return &settingsResolver{r.db, &settingsSubjectResolver{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
 
-func (r *defaultSettingsResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *defaultSettingsResolver) ViewerCanAdminister(_ context.Context) (bool, error) {
 	return false, nil
 }
 
 func (r *defaultSettingsResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubject{defaultSettings: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{defaultSettings: r}}
 }
 
 func (r *defaultSettingsResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

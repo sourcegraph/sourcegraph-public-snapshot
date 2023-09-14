@@ -25,7 +25,7 @@
 
 # Configure Sourcegraph with Kustomize
 
-This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components, and does not work with non-Kustomize deployment types.
+This guide will demonstrate how to customize a Kubernetes deployment (**non-Helm**) using Kustomize components.
 
 <div class="getting-started">
   <a class="btn text-center" href="./index">Installation</a>
@@ -46,7 +46,7 @@ Following these guidelines will help you create a seamless deployment and avoid 
 
 ## Base cluster
 
-The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services (tracing services and cAdvisor are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
+The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services ([tracing services](#tracing) and [cAdvisor](#deploy-cadvisor) are not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -104,6 +104,14 @@ RBAC must be enabled in your cluster for the frontend to communicate with other 
 ```
 
 This will allow the frontend service to discover endpoints for each service replica and communicate with them through the Kubernetes API. Note that this component should only be added if RBAC is enabled in your cluster.
+
+### Embeddings Service
+By default the Embeddings service which is used to handle embeddings searches is disabled. To enable it the following must be commented out. By default the Embeddings service stores indexes in `blobstore`. Use the [embeddings-backend](./configure.md#external-embeddings-object-storage) patch to configure an external object store.
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+components:
+  - ../../components/remove/embeddings # -- Disable Embeddings service by default
+```
 
 ---
 
@@ -741,7 +749,7 @@ Example:
     TLS_CLUSTER_ISSUER: letsencrypt
 ```
 
-Step 4: Include the tls component:
+Step 4: Include the `tls` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -752,6 +760,25 @@ Step 4: Include the tls component:
 ### TLS with Let’s Encrypt
 
 Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
+
+### TLS secret name
+
+If the name of your secret for TLS is not `sourcegraph-frontend-tls`, you can replace it using the `$TLS_SECRET_NAME` config key:
+
+```yaml
+# instances/$INSTANCE_NAME/buildConfig.yaml
+  data:
+    # [ACTION] Set values below
+    TLS_SECRET_NAME: sourcegraph-tls
+```
+
+Then, include the `tls-secretname` component:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/network/tls-secretname
+```
 
 ---
 
@@ -1117,6 +1144,34 @@ This adds the new environment variables for redis to the services listed above.
 
 > WARNING: You must restart frontend for the updated values to be activiated
 
+### External Embeddings Object Storage
+
+Sourcegraph supports specifying an external Object Store for embeddings indexes.
+
+**Step 1**: Create a subdirectory called 'patches' within the directory of your overlay
+
+```bash
+$ mkdir instances/$INSTANCE_NAME/patches
+```
+
+**Step 2**: Copy the `embeddings-backend.yaml` patch file from the components/patches directory to the new [patches subdirectory](kustomize/index.md#patches-directory)
+
+```bash
+$ cp components/patches/embeddings-backend.yaml instances/$INSTANCE_NAME/patches/embeddings-backend.yaml
+```
+
+**Step 3**: Configure the external object store [backend](../../../cody/explanations/code_graph_context.md#storing-embedding-indexes)
+
+**Step 4**: Include the patch file in your overlay under `patches`:
+   
+  ```yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/...
+  # ...
+  patches:
+    - patch: patches/embeddings-backend.yaml
+  ```
 ---
 
 ## SSH for cloning
@@ -1155,7 +1210,7 @@ To mount the files through Kustomize:
 
 **Step 4:** Update code host configuration
 
-Update your [code host configuration file](../../../external_service/index.md#full-code-host-docs) to enable ssh cloning. For example, set [gitURLType](../../../../admin/external_service/github.md#gitURLType) to `ssh` for [GitHub](../../../external_service/github.md). See the [external service docs](../../../admin/external_service.md) for the correct setting for your code host.
+Update your [code host configuration file](../../external_service/index.md#full-code-host-docs) to enable ssh cloning. For example, set [gitURLType](../../external_service/github.md#gitURLType) to `ssh` for [GitHub](../../external_service/github.md). See the [external service docs](../../../admin/external_service/index.md) for the correct setting for your code host.
 
 ---
 
@@ -1226,7 +1281,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
 
 ## Private registry
 
-**Step 1** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
+**Step 1:** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1234,7 +1289,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
     - ../../components/enable/private-registry
 ```
 
-**Step 2** Set the `PRIVATE_REGISTRY` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. For example:
+**Step 2:** Set the `PRIVATE_REGISTRY` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. For example:
 
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
@@ -1242,11 +1297,49 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
     PRIVATE_REGISTRY: your.private.registry.com # -- Replace 'your.private.registry.com'
 ```
 
+### Add imagePullSecrets
+
+To add `imagePullSecrets` to all resources:
+
+**Step 1:** Include the `imagepullsecrets` component.
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/resources/imagepullsecrets
+```
+
+**Step 2:** Set the `IMAGE_PULL_SECRET_NAME` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. 
+
+For example:
+
+```yaml
+# instances/$INSTANCE_NAME/buildConfig.yaml
+  data:
+    IMAGE_PULL_SECRET_NAME: YOUR_SECRET_NAME
+```
+
+**Alternative:** You can add the following patch under `patches`, and replace `YOUR_SECRET_NAME` with the name of your secret.
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          name: YOUR_SECRET_NAME
+    target:
+      group: apps
+      kind: StatefulSet|Deployment|DaemonSet
+      version: v1
+```
+
 ---
 
 ## Multi-version upgrade
 
-In order to perform a [multi-version upgrade](../../../updates/index.md#multi-version-upgrades), all pods must be scaled down to 0 except databases, which can be handled by including the `utils/multi-version-upgrade` component:
+In order to perform a [multi-version upgrade](../../updates/index.md#multi-version-upgrades), all pods must be scaled down to 0 except databases, which can be handled by including the `utils/multi-version-upgrade` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1280,4 +1373,4 @@ When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/lat
 
 ## Troubleshooting
 
-See the [Troubleshooting docs](../troubleshoot.md).
+See the [Troubleshooting docs](troubleshoot.md).

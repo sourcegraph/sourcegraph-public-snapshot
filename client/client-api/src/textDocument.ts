@@ -1,6 +1,7 @@
-import { DocumentSelector } from 'sourcegraph'
+import type { DocumentSelector } from 'sourcegraph'
 
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
+
 /**
  * The URI scheme for the resources that hold the body of comments (such as comments on a GitHub
  * issue).

@@ -2,7 +2,7 @@ import { memo } from 'react'
 
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 
-import { Tour, TourProps } from './components/Tour/Tour'
+import { Tour, type TourProps } from './components/Tour/Tour'
 import { TourInfo } from './components/Tour/TourInfo'
 import { withErrorBoundary } from './components/withErrorBoundary'
 import {

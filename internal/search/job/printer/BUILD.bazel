@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "printer",
@@ -12,12 +13,13 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/search/job",
-        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "printer_test",
+    timeout = "short",
     srcs = [
         "json_test.go",
         "mermaid_test.go",
@@ -28,7 +30,7 @@ go_test(
     embed = [":printer"],
     deps = [
         "//internal/search/job",
-        "@com_github_hexops_autogold//:autogold",
-        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

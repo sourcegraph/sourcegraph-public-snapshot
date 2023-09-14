@@ -1,0 +1,3 @@
+name: Add index on user_external_accounts for SCIM
+parents: [ 1678091683 ]
+createIndexConcurrently: true

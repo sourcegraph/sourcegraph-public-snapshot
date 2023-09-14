@@ -1,30 +1,28 @@
 package shared
 
 import (
-	"bytes"
 	"context"
 	"flag"
 	"io"
-	"net/http"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
+	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -33,113 +31,6 @@ func TestMain(m *testing.M) {
 		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
-}
-
-func TestParsePercent(t *testing.T) {
-	tests := []struct {
-		i       int
-		want    int
-		wantErr bool
-	}{
-		{i: -1, wantErr: true},
-		{i: -4, wantErr: true},
-		{i: 300, wantErr: true},
-		{i: 0, want: 0},
-		{i: 50, want: 50},
-		{i: 100, want: 100},
-	}
-	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			got, err := getPercent(tt.i)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parsePercent() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("parsePercent() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
-}
-
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
-}
-
-func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
-	externalServiceStore := database.NewMockExternalServiceStore()
-	externalServiceStore.GetByIDFunc.SetDefaultReturn(
-		&types.ExternalService{
-			ID:   1,
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`
-{
-  "url": "https://github.com",
-  "githubAppInstallationID": "21994992",
-  "repos": [],
-  "authorization": {},
-}`),
-		},
-		nil,
-	)
-
-	repoStore := database.NewMockRepoStore()
-	repoStore.GetByNameFunc.SetDefaultReturn(
-		&types.Repo{
-			ID:   1,
-			Name: "test-repo-1",
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:github:1": {
-					ID:       "extsvc:github:1",
-					CloneURL: "https://github.com/sgtest/test-repo-1",
-				},
-			},
-			Metadata: &github.Repository{
-				URL: "https://github.com/sgtest/test-repo-1",
-			},
-		},
-		nil,
-	)
-
-	doer := &mockDoer{
-		do: func(r *http.Request) (*http.Response, error) {
-			want := "http://github-proxy/app/installations/21994992/access_tokens"
-			if r.URL.String() != want {
-				return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-			}
-
-			body := `{"token": "mock-installtion-access-token"}`
-			return &http.Response{
-				Status:     http.StatusText(http.StatusOK),
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-			}, nil
-		},
-	}
-
-	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			GitHubApp: &schema.GitHubApp{
-				AppID:        "404",
-				PrivateKey:   bogusKey,
-				Slug:         "test-app",
-				ClientID:     "Iv1.deb0cd1048cf1040",
-				ClientSecret: "c6d0ed049217a89825c457898c701c30324f873b",
-			},
-		},
-	})
-	defer conf.Mock(nil)
-
-	got, err := getRemoteURLFunc(context.Background(), externalServiceStore, repoStore, doer, "test-repo-1")
-	require.NoError(t, err)
-
-	want := "https://x-access-token:mock-installtion-access-token@github.com/sgtest/test-repo-1"
-	assert.Equal(t, want, got)
 }
 
 func TestGetVCSSyncer(t *testing.T) {
@@ -152,11 +43,11 @@ func TestGetVCSSyncer(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
 
 	repo := api.RepoName("foo/bar")
-	extsvcStore := database.NewMockExternalServiceStore()
-	repoStore := database.NewMockRepoStore()
-	depsSvc := new(dependencies.Service)
+	extsvcStore := dbmocks.NewMockExternalServiceStore()
+	repoStore := dbmocks.NewMockRepoStore()
 
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{
@@ -181,7 +72,14 @@ func TestGetVCSSyncer(t *testing.T) {
 		}, nil
 	})
 
-	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo, tempReposDir)
+	s, err := getVCSSyncer(context.Background(), &newVCSSyncerOpts{
+		externalServiceStore: extsvcStore,
+		repoStore:            repoStore,
+		depsSvc:              new(dependencies.Service),
+		repo:                 repo,
+		reposDir:             tempReposDir,
+		coursierCacheDir:     tempCoursierCacheDir,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,5 +87,274 @@ func TestGetVCSSyncer(t *testing.T) {
 	_, ok := s.(*server.PerforceDepotSyncer)
 	if !ok {
 		t.Fatalf("Want *server.PerforceDepotSyncer, got %T", s)
+	}
+}
+
+func TestMethodSpecificStreamInterceptor(t *testing.T) {
+	tests := []struct {
+		name string
+
+		matchedMethod string
+		testMethod    string
+
+		expectedInterceptorCalled bool
+	}{
+		{
+			name: "allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "allowedMethod",
+
+			expectedInterceptorCalled: true,
+		},
+		{
+			name: "not allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "otherMethod",
+
+			expectedInterceptorCalled: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			interceptorCalled := false
+			interceptor := methodSpecificStreamInterceptor(test.matchedMethod, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+				interceptorCalled = true
+				return handler(srv, ss)
+			})
+
+			handlerCalled := false
+			noopHandler := func(srv any, ss grpc.ServerStream) error {
+				handlerCalled = true
+				return nil
+			}
+
+			err := interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: test.testMethod}, noopHandler)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if !handlerCalled {
+				t.Error("expected handler to be called")
+			}
+
+			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
+				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMethodSpecificUnaryInterceptor(t *testing.T) {
+	tests := []struct {
+		name string
+
+		matchedMethod string
+		testMethod    string
+
+		expectedInterceptorCalled bool
+	}{
+		{
+			name: "allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "allowedMethod",
+
+			expectedInterceptorCalled: true,
+		},
+		{
+			name: "not allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "otherMethod",
+
+			expectedInterceptorCalled: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			interceptorCalled := false
+			interceptor := methodSpecificUnaryInterceptor(test.matchedMethod, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+				interceptorCalled = true
+				return handler(ctx, req)
+			})
+
+			handlerCalled := false
+			noopHandler := func(ctx context.Context, req any) (any, error) {
+				handlerCalled = true
+				return nil, nil
+			}
+
+			_, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{FullMethod: test.testMethod}, noopHandler)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if !handlerCalled {
+				t.Error("expected handler to be called")
+			}
+
+			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
+				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
+			}
+
+		})
+	}
+}
+
+func TestSetupAndClearTmp(t *testing.T) {
+	root := t.TempDir()
+
+	// All non .git paths should become .git
+	mkFiles(t, root,
+		"github.com/foo/baz/.git/HEAD",
+		"example.org/repo/.git/HEAD",
+
+		// Needs to be deleted
+		".tmp/foo",
+		".tmp/baz/bam",
+
+		// Older tmp cleanups that failed
+		".tmp-old123/foo",
+	)
+
+	tmp, err := setupAndClearTmp(logtest.Scoped(t), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Straight after cleaning .tmp should be empty
+	assertPaths(t, filepath.Join(root, ".tmp"), ".")
+
+	// tmp should exist
+	if info, err := os.Stat(tmp); err != nil {
+		t.Fatal(err)
+	} else if !info.IsDir() {
+		t.Fatal("tmpdir is not a dir")
+	}
+
+	// tmp should be on the same mount as root, ie root is parent.
+	if filepath.Dir(tmp) != root {
+		t.Fatalf("tmp is not under root: tmp=%s root=%s", tmp, root)
+	}
+
+	// Wait until async cleaning is done
+	for i := 0; i < 1000; i++ {
+		found := false
+		files, err := os.ReadDir(root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range files {
+			found = found || strings.HasPrefix(f.Name(), ".tmp-old")
+		}
+		if !found {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Only files should be the repo files
+	assertPaths(
+		t,
+		root,
+		"github.com/foo/baz/.git/HEAD",
+		"example.org/repo/.git/HEAD",
+		".tmp",
+	)
+}
+
+func TestSetupAndClearTmp_Empty(t *testing.T) {
+	root := t.TempDir()
+
+	_, err := setupAndClearTmp(logtest.Scoped(t), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No files, just the empty .tmp dir should exist
+	assertPaths(t, root, ".tmp")
+}
+
+// assertPaths checks that all paths under want exist. It excludes non-empty directories
+func assertPaths(t *testing.T, root string, want ...string) {
+	t.Helper()
+	notfound := make(map[string]struct{})
+	for _, p := range want {
+		notfound[p] = struct{}{}
+	}
+	var unwanted []string
+	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			if empty, err := isEmptyDir(path); err != nil {
+				t.Fatal(err)
+			} else if !empty {
+				return nil
+			}
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		if _, ok := notfound[rel]; ok {
+			delete(notfound, rel)
+		} else {
+			unwanted = append(unwanted, rel)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(notfound) > 0 {
+		var paths []string
+		for p := range notfound {
+			paths = append(paths, p)
+		}
+		sort.Strings(paths)
+		t.Errorf("did not find expected paths: %s", strings.Join(paths, " "))
+	}
+	if len(unwanted) > 0 {
+		sort.Strings(unwanted)
+		t.Errorf("found unexpected paths: %s", strings.Join(unwanted, " "))
+	}
+}
+
+func isEmptyDir(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
+}
+
+func mkFiles(t *testing.T, root string, paths ...string) {
+	t.Helper()
+	for _, p := range paths {
+		if err := os.MkdirAll(filepath.Join(root, filepath.Dir(p)), os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, filepath.Join(root, p), nil)
+	}
+}
+
+func writeFile(t *testing.T, path string, content []byte) {
+	t.Helper()
+	err := os.WriteFile(path, content, 0o666)
+	if err != nil {
+		t.Fatal(err)
 	}
 }

@@ -1,6 +1,6 @@
 import { completionStatus } from '@codemirror/autocomplete'
-import { Extension } from '@codemirror/state'
-import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import type { Extension } from '@codemirror/state'
+import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
 

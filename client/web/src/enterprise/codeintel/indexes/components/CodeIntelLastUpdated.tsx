@@ -1,8 +1,8 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 
-import { PreciseIndexFields } from '../../../../graphql-operations'
+import type { PreciseIndexFields } from '../../../../graphql-operations'
 
 export interface CodeIntelLastUpdatedProps {
     index: PreciseIndexFields

@@ -1,11 +1,19 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
+import {
+    Observable,
+    fromEvent,
+    Subscription,
+    type OperatorFunction,
+    pipe,
+    type Subscriber,
+    type Notification,
+} from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
-import { SearchPatternType, SymbolKind } from '../graphql-operations'
+import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
 
@@ -153,6 +161,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
+    metadata?: Record<string, string | undefined>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -266,7 +275,8 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type SmartSearchAlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
+export type AlertKind = SmartSearchAlertKind | 'unowned-results'
 
 interface Alert {
     title: string
@@ -278,7 +288,7 @@ interface Alert {
 // Same key values from internal/search/alert.go
 export type AnnotationName = 'ResultCount'
 
-interface ProposedQuery {
+export interface ProposedQuery {
     description?: string | null
     annotations?: { name: AnnotationName; value: string }[]
     query: string
@@ -470,10 +480,9 @@ export interface StreamSearchOptions {
     featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
-    decorationKinds?: string[]
-    decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
 }
 
 function initiateSearchStream(
@@ -484,8 +493,6 @@ function initiateSearchStream(
         caseSensitive,
         trace,
         featureOverrides,
-        decorationKinds,
-        decorationContextLines,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
@@ -501,9 +508,6 @@ function initiateSearchStream(
             ['v', version],
             ['t', patternType as string],
             ['sm', searchMode.toString()],
-            ['dl', '0'],
-            ['dk', (decorationKinds || ['html']).join('|')],
-            ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
             ['cm', chunkMatches ? 't' : 'f'],
         ]
@@ -577,7 +581,8 @@ export function getRevision(branches?: string[], version?: string): string {
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.commit)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
+    const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
@@ -595,7 +600,7 @@ export function getCommitMatchUrl(commitMatch: CommitMatch): string {
     return '/' + encodeURI(commitMatch.repository) + '/-/commit/' + commitMatch.oid
 }
 
-export function getOwnerMatchUrl(ownerMatch: OwnerMatch): string {
+export function getOwnerMatchUrl(ownerMatch: OwnerMatch, ignoreUnknownPerson: boolean = false): string {
     if (ownerMatch.type === 'person' && ownerMatch.user) {
         return '/users/' + encodeURI(ownerMatch.user.username)
     }
@@ -606,10 +611,14 @@ export function getOwnerMatchUrl(ownerMatch: OwnerMatch): string {
         return `mailto:${ownerMatch.email}`
     }
 
+    if (ignoreUnknownPerson) {
+        return ''
+    }
     // Unknown person with only a handle.
-    // We need some unique dummy data here because this is used
+    // We can't ignore this person and return an empty string, we
+    // need some unique dummy data here because this is used
     // as the key in the virtual list. We can't use the index.
-    // Once we have enough data, we may be able to link to the
+    // In the future we may be able to link to the
     // person's profile page in the external code host.
     return '/unknown-person/' + encodeURI(ownerMatch.handle || 'unknown')
 }

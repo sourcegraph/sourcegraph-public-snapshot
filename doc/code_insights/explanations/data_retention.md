@@ -26,8 +26,15 @@ If you want to access this data, you are given the option to export all data for
 
 You can download all data for a Code Insight, including data that has been archived. You can do this:
 
-* From the insight card menu
-* From the standalone page
+- From the insight card menu
+- From the standalone page
+- By curling the API endpoint 
+
+```shell 
+curl \
+-H 'Authorization: token {SOURCEGRAPH_TOKEN}' \
+https://yourinstance.sourcegraph.com/.api/insights/export/{YOUR_INSIGHT_ID} -O -J
+```
 
 The data will be exported as a CSV file. 
 Only data that you are permitted to see will be excluded (i.e. repository permissions are enforced).

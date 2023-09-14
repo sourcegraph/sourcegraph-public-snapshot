@@ -15,7 +15,7 @@ var globalsToUnset = []string{
 	// "newproxy",
 	// "next",
 	// "pcall",
-	// "print",
+	"print",
 	// "rawequal",
 	// "rawget",
 	// "rawset",

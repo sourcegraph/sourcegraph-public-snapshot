@@ -1,7 +1,7 @@
-import { SearchPatternType } from '../../graphql-operations'
+import type { SearchPatternType } from '../../graphql-operations'
 
 import {
-    AliasedFilterType,
+    type AliasedFilterType,
     FILTERS,
     FilterType,
     isNegatedFilter,
@@ -9,7 +9,7 @@ import {
     resolveNegatedFilter,
 } from './filters'
 import { scanSearchQuery } from './scanner'
-import { Filter, Token } from './token'
+import type { Filter, Token } from './token'
 
 /** Returns true if the query contains operators. */
 export const operatorExists = (query: string): boolean => {

@@ -8,7 +8,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
-import { CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
+import { type CodeMonitorWithEvents, EventStatus } from '../../../../graphql-operations'
 
 import { TriggerEvent } from './TriggerEvent'
 

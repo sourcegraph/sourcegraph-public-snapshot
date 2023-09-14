@@ -1,13 +1,15 @@
 # Pings
 
-Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
+Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`). 
 
-## Critical telemetry
+Sourcegraph will also periodically perform a license verification check, to verify the validity of the configured Sourcegraph license. Tampering with these checks, or preventing them from occuring, will cause Sourcegraph to disable many features until a successful check is completed. Certain Enterprise licenses can request to be exempt from these license verification checks.
 
-Critical telemetry includes only the high-level data below required for billing, support, updates, and security notices.
+## Telemetry
+
+Sourcegraph aggregates usage and performance metrics for some product features in our enterprise deployments. No personal or specific information is ever included.
 
 <details>
-<summary>Click to expand a list of critical telemetry</summary>
+<summary>Click to expand a list of other telemetry</summary>
 
 - Randomly generated site identifier
 - The email address of the initial site installer (or if deleted, the first active site admin), to know who to contact regarding sales, product updates, security updates, and policy updates
@@ -20,20 +22,6 @@ Critical telemetry includes only the high-level data below required for billing,
 - Aggregated repository statistics
   - Total size of git repositories stored in bytes
   - Total number of lines of code stored in text search index
-- Code Insights: total count of insights
-
-</details>
-
-## Other telemetry
-
-By default, Sourcegraph also aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
-
-This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
-[site configuration](config/site_config.md#disableNonCriticalTelemetry).
-
-<details>
-<summary>Click to expand a list of other telemetry</summary>
-
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
 - Which code hosts are in use (GitHub, Bitbucket Server / Bitbucket Data Center, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)
@@ -88,6 +76,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
       - executor
       - local (using `src-cli`)
 - Aggregated counts of users created, deleted, retained, resurrected and churned within the month
+- Aggregated counts of access requests pending, approved, rejected
 - Saved searches usage data
   - Count of saved searches
   - Count of users using saved searches
@@ -108,6 +97,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of users that use non-default Sourcegraph extensions
   - Average number of non-default extensions enabled for users that use non-default Sourcegraph extensions
 - Code insights usage data
+  - Total count of insights
   - Weekly count of page views on the insights pages
   - Weekly count of unique viewers on the insights pages
   - Weekly counts of hovers and clicks insights by type (e.g. search, code stats)
@@ -200,7 +190,15 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count of unique users who interacted with the search exports feature
     - Count interactions with the go imports search query transformation feature
     - Count of unique users who interacted with the go imports search query transformation feature
-
+- Code ownership usage data
+  - Number and ratio of repositories for which ownership data is available via CODEOWNERS file or the API.
+  - Number of owners assigned through Own.
+  <!-- - Aggregate monthly weekly and daily active users for the following activities: -->
+    - Narrowing search results by owner using `file:has.owners` predicate.
+    - Selecting owner search result through `select:file.owners`.
+    - Displaying ownership panel in file view.
+- Histogram of cloned repository sizes
+- Aggregate daily, weekly, monthly repository metadata usage statistics
 </details>
 
 ## CIDR Range for Sourcegraph
@@ -213,14 +211,26 @@ The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-f
 
 ## Connections to Sourcegraph.com
 
-Sourcegraph only connects to Sourcegraph.com for two purposes:
+Sourcegraph only connects to Sourcegraph.com for three purposes:
 
 1. The pings described above are sent, in order to:
    - Check for new product updates.
    - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
+1. [Verify](./licensing/index.md) the validity of the configured Sourcegraph license.
 1. Legacy Sourcegraph extensions are fetched from Sourcegraph.com`s extension registry.
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
+
+## Connections to Sourcegraph.com via Cody app
+
+The Cody app connects to Sourcegraph.com to send a limited selection of the pings described above in order to infer value to our users and send update notifications. They include:  
+
+- Randomly generated site identifier
+- Deployment type (the Cody app)
+- Release version
+- Operating system
+- Total number of repositories added
+- Whether a user was active today (boolean) 
 
 ## Troubleshooting Pings
 

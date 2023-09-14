@@ -1,13 +1,13 @@
-import * as Comlink from 'comlink'
+import type * as Comlink from 'comlink'
 import * as uuid from 'uuid'
 
-import { EventSource, Event as EventType } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, type Event as EventType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { version } from '../../../package.json'
-import { ExtensionCoreAPI } from '../../contract'
+import type { ExtensionCoreAPI } from '../../contract'
 import { ANONYMOUS_USER_ID_KEY } from '../../settings/LocalStorageService'
 
-import { VsceTelemetryService } from './telemetryService'
+import type { VsceTelemetryService } from './telemetryService'
 
 // Event Logger for VS Code Extension
 export class EventLogger implements VsceTelemetryService {

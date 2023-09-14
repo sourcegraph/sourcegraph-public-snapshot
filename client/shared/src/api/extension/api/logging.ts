@@ -1,8 +1,8 @@
-import { Unsubscribable } from 'rxjs'
+import type { Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { Settings } from '../../../settings/settings'
-import { ExtensionHostState } from '../extensionHostState'
+import type { Settings } from '../../../settings/settings'
+import type { ExtensionHostState } from '../extensionHostState'
 
 /**
  * Sets active loggers extension host state based on user settings.
@@ -16,7 +16,7 @@ export function setActiveLoggers(state: Pick<ExtensionHostState, 'settings' | 'a
 }
 
 export function getActiveLoggersFromSettings(settings: Settings): Set<string> {
-    if (!settings || !settings['extensions.activeLoggers']) {
+    if (!settings?.['extensions.activeLoggers']) {
         return new Set<string>()
     }
 

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "recorder",
@@ -18,8 +19,13 @@ go_library(
 
 go_test(
     name = "recorder_test",
+    timeout = "short",
     srcs = ["common_test.go"],
     embed = [":recorder"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/rcache",
         "//lib/errors",

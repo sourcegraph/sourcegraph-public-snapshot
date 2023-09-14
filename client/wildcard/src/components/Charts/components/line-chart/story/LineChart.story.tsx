@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 import { ResizableBox } from 'react-resizable'
 
@@ -8,7 +8,7 @@ import { BrandedStory } from '../../../../../stories/BrandedStory'
 import { Badge } from '../../../../Badge'
 import { Button } from '../../../../Button'
 import { H2, Text, Code } from '../../../../Typography'
-import { Series } from '../../../types'
+import type { Series } from '../../../types'
 import { LineChart, LegendList, LegendItem, getLineColor } from '../index'
 
 import {
@@ -16,7 +16,7 @@ import {
     STANDARD_SERIES,
     SERIES_WITH_HUGE_DATA,
     UNALIGNED_SERIES,
-    StandardDatum,
+    type StandardDatum,
     FLAT_XY_SERIES,
 } from './mocks'
 

@@ -288,7 +288,7 @@ func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credenti
 	imageName := str[len(str)-1]
 
 	var found bool
-	for _, ourImages := range images.DeploySourcegraphDockerImages {
+	for _, ourImages := range images.SourcegraphDockerImages {
 		if strings.HasPrefix(imageName, ourImages) {
 			found = true
 			break

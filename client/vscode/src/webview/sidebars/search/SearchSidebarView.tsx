@@ -1,4 +1,4 @@
-import React, { FC, ReactElement, ReactNode, useCallback, useMemo } from 'react'
+import React, { type FC, type ReactElement, type ReactNode, useCallback, useMemo } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
@@ -17,20 +17,20 @@ import {
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import {
     InitialParametersSource,
-    QueryUpdate,
+    type QueryUpdate,
     SearchMode,
-    SearchQueryState,
-    SearchQueryStateStore,
+    type SearchQueryState,
+    type SearchQueryStateStore,
     updateQuery,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { type Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
-import { WebviewPageProps } from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 import styles from './SearchSidebarView.module.scss'
 

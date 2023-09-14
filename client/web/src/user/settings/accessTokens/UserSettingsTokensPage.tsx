@@ -1,25 +1,29 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Observable, Subject } from 'rxjs'
+import { type Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, Button, Link, Icon, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     AccessTokenFields,
     AccessTokensConnectionFields,
     AccessTokensResult,
     AccessTokensVariables,
     CreateAccessTokenResult,
 } from '../../../graphql-operations'
-import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import {
+    accessTokenFragment,
+    AccessTokenNode,
+    type AccessTokenNodeProps,
+} from '../../../settings/tokens/AccessTokenNode'
+import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**

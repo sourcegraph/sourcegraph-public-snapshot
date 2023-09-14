@@ -1,8 +1,8 @@
 import { SearchPatternType } from '../../graphql-operations'
 
 import { getMonacoTokens } from './decoratedToken'
-import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
-import { Token } from './token'
+import { scanSearchQuery, type ScanSuccess, type ScanResult } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -1547,6 +1547,45 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 34,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has.topic predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.topic(topic1)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 15,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 21,
                 "scopes": "metaPredicateParenthesis"
               }
             ]

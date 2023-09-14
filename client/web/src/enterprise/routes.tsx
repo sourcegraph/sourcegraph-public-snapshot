@@ -1,11 +1,13 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, type RouteObject } from 'react-router-dom'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LegacyRoute } from '../LegacyRouteContext'
-import { LayoutRouteProps, routes } from '../routes'
+import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
+
+import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
 
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
@@ -21,6 +23,7 @@ const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
 )
+const SentinelRouter = lazyComponent(() => import('./sentinel/SentinelRouter'), 'SentinelRouter')
 const CreateSearchContextPage = lazyComponent(
     () => import('./searchContexts/CreateSearchContextPage'),
     'CreateSearchContextPage'
@@ -30,9 +33,24 @@ const EditSearchContextPage = lazyComponent(
     'EditSearchContextPage'
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
-const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
+const CodySearchPage = lazyComponent(() => import('../cody/search/CodySearchPage'), 'CodySearchPage')
+const CodyChatPage = lazyComponent(() => import('../cody/chat/CodyChatPage'), 'CodyChatPage')
+const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
+const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
+const AppSetup = lazyComponent(() => import('./app/setup/AppSetupWizard'), 'AppSetupWizard')
+const SearchJob = lazyComponent(() => import('./search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
-export const enterpriseRoutes: readonly LayoutRouteProps[] = [
+export const enterpriseRoutes: RouteObject[] = [
+    {
+        path: `${EnterprisePageRoutes.AppSetup}/*`,
+        handle: { isFullPage: true },
+        element: (
+            <LegacyRoute
+                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+            />
+        ),
+    },
     {
         path: EnterprisePageRoutes.BatchChanges,
         element: (
@@ -54,7 +72,31 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         element: (
             <LegacyRoute
                 render={props => <CodeInsightsRouter {...props} />}
-                condition={props => isCodeInsightsEnabled(props.settingsCascade)}
+                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
+            />
+        ),
+    },
+    {
+        path: EnterprisePageRoutes.SearchJobs,
+        element: (
+            <LegacyRoute
+                render={props => <SearchJob />}
+                condition={({ settingsCascade }) => {
+                    if (isErrorLike(settingsCascade.final)) {
+                        return false
+                    }
+
+                    return settingsCascade.final?.experimentalFeatures?.searchJobs ?? false
+                }}
+            />
+        ),
+    },
+    {
+        path: EnterprisePageRoutes.Sentinel,
+        element: (
+            <LegacyRoute
+                render={props => <SentinelRouter {...props} />}
+                condition={props => isSentinelEnabled(props)}
             />
         ),
     },
@@ -83,8 +125,25 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
     {
-        path: EnterprisePageRoutes.Cody,
-        element: <LegacyRoute render={props => <GlobalCodyArea />} />,
+        path: EnterprisePageRoutes.CodySearch,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
+    },
+    {
+        path: EnterprisePageRoutes.Cody + '/*',
+        element: <LegacyRoute render={props => <CodyChatPage {...props} context={window.context} />} />,
+    },
+    {
+        path: EnterprisePageRoutes.Own,
+        element: <OwnPage />,
+    },
+    {
+        path: EnterprisePageRoutes.AppAuthCallback,
+        element: (
+            <LegacyRoute
+                render={() => <AppAuthCallbackPage />}
+                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+            />
+        ),
     },
     ...routes,
 ]

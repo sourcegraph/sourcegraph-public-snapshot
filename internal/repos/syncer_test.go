@@ -12,11 +12,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -24,6 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -947,14 +952,15 @@ func TestSyncRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	done := make(chan error)
+	done := make(chan struct{})
 	go func() {
-		done <- syncer.Run(ctx, store, repos.RunOptions{
+		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: func() time.Duration { return time.Second },
-			IsCloud:         false,
+			IsDotCom:        false,
 			MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
 			DequeueInterval: 1 * time.Millisecond,
-		})
+		})...)
+		done <- struct{}{}
 	}()
 
 	// Ignore fields store adds
@@ -1007,10 +1013,7 @@ func TestSyncRun(t *testing.T) {
 
 	// Cancel context and the run loop should stop
 	cancel()
-	err := <-done
-	if err != nil && err != context.Canceled {
-		t.Fatal(err)
-	}
+	<-done
 }
 
 func TestSyncerMultipleServices(t *testing.T) {
@@ -1104,14 +1107,15 @@ func TestSyncerMultipleServices(t *testing.T) {
 		Now:    time.Now,
 	}
 
-	done := make(chan error)
+	done := make(chan struct{})
 	go func() {
-		done <- syncer.Run(ctx, store, repos.RunOptions{
+		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
 			EnqueueInterval: func() time.Duration { return time.Second },
-			IsCloud:         false,
+			IsDotCom:        false,
 			MinSyncInterval: func() time.Duration { return 1 * time.Minute },
 			DequeueInterval: 1 * time.Millisecond,
-		})
+		})...)
+		done <- struct{}{}
 	}()
 
 	// Ignore fields store adds
@@ -1179,10 +1183,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 
 	// Cancel context and the run loop should stop
 	cancel()
-	err := <-done
-	if err != nil && err != context.Canceled {
-		t.Fatal(err)
-	}
+	<-done
 }
 
 func TestOrphanedRepo(t *testing.T) {
@@ -1344,6 +1345,55 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 	if !errors.Is(have, want) {
 		t.Fatalf("have err: %v, want %v", have, want)
 	}
+}
+
+func TestDotComPrivateReposDontSync(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	t.Cleanup(func() {
+		envvar.MockSourcegraphDotComMode(orig)
+		cancel()
+	})
+
+	store := getTestRepoStore(t)
+
+	now := time.Now()
+
+	svc1 := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// setup services
+	if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
+		t.Fatal(err)
+	}
+
+	privateRepo := &types.Repo{
+		Name:    "github.com/org/foo",
+		Private: true,
+	}
+
+	syncer := &repos.Syncer{
+		ObsvCtx: observation.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+			s := repos.NewFakeSource(svc1, nil, privateRepo)
+			return s, nil
+		},
+		Store: store,
+		Now:   time.Now,
+	}
+
+	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
+	errorMsg := fmt.Sprintf("%s is private, but dotcom does not support private repositories.", string(privateRepo.Name))
+
+	require.EqualError(t, have, errorMsg)
 }
 
 var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`
@@ -1997,4 +2047,155 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 
 var noopProgressRecorder = func(ctx context.Context, progress repos.SyncProgress, final bool) error {
 	return nil
+}
+
+func TestCreateRepoLicenseHook(t *testing.T) {
+	ctx := context.Background()
+
+	// Set up mock repo count
+	mockRepoStore := dbmocks.NewMockRepoStore()
+	mockStore := repos.NewMockStore()
+	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
+
+	tests := map[string]struct {
+		maxPrivateRepos int
+		unrestricted    bool
+		numPrivateRepos int
+		newRepo         *types.Repo
+		wantErr         bool
+	}{
+		"private repo, unrestricted": {
+			unrestricted:    true,
+			numPrivateRepos: 99999999,
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         false,
+		},
+		"private repo, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         true,
+		},
+		"public repo, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			newRepo:         &types.Repo{Private: false},
+			wantErr:         false,
+		},
+		"private repo, max private repos not reached": {
+			maxPrivateRepos: 2,
+			numPrivateRepos: 1,
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         false,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			mockRepoStore.CountFunc.SetDefaultReturn(test.numPrivateRepos, nil)
+
+			defaultMock := licensing.MockCheckFeature
+			licensing.MockCheckFeature = func(feature licensing.Feature) error {
+				if prFeature, ok := feature.(*licensing.FeaturePrivateRepositories); ok {
+					prFeature.MaxNumPrivateRepos = test.maxPrivateRepos
+					prFeature.Unrestricted = test.unrestricted
+				}
+
+				return nil
+			}
+			defer func() {
+				licensing.MockCheckFeature = defaultMock
+			}()
+
+			err := repos.CreateRepoLicenseHook(ctx, mockStore, test.newRepo)
+			if gotErr := err != nil; gotErr != test.wantErr {
+				t.Fatalf("got err: %t, want err: %t, err: %q", gotErr, test.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestUpdateRepoLicenseHook(t *testing.T) {
+	ctx := context.Background()
+
+	// Set up mock repo count
+	mockRepoStore := dbmocks.NewMockRepoStore()
+	mockStore := repos.NewMockStore()
+	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
+
+	tests := map[string]struct {
+		maxPrivateRepos int
+		unrestricted    bool
+		numPrivateRepos int
+		existingRepo    *types.Repo
+		newRepo         *types.Repo
+		wantErr         bool
+	}{
+		"from public to private, unrestricted": {
+			unrestricted:    true,
+			numPrivateRepos: 99999999,
+			existingRepo:    &types.Repo{Private: false},
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         false,
+		},
+		"from public to private, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			existingRepo:    &types.Repo{Private: false},
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         true,
+		},
+		"from private to private, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			existingRepo:    &types.Repo{Private: true},
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         false,
+		},
+		"from private to public, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			existingRepo:    &types.Repo{Private: true},
+			newRepo:         &types.Repo{Private: false},
+			wantErr:         false,
+		},
+		"from private deleted to private not deleted, max private repos reached": {
+			maxPrivateRepos: 1,
+			numPrivateRepos: 1,
+			existingRepo:    &types.Repo{Private: true, DeletedAt: time.Now()},
+			newRepo:         &types.Repo{Private: true, DeletedAt: time.Time{}},
+			wantErr:         true,
+		},
+		"from public to private, max private repos not reached": {
+			maxPrivateRepos: 2,
+			numPrivateRepos: 1,
+			existingRepo:    &types.Repo{Private: false},
+			newRepo:         &types.Repo{Private: true},
+			wantErr:         false,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			mockRepoStore.CountFunc.SetDefaultReturn(test.numPrivateRepos, nil)
+
+			defaultMock := licensing.MockCheckFeature
+			licensing.MockCheckFeature = func(feature licensing.Feature) error {
+				if prFeature, ok := feature.(*licensing.FeaturePrivateRepositories); ok {
+					prFeature.MaxNumPrivateRepos = test.maxPrivateRepos
+					prFeature.Unrestricted = test.unrestricted
+				}
+
+				return nil
+			}
+			defer func() {
+				licensing.MockCheckFeature = defaultMock
+			}()
+
+			err := repos.UpdateRepoLicenseHook(ctx, mockStore, test.existingRepo, test.newRepo)
+			if gotErr := err != nil; gotErr != test.wantErr {
+				t.Fatalf("got err: %t, want err: %t, err: %q", gotErr, test.wantErr, err)
+			}
+		})
+	}
 }

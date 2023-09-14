@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'

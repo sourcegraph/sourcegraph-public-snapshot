@@ -5,47 +5,53 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, Extension } from '@codemirror/state'
+import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
+import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
 
+import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { type AbsoluteRepoFile, type ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
-import { BlameHunkData } from '../blame/useBlameHunks'
-import { HoverThresholdProps } from '../RepoContainer'
+import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import type { BlameHunkData } from '../blame/useBlameHunks'
+import type { HoverThresholdProps } from '../RepoContainer'
 
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
-import { pin, updatePin } from './codemirror/hovercard'
-import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { buildLinks } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
+import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
+import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
-import { tokensAsLinks } from './codemirror/tokens-as-links'
+import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -72,11 +78,6 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables experimental navigation by rendering links for all interactive tokens.
-    enableLinkDrivenCodeNavigation?: boolean
-    // Enables experimental navigation by making interactive tokens selectable on click.
-    enableSelectionDrivenCodeNavigation?: boolean
-
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
@@ -100,19 +101,16 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
 
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
-
     /** LSIF syntax-highlighting data */
     lsif?: string
-
-    stencil?: BlobStencilFields[]
 
     /** If present, the file is stored in Git LFS (large file storage). */
     lfs?: { byteSize: Scalars['BigInt'] } | null
 
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
+
+    snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
 const staticExtensions: Extension = [
@@ -151,9 +149,10 @@ const staticExtensions: Extension = [
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.selected-line:focus': {
-            boxShadow: 'none',
+
+            '&:focus': {
+                boxShadow: 'none',
+            },
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -182,8 +181,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         isBlameVisible,
         blameHunks,
-        enableLinkDrivenCodeNavigation,
-        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -194,6 +191,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
+
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
+    const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
@@ -232,8 +232,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
         [isBlameVisible, blameHunks, isLightTheme]
     )
-
-    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -276,6 +274,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
+
+    // Added fallback to take care of ReferencesPanel/Simple storybook
+    const { setEditorScope } = useCodySidebar()
+
+    const editorRef = useRef<EditorView | null>(null)
+
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -289,27 +293,36 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
-                enableSelectionDrivenCodeNavigation,
             }),
+            scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             codeFoldingExtension(),
-            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
-            enableLinkDrivenCodeNavigation
-                ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
+            isCodyEnabled()
+                ? codyWidgetExtension(
+                      editorRef.current
+                          ? new CodeMirrorEditor({
+                                view: editorRef.current,
+                                repo: props.blobInfo.repoName,
+                                revision: props.blobInfo.revision,
+                                filename: props.blobInfo.filePath,
+                                content: props.blobInfo.content,
+                            })
+                          : undefined
+                  )
                 : [],
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
+            buildLinks.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : [],
             settingsCompartment.of(themeSettings),
             wrapCodeCompartment.of(wrapCodeSettings),
             search({
@@ -325,10 +338,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [onSelection, blobInfo, extensionsController, isCodyEnabled, editorRef.current]
     )
-
-    const editorRef = useRef<EditorView | null>(null)
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -340,7 +351,11 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
 
-            if (!enableSelectionDrivenCodeNavigation) {
+            if (navigateToLineOnAnyClick) {
+                /**
+                 * `navigateToLineOnAnyClick` is `true` when CodeMirrorBlob is rendered in the references panel.
+                 * We don't need code intel and keyboard navigation in the references panel blob: https://github.com/sourcegraph/sourcegraph/pull/41615.
+                 */
                 return
             }
 
@@ -362,7 +377,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 }
             }
         }
-    }, [blobInfo, extensions, enableSelectionDrivenCodeNavigation, locationRef])
+    }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
 
     // Propagate props changes to extensions
     useEffect(() => {
@@ -435,6 +450,32 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         }
     }, [])
 
+    // Sync the currently viewed document with the editor zustand store. This is used for features
+    // like Cody to know what file and range a user is looking at.
+    useEffect(() => {
+        const view = editorRef.current
+        setEditorScope(
+            new CodeMirrorEditor(
+                view
+                    ? {
+                          view,
+                          repo: props.blobInfo.repoName,
+                          revision: props.blobInfo.revision,
+                          filename: props.blobInfo.filePath,
+                          content: props.blobInfo.content,
+                      }
+                    : undefined
+            )
+        )
+        return () => setEditorScope(new NoopEditor())
+    }, [
+        props.blobInfo.content,
+        props.blobInfo.filePath,
+        props.blobInfo.repoName,
+        props.blobInfo.revision,
+        setEditorScope,
+    ])
+
     return (
         <>
             <div
@@ -448,6 +489,17 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
+            {enableBlobPageSwitchAreasShortcuts &&
+                focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        allowDefault={true}
+                        onMatch={() => {
+                            editorRef.current?.contentDOM.focus()
+                        }}
+                    />
+                ))}
         </>
     )
 }

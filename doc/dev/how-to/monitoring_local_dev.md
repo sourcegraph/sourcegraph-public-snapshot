@@ -10,7 +10,7 @@ The [developing observability page](../background-information/observability/inde
 
 ### With all services
 
-The monitoring stack is not included in `sg start` (or `sg start oss` and `sg start enterprise`) scripts.
+The monitoring stack is not included in `sg start` (or `sg start enterprise`) scripts.
 It needs to be started separately with `sg start monitoring`.
 Learn more about these in the [general development getting started guide](../setup/index.md).
 

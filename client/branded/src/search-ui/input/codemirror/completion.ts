@@ -4,16 +4,16 @@ import {
     autocompletion,
     startCompletion,
     completionKeymap,
-    CompletionResult,
-    Completion,
+    type CompletionResult,
+    type Completion,
     snippet,
-    CompletionSource,
+    type CompletionSource,
     acceptCompletion,
     selectedCompletion,
     currentCompletions,
     setSelectedCompletion,
 } from '@codemirror/autocomplete'
-import { Extension, Prec } from '@codemirror/state'
+import { type Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
 import {
     mdiCodeArray,
@@ -46,7 +46,7 @@ import {
     mdiWrench,
 } from '@mdi/js'
 import { isEqual, startCase } from 'lodash'
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 import { isDefined } from '@sourcegraph/common'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -56,12 +56,12 @@ import {
     regexInsertText,
     repositoryInsertText,
 } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { decorate, DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { FILTERS, FilterType, filterTypeKeys, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { decorate, type DecoratedToken, toDecoration } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { FILTERS, type FilterType, filterTypeKeys, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
@@ -124,6 +124,31 @@ type SuggestionSource<R, C extends SuggestionContext> = (
 ) => R | null | Promise<R | null>
 
 export type StandardSuggestionSource = SuggestionSource<CompletionResult | null, SuggestionContext>
+
+const theme = EditorView.theme({
+    '.completion-type-queryfilter > .cm-completionLabel': {
+        fontWeight: 'bold',
+    },
+    '.cm-tooltip-autocomplete svg': {
+        width: '1rem',
+        height: '1rem',
+        display: 'inline-block',
+        boxSizing: 'content-box',
+        textAlign: 'center',
+        paddingRight: '0.5rem',
+
+        '& path': {
+            fillOpacity: 0.6,
+        },
+    },
+    '.completion-type-searchhistory > .cm-completionLabel': {
+        display: 'none',
+    },
+    'li.completion-type-searchhistory': {
+        height: 'initial !important',
+        minHeight: '1.3rem',
+    },
+})
 
 /**
  * searchQueryAutocompletion registers extensions for automcompletion, using the
@@ -266,29 +291,7 @@ export function searchQueryAutocompletion(
                       )
             )
         ),
-        EditorView.theme({
-            '.completion-type-queryfilter > .cm-completionLabel': {
-                fontWeight: 'bold',
-            },
-            '.cm-tooltip-autocomplete svg': {
-                width: '1rem',
-                height: '1rem',
-                display: 'inline-block',
-                boxSizing: 'content-box',
-                textAlign: 'center',
-                paddingRight: '0.5rem',
-            },
-            '.cm-tooltip-autocomplete svg path': {
-                fillOpacity: 0.6,
-            },
-            '.completion-type-searchhistory > .cm-completionLabel': {
-                display: 'none',
-            },
-            'li.completion-type-searchhistory': {
-                height: 'initial !important',
-                minHeight: '1.3rem',
-            },
-        }),
+        theme,
         EditorView.updateListener.of(update => {
             // If a filter was completed, show the completion list again for
             // filter values.
@@ -316,7 +319,6 @@ export function searchQueryAutocompletion(
 export interface DefaultSuggestionSourcesOptions {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
-    globbing: boolean
     applyOnEnter?: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
@@ -462,7 +464,7 @@ export function createDefaultSuggestionSources(
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
-                    getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
+                    getMatch: insidePredicate ? undefined : createMatchFunction(token),
                 }
             })
         )
@@ -576,7 +578,7 @@ function completionFromSearchMatch(
                               revision: match.commit,
                               repoName: match.repository,
                           }),
-                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
+                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path) + ' ',
                     info: match.repository,
                 },
             ]
@@ -587,10 +589,7 @@ function completionFromSearchMatch(
                     type: 'repository',
                     url: hasNonActivePatternTokens ? undefined : `/${match.repository}`,
                     detail: formatRepositoryStars(match.repoStars),
-                    apply:
-                        (params?.isDefaultSource ? 'repo:' : '') +
-                        repositoryInsertText(match, { ...options, filterValue: params?.filterValue }) +
-                        ' ',
+                    apply: (params?.isDefaultSource ? 'repo:' : '') + repositoryInsertText(match) + ' ',
                 },
             ]
         case 'symbol':

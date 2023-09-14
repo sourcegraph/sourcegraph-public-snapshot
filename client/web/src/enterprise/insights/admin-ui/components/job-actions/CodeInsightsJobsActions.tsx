@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, type ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodeInsightsJobFragment } from '../../query'
 

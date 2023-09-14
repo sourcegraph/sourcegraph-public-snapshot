@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,13 +32,15 @@ func (j *lsifuploadstoreExpirer) Config() []env.Config {
 }
 
 func (j *lsifuploadstoreExpirer) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, lsifuploadstoreExpirerConfigInst.LSIFUploadStoreConfig)
+	ctx := context.Background()
+
+	uploadStore, err := lsifuploadstore.New(ctx, observationCtx, lsifuploadstoreExpirerConfigInst.LSIFUploadStoreConfig)
 	if err != nil {
 		observationCtx.Logger.Fatal("Failed to create upload store", log.Error(err))
 	}
 
 	return []goroutine.BackgroundRoutine{
-		uploadstore.NewExpirer(context.Background(), uploadStore, lsifuploadstoreExpirerConfigInst.prefix, lsifuploadstoreExpirerConfigInst.maxAge, lsifuploadstoreExpirerConfigInst.interval),
+		uploadstore.NewExpirer(ctx, uploadStore, lsifuploadstoreExpirerConfigInst.prefix, lsifuploadstoreExpirerConfigInst.maxAge, lsifuploadstoreExpirerConfigInst.interval),
 	}, nil
 }
 

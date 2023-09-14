@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -67,7 +67,7 @@ describe('StreamingProgressSkippedPopover', () => {
         }
         expect(
             renderWithBrandedContext(
-                <StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />
+                <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={sinon.spy()} />
             ).asFragment()
         ).toMatchSnapshot()
     })
@@ -87,7 +87,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
         expect(screen.queryByTestId('popover-form')).not.toBeInTheDocument()
     })
 
@@ -110,7 +112,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
         expect(searchAgainButton).toBeInTheDocument()
@@ -156,7 +160,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
 
         const checkboxes = screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)
         expect(checkboxes).toHaveLength(3)
@@ -207,7 +213,9 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={sinon.spy()} />
+        )
 
         const checkboxes = screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)
         expect(checkboxes).toHaveLength(3)
@@ -262,7 +270,9 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const searchAgain = sinon.spy()
 
-        renderWithBrandedContext(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} />)
+        renderWithBrandedContext(
+            <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={searchAgain} />
+        )
 
         const checkboxes = screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)
         expect(checkboxes).toHaveLength(3)

@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useEffect } from 'react'
 import { mdiContentCopy } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import copy from 'copy-to-clipboard'
-import { Observable, merge, of } from 'rxjs'
+import { type Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'

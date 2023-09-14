@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint rxjs/no-internal: warn */
-import { asapScheduler, ObservableInput, of, Operator, PartialObserver, Subscriber, TeardownLogic, zip } from 'rxjs'
+import {
+    asapScheduler,
+    type ObservableInput,
+    of,
+    type Operator,
+    type PartialObserver,
+    type Subscriber,
+    type TeardownLogic,
+    zip,
+} from 'rxjs'
 import { Observable } from 'rxjs/internal/Observable'
 import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber'
 import { subscribeToArray } from 'rxjs/internal/util/subscribeToArray'

@@ -1,4 +1,4 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+import React, { type ReactElement, useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronLeft, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,15 +7,15 @@ import { escapeRegExp } from 'lodash'
 import { renderMarkdown } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchQueryState,
+    type SearchQueryState,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
-    QueryExample,
+    type QueryExample,
     EditorHint,
 } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     useLocalStorage,
@@ -207,10 +207,17 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('has.topic({topic})'),
+        field: FilterType.repo,
+        description: 'Search only inside repositories that have the provided GitHub topic',
+        examples: ['repo:has.topic(go)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('has.commit.after({date})'),
         field: FilterType.repo,
         description:
-            'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
+            'Search only inside repositories that contain a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
         examples: ['repo:has.commit.after(1 month ago)', 'repo:has.commit.after(june 25 2017)'],
         showSuggestions: false,
     },
@@ -222,25 +229,18 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('has.tag({any string})'),
-        field: FilterType.repo,
-        description: 'Search inside repositories that are tagged with the provided string.',
-        examples: ['repo:has.tag(ocaml)', '-repo:has.tag(golang)'],
-        showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('has({key:value})'),
+        ...createQueryExampleFromString('has.meta({key:value})'),
         field: FilterType.repo,
         description:
-            'Search inside repositories associated with a key:value pair that matches the provided key:value pair.',
-        examples: ['repo:has(owner:jordan)', '-repo:has(team:search)'],
-        showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('has.key({any string})'),
-        field: FilterType.repo,
-        description: 'Search inside repositories that are associated with the given key, regardless of its value.',
-        examples: ['repo:has.key(owner)', '-repo:has.key(wip)'],
+            'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
+        examples: [
+            'repo:has.meta(owner:jordan)',
+            '-repo:has.meta(team:search)',
+            'repo:has.meta(owner)',
+            '-repo:has.meta(wip)',
+            'repo:has.meta(ocaml:)',
+            '-repo:has.meta(golang:)',
+        ],
         showSuggestions: false,
     },
     {
@@ -525,7 +525,7 @@ export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQuerySt
     filter: string
 }
 
-const SearchReference = React.memo((props: SearchReferenceProps): ReactElement => {
+const SearchReference = React.memo(function SearchReference(props: SearchReferenceProps) {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
     const { setQueryState, telemetryService } = props
@@ -625,5 +625,7 @@ const SearchReference = React.memo((props: SearchReferenceProps): ReactElement =
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>
 ): (filter: string) => React.ReactNode {
-    return (filter: string) => <SearchReference {...props} filter={filter} />
+    return function SearchReferenceFactory(filter: string) {
+        return <SearchReference {...props} filter={filter} />
+    }
 }

@@ -7,18 +7,50 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var (
+	client *Client
+	once   sync.Once
+)
+
+func init() {
+	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
+	once.Do(func() {
+		client = New(syntectServer)
+	})
+}
+
+func GetSyntectClient() *Client {
+	return client
+}
 
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
+	SyntaxEngineScipSyntax = "scip-syntax"
+
+	SyntaxEngineInvalid = "invalid"
 )
+
+func isTreesitterBased(engine string) bool {
+	switch engine {
+	case SyntaxEngineTreesitter, SyntaxEngineScipSyntax:
+		return true
+	default:
+		return false
+	}
+}
 
 type HighlightResponseType string
 
@@ -82,9 +114,6 @@ type Query struct {
 	// time if the user's request ends up being a problematic one.
 	StabilizeTimeout time.Duration `json:"-"`
 
-	// Tracer, if not nil, will be used to record opentracing spans associated with the query.
-	Tracer opentracing.Tracer
-
 	// Which highlighting engine to use
 	Engine string `json:"engine"`
 }
@@ -131,63 +160,29 @@ type response struct {
 	Code  string `json:"code"`
 }
 
-// Make sure all names are lowercase here, since they are normalized
-var enryLanguageMappings = map[string]string{
-	"c#": "c_sharp",
-}
-
-var supportedFiletypes = map[string]struct{}{
-	"c":          {},
-	"c_sharp":    {},
-	"cpp":        {},
-	"c++":        {},
-	"go":         {},
-	"java":       {},
-	"javascript": {},
-	"jsonnet":    {},
-	"jsx":        {},
-	"python":     {},
-	"ruby":       {},
-	"rust":       {},
-	"scala":      {},
-	"tsx":        {},
-	"typescript": {},
-	"xlsg":       {},
-}
-
 // Client represents a client connection to a syntect_server.
 type Client struct {
 	syntectServer string
-}
-
-var client = &http.Client{Transport: &nethttp.Transport{}}
-
-func normalizeFiletype(filetype string) string {
-	normalized := strings.ToLower(filetype)
-	if mapped, ok := enryLanguageMappings[normalized]; ok {
-		normalized = mapped
-	}
-
-	return normalized
+	httpClient    *http.Client
 }
 
 func IsTreesitterSupported(filetype string) bool {
-	_, contained := supportedFiletypes[normalizeFiletype(filetype)]
+	_, contained := treesitterSupportedFiletypes[languages.NormalizeLanguage(filetype)]
 	return contained
 }
 
 // Highlight performs a query to highlight some code.
-//
-// TOOD(tjdevries): I think it would be good to remove `useTreeSitter` as a
-// variable and instead use either two different callpaths or just
-// automatically do this via the query or something else. It feels a bit goofy
-// to be a separate param. But I need to clean up these other deprecated
-// options later, so it's OK for the first iteration.
-func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (*Response, error) {
+func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (_ *Response, err error) {
 	// Normalize filetype
-	q.Filetype = normalizeFiletype(q.Filetype)
+	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
-	if q.Engine == SyntaxEngineTreesitter && !IsTreesitterSupported(q.Filetype) {
+	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
+		attribute.String("filepath", q.Filepath),
+		attribute.String("theme", q.Theme),
+		attribute.Bool("css", q.CSS))
+	defer tr.EndWithErr(&err)
+
+	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
 	}
 
@@ -200,7 +195,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	var url string
 	if format == FormatJSONSCIP {
 		url = "/scip"
-	} else if q.Engine == SyntaxEngineTreesitter {
+	} else if isTreesitterBased(q.Engine) {
 		// "Legacy SCIP mode" for the HTML blob view and languages configured to
 		// be processed with tree sitter.
 		url = "/lsif"
@@ -208,7 +203,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 		url = "/"
 	}
 
-	req, err := http.NewRequest("POST", c.url(url), bytes.NewReader(jsonQuery))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.url(url), bytes.NewReader(jsonQuery))
 	if err != nil {
 		return nil, errors.Wrap(err, "building request")
 	}
@@ -217,19 +212,8 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 		req.Header.Set("X-Stabilize-Timeout", q.StabilizeTimeout.String())
 	}
 
-	// Add tracing to the request.
-	tracer := q.Tracer
-	if tracer == nil {
-		tracer = opentracing.NoopTracer{}
-	}
-	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(tracer, req,
-		nethttp.OperationName("Highlight"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
 	// Perform the request.
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
 	}
@@ -238,11 +222,6 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	if resp.StatusCode == http.StatusBadRequest {
 		return nil, ErrRequestTooLarge
 	}
-
-	// Can only call ht.Span() after the request has been executed, so add our span tags in now.
-	ht.Span().SetTag("Filepath", q.Filepath)
-	ht.Span().SetTag("Theme", q.Theme)
-	ht.Span().SetTag("CSS", q.CSS)
 
 	// Decode the response.
 	var r response
@@ -288,5 +267,53 @@ func (c *Client) url(path string) string {
 func New(syntectServer string) *Client {
 	return &Client{
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
+		httpClient:    httpcli.InternalClient,
 	}
+}
+
+type symbolsResponse struct {
+	Scip      string
+	Plaintext bool
+}
+
+type SymbolsQuery struct {
+	FileName string `json:"filename"`
+	Content  string `json:"content"`
+}
+
+// SymbolsResponse represents a response to a symbols query.
+type SymbolsResponse struct {
+	Scip      string `json:"scip"`
+	Plaintext bool   `json:"plaintext"`
+}
+
+func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
+	serialized, err := json.Marshal(q)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to encode query")
+	}
+	body := bytes.NewReader(serialized)
+
+	req, err := http.NewRequest("POST", c.url("/symbols"), body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to build request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to perform symbols request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
+	}
+
+	var r SymbolsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, errors.Wrap(err, "failed to decode symbols response")
+	}
+
+	return &r, nil
 }

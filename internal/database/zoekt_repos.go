@@ -23,7 +23,7 @@ type ZoektReposStore interface {
 
 	// UpdateIndexStatuses updates the index status of the rows in zoekt_repos
 	// whose repo_id matches an entry in the `indexed` map.
-	UpdateIndexStatuses(ctx context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error
+	UpdateIndexStatuses(ctx context.Context, indexed zoekt.ReposMap) error
 
 	// GetStatistics returns a summary of the zoekt_repos table.
 	GetStatistics(ctx context.Context) (ZoektRepoStatistics, error)
@@ -55,9 +55,10 @@ func (s *zoektReposStore) Transact(ctx context.Context) (ZoektReposStore, error)
 }
 
 type ZoektRepo struct {
-	RepoID      api.RepoID
-	IndexStatus string
-	Branches    []zoekt.RepositoryBranch
+	RepoID        api.RepoID
+	Branches      []zoekt.RepositoryBranch
+	IndexStatus   string
+	LastIndexedAt time.Time
 
 	UpdatedAt time.Time
 	CreatedAt time.Time
@@ -75,6 +76,7 @@ func scanZoektRepo(sc dbutil.Scanner) (*ZoektRepo, error) {
 		&zr.RepoID,
 		&branches,
 		&zr.IndexStatus,
+		&dbutil.NullTime{Time: &zr.LastIndexedAt},
 		&zr.UpdatedAt,
 		&zr.CreatedAt,
 	)
@@ -94,6 +96,7 @@ SELECT
 	zr.repo_id,
 	zr.branches,
 	zr.index_status,
+	zr.last_indexed_at,
 	zr.updated_at,
 	zr.created_at
 FROM zoekt_repos zr
@@ -107,7 +110,7 @@ AND
 ;
 `
 
-func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) (err error) {
+func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed zoekt.ReposMap) (err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return err
@@ -126,7 +129,13 @@ func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed map[u
 			return err
 		}
 
-		if err := inserter.Insert(ctx, repoID, "indexed", branches); err != nil {
+		var lastIndexedAt *time.Time
+		if entry.IndexTimeUnix != 0 {
+			t := time.Unix(entry.IndexTimeUnix, 0)
+			lastIndexedAt = &t
+		}
+
+		if err := inserter.Insert(ctx, repoID, "indexed", branches, lastIndexedAt); err != nil {
 			return err
 		}
 	}
@@ -155,27 +164,30 @@ var tempTableColumns = []string{
 	"repo_id",
 	"index_status",
 	"branches",
+	"last_indexed_at",
 }
 
 const updateIndexStatusesCreateTempTableQuery = `
 CREATE TEMPORARY TABLE temp_table (
-	repo_id      integer NOT NULL,
-	index_status text NOT NULL,
-	branches     jsonb
+	repo_id         integer NOT NULL,
+	index_status    text NOT NULL,
+	last_indexed_at TIMESTAMP WITH TIME ZONE,
+	branches        jsonb
 ) ON COMMIT DROP
 `
 
 const updateIndexStatusesUpdateQuery = `
 UPDATE zoekt_repos zr
 SET
-	index_status = source.index_status,
-	branches     = source.branches,
-	updated_at   = now()
+	index_status    = source.index_status,
+	branches        = source.branches,
+	last_indexed_at = source.last_indexed_at,
+	updated_at      = now()
 FROM temp_table source
 WHERE
 	zr.repo_id = source.repo_id
 AND
-	(zr.index_status != source.index_status OR zr.branches != source.branches)
+	(zr.index_status != source.index_status OR zr.branches != source.branches OR zr.last_indexed_at IS DISTINCT FROM source.last_indexed_at)
 ;
 `
 

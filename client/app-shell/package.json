@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "@sourcegraph/app-shell",
+  "version": "1.00",
+  "description": "The Sourcegraph Shell",
+  "scripts": {
+    "build": "rm -rf dist && ts-node --transpile-only dev/esbuild/build.ts"
+  },
+  "devDependencies": {
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/build-config": "workspace:*",
+    "esbuild": "^0.17.7",
+    "ts-node": "^10.9.1"
+  }
+}

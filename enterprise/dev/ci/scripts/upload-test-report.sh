@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 xml_file=$1
 xml=$(cat "$xml_file")

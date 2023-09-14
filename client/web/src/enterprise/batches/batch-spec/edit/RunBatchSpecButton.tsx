@@ -20,7 +20,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { ExecutionOptions } from '../BatchSpecContext'
+import type { ExecutionOptions } from '../BatchSpecContext'
 
 import styles from './RunBatchSpecButton.module.scss'
 

@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo, useState } from 'react'
+import { type FunctionComponent, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiArrowExpand, mdiArrowCollapse, mdiPlus } from '@mdi/js'
@@ -13,8 +13,8 @@ import {
     H4,
     ErrorAlert,
     useField,
-    FormChangeEvent,
-    SubmissionResult,
+    type FormChangeEvent,
+    type SubmissionResult,
     useForm,
     FORM_ERROR,
 } from '@sourcegraph/wildcard'
@@ -149,7 +149,14 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
-        seriesDisplayOptionsField.input.onChange(originalValues.seriesDisplayOptions)
+        seriesDisplayOptionsField.input.onChange({
+            limit: null,
+            numSamples: null,
+            sortOptions: {
+                mode: SeriesSortMode.RESULT_COUNT,
+                direction: SeriesSortDirection.DESC,
+            },
+        })
     }
 
     const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections

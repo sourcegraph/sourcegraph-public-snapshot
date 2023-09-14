@@ -1,4 +1,4 @@
-import { Tooltip, TooltipView } from '@codemirror/view'
+import type { Tooltip, TooltipView } from '@codemirror/view'
 
 export class LoadingTooltip implements Tooltip {
     public readonly above = true

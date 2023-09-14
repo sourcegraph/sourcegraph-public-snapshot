@@ -30,12 +30,16 @@ var (
 )
 
 func NewCacheEvicter(interval time.Duration, cache diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), "codeintel.symbols-cache-evictor", "evicts entries from the symbols cache",
-		interval, &cacheEvicter{
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		&cacheEvicter{
 			cache:             cache,
 			maxCacheSizeBytes: maxCacheSizeBytes,
 			metrics:           metrics,
 		},
+		goroutine.WithName("codeintel.symbols-cache-evictor"),
+		goroutine.WithDescription("evicts entries from the symbols cache"),
+		goroutine.WithInterval(interval),
 	)
 }
 

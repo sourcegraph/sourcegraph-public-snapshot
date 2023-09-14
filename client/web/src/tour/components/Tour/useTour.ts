@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 
 import { omit, uniq } from 'lodash'
-import { Optional } from 'utility-types'
+import type { Optional } from 'utility-types'
 
-import { useTemporarySetting, TourLanguage } from '@sourcegraph/shared/src/settings/temporary'
+import { useTemporarySetting, type TourLanguage } from '@sourcegraph/shared/src/settings/temporary'
 
 export interface TourState {
     completedStepIds?: string[]

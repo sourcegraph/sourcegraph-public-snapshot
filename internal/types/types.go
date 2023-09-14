@@ -13,9 +13,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -83,6 +84,31 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+func (r *Repo) IDName() RepoIDName {
+	return RepoIDName{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
+type GitHubAppDomain string
+
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+const (
+	ReposGitHubAppDomain   GitHubAppDomain = "repos"
+	BatchesGitHubAppDomain GitHubAppDomain = "batches"
+)
+
+// RepoCommit is a record of a repo and a corresponding commit.
+type RepoCommit struct {
+	ID                   int64
+	RepoID               api.RepoID
+	CommitSHA            dbutil.CommitBytea
+	PerforceChangelistID int64
+	CreatedAt            time.Time
+}
+
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
 type SearchedRepo struct {
 	// ID is the unique numeric ID for this repository.
@@ -135,6 +161,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 		ids = append(ids, src.ExternalServiceID())
 	}
 	return ids
+}
+
+func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
+	return &ExternalServiceRepository{
+		ID:         r.ID,
+		Name:       r.Name,
+		ExternalID: r.ExternalRepo.ID,
+	}
 }
 
 // BlockedRepoError is returned by a Repo IsBlocked method.
@@ -478,6 +512,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoIDName combines a repo name and ID into a single struct
+type RepoIDName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
 // MinimalRepo represents a source code repository name, its ID and number of stars.
 type MinimalRepo struct {
 	ID    api.RepoID
@@ -544,12 +584,13 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 	return ParseCloneStatus(strings.ToLower(s))
 }
 
-// GitserverRepo  represents the data gitserver knows about a repo
+// GitserverRepo represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
-	ShardID     string
-	CloneStatus CloneStatus
+	ShardID         string
+	CloneStatus     CloneStatus
+	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
@@ -589,6 +630,7 @@ type ExternalService struct {
 	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	CodeHostID     *int32
 }
 
 type ExternalServiceRepo struct {
@@ -814,17 +856,20 @@ type User struct {
 	UpdatedAt             time.Time
 	SiteAdmin             bool
 	BuiltinAuth           bool
-	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
+	CompletedPostSignup   bool
 	Searchable            bool
+	SCIMControlled        bool
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
 type UserForSCIM struct {
 	User
-	Emails         []string
-	SCIMExternalID string
+	Emails          []string
+	SCIMExternalID  string
+	SCIMAccountData string
+	Active          bool
 }
 
 type SystemRole string
@@ -845,31 +890,18 @@ type Role struct {
 	CreatedAt time.Time
 }
 
-// A PermissionNamespace represents a distinct context within which permission policies
-// are defined and enforced.
-type PermissionNamespace string
-
-func (n PermissionNamespace) String() string {
-	return string(n)
+func (r Role) IsSiteAdmin() bool {
+	return r.Name == string(SiteAdministratorSystemRole)
 }
 
-// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
-func (n PermissionNamespace) Valid() bool {
-	switch n {
-	case BatchChangesNamespace:
-		return true
-	default:
-		return false
-	}
+func (r Role) IsUser() bool {
+	return r.Name == string(UserSystemRole)
 }
-
-// BatchChangesNamespace represents the Batch Changes namespace.
-const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
 
 type Permission struct {
 	ID        int32
-	Namespace PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 	CreatedAt time.Time
 }
 
@@ -894,7 +926,7 @@ type UserRole struct {
 
 type NamespacePermission struct {
 	ID         int64
-	Namespace  PermissionNamespace
+	Namespace  rtypes.PermissionNamespace
 	ResourceID int64
 	UserID     int32
 	CreatedAt  time.Time
@@ -965,10 +997,93 @@ type UserDates struct {
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
+type CodyUsageStatistics struct {
+	Daily   []*CodyUsagePeriod
+	Weekly  []*CodyUsagePeriod
+	Monthly []*CodyUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsagePeriod struct {
+	StartTime              time.Time
+	TotalUsers             *CodyCountStatistics
+	TotalRequests          *CodyCountStatistics
+	CodeGenerationRequests *CodyCountStatistics
+	ExplanationRequests    *CodyCountStatistics
+	InvalidRequests        *CodyCountStatistics
+}
+
+type CodyCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
+}
+
+// CodyAggregatedEvent represents the total requests, unique users, code
+// generation requests, explanation requests, and invalid requests over
+// the current month, week, and day for a single search event.
+type CodyAggregatedEvent struct {
+	Name                string
+	Month               time.Time
+	Week                time.Time
+	Day                 time.Time
+	TotalMonth          int32
+	TotalWeek           int32
+	TotalDay            int32
+	UniquesMonth        int32
+	UniquesWeek         int32
+	UniquesDay          int32
+	CodeGenerationMonth int32
+	CodeGenerationWeek  int32
+	CodeGenerationDay   int32
+	ExplanationMonth    int32
+	ExplanationWeek     int32
+	ExplanationDay      int32
+	InvalidMonth        int32
+	InvalidWeek         int32
+	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler.
+// RepoMetadataAggregatedStats represents the total number of repo metadata,
+// number of repositories with any metadata, total and unique number of
+// events for repo metadata usage related events over the current day, week, month.
+type RepoMetadataAggregatedStats struct {
+	Summary *RepoMetadataAggregatedSummary
+	Daily   *RepoMetadataAggregatedEvents
+	Weekly  *RepoMetadataAggregatedEvents
+	Monthly *RepoMetadataAggregatedEvents
+}
+
+type RepoMetadataAggregatedSummary struct {
+	IsEnabled              bool
+	RepoMetadataCount      *int32
+	ReposWithMetadataCount *int32
+}
+
+type RepoMetadataAggregatedEvents struct {
+	StartTime          time.Time
+	CreateRepoMetadata *EventStats
+	UpdateRepoMetadata *EventStats
+	DeleteRepoMetadata *EventStats
+	SearchFilterUsage  *EventStats
+}
+
+type EventStats struct {
+	UsersCount  *int32
+	EventsCount *int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
-	DAUs []*SiteActivityPeriod
-	WAUs []*SiteActivityPeriod
-	MAUs []*SiteActivityPeriod
+	DAUs  []*SiteActivityPeriod
+	WAUs  []*SiteActivityPeriod
+	MAUs  []*SiteActivityPeriod
+	RMAUs []*SiteActivityPeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1291,18 +1406,22 @@ type SearchEventLatencies struct {
 // SiteUsageSummary is an alternate view of SiteUsageStatistics which is
 // calculated in the database layer.
 type SiteUsageSummary struct {
-	Month                   time.Time
-	Week                    time.Time
-	Day                     time.Time
-	UniquesMonth            int32
-	UniquesWeek             int32
-	UniquesDay              int32
-	RegisteredUniquesMonth  int32
-	RegisteredUniquesWeek   int32
-	RegisteredUniquesDay    int32
-	IntegrationUniquesMonth int32
-	IntegrationUniquesWeek  int32
-	IntegrationUniquesDay   int32
+	RollingMonth                   time.Time
+	Month                          time.Time
+	Week                           time.Time
+	Day                            time.Time
+	UniquesRollingMonth            int32
+	UniquesMonth                   int32
+	UniquesWeek                    int32
+	UniquesDay                     int32
+	RegisteredUniquesRollingMonth  int32
+	RegisteredUniquesMonth         int32
+	RegisteredUniquesWeek          int32
+	RegisteredUniquesDay           int32
+	IntegrationUniquesRollingMonth int32
+	IntegrationUniquesMonth        int32
+	IntegrationUniquesWeek         int32
+	IntegrationUniquesDay          int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and
@@ -1349,11 +1468,14 @@ type Event struct {
 // GrowthStatistics represents the total users that were created,
 // deleted, resurrected, churned and retained over the current month.
 type GrowthStatistics struct {
-	DeletedUsers     int32
-	CreatedUsers     int32
-	ResurrectedUsers int32
-	ChurnedUsers     int32
-	RetainedUsers    int32
+	DeletedUsers           int32
+	CreatedUsers           int32
+	ResurrectedUsers       int32
+	ChurnedUsers           int32
+	RetainedUsers          int32
+	PendingAccessRequests  int32
+	ApprovedAccessRequests int32
+	RejectedAccessRequests int32
 }
 
 // IDEExtensionsUsage represents the daily, weekly and monthly numbers
@@ -1414,9 +1536,6 @@ type MigratedExtensionsUsageStatistics struct {
 	SearchExportPerformedUniqueUsers *int32
 	SearchExportFailed               *int32
 	SearchExportFailedUniqueUsers    *int32
-
-	GoImportsSearchQueryTransformed            *int32
-	GoImportsSearchQueryTransformedUniqueUsers *int32
 
 	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
 }
@@ -1719,6 +1838,51 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedSymbolBlocksCount   *int32
 }
 
+type OwnershipUsageStatistics struct {
+	// Statistics about ownership data in repositories
+	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
+
+	// Activity of selecting owners as search results using
+	// `select:file.owners`.
+	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
+
+	// Activity of using a `file:has.owner` predicate in search.
+	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
+
+	// Opening ownership panel.
+	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+
+	// AssignedOwnersCount is the total number of assigned owners. For instance
+	// if an owner is assigned to a single file - that counts as one,
+	// for the whole repo - also counts as one.
+	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
+}
+
+type OwnershipUsageReposCounts struct {
+	// Total number of repositories. Can be used in computing adoption
+	// ratio as denominator to number of repos with ownership.
+	Total *int32 `json:"total,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data (of any source, either CODEOWNERS file or API).
+	WithOwnership *int32 `json:"with_ownership,omitempty"`
+
+	// Number of repos in an instance that have ownership
+	// data ingested through the API.
+	WithIngestedOwnership *int32 `json:"with_ingested_ownership,omitempty"`
+}
+
+type OwnershipUsageStatisticsActiveUsers struct {
+	// Daily-Active Users
+	DAU *int32 `json:"dau,omitempty"`
+
+	// Weekly-Active Users
+	WAU *int32 `json:"wau,omitempty"`
+
+	// Monthly-Active Users
+	MAU *int32 `json:"mau,omitempty"`
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32
@@ -1876,25 +2040,17 @@ type TeamMember struct {
 	UpdatedAt time.Time
 }
 
-type CodeownersFile struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-
-	RepoID   api.RepoID
-	Contents string
-	Proto    *codeownerspb.File
-}
-
 type AccessRequestStatus string
 
 type AccessRequest struct {
-	ID             int32
-	Name           string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Email          string
-	AdditionalInfo string
-	Status         AccessRequestStatus
+	ID               int32
+	Name             string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	Email            string
+	AdditionalInfo   string
+	Status           AccessRequestStatus
+	DecisionByUserID *int32
 }
 
 const (
@@ -1902,3 +2058,21 @@ const (
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
 )
+
+type PerforceChangelist struct {
+	CommitSHA    api.CommitID
+	ChangelistID int64
+}
+
+// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
+type CodeHost struct {
+	ID                          int32
+	Kind                        string
+	URL                         string
+	APIRateLimitQuota           *int32
+	APIRateLimitIntervalSeconds *int32
+	GitRateLimitQuota           *int32
+	GitRateLimitIntervalSeconds *int32
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
+}

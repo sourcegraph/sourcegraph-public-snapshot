@@ -83,8 +83,8 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func (t *externalTransport) update(ctx context.Context, config *schema.TlsExternal) *http.Transport {
 	// No function calls here use the context further
-	tr, _ := trace.New(ctx, "externalTransport", "update")
-	defer tr.Finish()
+	tr, _ := trace.New(ctx, "externalTransport.update")
+	defer tr.End()
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -106,7 +106,7 @@ func (t *externalTransport) update(ctx context.Context, config *schema.TlsExtern
 			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
 			if err != nil {
 				tr.AddEvent("failed to load SystemCertPool",
-					attribute.String("error", err.Error()),
+					trace.Error(err),
 					attribute.String("warning", "communication with external HTTPS APIs may fail"))
 
 				pool = x509.NewCertPool()

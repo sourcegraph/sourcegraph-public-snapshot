@@ -1,24 +1,25 @@
 import React, { useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     UserEventLogFields,
     UserEventLogsConnectionFields,
     UserEventLogsResult,
     UserEventLogsVariables,
 } from '../../../graphql-operations'
-import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
+import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
+import type { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
 
@@ -52,15 +53,34 @@ export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<User
     </li>
 )
 
-export interface UserEventLogsPageProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
+export interface UserEventLogsPageProps
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'isSourcegraphDotCom'>,
+        UserEventLogsPageContentProps {}
+
+export interface UserEventLogsPageContentProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
 
 /**
  * A page displaying usage statistics for the site.
  */
 export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
+    isSourcegraphDotCom,
+    authenticatedUser,
     telemetryService,
     user,
 }) => {
+    if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
+        return (
+            <SiteAdminAlert className="sidebar__alert" variant="danger">
+                Only the user may access their event logs.
+            </SiteAdminAlert>
+        )
+    }
+    return <UserEventLogsPageContent telemetryService={telemetryService} user={user} />
+}
+
+export const UserEventLogsPageContent: React.FunctionComponent<
+    React.PropsWithChildren<UserEventLogsPageContentProps>
+> = ({ telemetryService, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])

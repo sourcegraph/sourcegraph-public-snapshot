@@ -3,20 +3,21 @@ import React, { useEffect } from 'react'
 import classNames from 'classnames'
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
-import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { type SignUpArguments, SignUpForm } from './SignUpForm'
 import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -26,7 +27,6 @@ export interface SignUpPageProps extends TelemetryProps {
     context: Pick<
         SourcegraphContext,
         | 'allowSignup'
-        | 'experimentalFeatures'
         | 'authProviders'
         | 'sourcegraphDotComMode'
         | 'xhrHeaders'
@@ -82,7 +82,8 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            window.location.replace(returnTo)
+            // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
+            window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
 
             return Promise.resolve()
         })

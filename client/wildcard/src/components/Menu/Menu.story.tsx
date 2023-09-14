@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { BrandedStory } from '../../stories/BrandedStory'

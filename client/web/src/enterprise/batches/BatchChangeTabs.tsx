@@ -1,12 +1,10 @@
 import React from 'react'
 
-import { TabList, TabListProps, Tabs, TabsProps } from '@sourcegraph/wildcard'
-
-import styles from './BatchChangeTabs.module.scss'
+import { TabList, type TabListProps, Tabs, type TabsProps } from '@sourcegraph/wildcard'
 
 /** sourcegraph/wildcard `Tabs` with styling applied to prevent CLS on hovering the tabs. */
 export const BatchChangeTabs: React.FunctionComponent<TabsProps> = props => (
-    <Tabs className={styles.batchChangeTabs} lazy={true} {...props} />
+    <Tabs size="medium" lazy={true} {...props} />
 )
 
 /** sourcegraph/wildcard `TabsList` with BC visual styling applied. */

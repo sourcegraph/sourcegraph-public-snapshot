@@ -1,12 +1,12 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 
-import { fromHoverMerged, HoverMerged, TextDocumentIdentifier } from '@sourcegraph/client-api'
+import { fromHoverMerged, type HoverMerged, type TextDocumentIdentifier } from '@sourcegraph/client-api'
 import { LOADING } from '@sourcegraph/codeintellify'
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 
 import type { Hover, DocumentHighlight } from '../../../codeintel/legacy-extensions/api'
-import { callProviders, mergeProviderResults, providersForDocument, RegisteredProvider } from '../extensionHostApi'
+import { callProviders, mergeProviderResults, providersForDocument, type RegisteredProvider } from '../extensionHostApi'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -195,13 +195,13 @@ describe('mergeProviderResults()', () => {
 
         it('merges a Hover into result', () => {
             const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-            const merged: HoverMerged = { contents: [hover.contents], alerts: [], aggregatedBadges: [] }
+            const merged: HoverMerged = { contents: [hover.contents], aggregatedBadges: [] }
             expect(mergeHoverResults([hover])).toEqual(merged)
         })
 
         it('omits non Hover values from hovers result', () => {
             const hover: Hover = { contents: { value: 'a', kind: MarkupKind.PlainText } }
-            const merged: HoverMerged = { contents: [hover.contents], alerts: [], aggregatedBadges: [] }
+            const merged: HoverMerged = { contents: [hover.contents], aggregatedBadges: [] }
             expect(mergeHoverResults([hover, null, LOADING, undefined])).toEqual(merged)
         })
 
@@ -222,7 +222,6 @@ describe('mergeProviderResults()', () => {
                     { value: 'c2', kind: MarkupKind.PlainText },
                 ],
                 range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
-                alerts: [],
                 aggregatedBadges: [],
             }
 

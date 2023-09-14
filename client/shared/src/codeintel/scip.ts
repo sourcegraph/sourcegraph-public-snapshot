@@ -1,8 +1,8 @@
 // TODO: Eventually we'll import the actual lsif-typed protobuf file in this project,
 // but it doesn't make sense to do so right now.
-import * as extensions from '@sourcegraph/extension-api-types'
+import type * as extensions from '@sourcegraph/extension-api-types'
 
-import * as sourcegraph from './legacy-extensions/api'
+import type * as sourcegraph from './legacy-extensions/api'
 
 export interface JsonDocument {
     occurrences?: JsonOccurrence[]
@@ -16,6 +16,8 @@ export interface DocumentInfo {
 export interface JsonOccurrence {
     range: [number, number, number] | [number, number, number, number]
     syntaxKind?: SyntaxKind
+    symbol?: string
+    symbolRoles?: number
 }
 
 export class Position implements sourcegraph.Position {
@@ -126,7 +128,12 @@ export class Range {
 }
 
 export class Occurrence {
-    constructor(public readonly range: Range, public readonly kind?: SyntaxKind) {}
+    constructor(
+        public readonly range: Range,
+        public readonly kind?: SyntaxKind,
+        public readonly symbol?: string,
+        public readonly symbolRoles?: number
+    ) {}
 
     public withStartPosition(newStartPosition: Position): Occurrence {
         return this.withRange(this.range.withStart(newStartPosition))
@@ -135,7 +142,7 @@ export class Occurrence {
         return this.withRange(this.range.withEnd(newEndPosition))
     }
     public withRange(newRange: Range): Occurrence {
-        return new Occurrence(newRange, this.kind)
+        return new Occurrence(newRange, this.kind, this.symbol, this.symbolRoles)
     }
 
     public static fromJson(occ: JsonOccurrence): Occurrence {
@@ -149,7 +156,7 @@ export class Occurrence {
                   new Position(occ.range[2], occ.range[3])
         )
 
-        return new Occurrence(range, occ.syntaxKind)
+        return new Occurrence(range, occ.syntaxKind, occ.symbol, occ.symbolRoles)
     }
     public static fromInfo(info: DocumentInfo): Occurrence[] {
         const sortedSingleLineOccurrences = parseJsonOccurrencesIntoSingleLineOccurrences(info)

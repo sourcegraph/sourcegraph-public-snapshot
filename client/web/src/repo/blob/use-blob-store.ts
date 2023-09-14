@@ -1,7 +1,7 @@
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import create from 'zustand'
 
-import { lineScrollEnforcing, SelectedLineRange, setSelectedLines } from './codemirror/linenumbers'
+import { lineScrollEnforcing, type SelectedLineRange, setSelectedLines } from './codemirror/linenumbers'
 
 interface BlobStore {
     editorView: EditorView | null
@@ -16,6 +16,8 @@ const useBlobUIStore = create<BlobStore>(() => ({ editorView: null }))
 export const setBlobEditView = (editView: EditorView | null): void => {
     useBlobUIStore.setState({ editorView: editView })
 }
+
+export const getBlobEditView = (): EditorView | null => useBlobUIStore.getState()?.editorView
 
 // Public blob UI API
 export const scrollIntoView = (target: SelectedLineRange): void => {

@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -61,11 +60,10 @@ func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
 // Routines is called by the worker service to start the worker.
 // It returns a list of goroutines that the worker service should start and manage.
 func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	wdb, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
-	db := edb.NewEnterpriseDB(wdb)
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(observationCtx.Logger)
 
@@ -79,7 +77,7 @@ func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, observation
 
 // bitbucketProjectPermissionsHandler handles the execution of a single explicit_permissions_bitbucket_projects_jobs record.
 type bitbucketProjectPermissionsHandler struct {
-	db     edb.EnterpriseDB
+	db     database.DB
 	client *bitbucketserver.Client
 }
 
@@ -306,6 +304,11 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		UserIDs: userIDs,
 	}
 
+	perms := make([]authz.UserIDWithExternalAccountID, 0, len(userIDs))
+	for userID := range userIDs {
+		perms = append(perms, authz.UserIDWithExternalAccountID{UserID: userID})
+	}
+
 	txs, err := h.db.Perms().Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to start transaction")
@@ -325,9 +328,8 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	}
 
 	// set repo permissions (and user permissions)
-	_, err = txs.SetRepoPermissions(ctx, &p)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
+	if _, err = txs.SetRepoPerms(ctx, int32(repoID), perms, authz.SourceAPI); err != nil {
+		return errors.Wrapf(err, "failed to set user repo permissions for repo %d and users %v", repoID, perms)
 	}
 
 	// set pending permissions
@@ -352,7 +354,7 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *observation.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker[*types.BitbucketProjectPermissionJob] {
+func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *observation.Context, db database.DB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker[*types.BitbucketProjectPermissionJob] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsWorker", ""), observationCtx)
 
 	options := workerutil.WorkerOptions{
@@ -371,7 +373,7 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *o
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
-func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
+func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context, db database.DB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsResetter", ""), observationCtx)
 
 	workerStore := createBitbucketProjectPermissionsStore(observationCtx, db, cfg)

@@ -10,7 +10,7 @@ import { pluralize } from '@sourcegraph/common'
 import { Badge, Icon, Heading, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
-import { BatchChangeFields } from '../../../graphql-operations'
+import type { BatchChangeFields } from '../../../graphql-operations'
 import { BatchChangeStatePill } from '../list/BatchChangeStatePill'
 
 import {
@@ -20,12 +20,16 @@ import {
     ChangesetStatusMerged,
     ChangesetStatusDraft,
     ChangesetStatusArchived,
+    ChangesetStatusOthers,
 } from './changesets/ChangesetStatusCell'
 
 import styles from './BatchChangeStatsCard.module.scss'
 
 const ARCHIVED_TOOLTIP =
     'Changesets created by an earlier version of the batch change for repos that are not in scope anymore are archived in the batch change and closed on the code host. They do not count towards the completion percentage.'
+
+const OTHERS_TOOLTIP =
+    'Changesets in internal states (failed, retrying, scheduled, or processing) do not count towards the completion percentage.'
 
 interface BatchChangeStatsCardProps {
     batchChange: Pick<BatchChangeFields, 'diffStat' | 'changesetsStats' | 'state'>
@@ -41,16 +45,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
     className,
 }) => {
     const { changesetsStats: stats, diffStat } = batchChange
-    // TODO: We should just compute this and `isCompleted` on the backend batch change resolver.
-    const percentComplete =
-        // We don't count archived or deleted changesets when computing the percentage.
-        stats.total === 0 ? 0 : ((stats.closed + stats.merged) / (stats.total - stats.archived - stats.deleted)) * 100
-    const isCompleted =
-        stats.total !== 0 && stats.closed + stats.merged === stats.total - stats.archived - stats.deleted
-    let BatchChangeStatusIcon = ProgressCheckIcon
-    if (isCompleted) {
-        BatchChangeStatusIcon = CheckCircleOutlineIcon
-    }
+    const BatchChangeStatusIcon = stats.isCompleted ? CheckCircleOutlineIcon : ProgressCheckIcon
+    const otherStats = stats.failed + stats.retrying + stats.scheduled + stats.processing
     return (
         <div className={classNames(className)}>
             <div className="d-flex flex-wrap align-items-center flex-grow-1">
@@ -67,13 +63,13 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                 <div className="d-flex align-items-center">
                     <Heading as="h3" styleAs="h1" className="d-inline mb-0" aria-hidden="true">
                         <Icon
-                            className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
+                            className={classNames('mr-2', stats.isCompleted ? 'text-success' : 'text-muted')}
                             as={BatchChangeStatusIcon}
                             aria-hidden={true}
                         />
                     </Heading>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {`${formatDisplayPercent(percentComplete)} complete`}
+                        {`${formatDisplayPercent(stats.percentComplete)} complete`}
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
@@ -140,6 +136,27 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
                     />
+                    {otherStats !== 0 && (
+                        <ChangesetStatusOthers
+                            label={
+                                <H4 className="font-weight-normal text-muted m-0">
+                                    {otherStats} <VisuallyHidden>{pluralize('changeset', otherStats)}</VisuallyHidden>
+                                    {pluralize('other', otherStats)}
+                                    <Tooltip content={OTHERS_TOOLTIP}>
+                                        <Icon
+                                            aria-label={OTHERS_TOOLTIP}
+                                            svgPath={mdiInformationOutline}
+                                            className="ml-1"
+                                        />
+                                    </Tooltip>
+                                </H4>
+                            }
+                            className={classNames(
+                                styles.batchChangeStatsCardStat,
+                                'd-flex flex-grow-0 pl-2 text-truncate'
+                            )}
+                        />
+                    )}
                 </div>
             </div>
         </div>

@@ -4,7 +4,7 @@ import './initZones'
 
 import type { ZoneContextManager } from '@opentelemetry/context-zone'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
-import { InstrumentationOption, registerInstrumentations } from '@opentelemetry/instrumentation'
+import { type InstrumentationOption, registerInstrumentations } from '@opentelemetry/instrumentation'
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { Resource } from '@opentelemetry/resources'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'

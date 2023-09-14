@@ -1,6 +1,6 @@
-import { InsightViewNode, GroupByField } from '../../../../../../graphql-operations'
-import { ComputeInsight, Insight, InsightType } from '../../../types'
-import { BaseInsight } from '../../../types/insight/common'
+import { type InsightViewNode, GroupByField } from '../../../../../../graphql-operations'
+import { type ComputeInsight, type Insight, InsightType } from '../../../types'
+import type { BaseInsight } from '../../../types/insight/common'
 
 import { getDurationFromStep, getInsightRepositories, getParsedFilters } from './field-parsers'
 

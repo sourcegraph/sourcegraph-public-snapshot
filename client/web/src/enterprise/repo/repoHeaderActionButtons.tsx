@@ -1,4 +1,4 @@
-import { RepoHeaderActionButton } from '../../repo/RepoHeader'
+import type { RepoHeaderActionButton } from '../../repo/RepoHeader'
 import { repoHeaderActionButtons } from '../../repo/repoHeaderActionButtons'
 
 export const enterpriseRepoHeaderActionButtons: readonly RepoHeaderActionButton[] = repoHeaderActionButtons

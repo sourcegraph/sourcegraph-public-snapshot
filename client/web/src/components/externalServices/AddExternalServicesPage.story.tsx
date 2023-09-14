@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -33,10 +33,31 @@ export const Overview: Story = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
+                isSourcegraphApp={false}
             />
         )}
     </WebStory>
 )
+
+export const OverviewWithBusinessLicense: Story = () => {
+    window.context.licenseInfo = { currentPlan: 'business-0' }
+    return (
+        <WebStory>
+            {webProps => (
+                <AddExternalServicesPage
+                    {...webProps}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    codeHostExternalServices={codeHostExternalServices}
+                    nonCodeHostExternalServices={nonCodeHostExternalServices}
+                    autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
+                    isSourcegraphApp={false}
+                />
+            )}
+        </WebStory>
+    )
+}
 
 export const AddConnectionBykind: Story = () => (
     <WebStory initialEntries={['/page?id=github']}>
@@ -49,6 +70,7 @@ export const AddConnectionBykind: Story = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
+                isSourcegraphApp={false}
             />
         )}
     </WebStory>

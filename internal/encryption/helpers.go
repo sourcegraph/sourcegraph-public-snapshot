@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,16 +20,16 @@ func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string
 		return data, "", nil
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "key.Encrypt") //nolint:staticcheck // OT is deprecated
-	encrypted, err := key.Encrypt(ctx, []byte(data))
-	span.Finish()
+	tr, trCtx := trace.New(ctx, "key.Encrypt")
+	encrypted, err := key.Encrypt(trCtx, []byte(data))
+	tr.EndWithErr(&err)
 	if err != nil {
 		return "", "", err
 	}
 
-	span, ctx = ot.StartSpanFromContext(ctx, "key.Version") //nolint:staticcheck // OT is deprecated
-	version, err := key.Version(ctx)
-	span.Finish()
+	tr, trCtx = trace.New(ctx, "key.Version")
+	version, err := key.Version(trCtx)
+	tr.EndWithErr(&err)
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to get encryption key version")
 	}
@@ -50,13 +50,13 @@ func MaybeDecrypt(ctx context.Context, key Key, data, keyIdent string) (string, 
 		return data, errors.Errorf("key mismatch: value is encrypted but no encryption key available in site-config")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt") //nolint:staticcheck // OT is deprecated
-	decrypted, err := key.Decrypt(ctx, []byte(data))
-	span.Finish()
+	tr, innerCtx := trace.New(ctx, "key.Decrypt")
+	decrypted, err := key.Decrypt(innerCtx, []byte(data))
+	tr.EndWithErr(&err)
 	if err != nil {
-		span, ctx = ot.StartSpanFromContext(ctx, "key.Version") //nolint:staticcheck // OT is deprecated
-		version, versionErr := key.Version(ctx)
-		span.Finish()
+		tr, innerCtx = trace.New(ctx, "key.Version")
+		version, versionErr := key.Version(innerCtx)
+		tr.EndWithErr(&versionErr)
 		if versionErr == nil && keyIdent != version.JSON() {
 			return "", errors.New("key mismatch: value is encrypted with an encryption key distinct from the one available in site-config")
 		}

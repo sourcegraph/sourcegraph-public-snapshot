@@ -25,7 +25,7 @@ If you frequently rely on your editor’s “go to definition” and “find ref
 
 If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
 
-For a high-level overview of how Sourcegraph compares to GitHub code search, see this [documennt](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs.%20GitHub%20code%20search%20chart.pdf).  
+For a high-level overview of how Sourcegraph compares to GitHub code search, see this [document](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs.%20GitHub%20code%20search%20chart.pdf).  
 
 ## Searching code
 
@@ -720,13 +720,8 @@ GitHub does not currently offer functionality to embed code search within notebo
 
 GitHub is closed source, while Sourcegraph’s code is publicly available. 
 
-Sourcegraph offers two versions of its product: Sourcegraph OSS (just universal code search) and Sourcegraph Enterprise (full code intelligence platform). 
-
-Sourcegraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
-
-
 ## Availability
 
 GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). The beta preview is not yet available for GitHub Enterprise. 
 
-Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://signup.sourcegraph.com/).
+Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://about.sourcegraph.com/get-started?t=enterprise/).

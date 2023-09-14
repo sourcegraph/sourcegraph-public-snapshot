@@ -57,20 +57,20 @@ func (rubyDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (rep
 }
 
 func (s *rubyDependencySource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	pkgContents, packageURL, err := s.client.GetPackageContents(ctx, dep)
+	pkgContents, err := s.client.GetPackageContents(ctx, dep)
 	if err != nil {
-		return errors.Wrapf(err, "error downloading RubyGem with URL '%s'", packageURL)
+		return errors.Wrapf(err, "error downloading RubyGem %q", dep.VersionedPackageSyntax())
 	}
 	defer pkgContents.Close()
 
-	if err = unpackRubyPackage(packageURL, pkgContents, dir); err != nil {
-		return errors.Wrapf(err, "failed to unzip ruby module from URL %s", packageURL)
+	if err = unpackRubyPackage(pkgContents, dir); err != nil {
+		return errors.Wrapf(err, "failed to unzip ruby module %q", dep.VersionedPackageSyntax())
 	}
 
 	return nil
 }
 
-func unpackRubyPackage(packageURL string, pkg io.Reader, workDir string) error {
+func unpackRubyPackage(pkg io.Reader, workDir string) error {
 	opts := unpack.Opts{
 		SkipInvalid:    true,
 		SkipDuplicates: true,
@@ -86,10 +86,10 @@ func unpackRubyPackage(packageURL string, pkg io.Reader, workDir string) error {
 	defer os.RemoveAll(tmpDir)
 
 	if err := unpack.Tar(pkg, tmpDir, opts); err != nil {
-		return errors.Wrapf(err, "failed to tar downloaded bytes from URL %s", packageURL)
+		return errors.Wrap(err, "failed to unpack downloaded tar")
 	}
 
-	err = unpackRubyDataTarGz(packageURL, filepath.Join(tmpDir, "data.tar.gz"), workDir)
+	err = unpackRubyDataTarGz(filepath.Join(tmpDir, "data.tar.gz"), workDir)
 	if err != nil {
 		return err
 	}
@@ -109,10 +109,10 @@ func unpackRubyPackage(packageURL string, pkg io.Reader, workDir string) error {
 }
 
 // unpackRubyDataTarGz unpacks the given `data.tar.gz` from a downloaded RubyGem.
-func unpackRubyDataTarGz(packageURL, path string, workDir string) error {
+func unpackRubyDataTarGz(path string, workDir string) error {
 	r, err := os.Open(path)
 	if err != nil {
-		return errors.Wrapf(err, "failed to read file from downloaded URL %s", packageURL)
+		return errors.Wrapf(err, "failed to read data archive file %q", path)
 	}
 	defer r.Close()
 	opts := unpack.Opts{

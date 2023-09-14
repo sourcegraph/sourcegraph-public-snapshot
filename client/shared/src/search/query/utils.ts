@@ -1,6 +1,6 @@
 import { memoize } from 'lodash'
 
-import { FilterType, resolveFilter } from './filters'
+import { type FilterType, resolveFilter } from './filters'
 import type { Filter, Token } from './token'
 
 /**

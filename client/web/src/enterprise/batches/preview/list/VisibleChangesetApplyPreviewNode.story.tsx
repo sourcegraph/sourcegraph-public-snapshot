@@ -1,9 +1,9 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, DecoratorFn, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
-import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import type { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
 import { visibleChangesetApplyPreviewNodeStories } from './storyData'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'

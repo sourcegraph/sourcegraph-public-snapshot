@@ -1,6 +1,6 @@
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
-import { DocumentSelector, TextDocument } from '../../../codeintel/legacy-extensions/api'
+import type { DocumentSelector, TextDocument } from '../../../codeintel/legacy-extensions/api'
 
 import { match, offsetToPosition, positionToOffset, score } from './textDocument'
 

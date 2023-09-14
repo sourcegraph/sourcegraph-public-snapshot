@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { mockPreviewWorkspace } from '../batch-spec/batch-spec.mock'

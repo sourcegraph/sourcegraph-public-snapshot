@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { SelfHostedCta } from '../../../components/SelfHostedCta'
 
 import styles from './AboutOrganizationPage.module.scss'
+
 interface AboutOrganizationPageProps extends TelemetryProps {}
 
 export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChildren<AboutOrganizationPageProps>> = ({

@@ -1,10 +1,10 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "sg_lib",
     srcs = [
         "analytics.go",
-        "categories.go",
         "checks.go",
         "generates.go",
         "live.go",
@@ -13,10 +13,12 @@ go_library(
         "release.go",
         "sg_adr.go",
         "sg_analytics.go",
+        "sg_app.go",
         "sg_audit.go",
-        "sg_ci.go",
         "sg_cloud.go",
         "sg_db.go",
+        "sg_deploy.go",
+        "sg_embeddings_qa.go",
         "sg_feedback.go",
         "sg_generate.go",
         "sg_help.go",
@@ -40,18 +42,20 @@ go_library(
         "sg_tests.go",
         "sg_update.go",
         "sg_version.go",
+        "sg_wolfi.go",
         "suggest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
     deps = [
-        "//dev/ci/runtype",
         "//dev/sg/adr",
         "//dev/sg/buf",
+        "//dev/sg/ci",
         "//dev/sg/dependencies",
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/background",
         "//dev/sg/internal/bk",
+        "//dev/sg/internal/category",
         "//dev/sg/internal/check",
         "//dev/sg/internal/db",
         "//dev/sg/internal/docker",
@@ -59,7 +63,6 @@ go_library(
         "//dev/sg/internal/generate/golang",
         "//dev/sg/internal/generate/proto",
         "//dev/sg/internal/images",
-        "//dev/sg/internal/loki",
         "//dev/sg/internal/migration",
         "//dev/sg/internal/open",
         "//dev/sg/internal/repo",
@@ -70,10 +73,13 @@ go_library(
         "//dev/sg/internal/slack",
         "//dev/sg/internal/std",
         "//dev/sg/internal/usershell",
+        "//dev/sg/internal/wolfi",
         "//dev/sg/interrupt",
         "//dev/sg/linters",
+        "//dev/sg/msp",
         "//dev/sg/root",
         "//dev/team",
+        "//enterprise/cmd/embeddings/qa",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/connections/live",
@@ -101,7 +107,6 @@ go_library(
         "@com_github_agext_levenshtein//:levenshtein",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_docker_docker_credential_helpers//credentials",
-        "@com_github_gen2brain_beeep//:beeep",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_github//github",
         "@com_github_google_go_github_v41//github",
@@ -112,9 +117,11 @@ go_library(
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
         "@com_github_slack_go_slack//:slack",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
+        "@com_google_cloud_go_storage//:storage",
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
@@ -127,10 +134,15 @@ go_binary(
     name = "sg",
     embed = [":sg_lib"],
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 go_test(
     name = "sg_test",
+    timeout = "short",
     srcs = [
         "main_test.go",
         "release_test.go",
@@ -148,8 +160,30 @@ go_test(
         "//dev/sg/internal/std",
         "//lib/output/outputtest",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
         "@com_github_urfave_cli_v2//:cli",
     ],
+)
+
+# Refer to /doc/dev/background-information/sg/BUILD.bazel to see how this target is used to copy the
+# reference.md to the correct directory.
+#
+# Alternatively, if you just want to generate the doc:
+# bazel run //doc/dev/background-information/sg:write_cli_reference_doc
+genrule(
+    name = "generate_reference_doc",
+    srcs = ["//:sg.config.yaml"],
+    outs = ["reference.md"],
+    cmd = """
+    SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
+            --no-dev-private \
+            --disable-overwrite \
+            --disable-analytics \
+            --skip-auto-update \
+            --config sg.config.yaml \
+            help --full --output $@
+    """,
+    tools = [":sg"],
+    visibility = ["//visibility:public"],
 )

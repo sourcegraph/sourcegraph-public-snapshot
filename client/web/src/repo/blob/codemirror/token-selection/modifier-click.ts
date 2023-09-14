@@ -1,5 +1,5 @@
-import { Extension, StateEffect, StateField } from '@codemirror/state'
-import { EditorView, PluginValue, ViewPlugin } from '@codemirror/view'
+import { type Extension, StateEffect, StateField } from '@codemirror/state'
+import { EditorView, type PluginValue, ViewPlugin } from '@codemirror/view'
 
 import { isMacPlatform } from '@sourcegraph/common'
 
@@ -58,16 +58,14 @@ export function isModifierKey(event: KeyboardEvent | MouseEvent): boolean {
     return event.ctrlKey
 }
 
+const theme = EditorView.theme({
+    '.cm-token-selection-clickable:hover': {
+        cursor: 'pointer',
+    },
+})
+
 export function modifierClickExtension(): Extension {
-    return [
-        isModifierKeyHeld,
-        cmdPointerCursor,
-        EditorView.theme({
-            '.cm-token-selection-clickable:hover': {
-                cursor: 'pointer',
-            },
-        }),
-    ]
+    return [isModifierKeyHeld, cmdPointerCursor, theme]
 }
 
 export const modifierClickDescription = isMacPlatform() ? 'cmd+click' : 'ctrl+click'

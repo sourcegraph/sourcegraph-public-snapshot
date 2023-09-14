@@ -197,22 +197,22 @@ func NewMockStore[T Record]() *MockStore[T] {
 			},
 		},
 		HeartbeatFunc: &StoreHeartbeatFunc[T]{
-			defaultHook: func(context.Context, []int) (r0 []int, r1 []int, r2 error) {
+			defaultHook: func(context.Context, []string) (r0 []string, r1 []string, r2 error) {
 				return
 			},
 		},
 		MarkCompleteFunc: &StoreMarkCompleteFunc[T]{
-			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, T) (r0 bool, r1 error) {
 				return
 			},
 		},
 		MarkErroredFunc: &StoreMarkErroredFunc[T]{
-			defaultHook: func(context.Context, int, string) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, T, string) (r0 bool, r1 error) {
 				return
 			},
 		},
 		MarkFailedFunc: &StoreMarkFailedFunc[T]{
-			defaultHook: func(context.Context, int, string) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, T, string) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -234,22 +234,22 @@ func NewStrictMockStore[T Record]() *MockStore[T] {
 			},
 		},
 		HeartbeatFunc: &StoreHeartbeatFunc[T]{
-			defaultHook: func(context.Context, []int) ([]int, []int, error) {
+			defaultHook: func(context.Context, []string) ([]string, []string, error) {
 				panic("unexpected invocation of MockStore.Heartbeat")
 			},
 		},
 		MarkCompleteFunc: &StoreMarkCompleteFunc[T]{
-			defaultHook: func(context.Context, int) (bool, error) {
+			defaultHook: func(context.Context, T) (bool, error) {
 				panic("unexpected invocation of MockStore.MarkComplete")
 			},
 		},
 		MarkErroredFunc: &StoreMarkErroredFunc[T]{
-			defaultHook: func(context.Context, int, string) (bool, error) {
+			defaultHook: func(context.Context, T, string) (bool, error) {
 				panic("unexpected invocation of MockStore.MarkErrored")
 			},
 		},
 		MarkFailedFunc: &StoreMarkFailedFunc[T]{
-			defaultHook: func(context.Context, int, string) (bool, error) {
+			defaultHook: func(context.Context, T, string) (bool, error) {
 				panic("unexpected invocation of MockStore.MarkFailed")
 			},
 		},
@@ -402,15 +402,15 @@ func (c StoreDequeueFuncCall[T]) Results() []interface{} {
 // StoreHeartbeatFunc describes the behavior when the Heartbeat method of
 // the parent MockStore instance is invoked.
 type StoreHeartbeatFunc[T Record] struct {
-	defaultHook func(context.Context, []int) ([]int, []int, error)
-	hooks       []func(context.Context, []int) ([]int, []int, error)
+	defaultHook func(context.Context, []string) ([]string, []string, error)
+	hooks       []func(context.Context, []string) ([]string, []string, error)
 	history     []StoreHeartbeatFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // Heartbeat delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore[T]) Heartbeat(v0 context.Context, v1 []int) ([]int, []int, error) {
+func (m *MockStore[T]) Heartbeat(v0 context.Context, v1 []string) ([]string, []string, error) {
 	r0, r1, r2 := m.HeartbeatFunc.nextHook()(v0, v1)
 	m.HeartbeatFunc.appendCall(StoreHeartbeatFuncCall[T]{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -418,7 +418,7 @@ func (m *MockStore[T]) Heartbeat(v0 context.Context, v1 []int) ([]int, []int, er
 
 // SetDefaultHook sets function that is called when the Heartbeat method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreHeartbeatFunc[T]) SetDefaultHook(hook func(context.Context, []int) ([]int, []int, error)) {
+func (f *StoreHeartbeatFunc[T]) SetDefaultHook(hook func(context.Context, []string) ([]string, []string, error)) {
 	f.defaultHook = hook
 }
 
@@ -426,7 +426,7 @@ func (f *StoreHeartbeatFunc[T]) SetDefaultHook(hook func(context.Context, []int)
 // Heartbeat method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreHeartbeatFunc[T]) PushHook(hook func(context.Context, []int) ([]int, []int, error)) {
+func (f *StoreHeartbeatFunc[T]) PushHook(hook func(context.Context, []string) ([]string, []string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -434,20 +434,20 @@ func (f *StoreHeartbeatFunc[T]) PushHook(hook func(context.Context, []int) ([]in
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreHeartbeatFunc[T]) SetDefaultReturn(r0 []int, r1 []int, r2 error) {
-	f.SetDefaultHook(func(context.Context, []int) ([]int, []int, error) {
+func (f *StoreHeartbeatFunc[T]) SetDefaultReturn(r0 []string, r1 []string, r2 error) {
+	f.SetDefaultHook(func(context.Context, []string) ([]string, []string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreHeartbeatFunc[T]) PushReturn(r0 []int, r1 []int, r2 error) {
-	f.PushHook(func(context.Context, []int) ([]int, []int, error) {
+func (f *StoreHeartbeatFunc[T]) PushReturn(r0 []string, r1 []string, r2 error) {
+	f.PushHook(func(context.Context, []string) ([]string, []string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreHeartbeatFunc[T]) nextHook() func(context.Context, []int) ([]int, []int, error) {
+func (f *StoreHeartbeatFunc[T]) nextHook() func(context.Context, []string) ([]string, []string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -485,13 +485,13 @@ type StoreHeartbeatFuncCall[T Record] struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []int
+	Arg1 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []int
+	Result0 []string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 []int
+	Result1 []string
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -512,15 +512,15 @@ func (c StoreHeartbeatFuncCall[T]) Results() []interface{} {
 // StoreMarkCompleteFunc describes the behavior when the MarkComplete method
 // of the parent MockStore instance is invoked.
 type StoreMarkCompleteFunc[T Record] struct {
-	defaultHook func(context.Context, int) (bool, error)
-	hooks       []func(context.Context, int) (bool, error)
+	defaultHook func(context.Context, T) (bool, error)
+	hooks       []func(context.Context, T) (bool, error)
 	history     []StoreMarkCompleteFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // MarkComplete delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore[T]) MarkComplete(v0 context.Context, v1 int) (bool, error) {
+func (m *MockStore[T]) MarkComplete(v0 context.Context, v1 T) (bool, error) {
 	r0, r1 := m.MarkCompleteFunc.nextHook()(v0, v1)
 	m.MarkCompleteFunc.appendCall(StoreMarkCompleteFuncCall[T]{v0, v1, r0, r1})
 	return r0, r1
@@ -528,7 +528,7 @@ func (m *MockStore[T]) MarkComplete(v0 context.Context, v1 int) (bool, error) {
 
 // SetDefaultHook sets function that is called when the MarkComplete method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreMarkCompleteFunc[T]) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+func (f *StoreMarkCompleteFunc[T]) SetDefaultHook(hook func(context.Context, T) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -536,7 +536,7 @@ func (f *StoreMarkCompleteFunc[T]) SetDefaultHook(hook func(context.Context, int
 // MarkComplete method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreMarkCompleteFunc[T]) PushHook(hook func(context.Context, int) (bool, error)) {
+func (f *StoreMarkCompleteFunc[T]) PushHook(hook func(context.Context, T) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -545,19 +545,19 @@ func (f *StoreMarkCompleteFunc[T]) PushHook(hook func(context.Context, int) (boo
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreMarkCompleteFunc[T]) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+	f.SetDefaultHook(func(context.Context, T) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreMarkCompleteFunc[T]) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int) (bool, error) {
+	f.PushHook(func(context.Context, T) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreMarkCompleteFunc[T]) nextHook() func(context.Context, int) (bool, error) {
+func (f *StoreMarkCompleteFunc[T]) nextHook() func(context.Context, T) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -595,7 +595,7 @@ type StoreMarkCompleteFuncCall[T Record] struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 T
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -619,15 +619,15 @@ func (c StoreMarkCompleteFuncCall[T]) Results() []interface{} {
 // StoreMarkErroredFunc describes the behavior when the MarkErrored method
 // of the parent MockStore instance is invoked.
 type StoreMarkErroredFunc[T Record] struct {
-	defaultHook func(context.Context, int, string) (bool, error)
-	hooks       []func(context.Context, int, string) (bool, error)
+	defaultHook func(context.Context, T, string) (bool, error)
+	hooks       []func(context.Context, T, string) (bool, error)
 	history     []StoreMarkErroredFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // MarkErrored delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore[T]) MarkErrored(v0 context.Context, v1 int, v2 string) (bool, error) {
+func (m *MockStore[T]) MarkErrored(v0 context.Context, v1 T, v2 string) (bool, error) {
 	r0, r1 := m.MarkErroredFunc.nextHook()(v0, v1, v2)
 	m.MarkErroredFunc.appendCall(StoreMarkErroredFuncCall[T]{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -635,7 +635,7 @@ func (m *MockStore[T]) MarkErrored(v0 context.Context, v1 int, v2 string) (bool,
 
 // SetDefaultHook sets function that is called when the MarkErrored method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreMarkErroredFunc[T]) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+func (f *StoreMarkErroredFunc[T]) SetDefaultHook(hook func(context.Context, T, string) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -643,7 +643,7 @@ func (f *StoreMarkErroredFunc[T]) SetDefaultHook(hook func(context.Context, int,
 // MarkErrored method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreMarkErroredFunc[T]) PushHook(hook func(context.Context, int, string) (bool, error)) {
+func (f *StoreMarkErroredFunc[T]) PushHook(hook func(context.Context, T, string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -652,19 +652,19 @@ func (f *StoreMarkErroredFunc[T]) PushHook(hook func(context.Context, int, strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreMarkErroredFunc[T]) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+	f.SetDefaultHook(func(context.Context, T, string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreMarkErroredFunc[T]) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int, string) (bool, error) {
+	f.PushHook(func(context.Context, T, string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreMarkErroredFunc[T]) nextHook() func(context.Context, int, string) (bool, error) {
+func (f *StoreMarkErroredFunc[T]) nextHook() func(context.Context, T, string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -702,7 +702,7 @@ type StoreMarkErroredFuncCall[T Record] struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 T
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
@@ -729,15 +729,15 @@ func (c StoreMarkErroredFuncCall[T]) Results() []interface{} {
 // StoreMarkFailedFunc describes the behavior when the MarkFailed method of
 // the parent MockStore instance is invoked.
 type StoreMarkFailedFunc[T Record] struct {
-	defaultHook func(context.Context, int, string) (bool, error)
-	hooks       []func(context.Context, int, string) (bool, error)
+	defaultHook func(context.Context, T, string) (bool, error)
+	hooks       []func(context.Context, T, string) (bool, error)
 	history     []StoreMarkFailedFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // MarkFailed delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore[T]) MarkFailed(v0 context.Context, v1 int, v2 string) (bool, error) {
+func (m *MockStore[T]) MarkFailed(v0 context.Context, v1 T, v2 string) (bool, error) {
 	r0, r1 := m.MarkFailedFunc.nextHook()(v0, v1, v2)
 	m.MarkFailedFunc.appendCall(StoreMarkFailedFuncCall[T]{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -745,7 +745,7 @@ func (m *MockStore[T]) MarkFailed(v0 context.Context, v1 int, v2 string) (bool, 
 
 // SetDefaultHook sets function that is called when the MarkFailed method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreMarkFailedFunc[T]) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+func (f *StoreMarkFailedFunc[T]) SetDefaultHook(hook func(context.Context, T, string) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -753,7 +753,7 @@ func (f *StoreMarkFailedFunc[T]) SetDefaultHook(hook func(context.Context, int, 
 // MarkFailed method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreMarkFailedFunc[T]) PushHook(hook func(context.Context, int, string) (bool, error)) {
+func (f *StoreMarkFailedFunc[T]) PushHook(hook func(context.Context, T, string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -762,19 +762,19 @@ func (f *StoreMarkFailedFunc[T]) PushHook(hook func(context.Context, int, string
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreMarkFailedFunc[T]) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+	f.SetDefaultHook(func(context.Context, T, string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreMarkFailedFunc[T]) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int, string) (bool, error) {
+	f.PushHook(func(context.Context, T, string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreMarkFailedFunc[T]) nextHook() func(context.Context, int, string) (bool, error) {
+func (f *StoreMarkFailedFunc[T]) nextHook() func(context.Context, T, string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -812,7 +812,7 @@ type StoreMarkFailedFuncCall[T Record] struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 T
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string

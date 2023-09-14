@@ -1,12 +1,13 @@
-import cookies, { CookieAttributes } from 'js-cookie'
-import { EMPTY, fromEvent, merge, Observable } from 'rxjs'
+import cookies, { type CookieAttributes } from 'js-cookie'
+import { EMPTY, fromEvent, merge, type Observable } from 'rxjs'
 import { catchError, map, publishReplay, refCount, take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
-import { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
+import type { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
+import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
 import { observeQuerySelector } from '../util/dom'
 
@@ -360,6 +361,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         } catch {
             return ''
         }
+    }
+
+    public getClient(): string {
+        if (window.context?.sourcegraphAppMode) {
+            return EventClient.APP_WEB
+        }
+        if (window.context?.sourcegraphDotComMode) {
+            return EventClient.DOTCOM_WEB
+        }
+        return EventClient.SERVER_WEB
     }
 
     // Grabs and sets the deviceSessionID to renew the session expiration

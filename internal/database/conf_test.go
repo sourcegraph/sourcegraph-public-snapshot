@@ -6,11 +6,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSiteGetLatestDefault(t *testing.T) {
@@ -214,7 +217,6 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				},
 			},
 		},
-
 		{
 			name: "redact_sensitive_data",
 			sequence: []pair{
@@ -324,30 +326,39 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 }
 
 func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
-	const config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
+	config := `{"disableAutoGitUpdates": true, "auth.Providers": []}`
 
 	siteConfig, err := s.SiteCreateIfUpToDate(ctx, nil, 0, config, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err, "failed to create site config")
 
 	// The first call to SiteCreatedIfUpToDate will always create a default entry if there are no
 	// rows in the table yet and then eventually create another entry.
 	//
-	// lastID should be 2 here.
+	// lastID will be 2 here.
 	lastID := siteConfig.ID
 
-	// Create two more entries.
-	for lastID < 4 {
-		siteConfig, err := s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
-		if err != nil {
-			t.Fatal(err)
-		}
+	// Change config so that we have a new entry in the DB - ID: 3
+	config = `{"auth.Providers": []}`
+	siteConfig, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
+	require.NoError(t, err, "failed to create site config")
 
-		lastID = siteConfig.ID
-	}
+	lastID = siteConfig.ID
 
-	// By this point we have 4 entries instead of 3.
+	//  Create another entry with the same config - ID: 4
+	siteConfig, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
+	require.NoError(t, err, "failed to create site config")
+
+	lastID = siteConfig.ID
+
+	// Change config again one last time, so that we have a new entry in the DB - ID: 5
+	config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
+	_, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
+	require.NoError(t, err, "failed to create site config")
+
+	// By this point we have 5 entries instead of 4.
+	// 3 and 4 are identical.
+	// The unique list of configs is:
+	// 5, 3, 2, 1
 }
 
 func TestGetSiteConfigCount(t *testing.T) {
@@ -367,15 +378,13 @@ func TestGetSiteConfigCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// We have 5 entries in the DB, but we skip redundant ones so this returns 4.
 	if count != 4 {
 		t.Fatalf("Expected 4 site config entries, but got %d", count)
 	}
 }
 
 func TestListSiteConfigs(t *testing.T) {
-	toIntPtr := func(n int) *int { return &n }
-	toStringPtr := func(n string) *string { return &n }
-
 	if testing.Short() {
 		t.Skip()
 	}
@@ -398,113 +407,113 @@ func TestListSiteConfigs(t *testing.T) {
 	}{
 		{
 			name:        "nil pagination args",
-			expectedIDs: []int32{1, 2, 3, 4},
+			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
 			name: "first: 2 (subset of data)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(2),
+				First: pointers.Ptr(2),
 			},
-			expectedIDs: []int32{4, 3},
+			expectedIDs: []int32{5, 3},
 		},
 		{
 			name: "last: 2 (subset of data)",
 			listOptions: &PaginationArgs{
-				Last: toIntPtr(2),
+				Last: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
-			name: "first: 4 (all of data)",
+			name: "first: 5 (all of data)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(4),
+				First: pointers.Ptr(5),
 			},
-			expectedIDs: []int32{4, 3, 2, 1},
+			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
-			name: "last: 4 (all of data)",
+			name: "last: 5 (all of data)",
 			listOptions: &PaginationArgs{
-				Last: toIntPtr(4),
+				Last: pointers.Ptr(5),
 			},
-			expectedIDs: []int32{1, 2, 3, 4},
+			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
 			name: "first: 10 (more than data)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(10),
+				First: pointers.Ptr(10),
 			},
-			expectedIDs: []int32{4, 3, 2, 1},
+			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
-			name: "last: 4 (more than data)",
+			name: "last: 10 (more than data)",
 			listOptions: &PaginationArgs{
-				Last: toIntPtr(10),
+				Last: pointers.Ptr(10),
 			},
-			expectedIDs: []int32{1, 2, 3, 4},
+			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
-			name: "first: 2, after: 3",
+			name: "first: 2, after: 5",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(2),
-				After: toStringPtr("3"),
+				First: pointers.Ptr(2),
+				After: pointers.Ptr("5"),
 			},
-			expectedIDs: []int32{2, 1},
+			expectedIDs: []int32{3, 2},
 		},
 		{
-			name: "first: 5, after: 3 (overflow)",
+			name: "first: 6, after: 5 (overflow)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(5),
-				After: toStringPtr("3"),
+				First: pointers.Ptr(6),
+				After: pointers.Ptr("5"),
 			},
-			expectedIDs: []int32{2, 1},
+			expectedIDs: []int32{3, 2, 1},
 		},
 		{
-			name: "last: 2, after: 4",
+			name: "last: 2, after: 5",
 			listOptions: &PaginationArgs{
-				Last:  toIntPtr(2),
-				After: toStringPtr("4"),
+				Last:  pointers.Ptr(2),
+				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
-			name: "last: 5, after: 4 (overflow)",
+			name: "last: 6, after: 5 (overflow)",
 			listOptions: &PaginationArgs{
-				Last:  toIntPtr(5),
-				After: toStringPtr("4"),
+				Last:  pointers.Ptr(6),
+				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{1, 2, 3},
 		},
 		{
 			name: "first: 2, before: 1",
 			listOptions: &PaginationArgs{
-				First:  toIntPtr(2),
-				Before: toStringPtr("1"),
+				First:  pointers.Ptr(2),
+				Before: pointers.Ptr("1"),
 			},
-			expectedIDs: []int32{4, 3},
+			expectedIDs: []int32{5, 3},
 		},
 		{
-			name: "first: 5, before: 1 (overflow)",
+			name: "first: 6, before: 1 (overflow)",
 			listOptions: &PaginationArgs{
-				First:  toIntPtr(5),
-				Before: toStringPtr("1"),
+				First:  pointers.Ptr(6),
+				Before: pointers.Ptr("1"),
 			},
-			expectedIDs: []int32{4, 3, 2},
+			expectedIDs: []int32{5, 3, 2},
 		},
 		{
-			name: "last: 2, before: 1",
+			name: "last: 2, before: 2",
 			listOptions: &PaginationArgs{
-				Last:   toIntPtr(2),
-				Before: toStringPtr("1"),
+				Last:   pointers.Ptr(2),
+				Before: pointers.Ptr("2"),
 			},
-			expectedIDs: []int32{2, 3},
+			expectedIDs: []int32{3, 5},
 		},
 		{
-			name: "last: 5, before: 1 (overflow)",
+			name: "last: 6, before: 2 (overflow)",
 			listOptions: &PaginationArgs{
-				Last:   toIntPtr(5),
-				Before: toStringPtr("1"),
+				Last:   pointers.Ptr(6),
+				Before: pointers.Ptr("2"),
 			},
-			expectedIDs: []int32{2, 3, 4},
+			expectedIDs: []int32{3, 5},
 		},
 	}
 

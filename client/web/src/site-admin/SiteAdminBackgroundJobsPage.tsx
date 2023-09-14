@@ -16,7 +16,7 @@ import format from 'date-fns/format'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
@@ -32,7 +32,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { BackgroundJobsResult, BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
+import { type BackgroundJobsResult, type BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
 import { formatDurationLong } from '../util/time'
 
 import { ValueLegendList } from './analytics/components/ValueLegendList'
@@ -110,7 +110,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             <Text>Terminology:</Text>
             <ul>
                 <li>
-                    <strong>Job</strong>: a bag of routines, started when the Sourcegraph app is launched
+                    <strong>Job</strong>: a bag of routines, started when the Cody app is launched
                 </li>
                 <li>
                     <strong>Routine</strong>: a background process that repeatedly executes its task indefinitely, using
@@ -416,7 +416,8 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
     const mostRecentRunDate = routine.recentRuns.length ? new Date(routine.recentRuns[0].at) : null
 
     // See if this routine is stopped or not seen recently
-    const isStopped = earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
+    const isStopped =
+        latestStartDateString && earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
     const isUnseenInAWhile = !!(
         routine.intervalMs &&
         routine.type !== BackgroundRoutineType.DB_BACKED &&

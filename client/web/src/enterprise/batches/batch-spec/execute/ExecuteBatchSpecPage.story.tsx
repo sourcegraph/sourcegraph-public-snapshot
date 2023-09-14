@@ -1,19 +1,19 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes } from 'date-fns'
 import { of } from 'rxjs'
-import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, type MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { WebStory } from '../../../../components/WebStory'
 import {
-    BatchSpecExecutionFields,
+    type BatchSpecExecutionFields,
     BatchSpecSource,
     BatchSpecWorkspaceResolutionState,
     BatchSpecWorkspaceState,
-    VisibleBatchSpecWorkspaceFields,
+    type VisibleBatchSpecWorkspaceFields,
 } from '../../../../graphql-operations'
 import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../create/backend'
 import {
@@ -30,7 +30,7 @@ import {
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
     FETCH_BATCH_SPEC_EXECUTION,
-    queryWorkspacesList as _queryWorkspacesList,
+    type queryWorkspacesList as _queryWorkspacesList,
 } from './backend'
 import { ExecuteBatchSpecPage } from './ExecuteBatchSpecPage'
 

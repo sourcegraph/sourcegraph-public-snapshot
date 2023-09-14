@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "outboundwebhooks",
@@ -30,18 +31,19 @@ go_library(
         "//internal/workerutil/dbworker",
         "//internal/workerutil/dbworker/store",
         "//lib/errors",
-        "//lib/group",
         "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "outboundwebhooks_test",
+    timeout = "short",
     srcs = ["handler_test.go"],
     embed = [":outboundwebhooks"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/encryption",
         "//internal/types",
         "//lib/errors",

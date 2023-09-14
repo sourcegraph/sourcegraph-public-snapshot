@@ -1,4 +1,4 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, DecoratorFn, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -41,7 +41,9 @@ function stateToInput(state: LicensingState): boolean | undefined {
 }
 
 const Template: Story = ({ state, ...args }) => (
-    <WebStory>{() => <BatchChangesListIntro isLicensed={stateToInput(args.licensed)} />}</WebStory>
+    <WebStory>
+        {() => <BatchChangesListIntro viewerIsAdmin={false} isLicensed={stateToInput(args.licensed)} />}
+    </WebStory>
 )
 
 export const Licensed = Template.bind({})

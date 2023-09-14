@@ -1,9 +1,9 @@
 import { renderHook, act } from '@testing-library/react'
-import { Observable, ObservableInput, of } from 'rxjs'
+import { type Observable, type ObservableInput, of } from 'rxjs'
 import { delay, map, switchMap, tap } from 'rxjs/operators'
 import sinon from 'sinon'
 
-import { createUseParallelRequestsHook, FetchResult } from './use-parallel-request'
+import { createUseParallelRequestsHook, type FetchResult } from './use-parallel-request'
 
 jest.useFakeTimers()
 

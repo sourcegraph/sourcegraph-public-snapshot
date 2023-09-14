@@ -1,0 +1,32 @@
+{
+  "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9f815d128eae9f1066353ca41c297cdc0ef94662",
+  "sha": "9f815d128eae9f1066353ca41c297cdc0ef94662",
+  "node_id": "C_kwDODS5xedoAKDlmODE1ZDEyOGVhZTlmMTA2NjM1M2NhNDFjMjk3Y2RjMGVmOTQ2NjI",
+  "author": {
+   "name": "Sourcegraph VCR Test",
+   "email": "dev@sourcegraph.com",
+   "date": "2023-06-01T12:00:00Z"
+  },
+  "committer": {
+   "name": "Sourcegraph VCR Test",
+   "email": "dev@sourcegraph.com",
+   "date": "2023-06-01T12:00:00Z"
+  },
+  "message": "I'm a new commit from a VCR test!",
+  "tree": {
+   "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/trees/851e666a00cd0cf74f1558ac5664fe431d3b1935",
+   "sha": "851e666a00cd0cf74f1558ac5664fe431d3b1935"
+  },
+  "parents": [
+   {
+    "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9d04a0d8733dafbb5d75e594a9ec525c49dfc975",
+    "sha": "9d04a0d8733dafbb5d75e594a9ec525c49dfc975"
+   }
+  ],
+  "verification": {
+   "verified": false,
+   "reason": "unsigned",
+   "signature": "",
+   "payload": ""
+  }
+ }

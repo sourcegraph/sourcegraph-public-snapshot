@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import { TestScheduler } from 'rxjs/testing'
 
-import { emitLoading, LOADING, MaybeLoadingResult } from './loading'
+import { emitLoading, LOADING, type MaybeLoadingResult } from './loading'
 
 const inputAlphabet: Record<'l' | 'e' | 'i' | 'r', MaybeLoadingResult<number | null>> = {
     // loading

@@ -1,4 +1,4 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../components/WebStory'
@@ -30,7 +30,6 @@ const defaultProps = {
     editor: undefined,
     onEditorCreated: noop,
     isSourcegraphDotCom: false,
-    globbing: false,
 }
 
 export const Default: Story = () => (

@@ -4,25 +4,26 @@ import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 
 import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 
-import { UserAreaHeaderNavItem } from './UserAreaHeader'
+import type { UserAreaHeaderNavItem } from './UserAreaHeader'
 
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
         to: '/profile',
         label: 'Profile',
         icon: AccountIcon,
+        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     },
     {
         to: '/settings',
         label: 'Settings',
         icon: CogOutlineIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ user: { viewerCanAdminister }, isSourcegraphApp }) => viewerCanAdminister && !isSourcegraphApp,
     },
     {
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ user: { viewerCanAdminister }, isSourcegraphApp }) => viewerCanAdminister && !isSourcegraphApp,
     },
     ...namespaceAreaHeaderNavItems,
 ]

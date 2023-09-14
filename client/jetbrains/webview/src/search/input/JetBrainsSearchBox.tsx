@@ -5,17 +5,17 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { IEditor, LazyQueryInput } from '@sourcegraph/branded'
+import { type IEditor, LazyQueryInput } from '@sourcegraph/branded'
 import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Search } from '../jetbrains-icons/Search'
 
-import { JetBrainsToggles, JetBrainsTogglesProps } from './JetBrainsToggles'
+import { JetBrainsToggles, type JetBrainsTogglesProps } from './JetBrainsToggles'
 
 import styles from './JetBrainsSearchBox.module.scss'
 
@@ -40,9 +40,6 @@ export interface JetBrainsSearchBoxProps
     autoFocus?: boolean
     className?: string
     containerClassName?: string
-
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
 
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
@@ -89,7 +86,8 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <SearchContextDropdown
                             authenticatedUser={props.authenticatedUser}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            // This is only used to render the CTA which we do not want on JetBrains
+                            isSourcegraphDotCom={false}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
@@ -103,6 +101,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
                             menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
+                            ignoreDefaultContextDoesNotExistError={true}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
@@ -120,7 +119,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onSubmit={props.onSubmit}

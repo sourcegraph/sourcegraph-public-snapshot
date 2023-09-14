@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "apitest",
+    srcs = [
+        "exec.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/gqlutil",
+        "//internal/jsonc",
+        "//internal/rbac/types",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//errors",
+    ],
+)

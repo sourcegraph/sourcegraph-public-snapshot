@@ -1,9 +1,9 @@
 import { basename, dirname, extname } from 'path'
 
-import { Context } from '@sourcegraph/template-parser'
+import type { Context } from '@sourcegraph/template-parser'
 
-import { SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
-import { ViewerWithPartialModel } from '../../../viewerTypes'
+import { type SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
+import type { ViewerWithPartialModel } from '../../../viewerTypes'
 
 export type ContributionScope =
     | ViewerWithPartialModel

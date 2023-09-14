@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, type Observable } from 'rxjs'
 
 /**
  * Adds correct theme class to <body> element,

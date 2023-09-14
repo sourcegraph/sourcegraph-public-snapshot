@@ -1,13 +1,19 @@
 import React from 'react'
 
 import { mdiClose } from '@mdi/js'
+import { omit } from 'lodash'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { isMacPlatform } from '@sourcegraph/common'
-import { Keybinding, KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { type Keybinding, type KeyboardShortcut, shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+import {
+    KEYBOARD_SHORTCUTS,
+    EXPERIMENTAL_BLOB_PAGE_SHORTCUTS,
+} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
+
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import styles from './KeyboardShortcutsHelp.module.scss'
 
@@ -36,6 +42,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
         'characterKeyShortcuts.enabled',
         true
     )
+    const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
     return (
         <Modal
             position="center"
@@ -52,7 +59,12 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
             </div>
             <div>
                 <ul className="list-group list-group-flush">
-                    {Object.values({ ...KEYBOARD_SHORTCUTS, ...LEGACY_KEYBOARD_SHORTCUTS })
+                    {Object.values({
+                        ...(enableBlobPageSwitchAreasShortcuts
+                            ? KEYBOARD_SHORTCUTS
+                            : omit(KEYBOARD_SHORTCUTS, Object.keys(EXPERIMENTAL_BLOB_PAGE_SHORTCUTS))),
+                        ...LEGACY_KEYBOARD_SHORTCUTS,
+                    })
                         .filter(({ hideInHelp }) => !hideInHelp)
                         .map(({ title, keybindings }, index) => (
                             <li

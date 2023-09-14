@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
-	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -94,14 +94,12 @@ func NewHandler(
 
 	// Initialize the gRPC server
 	grpcServer := defaults.NewServer(rootLogger)
-	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
+	proto.RegisterSymbolsServiceServer(grpcServer, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
-
-	reflection.Register(grpcServer)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
 
@@ -155,6 +153,14 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 
 func handleListLanguages(ctagsBinary string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if deploy.IsSingleBinary() && ctagsBinary == "" {
+			// app: ctags is not available
+			var mapping map[string][]string
+			if err := json.NewEncoder(w).Encode(mapping); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		mapping, err := ctags.ListLanguageMappings(r.Context(), ctagsBinary)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

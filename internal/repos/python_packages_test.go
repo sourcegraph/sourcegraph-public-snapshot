@@ -18,26 +18,26 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		{
 			Scheme: dependencies.PythonPackagesScheme,
 			Name:   "requests",
-			Versions: []string{
-				"2.27.1", // test deduplication with version from config
-				"2.27.2", // test multiple versions of the same module
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "2.27.1"}, // test deduplication with version from config
+				{Version: "2.27.2"}, // test multiple versions of the same module
 			},
 		},
 		{
 			Scheme:   dependencies.PythonPackagesScheme,
 			Name:     "numpy",
-			Versions: []string{"1.22.3"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "1.22.3"}},
 		},
 		{
 			Scheme:   dependencies.PythonPackagesScheme,
 			Name:     "lofi",
-			Versions: []string{"foobar"}, // test that we create a repo for this package even if it's missing.
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "foobar"}}, // test that we create a repo for this package even if it's missing.
 		},
 	})
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindPythonPackages,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.PythonPackagesConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PythonPackagesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
@@ -50,7 +50,7 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		})),
 	}
 
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
 	src, err := NewPythonPackagesSource(ctx, &svc, cf)
@@ -60,7 +60,7 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 
 	src.SetDependenciesService(depsSvc)
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,5 +69,5 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		return repos[i].Name < repos[j].Name
 	})
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }

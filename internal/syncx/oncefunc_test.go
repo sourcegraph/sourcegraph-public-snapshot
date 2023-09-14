@@ -127,8 +127,9 @@ func TestOnceFuncPanicTraceback(t *testing.T) {
 			t.Fatalf("want panic %v, got %v", "x", p)
 		}
 		stack := debug.Stack()
-		want := "syncx_test.onceFuncPanic"
-		if !bytes.Contains(stack, []byte(want)) {
+		// Add second case for bazel binary names
+		want := []string{"syncx_test.onceFuncPanic", "syncx_test_test.onceFuncPanic"}
+		if !bytes.Contains(stack, []byte(want[0])) && !bytes.Contains(stack, []byte(want[1])) {
 			t.Fatalf("want stack containing %v, got:\n%s", want, string(stack))
 		}
 	}()

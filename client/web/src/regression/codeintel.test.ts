@@ -1,15 +1,15 @@
-import { applyEdits, JSONPath, modify } from 'jsonc-parser'
+import { applyEdits, type JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { ExternalServiceKind } from '../graphql-operations'
 
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
-import { GraphQLClient } from './util/GraphQlClient'
+import type { GraphQLClient } from './util/GraphQlClient'
 import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
@@ -179,9 +179,9 @@ describe('Code graph regression test suite', () => {
         //         // but only when automated - doing the same flow manually works correctly.
         //         // expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
         //         expectedReferences: [
-        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L97:10&subtree=true`,
-        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L225:11&subtree=true`,
-        //             `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?L7:6&subtree=true`,
+        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L97:10`,
+        //             `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?L225:11`,
+        //             `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?L7:6`,
         //         ],
         //     }))
     })

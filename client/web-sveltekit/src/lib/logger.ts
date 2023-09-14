@@ -8,6 +8,8 @@ import { eventLogger, type EventLogger } from '@sourcegraph/web/src/tracking/eve
 
 import { PUBLIC_ENABLE_EVENT_LOGGER } from '$env/static/public'
 
+export { eventLogger }
+
 /**
  * Can only be called during component initialization. It logs a view event when
  * the component is mounted (and event logging is enabled).

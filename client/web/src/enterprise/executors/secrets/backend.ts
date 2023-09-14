@@ -1,12 +1,12 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     ExecutorSecretFields,
     Scalars,
     UserExecutorSecretsResult,
@@ -131,7 +131,7 @@ export const userExecutorSecretsConnectionFactory = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -177,7 +177,7 @@ export const orgExecutorSecretsConnectionFactory = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -217,7 +217,7 @@ export const globalExecutorSecretsConnectionFactory = (
         },
         options: {
             useURL: true,
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { executorSecrets } = dataOrThrowErrors(result)
@@ -277,7 +277,7 @@ export const useExecutorSecretAccessLogsConnection = (
             after: null,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)

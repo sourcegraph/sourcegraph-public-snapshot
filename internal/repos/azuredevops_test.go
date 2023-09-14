@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -16,6 +17,8 @@ import (
 //  2. Run the test with the -update flag:
 //     `go test -run='TestAzureDevOpsSource_ListRepos' -update=TestAzureDevOpsSource_ListRepos`
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	conf := &schema.AzureDevOpsConnection{
 		Url:      "https://dev.azure.com",
 		Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
@@ -23,19 +26,19 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 		Projects: []string{"sgtestazure/sgtestazure", "sgtestazure/sg test with spaces"},
 		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
 			{
-				Name: "sg test with spaces/sg test with spaces",
+				Name: "sgtestazure/sg test with spaces/sg test with spaces",
 			},
 			{
-				Pattern: "^sgtestazure/sgtestazure[3-9]",
+				Pattern: "^sgtestazure/sgtestazure/sgtestazure[3-9]",
 			},
 		},
 	}
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	defer save(t)
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindAzureDevOps,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
 	}
 
 	ctx := context.Background()
@@ -44,10 +47,10 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos, err := listAll(context.Background(), src)
+	repos, err := ListAll(context.Background(), src)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), Update(t.Name()), repos)
 }

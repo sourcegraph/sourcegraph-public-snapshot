@@ -1,0 +1,59 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "actor",
+    srcs = [
+        "actor.go",
+        "limits.go",
+        "source.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/limiter",
+        "//cmd/cody-gateway/internal/notify",
+        "//internal/codygateway",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_go_redsync_redsync_v4//:redsync",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+go_test(
+    name = "actor_test",
+    srcs = [
+        "actor_test.go",
+        "limits_test.go",
+        "source_test.go",
+    ],
+    embed = [":actor"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/cody-gateway/internal/limiter",
+        "//internal/codygateway",
+        "//internal/observation",
+        "//internal/redispool",
+        "//lib/errors",
+        "@com_github_go_redsync_redsync_v4//:redsync",
+        "@com_github_go_redsync_redsync_v4//redis/redigo",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)

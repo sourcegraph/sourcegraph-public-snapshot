@@ -1,0 +1,31 @@
+.summary-container {
+    padding: 1.5rem 1.5rem 1rem;
+}
+
+.summary {
+    padding-bottom: 1.5rem;
+}
+
+.summary-item-thin {
+    max-width: 6rem;
+}
+
+.filter-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.radio-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.select {
+    width: 11rem;
+}

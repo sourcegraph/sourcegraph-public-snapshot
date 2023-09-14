@@ -5,40 +5,58 @@ interactions:
     body: ""
     form: {}
     headers: {}
-    url: https://gerrit-review.googlesource.com/projects/?S=0&n=5
+    url: https://gerrit.sgdev.org/a/projects/?S=0&n=5
     method: GET
   response:
     body: |
       )]}'
-      {"Core-Plugins":{"id":"Core-Plugins","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/Core-Plugins/","target":"_blank"}]},"Public-Plugins":{"id":"Public-Plugins","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/Public-Plugins/","target":"_blank"}]},"Public-Projects":{"id":"Public-Projects","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/Public-Projects/","target":"_blank"}]},"TestRepo":{"id":"TestRepo","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/TestRepo/","target":"_blank"}]},"apps/analytics-etl":{"id":"apps%2Fanalytics-etl","state":"ACTIVE","web_links":[{"name":"browse","url":"https://gerrit.googlesource.com/apps/analytics-etl/","target":"_blank"}]}}
+      {
+        "All-Projects": {
+          "id": "All-Projects",
+          "state": "ACTIVE"
+        },
+        "All-Users": {
+          "id": "All-Users",
+          "state": "ACTIVE"
+        },
+        "beatrix": {
+          "id": "beatrix",
+          "state": "ACTIVE"
+        },
+        "idan-temp": {
+          "id": "idan-temp",
+          "state": "ACTIVE"
+        },
+        "k8s-gerrit": {
+          "id": "k8s-gerrit",
+          "state": "ACTIVE"
+        }
+      }
     headers:
-      Alt-Svc:
-      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000,h3-Q050=":443"; ma=2592000,h3-Q046=":443";
-        ma=2592000,h3-Q043=":443"; ma=2592000,quic=":443"; ma=2592000; v="46,43"
       Cache-Control:
       - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7c85e10749c75407-YYZ
       Content-Disposition:
       - attachment
-      Content-Security-Policy-Report-Only:
-      - 'script-src ''nonce-LqYfkker0cyXan8LHVCJDw'' ''unsafe-inline'' ''strict-dynamic''
-        https: http: ''unsafe-eval'';object-src ''none'';base-uri ''self'';report-uri
-        https://csp.withgoogle.com/csp/gerritcodereview/1'
       Content-Type:
-      - application/json; charset=utf-8
+      - application/json;charset=utf-8
       Date:
-      - Tue, 24 Jan 2023 12:14:13 GMT
+      - Tue, 16 May 2023 19:03:08 GMT
       Expires:
       - Mon, 01 Jan 1990 00:00:00 GMT
       Pragma:
       - no-cache
+      Server:
+      - cloudflare
       Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
+      - max-age=15724800; includeSubDomains
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
-      - SAMEORIGIN
-      X-Xss-Protection:
-      - "0"
+      - DENY
     status: 200 OK
     code: 200
     duration: ""

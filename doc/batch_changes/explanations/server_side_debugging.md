@@ -1,7 +1,5 @@
 # Debugging when you run batch changes server-side
 
-<aside class="experimental">This feature is experimental. Follow the <a href="server_side#setup">setup guide</a> to get started.</aside>
-
 When you run batch changes server-side, you can monitor various artifacts of an execution, like per-step logs, timing information and output variables in a persisted, sharable UI.
 
 From the UI, you can start from a high level perspective for the entire batch spec and then drill down to find the problem.

@@ -46,6 +46,15 @@ func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types
 				IntegrationUserCount: summary.IntegrationUniquesMonth,
 			},
 		},
+		RMAUs: []*types.SiteActivityPeriod{
+			{
+				StartTime:            summary.RollingMonth,
+				UserCount:            summary.UniquesRollingMonth,
+				RegisteredUserCount:  summary.RegisteredUniquesRollingMonth,
+				AnonymousUserCount:   summary.UniquesRollingMonth - summary.RegisteredUniquesRollingMonth,
+				IntegrationUserCount: summary.IntegrationUniquesRollingMonth,
+			},
+		},
 	}
 
 	if monthsOnly {

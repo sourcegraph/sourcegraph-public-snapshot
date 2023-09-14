@@ -3,18 +3,17 @@ import 'focus-visible'
 import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
-import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, Observable } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, type Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import { type GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     getUserSearchContextNamespaces,
@@ -33,34 +32,31 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import {
     EMPTY_SETTINGS_CASCADE,
-    SettingsCascadeProps,
+    type SettingsCascadeProps,
     SettingsProvider,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
-import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
+import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { isBatchChangesExecutionEnabled } from './batches'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { HeroPage } from './components/HeroPage'
-import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
-import { LegacyLayout, LegacyLayoutProps } from './LegacyLayout'
+import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
+import { LegacyLayout, type LegacyLayoutProps } from './LegacyLayout'
 import { LegacyRouteContextProvider } from './LegacyRouteContext'
+import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
 import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
-import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
+import type { StaticAppConfig } from './staticAppConfig'
+import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
-
-import styles from './LegacySourcegraphWebApp.module.scss'
 
 interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
@@ -80,18 +76,11 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LegacyLayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
-
-    /**
-     * Whether globbing is enabled for filters.
-     */
-    globbing: boolean
 }
 
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
-
-setLinkComponent(RouterLink)
 
 /**
  * The root component.
@@ -112,7 +101,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             authenticatedUser: authenticatedUserValue,
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            globbing: false,
         }
     }
 
@@ -142,12 +130,10 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
                 authenticatedUserSubject,
             ]).subscribe(([settingsCascade, authenticatedUser]) => {
-                setExperimentalFeaturesFromSettings(settingsCascade)
                 setQueryStateFromSettings(settingsCascade)
                 this.setState({
                     settingsCascade,
                     authenticatedUser,
-                    globbing: globbingEnabledFromSettings(settingsCascade),
                     viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                 })
             })
@@ -191,29 +177,9 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
     }
 
     public render(): React.ReactNode {
-        if (window.pageError && window.pageError.statusCode !== 404) {
-            const statusCode = window.pageError.statusCode
-            const statusText = window.pageError.statusText
-            const errorMessage = window.pageError.error
-            const errorID = window.pageError.errorID
-
-            let subtitle: JSX.Element | undefined
-            if (errorID) {
-                subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
-            }
-            if (errorMessage) {
-                subtitle = (
-                    <div className={styles.error}>
-                        {subtitle}
-                        {subtitle && <hr className="my-3" />}
-                        <pre>{errorMessage}</pre>
-                    </div>
-                )
-            } else {
-                subtitle = <div className={styles.error}>{subtitle}</div>
-            }
-
-            return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
+        const pageError = window.pageError
+        if (pageError && pageError.statusCode !== 404) {
+            return <PageError pageError={pageError} />
         }
 
         const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
@@ -251,6 +217,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSourcegraphApp={window.context.sourcegraphAppMode}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             searchContextsEnabled={this.props.searchContextsEnabled}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchSearchContexts={fetchSearchContexts}
@@ -259,8 +226,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             createSearchContext={createSearchContext}
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
-                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                            globbing={this.state.globbing}
                             streamSearch={aggregateStreamingSearch}
                         />
                     }
@@ -278,7 +243,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                     <SettingsProvider settingsCascade={this.state.settingsCascade} />,
                     <ErrorBoundary location={null} />,
                     <TraceSpanProvider name={SharedSpanName.AppMount} />,
-                    <FeatureFlagsProvider />,
+                    <FeatureFlagsLocalOverrideAgent />,
                     <ShortcutProvider />,
                     <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                     <SearchResultsCacheProvider />,

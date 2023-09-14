@@ -1,7 +1,8 @@
-import { FC, SVGProps } from 'react'
+import { type SVGProps, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
+import type { ForwardReferenceComponent } from '../../types'
 import { Icon } from '../Icon'
 
 import styles from './LoadingSpinner.module.scss'
@@ -15,7 +16,7 @@ export interface LoadingSpinnerProps extends SVGProps<SVGSVGElement> {
     inline?: boolean
 }
 
-export const LoadingSpinner: FC<LoadingSpinnerProps> = props => {
+export const LoadingSpinner = forwardRef(function LoadingSpinner(props, reference) {
     const { inline = true, className, ...attribute } = props
 
     return (
@@ -26,7 +27,8 @@ export const LoadingSpinner: FC<LoadingSpinnerProps> = props => {
             aria-live="polite"
             className={classNames(styles.loadingSpinner, className)}
             data-loading-spinner={true}
+            ref={reference}
             {...attribute}
         />
     )
-}
+}) as ForwardReferenceComponent<'div', LoadingSpinnerProps>

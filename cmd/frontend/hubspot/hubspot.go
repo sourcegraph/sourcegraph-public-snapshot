@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,6 +22,9 @@ import (
 type Client struct {
 	portalID    string
 	accessToken string
+
+	lastPing       atomic.Time
+	lastPingResult atomic.Error
 }
 
 // New returns a new HubSpot client using the given Portal ID.
@@ -136,6 +140,30 @@ func (c *Client) get(methodName string, baseURL *url.URL, suffix string, params 
 		return wrapError(methodName, errors.Errorf("Code %v: %s", resp.StatusCode, buf.String()))
 	}
 	return nil
+}
+
+// Ping does a naive API call to HubSpot to check if the API key is valid. The
+// value of the `ttl` is used determine whether the previous ping result may be
+// reused. This is to avoid wasting large volume of quotes because every ping
+// consumes one rate limit quote.
+func (c *Client) Ping(ttl time.Duration) error {
+	if time.Since(c.lastPing.Load()) > ttl {
+		c.lastPingResult.Store(
+			c.get(
+				"Ping",
+				&url.URL{
+					Scheme: "https",
+					Host:   "api.hubapi.com",
+					Path:   "/account-info/v3/details",
+				},
+				"",
+				nil,
+			),
+		)
+	}
+
+	c.lastPing.Store(time.Now())
+	return c.lastPingResult.Load()
 }
 
 func setAccessTokenAuthorizationHeader(req *http.Request, accessToken string) {

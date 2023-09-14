@@ -1,5 +1,3 @@
-cmd/server/dockerfile.go
-
 # Web
 .nyc_output/
 coverage/
@@ -15,3 +13,4 @@ yarn-error.log
 !/ui/assets/img/*
 /.bin
 /vendor/.bin
+/cmd/embeddings/shared/testdata/

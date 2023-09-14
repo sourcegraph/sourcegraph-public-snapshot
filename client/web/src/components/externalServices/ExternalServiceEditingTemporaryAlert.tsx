@@ -1,9 +1,9 @@
-import * as React from 'react'
+import type { FC } from 'react'
 
 import { Alert, H4, Code, Text } from '@sourcegraph/wildcard'
 
-export const ExternalServiceEditingTemporaryAlert: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <Alert variant="warning">
+export const ExternalServiceEditingTemporaryAlert: FC<{ className?: string }> = props => (
+    <Alert variant="warning" className={props.className}>
         <H4>Edits will be reset when restarting</H4>
         <Text className="mb-0">
             Environment variable <Code>EXTSVC_CONFIG_ALLOW_EDITS</Code> is set along with{' '}

@@ -8,8 +8,9 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
@@ -66,9 +67,12 @@ type UserExternalAccountsStore interface {
 	// Get gets information about the user external account.
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
 
+	// Insert creates the external account record in the database
 	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
+
+	ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error)
 
 	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
 	// association with the external account already exist).
@@ -77,6 +81,12 @@ type UserExternalAccountsStore interface {
 	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
 	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
+
+	// UpsertSCIMData updates the external account data for the given user's SCIM account.
+	// It looks up the existing user based on its ID, then sets its account ID and data.
+	// Account ID is the same as the external ID for SCIM.
+	// If the external account does not exist, it creates a new one.
+	UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error)
 
 	// TouchExpired sets the given user external accounts to be expired now.
 	TouchExpired(ctx context.Context, ids ...int32) error
@@ -131,18 +141,9 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	var encryptedAuthData, encryptedAccountData, keyID string
-	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return 0, err
-		}
-	}
-	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return 0, err
-		}
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return 0, err
 	}
 
 	err = s.Handle().QueryRowContext(ctx, `
@@ -165,6 +166,45 @@ RETURNING user_id
 		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
 	return userID, err
+}
+
+func (s *userExternalAccountsStore) UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return
+	}
+
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
+UPDATE user_external_accounts
+SET
+	account_id = %s,
+	auth_data = %s,
+	account_data = %s,
+	encryption_key_id = %s,
+	updated_at = now(),
+	expired_at = NULL
+WHERE
+	user_id = %s
+AND service_type = %s
+AND service_id = %s
+AND deleted_at IS NULL
+`, accountID, encryptedAuthData, encryptedAccountData, keyID, userID, "scim", "scim"))
+	if err != nil {
+		return
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return
+	}
+
+	if rowsAffected == 0 {
+		return s.Insert(ctx, userID, extsvc.AccountSpec{ServiceType: "scim", ServiceID: "scim", AccountID: accountID}, data)
+	}
+
+	// This logs an audit event for account changes but only if they are initiated via SCIM
+	logAccountModifiedEvent(ctx, NewDBWith(s.logger, s), userID, "scim")
+
+	return
 }
 
 func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
@@ -270,24 +310,29 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 }
 
 func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	var encryptedAuthData, encryptedAccountData, keyID string
-	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return err
-		}
-	}
-	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return err
-		}
+	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
+	if err != nil {
+		return
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
+}
+
+// encryptData encrypts the given account data and returns the encrypted data and key ID.
+func (s *userExternalAccountsStore) encryptData(ctx context.Context, accountData extsvc.AccountData) (eAuthData string, eData string, keyID string, err error) {
+	if accountData.AuthData != nil {
+		eAuthData, keyID, err = accountData.AuthData.Encrypt(ctx, s.getEncryptionKey())
+		if err != nil {
+			return
+		}
+	}
+	if accountData.Data != nil {
+		eData, keyID, err = accountData.Data.Encrypt(ctx, s.getEncryptionKey())
+	}
+	return
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int32) error {
@@ -381,22 +426,57 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
-	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List", "")
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List")
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
 		}
 
-		tr.LogFields( //nolint:staticcheck // TODO unpack the object
-			otlog.Object("opt", opt),
-			otlog.Int("accounts.count", len(acct)),
+		tr.AddEvent(
+			"done",
+			attribute.String("opt", fmt.Sprintf("%#v", opt)),
+			attribute.Int("accounts.count", len(acct)),
 		)
 
-		tr.Finish()
+		tr.End()
 	}()
 
 	conds := s.listSQL(opt)
 	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+}
+
+func (s *userExternalAccountsStore) ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error) {
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.ListForUsers")
+	var count int
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.AddEvent(
+			"done",
+			attribute.String("userIDs", fmt.Sprintf("%v", userIDs)),
+			attribute.Int("accounts.count", count),
+		)
+		tr.End()
+	}()
+	if len(userIDs) == 0 {
+		return
+	}
+	condition := sqlf.Sprintf("WHERE user_id = ANY(%s)", pq.Array(userIDs))
+	accts, err := s.listBySQL(ctx, condition)
+	if err != nil {
+		return nil, err
+	}
+	count = len(accts)
+	userToAccts = make(map[int32][]*extsvc.Account)
+	for _, acct := range accts {
+		userID := acct.UserID
+		if _, ok := userToAccts[userID]; !ok {
+			userToAccts[userID] = make([]*extsvc.Account, 0)
+		}
+		userToAccts[userID] = append(userToAccts[userID], acct)
+	}
+	return
 }
 
 func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {

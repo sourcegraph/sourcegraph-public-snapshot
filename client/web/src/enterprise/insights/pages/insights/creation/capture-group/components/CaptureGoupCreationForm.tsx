@@ -1,4 +1,4 @@
-import { FC, FormHTMLAttributes, ReactNode } from 'react'
+import type { FC, FormHTMLAttributes, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -9,9 +9,9 @@ import {
     Link,
     FormGroup,
     getDefaultInputProps,
-    useFieldAPI,
-    FormInstance,
-    SubmissionErrors,
+    type useFieldAPI,
+    type FormInstance,
+    type SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -21,8 +21,8 @@ import {
     RepoSettingSection,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { CaptureGroupFormFields } from '../types'
-import { Checks } from '../utils/search-query-validator'
+import type { CaptureGroupFormFields } from '../types'
+import type { Checks } from '../utils/search-query-validator'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
 import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
@@ -178,7 +178,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
-                    numberOfPoints={7}
+                    numberOfPoints={12}
                 />
             </FormGroup>
 

@@ -56,6 +56,13 @@ type Actor struct {
 // FromUser returns an actor corresponding to the user with the given ID
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
 
+// FromActualUser returns an actor corresponding to the user with the given ID
+func FromActualUser(user *types.User) *Actor {
+	a := &Actor{UID: user.ID, user: user, userErr: nil}
+	a.userOnce.Do(func() {})
+	return a
+}
+
 // FromAnonymousUser returns an actor corresponding to an unauthenticated user with the given anonymous ID
 func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID: anonymousUID} }
 

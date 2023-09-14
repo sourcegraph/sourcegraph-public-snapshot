@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { Args } from '@storybook/addons'
-import { Meta, Story } from '@storybook/react'
+import type { Args } from '@storybook/addons'
+import type { Meta, Story } from '@storybook/react'
 
 import { PopoverTrigger, H1 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'

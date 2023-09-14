@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../../components/Sidebar'
-import { NavGroupDescriptor } from '../../../util/contributions'
+import type { NavGroupDescriptor } from '../../../util/contributions'
 
 export interface CodeIntelSideBarGroup extends NavGroupDescriptor {}
 

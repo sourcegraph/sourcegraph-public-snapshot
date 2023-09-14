@@ -1,10 +1,11 @@
-import React, { MouseEvent, useContext, useState } from 'react'
+import React, { type MouseEvent, useContext, useState } from 'react'
 
 import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Card,
@@ -24,7 +25,6 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../../../stores'
 import { InsightType } from '../../../../../core'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
@@ -35,7 +35,7 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import { Template, getTemplateSections } from './constants'
+import { type Template, getTemplateSections } from './constants'
 
 import styles from './CodeInsightsTemplates.module.scss'
 
@@ -53,8 +53,8 @@ interface CodeInsightsTemplates extends TelemetryProps, React.HTMLAttributes<HTM
 export const CodeInsightsTemplates: React.FunctionComponent<React.PropsWithChildren<CodeInsightsTemplates>> = props => {
     const { telemetryService, ...otherProps } = props
     const tabChangePingName = useLogEventName('InsightsGetStartedTabClick')
-    const features = useExperimentalFeatures()
-    const templateSections = getTemplateSections(features)
+    const goCodeCheckerTemplates = useExperimentalFeatures(features => features.goCodeCheckerTemplates)
+    const templateSections = getTemplateSections(goCodeCheckerTemplates)
 
     const handleTabChange = (index: number): void => {
         const template = templateSections[index]

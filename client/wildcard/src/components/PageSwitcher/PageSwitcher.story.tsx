@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Text } from '../Typography/Text/Text'

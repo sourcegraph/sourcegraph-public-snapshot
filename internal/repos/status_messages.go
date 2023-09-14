@@ -34,25 +34,34 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sync errors")
 	}
-	// Return early since we don't have any affiliated external services
-	if len(externalServiceSyncErrors) == 0 {
-		return messages, nil
-	}
-
-	for id, failure := range externalServiceSyncErrors {
-		if failure != "" {
-			messages = append(messages, StatusMessage{
-				ExternalServiceSyncError: &ExternalServiceSyncError{
-					Message:           failure,
-					ExternalServiceId: id,
-				},
-			})
-		}
-	}
 
 	stats, err := db.RepoStatistics().GetRepoStatistics(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading repo statistics")
+	}
+
+	// Return early since we don't have any affiliated external services
+	if len(externalServiceSyncErrors) == 0 {
+		// Explicit no repository message
+		if stats.Total == 0 {
+			messages = append(messages, StatusMessage{
+				NoRepositoriesDetected: &NoRepositoriesDetected{
+					Message: "No repositories have been added to Sourcegraph.",
+				},
+			})
+		}
+		return messages, nil
+	}
+
+	for _, syncError := range externalServiceSyncErrors {
+		if syncError.Message != "" {
+			messages = append(messages, StatusMessage{
+				ExternalServiceSyncError: &ExternalServiceSyncError{
+					Message:           syncError.Message,
+					ExternalServiceId: syncError.ServiceID,
+				},
+			})
+		}
 	}
 
 	if stats.FailedFetch > 0 {
@@ -110,6 +119,9 @@ func pluralize(count int, singularNoun, pluralNoun string) string {
 type GitUpdatesDisabled struct {
 	Message string
 }
+type NoRepositoriesDetected struct {
+	Message string
+}
 
 type CloningProgress struct {
 	Message string
@@ -131,6 +143,7 @@ type IndexingProgress struct {
 
 type StatusMessage struct {
 	GitUpdatesDisabled       *GitUpdatesDisabled       `json:"git_updates_disabled"`
+	NoRepositoriesDetected   *NoRepositoriesDetected   `json:"no_repositories_detected"`
 	Cloning                  *CloningProgress          `json:"cloning"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`

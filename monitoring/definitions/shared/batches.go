@@ -198,3 +198,13 @@ func (batches) NewBatchesHTTPAPIGroup(containerName string) monitoring.Group {
 		},
 	})
 }
+
+// NewExecutorQueueGroup creates a Executors.NewExecutorQueueGroup tailored for batches
+// workloads.
+func (batches) NewExecutorQueueGroup() monitoring.Group {
+	// queueContainerName is the set of potential sources of executor queue metrics,
+	// copied from CodeIntelligence.NewAutoindexingSummaryGroup
+	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
+
+	return Executors.NewExecutorQueueGroup("batches", queueContainerName, "batches")
+}

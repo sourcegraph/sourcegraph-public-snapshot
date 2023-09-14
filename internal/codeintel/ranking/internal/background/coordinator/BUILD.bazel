@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "coordinator",
+    srcs = [
+        "config.go",
+        "job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/coordinator",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/ranking/internal/shared",
+        "//internal/codeintel/ranking/internal/store",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

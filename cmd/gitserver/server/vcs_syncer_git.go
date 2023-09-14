@@ -2,42 +2,39 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitCommandError is an error of a failed Git command.
-type GitCommandError struct {
-	// Err is the original error produced by the git command that failed.
-	Err error
-	// Output is the std error output of the command that failed.
-	Output string
+// gitRepoSyncer is a syncer for Git repositories.
+type gitRepoSyncer struct {
+	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
-func (e *GitCommandError) Error() string {
-	return fmt.Sprintf("%s - output: %q", e.Err, e.Output)
+func NewGitRepoSyncer(r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
+	return &gitRepoSyncer{recordingCommandFactory: r}
 }
 
-func (e *GitCommandError) Unwrap() error {
-	return e.Err
-}
-
-// GitRepoSyncer is a syncer for Git repositories.
-type GitRepoSyncer struct{}
-
-func (s *GitRepoSyncer) Type() string {
+func (s *gitRepoSyncer) Type() string {
 	return "git"
 }
 
+// testGitRepoExists is a test fixture that overrides the return value for
+// GitRepoSyncer.IsCloneable when it is set.
+var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
+
 // IsCloneable checks to see if the Git remote URL is cloneable.
-func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error {
 	if isAlwaysCloningTestRemoteURL(remoteURL) {
 		return nil
 	}
@@ -50,13 +47,13 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), true, nil)
+	out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = &GitCommandError{Err: err, Output: string(out)}
+			err = &common.GitCommandError{Err: err, Output: string(out)}
 		}
 		return err
 	}
@@ -64,7 +61,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 }
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
-func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}
@@ -72,7 +69,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 	cmd = exec.CommandContext(ctx, "git", "init", "--bare", ".")
 	cmd.Dir = tmpPath
 	if err := cmd.Run(); err != nil {
-		return nil, errors.Wrapf(&GitCommandError{Err: err}, "clone setup failed")
+		return nil, errors.Wrapf(&common.GitCommandError{Err: err}, "clone setup failed")
 	}
 
 	cmd, _ = s.fetchCommand(ctx, remoteURL)
@@ -81,21 +78,22 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) error {
+func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
-		return errors.Wrapf(&GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}, "failed to update")
+	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), configRemoteOpts, nil)
+	if err != nil {
+		return nil, &common.GitCommandError{Err: err, Output: urlredactor.New(remoteURL).Redact(string(output))}
 	}
-	return nil
+	return output, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
-func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *gitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
-func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
+func (s *gitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
 	configRemoteOpts = true
 	if customCmd := customFetchCmd(ctx, remoteURL); customCmd != nil {
 		cmd = customCmd

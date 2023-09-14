@@ -1,18 +1,30 @@
-import { FC, ReactElement } from 'react'
+import type { FC, ReactElement } from 'react'
 
-import { useQuery } from '@apollo/client'
-import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
+import type { QueryResult } from '@apollo/client'
+import { mdiDelete, mdiInformationOutline, mdiPlus, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
-import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import {
+    Button,
+    ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverTail,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
-import { CodeHost, GetCodeHostsResult } from '../../../../../graphql-operations'
-import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
-import { GET_CODE_HOSTS } from '../../queries'
+import { type CodeHost, ExternalServiceKind, type GetCodeHostsResult } from '../../../../../graphql-operations'
+import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
 
 interface CodeHostsNavigationProps {
+    codeHostQueryResult: QueryResult<GetCodeHostsResult>
     activeConnectionId: string | undefined
     createConnectionType: string | undefined
     className?: string
@@ -20,11 +32,8 @@ interface CodeHostsNavigationProps {
 }
 
 export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
-    const { activeConnectionId, createConnectionType, className, onCodeHostDelete } = props
-
-    const { data, loading, error, refetch } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
-        fetchPolicy: 'cache-and-network',
-    })
+    const { codeHostQueryResult, activeConnectionId, createConnectionType, className, onCodeHostDelete } = props
+    const { data, loading, error, refetch } = codeHostQueryResult
 
     if (error && !loading) {
         return (
@@ -45,7 +54,14 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
         )
     }
 
-    if (data.externalServices.nodes.length === 0) {
+    // Filter out all other external services since we don't properly support them
+    // in the wizard, "Other" and "LocalGit" external services are used as local repositories setup in
+    // Sourcegraph App for which we have a special setup step
+    const nonOtherExternalServices = data.externalServices.nodes.filter(
+        service => service.kind !== ExternalServiceKind.OTHER && service.kind !== ExternalServiceKind.LOCALGIT
+    )
+
+    if (nonOtherExternalServices.length === 0) {
         return (
             <small className={classNames(className, styles.emptyState)}>
                 <span>
@@ -57,7 +73,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                         className={styles.emptyStateIcon}
                     />
                 </span>
-                <span>Choose at least one of the code host providers from the list on the right.</span>
+                <span>Choose at least one of the code host providers from the list.</span>
             </small>
         )
     }
@@ -65,30 +81,56 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
     return (
         <ul className={styles.list}>
             {createConnectionType && <CreateCodeHostConnectionCard codeHostType={createConnectionType} />}
-            {data.externalServices.nodes.map(codeHost => (
+            {nonOtherExternalServices.map(codeHost => (
                 <li
                     key={codeHost.id}
                     className={classNames(styles.item, { [styles.itemActive]: codeHost.id === activeConnectionId })}
                 >
-                    <Button
-                        as={Link}
-                        to={`/setup/remote-repositories/${codeHost.id}/edit`}
-                        className={styles.itemButton}
-                    >
+                    <Button as={Link} to={`${codeHost.id}/edit`} className={styles.itemButton}>
                         <span>
-                            <Icon svgPath={getCodeHostIcon(codeHost.kind)} aria-hidden={true} />
+                            <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} />
                         </span>
                         <span className={styles.itemDescription}>
-                            <span>{codeHost.displayName}</span>
-                            <small className={styles.itemDescriptionStatus}>
-                                {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
+                            <span className={styles.itemTitle}>
+                                {codeHost.displayName}
                                 {codeHost.lastSyncAt === null && (
+                                    <small>
+                                        <LoadingSpinner />
+                                    </small>
+                                )}
+                            </span>
+                            <small className={styles.itemDescriptionStatus}>
+                                {codeHost.lastSyncAt !== null && codeHost.lastSyncError === null && (
+                                    <>Synced, {codeHost.repoCount} repositories found</>
+                                )}
+                                {codeHost.lastSyncAt === null && codeHost.lastSyncError === null && (
                                     <>
-                                        <LoadingSpinner />, Syncing{' '}
+                                        Syncing
                                         {codeHost.repoCount > 0 && (
-                                            <>, so far {codeHost.repoCount} repositories found</>
+                                            <>
+                                                , so far {codeHost.repoCount}{' '}
+                                                {pluralize('repository', codeHost.repoCount ?? 0, 'repositories')} found
+                                            </>
                                         )}
                                     </>
+                                )}
+                                {codeHost.lastSyncError !== null && (
+                                    <Popover>
+                                        <PopoverTrigger as="span" className={styles.errorButton}>
+                                            Sync error appeared{' '}
+                                            <Icon svgPath={mdiAlertCircle} aria-label="Sync error icon" />
+                                        </PopoverTrigger>
+
+                                        <PopoverContent position="right" className={styles.errorPopover}>
+                                            <ErrorAlert
+                                                error={codeHost.lastSyncError}
+                                                variant="danger"
+                                                className="m-3"
+                                            />
+                                        </PopoverContent>
+
+                                        <PopoverTail size="sm" />
+                                    </Popover>
                                 )}
                             </small>
                         </span>
@@ -101,11 +143,6 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     </Tooltip>
                 </li>
             ))}
-            <li className={styles.itemWithMoreLink}>
-                <Link to="/setup/remote-repositories" className={classNames(styles.moreLink)}>
-                    <Icon svgPath={mdiPlus} aria-hidden={true} /> Add more code hosts
-                </Link>
-            </li>
         </ul>
     )
 }
@@ -125,7 +162,7 @@ function CreateCodeHostConnectionCard(props: CreateCodeHostConnectionCardProps):
             </span>
             <span className={styles.itemDescription}>
                 <span>
-                    Connect <Icon svgPath={getCodeHostIcon(codeHostKind)} aria-hidden={true} />{' '}
+                    Connect <CodeHostIcon codeHostType={codeHostKind} aria-hidden={true} />{' '}
                     {getCodeHostName(codeHostKind)}
                 </span>
                 <small className={styles.itemDescriptionStatus}>

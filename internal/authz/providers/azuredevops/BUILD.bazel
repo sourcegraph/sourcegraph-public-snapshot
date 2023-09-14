@@ -1,0 +1,47 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "azuredevops",
+    srcs = ["provider.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/azuredevops",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authz",
+        "//internal/authz/types",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/azuredevops",
+        "//internal/licensing",
+        "//internal/oauthtoken",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "azuredevops_test",
+    timeout = "short",
+    srcs = ["provider_test.go"],
+    embed = [":azuredevops"],
+    tags = [
+        "requires-network",
+    ],
+    deps = [
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
+        "//internal/licensing",
+        "//internal/ratelimit",
+        "//internal/rcache",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_goware_urlx//:urlx",
+    ],
+)

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "squirrel",
@@ -41,11 +42,13 @@ go_library(
 
 go_test(
     name = "squirrel_test",
+    timeout = "short",
     srcs = [
         "hover_test.go",
         "local_code_intel_test.go",
         "service_test.go",
     ],
+    data = glob(["test_repos/**"]),
     embed = [":squirrel"],
     deps = [
         "//internal/search",

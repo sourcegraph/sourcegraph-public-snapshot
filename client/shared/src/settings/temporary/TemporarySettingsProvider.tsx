@@ -1,4 +1,4 @@
-import React, { createContext, useEffect } from 'react'
+import { type FC, type PropsWithChildren, createContext, useEffect } from 'react'
 
 import { logger } from '@sourcegraph/common'
 
@@ -10,15 +10,18 @@ export const TemporarySettingsContext = createContext<TemporarySettingsStorage>(
 )
 TemporarySettingsContext.displayName = 'TemporarySettingsContext'
 
+interface TemporarySettingsProviderProps {
+    temporarySettingsStorage: TemporarySettingsStorage
+}
+
 /**
  * React context provider for the temporary settings.
  * The web app needs to be wrapped around this.
  */
-export const TemporarySettingsProvider: React.FunctionComponent<
-    React.PropsWithChildren<{
-        temporarySettingsStorage: TemporarySettingsStorage
-    }>
-> = ({ children, temporarySettingsStorage }) => {
+export const TemporarySettingsProvider: FC<PropsWithChildren<TemporarySettingsProviderProps>> = ({
+    children,
+    temporarySettingsStorage,
+}) => {
     // On first run, migrate the settings from the local storage to the temporary storage.
     useEffect(() => {
         const migrate = async (): Promise<void> => {

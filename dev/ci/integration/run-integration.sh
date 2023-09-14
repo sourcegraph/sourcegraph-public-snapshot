@@ -59,7 +59,7 @@ function cleanup() {
     # This command will fail, so our last step will be expanded. We don't want
     # to expand "docker cleanup" so we add in a dummy section.
     echo "--- integration test failed"
-    echo "See integration test section for test runner logs, and uploaded artefacts for server logs."
+    echo "See integration test section for test runner logs, and uploaded artifacts for server logs."
   fi
 }
 trap cleanup EXIT

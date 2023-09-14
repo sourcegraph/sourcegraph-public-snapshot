@@ -1,5 +1,5 @@
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
-import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 import { getBrowserName } from '@sourcegraph/common'
@@ -10,7 +10,7 @@ import {
     isSharedSpanName,
     SharedSpanName,
     sharedSpanStore,
-    ReadWriteSpan,
+    type ReadWriteSpan,
 } from '../sdk'
 
 export enum ClientAttributes {

@@ -7,26 +7,26 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -95,7 +95,7 @@ func combyChunkMatchesToFileMatch(combyMatch *comby.FileMatchWithChunks) protoco
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			Content: cm.Content,
+			Content: strings.ToValidUTF8(cm.Content, "�"),
 			ContentStart: protocol.Location{
 				Offset: int32(cm.Start.Offset),
 				Line:   int32(cm.Start.Line) - 1,
@@ -189,7 +189,7 @@ func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 			// NOTE: we must copy the content here because the reference
 			// must not outlive the backing mmap, which may be cleaned
 			// up before the match is serialized for the network.
-			Content: string(buf[firstLineStart:lastLineEnd]),
+			Content: string(bytes.ToValidUTF8(buf[firstLineStart:lastLineEnd], []byte("�"))),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,
 				Line:   chunk.cover.Start.Line,
@@ -396,15 +396,8 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "structuralSearch", repo.Attr())
+	defer tr.EndWithErr(&err)
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
@@ -415,7 +408,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	if v, ok := paths.(subset); ok {
 		filePatterns = v
 	}
-	span.LogFields(otlog.Int("paths", len(filePatterns)))
+	tr.AddEvent("calculated paths", attribute.Int("paths", len(filePatterns)))
 
 	args := comby.Args{
 		Input:         inputType,
@@ -486,12 +479,18 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 	})
 
 	if err := cmd.Start(); err != nil {
+		// Help cleanup pool resources.
+		_ = stdin.Close()
+		_ = stdout.Close()
+
 		return errors.Wrap(err, "start comby")
 	}
 
 	// Wait for readers and writers to complete before calling Wait
 	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
+		// Cleanup process since we called Start.
+		go killAndWait(cmd)
 		return err
 	}
 
@@ -546,12 +545,18 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	})
 
 	if err := cmd.Start(); err != nil {
+		// Help cleanup pool resources.
+		_ = stdin.Close()
+		_ = stdout.Close()
+
 		return errors.Wrap(err, "start comby")
 	}
 
 	// Wait for readers and writers to complete before calling Wait
 	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
+		// Cleanup process since we called Start.
+		go killAndWait(cmd)
 		return err
 	}
 
@@ -560,6 +565,18 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	}
 
 	return nil
+}
+
+// killAndWait is a helper to kill a started cmd and release its resources.
+// This is used when returning from a function after calling Start but before
+// calling Wait. This can be called in a goroutine.
+func killAndWait(cmd *exec.Cmd) {
+	proc := cmd.Process
+	if proc == nil {
+		return
+	}
+	_ = proc.Kill()
+	_ = cmd.Wait()
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

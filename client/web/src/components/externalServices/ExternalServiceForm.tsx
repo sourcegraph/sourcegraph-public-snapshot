@@ -1,7 +1,11 @@
-import React, { useCallback } from 'react'
+import React, { type ReactNode, useCallback, useMemo } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import AJV from 'ajv'
+import addFormats from 'ajv-formats'
+import { parse } from 'jsonc-parser'
+
+import type { ErrorLike } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
@@ -14,14 +18,15 @@ import {
     ErrorMessage,
     Form,
     ButtonLink,
+    Label,
 } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceInput } from '../../graphql-operations'
+import type { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
-import { AddExternalServiceOptions } from './externalServices'
+import type { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, TelemetryProps {
     input: AddExternalServiceInput
@@ -37,7 +42,11 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     autoFocus?: boolean
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    additionalFormComponent?: ReactNode
 }
+
+const ajv = new AJV({ strict: false, $comment: true })
+addFormats(ajv)
 
 /**
  * Form for submitting a new or updated external service.
@@ -59,6 +68,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocus = true,
+    additionalFormComponent,
 }) => {
     const isLightTheme = useIsLightTheme()
     const onDisplayNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
@@ -67,13 +77,21 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
         },
         [input, onChange]
     )
-
     const onConfigChange = useCallback(
         (config: string): void => {
             onChange({ ...input, config })
         },
         [input, onChange]
     )
+    const validate = useMemo(() => ajv.compile(jsonSchema), [jsonSchema])
+    const configValid = useMemo<boolean>(() => {
+        if (input.config) {
+            const config = parse(input.config)
+            return validate(config)
+        }
+        return false
+    }, [input.config, validate])
+
     const disabled = externalServicesFromFile && !allowEditExternalServicesWithFile
 
     return (
@@ -90,7 +108,8 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
             {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             {hideDisplayNameField || (
-                <div className="form-group">
+                <Label className="w-100">
+                    <Text className="mb-2">Display name</Text>
                     <Input
                         id="test-external-service-form-display-name"
                         required={true}
@@ -101,12 +120,12 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                         value={input.displayName}
                         onChange={onDisplayNameChange}
                         disabled={loading || disabled}
-                        label="Display name:"
                         className="mb-0"
                     />
-                </div>
+                </Label>
             )}
-            <div className="form-group">
+            {additionalFormComponent && <>{additionalFormComponent}</>}
+            <div className="form-group mt-3">
                 <DynamicallyImportedMonacoSettingsEditor
                     // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
                     // if it thinks the config is dirty. We want to always replace the config if the kind changes
@@ -114,6 +133,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     value={input.config}
                     jsonSchema={jsonSchema}
                     canEdit={false}
+                    controlled={true}
                     loading={loading}
                     height={350}
                     readOnly={disabled}
@@ -145,7 +165,10 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                         </Button>
                     </div>
                     <div className="ml-1">
-                        <ButtonLink to={`/site-admin/external-services/${externalServiceID}`} variant="secondary">
+                        <ButtonLink
+                            to={`/site-admin/external-services/${encodeURIComponent(externalServiceID ?? '')}`}
+                            variant="secondary"
+                        >
                             Cancel
                         </ButtonLink>
                     </div>
@@ -154,11 +177,11 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                 <Button
                     type="submit"
                     className="test-add-external-service-button"
-                    disabled={loading || disabled}
+                    disabled={loading || disabled || !configValid}
                     variant="primary"
                 >
                     {loading && <LoadingSpinner />}
-                    {submitName ?? 'Add repositories'}
+                    {submitName ?? 'Add connection'}
                 </Button>
             )}
         </Form>

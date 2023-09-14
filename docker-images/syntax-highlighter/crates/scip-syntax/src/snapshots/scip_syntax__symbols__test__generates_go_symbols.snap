@@ -1,0 +1,50 @@
+---
+source: crates/scip-syntax/src/symbols.rs
+expression: dumped
+---
+  package symbolexample
+//        ^^^^^^^^^^^^^ definition(Package) scip-ctags symbolexample/
+  
+  import (
+   "github.com/sourcegraph/sourcegraph/schema"
+  )
+  
+  func AuthProviderType(p schema.AuthProviders) string {
+//     ^^^^^^^^^^^^^^^^ definition(Function) scip-ctags symbolexample/AuthProviderType().
+//                               ^^^^^^^^^^^^^ reference scip-ctags schema/AuthProviders#
+//                                              ^^^^^^ reference scip-ctags string#
+   switch {
+   case p.Builtin != nil:
+    return p.Builtin.Type
+   case p.Gitlab != nil:
+    return p.Gitlab.Type
+   default:
+    return ""
+   }
+  }
+  
+  func authAllowSignup(c *Unified) bool {
+//     ^^^^^^^^^^^^^^^ definition(Function) scip-ctags symbolexample/authAllowSignup().
+//                        ^^^^^^^ reference scip-ctags Unified#
+//                                 ^^^^ reference scip-ctags bool#
+   for _, p := range c.AuthProviders {
+    if p.Builtin != nil && p.Builtin.AllowSignup {
+     return true
+    }
+   }
+   return false
+  }
+  
+  func MadeUp() SomeSymbol {}
+//     ^^^^^^ definition(Function) scip-ctags symbolexample/MadeUp().
+//              ^^^^^^^^^^ reference scip-ctags SomeSymbol#
+  
+  func CallsAFunction() bool {
+//     ^^^^^^^^^^^^^^ definition(Function) scip-ctags symbolexample/CallsAFunction().
+//                      ^^^^ reference scip-ctags bool#
+   x := DoSomething()
+//      ^^^^^^^^^^^ reference scip-ctags DoSomething().
+   y := pkg.DoSomething()
+//          ^^^^^^^^^^^ reference scip-ctags pkg/DoSomething().
+  }
+

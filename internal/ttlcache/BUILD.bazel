@@ -1,0 +1,18 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ttlcache",
+    srcs = ["cache.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/ttlcache",
+    visibility = ["//:__subpackages__"],
+    deps = ["@com_github_sourcegraph_log//:log"],
+)
+
+go_test(
+    name = "ttlcache_test",
+    timeout = "short",
+    srcs = ["cache_test.go"],
+    embed = [":ttlcache"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

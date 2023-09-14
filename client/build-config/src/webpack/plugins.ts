@@ -2,7 +2,7 @@ import path from 'path'
 
 import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import webpack, { StatsOptions } from 'webpack'
+import webpack, { type StatsOptions } from 'webpack'
 
 import { STATIC_ASSETS_PATH } from '../paths'
 
@@ -22,9 +22,9 @@ export const getProvidePlugin = (): webpack.ProvidePlugin =>
         // Adding the file extension is necessary to make importing this file
         // work inside JavaScript modules. The alternative is to set
         // `fullySpecified: false` (https://webpack.js.org/configuration/module/#resolvefullyspecified).
-        process: 'process/browser.js',
+        process: require.resolve('process/browser.js'),
         // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
-        Buffer: ['buffer', 'Buffer'],
+        Buffer: [require.resolve('buffer/index.js'), 'Buffer'],
     })
 
 const STATOSCOPE_STATS: StatsOptions = {

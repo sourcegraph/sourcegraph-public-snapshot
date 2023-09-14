@@ -1,11 +1,11 @@
 import { cloneDeep } from 'lodash'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, type Observable } from 'rxjs'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SearchQueryState } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SearchQueryState } from '@sourcegraph/shared/src/search'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
-import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
+import { type LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 
 /**
  * One state machine that lives in Core

@@ -4,7 +4,7 @@ import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
-import { SiteAdminAreaRoute } from './SiteAdminArea'
+import type { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
 const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')
@@ -34,16 +34,21 @@ const SiteAdminConfigurationPage = lazyComponent(
     'SiteAdminConfigurationPage'
 )
 const SiteAdminSettingsPage = lazyComponent(() => import('./SiteAdminSettingsPage'), 'SiteAdminSettingsPage')
+const SiteAdminOnboardingTourPage = lazyComponent(
+    () => import('./SiteAdminOnboardingTourPage'),
+    'SiteAdminOnboardingTourPage'
+)
 const SiteAdminExternalServicesArea = lazyComponent(
     () => import('./SiteAdminExternalServicesArea'),
     'SiteAdminExternalServicesArea'
 )
+const SiteAdminGitHubAppsArea = lazyComponent(() => import('./SiteAdminGitHubAppsArea'), 'SiteAdminGitHubAppsArea')
 const SiteAdminRepositoriesPage = lazyComponent(
     () => import('./SiteAdminRepositoriesPage'),
     'SiteAdminRepositoriesPage'
 )
 const SiteAdminOrgsPage = lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
-const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
+export const UsersManagement = lazyComponent(() => import('./UserManagement'), 'UsersManagement')
 const AccessRequestsPage = lazyComponent(() => import('./AccessRequestsPage'), 'AccessRequestsPage')
 
 const SiteAdminCreateUserPage = lazyComponent(() => import('./SiteAdminCreateUserPage'), 'SiteAdminCreateUserPage')
@@ -76,8 +81,8 @@ const OutboundWebhooksPage = lazyComponent(
     () => import('./outbound-webhooks/OutboundWebhooksPage'),
     'OutboundWebhooksPage'
 )
-const CreatePage = lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage')
-const EditPage = lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage')
+const OutgoingWebhookCreatePage = lazyComponent(() => import('./outbound-webhooks/CreatePage'), 'CreatePage')
+const OutgoingWebhookEditPage = lazyComponent(() => import('./outbound-webhooks/EditPage'), 'EditPage')
 const SiteAdminWebhooksPage = lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage')
 const SiteAdminWebhookCreatePage = lazyComponent(
     () => import('./SiteAdminWebhookCreatePage'),
@@ -93,8 +98,9 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     'SiteAdminWebhookUpdatePage'
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
+const GitserversPageProps = lazyComponent(() => import('./SiteAdminGitserversPage'), 'SiteAdminGitserversPage')
 
-export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
         render: () => <AnalyticsOverviewPage />,
@@ -118,10 +124,12 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/code-insights',
         render: () => <AnalyticsCodeInsightsPage />,
+        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
         path: '/analytics/batch-changes',
         render: () => <AnalyticsBatchChangesPage />,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/analytics/notebooks',
@@ -136,6 +144,15 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminSettingsPage {...props} />,
     },
     {
+        path: '/end-user-onboarding',
+        render: props => <SiteAdminOnboardingTourPage {...props} />,
+        condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
+    },
+    {
+        path: '/github-apps/*',
+        render: props => <SiteAdminGitHubAppsArea {...props} />,
+    },
+    {
         path: '/external-services/*',
         render: props => <SiteAdminExternalServicesArea {...props} />,
     },
@@ -148,18 +165,9 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminOrgsPage {...props} />,
     },
     {
-        path: '/users',
-        render: () => <UsersManagement />,
-    },
-    {
-        path: '/access-requests',
+        path: '/account-requests',
         render: () => <AccessRequestsPage />,
-        condition: context =>
-            checkRequestAccessAllowed(
-                context.isSourcegraphDotCom,
-                window.context.allowSignup,
-                window.context.experimentalFeatures
-            ),
+        condition: () => checkRequestAccessAllowed(window.context),
     },
     {
         path: '/users/new',
@@ -206,36 +214,36 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminFeatureFlagConfigurationPage {...props} />,
     },
     {
-        path: '/outbound-webhooks',
+        path: '/webhooks/outgoing',
         render: props => <OutboundWebhooksPage {...props} />,
     },
     {
-        path: '/outbound-webhooks/create',
-        render: props => <CreatePage {...props} />,
+        path: '/webhooks/outgoing/create',
+        render: props => <OutgoingWebhookCreatePage {...props} />,
     },
     {
-        path: '/outbound-webhooks/:id',
-        render: props => <EditPage {...props} />,
+        path: '/webhooks/outgoing/:id',
+        render: props => <OutgoingWebhookEditPage {...props} />,
     },
     {
-        path: '/webhooks',
+        path: '/webhooks/incoming',
         render: props => <SiteAdminWebhooksPage {...props} />,
     },
     {
-        path: '/webhooks/create',
+        path: '/webhooks/incoming/create',
         render: props => <SiteAdminWebhookCreatePage {...props} />,
     },
     {
-        path: '/webhooks/:id',
+        path: '/webhooks/incoming/:id',
         render: props => <SiteAdminWebhookPage {...props} />,
+    },
+    {
+        path: '/webhooks/incoming/:id/edit',
+        render: props => <SiteAdminWebhookUpdatePage {...props} />,
     },
     {
         path: '/slow-requests',
         render: props => <SiteAdminSlowRequestsPage {...props} />,
-    },
-    {
-        path: '/webhooks/:id/edit',
-        render: props => <SiteAdminWebhookUpdatePage {...props} />,
     },
     {
         path: '/packages',
@@ -246,4 +254,18 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/permissions-syncs',
         render: props => <PermissionsSyncJobsTable {...props} />,
     },
+    {
+        path: '/gitservers',
+        render: props => <GitserversPageProps {...props} />,
+    },
+]
+
+const siteAdminUserManagementRoute: SiteAdminAreaRoute = {
+    path: '/users',
+    render: () => <UsersManagement isEnterprise={false} renderAssignmentModal={() => null} />,
+}
+
+export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+    ...otherSiteAdminRoutes,
+    siteAdminUserManagementRoute,
 ]

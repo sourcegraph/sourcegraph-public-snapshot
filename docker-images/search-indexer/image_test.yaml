@@ -1,0 +1,56 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "zoekt-sourcegraph-indexserver is runnable"
+    command: "zoekt-sourcegraph-indexserver"
+    args:
+      - --help
+  - name: "zoekt-archive-index is runnable"
+    command: "zoekt-archive-index"
+    args:
+      - --help
+  - name: "zoekt-git-index is runnable"
+    command: "zoekt-git-index"
+    args:
+      - --version
+
+  - name: "git is runnable"
+    command: "git"
+    args:
+      - version
+  - name: "ctags is runnable"
+    command: "universal-ctags"
+    args:
+      - --version
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+
+fileExistenceTests:
+# zoekt-merge-index doesn't have any arguments we can use for testing
+- name: '/usr/local/bin/zoekt-merge-index'
+  path: '/usr/local/bin/zoekt-merge-index'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/data/index'
+  path: '/data/index'
+  shouldExist: true
+  uid: 100
+  gid: 101
+  permissions: 'drwxr-xr-x'
+- name: 'jansson package'
+  path: 'usr/lib/libjansson.la'
+  shouldExist: true
+
+metadataTest:
+  envVars:
+    - key: SRC_FRONTEND_INTERNAL
+      value: 'http://sourcegraph-frontend-internal'
+    - key: DATA_DIR
+      value: '/data/index'

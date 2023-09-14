@@ -2,8 +2,8 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
-import { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
+import type { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'

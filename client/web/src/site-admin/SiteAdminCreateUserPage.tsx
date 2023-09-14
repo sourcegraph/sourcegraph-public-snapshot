@@ -9,7 +9,7 @@ import { Button, Link, Label, H2, Text, ErrorAlert, Form } from '@sourcegraph/wi
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { PageTitle } from '../components/PageTitle'
-import { CreateUserResult } from '../graphql-operations'
+import type { CreateUserResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'

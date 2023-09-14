@@ -1,11 +1,8 @@
-import { useMemo } from 'react'
-
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import type { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { getFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
-import { FuzzyTabKey } from './FuzzyTabs'
+import { useFuzzyFinderFeatureFlags } from './FuzzyFinderFeatureFlag'
+import type { FuzzyTabKey } from './FuzzyTabs'
 
 interface FuzzyShortcut {
     name: FuzzyTabKey
@@ -13,11 +10,8 @@ interface FuzzyShortcut {
     shortcut: KeyboardShortcut | undefined
 }
 
-export function useFuzzyShortcuts(settings?: SettingsCascadeOrError<Settings>['final']): FuzzyShortcut[] {
-    const { fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols } = useMemo(
-        () => getFuzzyFinderFeatureFlags(settings),
-        [settings]
-    )
+export function useFuzzyShortcuts(): FuzzyShortcut[] {
+    const { fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols } = useFuzzyFinderFeatureFlags()
     const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
     const fuzzyFinderActionsShortcut = useKeyboardShortcut('fuzzyFinderActions')
     const fuzzyFinderReposShortcut = useKeyboardShortcut('fuzzyFinderRepos')

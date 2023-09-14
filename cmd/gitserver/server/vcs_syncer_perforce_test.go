@@ -99,7 +99,7 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 			name:     "empty error message",
 			errorMsg: "",
 			command: &exec.Cmd{
-				Args: []string{"p4", "ping", "-c", "1"},
+				Args: []string{"p4", "login", "-s"},
 			},
 			expectedMsg: "",
 		},
@@ -107,7 +107,7 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 			name:     "error message without phrase to replace",
 			errorMsg: "Some error",
 			command: &exec.Cmd{
-				Args: []string{"p4", "ping", "-c", "1"},
+				Args: []string{"p4", "login", "-s"},
 			},
 			expectedMsg: "Some error",
 		},
@@ -125,11 +125,11 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 		},
 		{
 			name:     "error message with phrase to replace, valid input Cmd",
-			errorMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nYou don't have permission for this operation.",
+			errorMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nPerforce password (P4PASSWD) invalid or unset.",
 			command: &exec.Cmd{
-				Args: []string{"p4", "ping", "-c", "1"},
+				Args: []string{"p4", "login", "-s"},
 			},
-			expectedMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nYou don't have permission for `p4 ping -c 1`.",
+			expectedMsg: "error cloning repo: repo perforce/path/to/depot not cloneable: exit status 1 (output follows)\n\nPerforce password (P4PASSWD) invalid or unset.",
 		},
 	}
 

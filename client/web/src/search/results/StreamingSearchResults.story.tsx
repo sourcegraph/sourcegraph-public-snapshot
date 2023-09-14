@@ -1,9 +1,9 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_LONG_REQUEST,
@@ -11,11 +11,11 @@ import {
     REPO_MATCH_RESULTS_WITH_METADATA,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import { useNavbarQueryState } from '../../stores'
 
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import { StreamingSearchResults, type StreamingSearchResultsProps } from './StreamingSearchResults'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
@@ -54,6 +54,7 @@ const defaultProps: StreamingSearchResultsProps = {
     searchContextsEnabled: true,
     searchAggregationEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
 }
 
 const decorator: DecoratorFn = Story => {
@@ -288,6 +289,38 @@ export const ServerSideAlertNoResults: Story = () => {
 }
 
 ServerSideAlertNoResults.storyName = 'server-side alert with no results'
+
+export const ServerSideAlertUnownedResults: Story = () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'complete',
+        results: [],
+        filters: [],
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
+            skipped: [],
+        },
+        alert: {
+            proposedQueries: [],
+            kind: 'unowned-results',
+            title: 'Some results have no owners',
+            description:
+                'For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://docs.sourcegraph.com/own).',
+        },
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                    <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />
+                </SearchQueryStateStoreProvider>
+            )}
+        </WebStory>
+    )
+}
+
+ServerSideAlertUnownedResults.storyName = 'server-side alert with unowned results'
 
 export const ErrorWithNoResults: Story = () => {
     const result: AggregateStreamingSearchResults = {

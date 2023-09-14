@@ -1,19 +1,19 @@
 import {
-    Ref,
+    type Ref,
     forwardRef,
     useRef,
-    ReactNode,
-    ReactElement,
-    InputHTMLAttributes,
-    MouseEvent,
-    PropsWithChildren,
+    type ReactNode,
+    type ReactElement,
+    type InputHTMLAttributes,
+    type MouseEvent,
+    type PropsWithChildren,
     createContext,
     useContext,
-    KeyboardEvent,
-    FocusEvent,
+    type KeyboardEvent,
+    type FocusEvent,
     useState,
     useCallback,
-    HTMLAttributes,
+    type HTMLAttributes,
     useMemo,
     useLayoutEffect,
 } from 'react'
@@ -21,15 +21,15 @@ import {
 import { mdiClose } from '@mdi/js'
 import { useComboboxContext } from '@reach/combobox'
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import { noop, sortBy } from 'lodash'
 import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useMeasure } from '../../hooks'
 import { Button } from '../Button'
-import { Input, InputStatus } from '../Form'
+import { Input, type InputStatus } from '../Form'
 import { Icon } from '../Icon'
-import { PopoverContent, Position, TetherInstanceAPI } from '../Popover'
+import { createRectangle, PopoverContent, Position, type TetherInstanceAPI } from '../Popover'
 
 import {
     Combobox,
@@ -38,8 +38,8 @@ import {
     ComboboxOptionGroup,
     ComboboxOption,
     ComboboxOptionText,
-    ComboboxProps,
-    ComboboxOptionProps,
+    type ComboboxProps,
+    type ComboboxOptionProps,
 } from './Combobox'
 
 import styles from './MultiCombobox.module.scss'
@@ -59,8 +59,9 @@ interface MultiComboboxContextData<T> {
 
     // Public api props shared via context
     selectedItems: T[]
-    getItemName: (item: T) => string
+    getItemName: (item: T) => ReactNode
     getItemKey: (item: T) => string | number
+    getItemIsPermanent: (item: T) => boolean
     onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
@@ -78,20 +79,33 @@ const MultiComboboxContext = createContext<MultiComboboxContextData<any>>({
     selectedItems: [],
     getItemName: () => '',
     getItemKey: () => '',
+    getItemIsPermanent: () => false,
     onSelectedItemsChange: noop,
 })
 
 export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     selectedItems: T[]
-    getItemName: (item: T) => string
+    getItemName: (item: T) => ReactNode
     getItemKey: (item: T) => string | number
+    /**
+     * Permanent items can never be unselected. They will appear first in the
+     * MultiComboboxInput list.
+     */
+    getItemIsPermanent?: (item: T) => boolean
     className?: string
     children: ReactNode | ReactNode[]
     onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
 export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
-    const { selectedItems, getItemKey, getItemName, onSelectedItemsChange, ...attributes } = props
+    const {
+        selectedItems,
+        getItemKey,
+        getItemName,
+        getItemIsPermanent = () => false,
+        onSelectedItemsChange,
+        ...attributes
+    } = props
 
     const suggestItemsRef = useRef<T[]>([])
     const [tether, setTether] = useState<TetherInstanceAPI | null>(null)
@@ -145,6 +159,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
             selectedItems,
             getItemKey,
             getItemName,
+            getItemIsPermanent,
             onSelectedItemsChange: handleSelectedItemsChange,
             onItemSelect: handleSelectItem,
         }),
@@ -159,6 +174,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
             selectedItems,
             getItemKey,
             getItemName,
+            getItemIsPermanent,
             handleSelectedItemsChange,
             handleSelectItem,
         ]
@@ -173,9 +189,13 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
 
 interface MultiComboboxInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: InputStatus | `${InputStatus}`
+    getPillContent?: (item: any) => ReactNode
 }
 
-export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInputProps>((props, reference) => {
+export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInputProps>(function MultiComboboxInput(
+    props,
+    reference
+) {
     const { value = '', ...attributes } = props
 
     return (
@@ -194,12 +214,13 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
 interface MultiValueInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: InputStatus | `${InputStatus}`
     byPassValue: string
+    getPillContent?: (item: any) => ReactNode
 }
 
 // Forward ref doesn't support function components with generic,
 // so we have to cast a proper FC types with generic props
-const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLInputElement>) => {
-    const { onKeyDown, onFocus, onBlur, byPassValue, value, className, ...attributes } = props
+const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInputProps, ref: Ref<HTMLInputElement>) {
+    const { getPillContent, onKeyDown, onFocus, onBlur, byPassValue, value, className, ...attributes } = props
 
     const {
         setInputElement,
@@ -207,17 +228,30 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
         selectedItems,
         getItemKey,
         getItemName,
+        getItemIsPermanent,
         onSelectedItemsChange,
         onItemSelect,
     } = useContext(MultiComboboxContext)
     const { navigationValue } = useComboboxContext()
+
+    // Permanent items should be always first in the list, so that the user can still use
+    // the backspace key to delete items up until these ones.
+    const orderedSelectedItems = useMemo(
+        () => sortBy(selectedItems, item => (getItemIsPermanent(item) ? 1 : 2)),
+        [selectedItems, getItemIsPermanent]
+    )
 
     const inputRef = useMergeRefs<HTMLInputElement>([ref])
     const listRef = useMergeRefs<HTMLUListElement>([setInputElement])
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         if (byPassValue === '' && event.key === Key.Backspace) {
-            onSelectedItemsChange(selectedItems.slice(0, -1))
+            // If the next item is permanent, stop removing items.
+            const nextItem = orderedSelectedItems[orderedSelectedItems.length - 1]
+            if (getItemIsPermanent(nextItem)) {
+                return
+            }
+            onSelectedItemsChange(orderedSelectedItems.slice(0, -1))
 
             // Prevent any single combobox UI state machine updates
             return
@@ -237,8 +271,8 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
     }
 
     const handleItemDelete = (deletedItem: unknown, index: number): void => {
-        const isLastElementDeleted = index === selectedItems.length - 1
-        const newSelectedItems = selectedItems.filter(item => getItemKey(item) !== getItemKey(deletedItem))
+        const isLastElementDeleted = index === orderedSelectedItems.length - 1
+        const newSelectedItems = orderedSelectedItems.filter(item => getItemKey(item) !== getItemKey(deletedItem))
 
         if (isLastElementDeleted) {
             // If it was the last element pill move focus to the editor
@@ -265,18 +299,25 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
 
     return (
         <ul ref={listRef} className={styles.root}>
-            {selectedItems.map((item, index) => (
+            {orderedSelectedItems.map((item, index) => (
                 <li key={getItemKey(item)} data-multibox-pill={true} className={styles.pill}>
-                    <span className={styles.pillText}>{getItemName(item)}</span>
-                    <Button
-                        type="button"
-                        variant="icon"
-                        className={styles.removePill}
-                        onClick={() => handleItemDelete(item, index)}
-                        onMouseDown={event => event.preventDefault()}
-                    >
-                        <Icon svgPath={mdiClose} aria-label="deselect item" />
-                    </Button>
+                    {getPillContent ? (
+                        getPillContent(item)
+                    ) : (
+                        <span className={styles.pillText}>{getItemName(item)}</span>
+                    )}
+
+                    {getItemIsPermanent(item) ? null : (
+                        <Button
+                            type="button"
+                            variant="icon"
+                            className={styles.removePill}
+                            onClick={() => handleItemDelete(item, index)}
+                            onMouseDown={event => event.preventDefault()}
+                        >
+                            <Icon svgPath={mdiClose} aria-label="deselect item" />
+                        </Button>
+                    )}
                 </li>
             ))}
             <Input
@@ -293,8 +334,14 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
     )
 })
 
-export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): ReactElement {
-    const { className, style, ...attributes } = props
+const POPOVER_TARGET_PADDING = createRectangle(0, 0, 2, 2)
+
+interface MultiComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
+    syncWidth?: boolean
+}
+
+export function MultiComboboxPopover(props: PropsWithChildren<MultiComboboxPopoverProps>): ReactElement {
+    const { syncWidth = true, className, style, ...attributes } = props
     const { inputElement, isPopoverOpen, tether, setTether } = useContext(MultiComboboxContext)
 
     const [, { width: inputWidth }] = useMeasure(inputElement, 'boundingRect')
@@ -311,7 +358,8 @@ export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTM
             position={Position.bottomStart}
             focusLocked={false}
             returnTargetFocus={false}
-            style={{ minWidth: inputWidth, ...style }}
+            targetPadding={POPOVER_TARGET_PADDING}
+            style={{ minWidth: syncWidth ? inputWidth : undefined, ...style }}
             className={classNames(styles.popover, className)}
             onTetherCreate={setTether}
         />

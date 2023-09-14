@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
-import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import { DiffHunkLineType, type FileDiffHunkFields } from '../../graphql-operations'
 
 import { DiffHunk } from './DiffHunk'
 

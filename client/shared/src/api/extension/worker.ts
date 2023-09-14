@@ -1,10 +1,13 @@
 // eslint-disable-next-line import/extensions
 import { Subscription } from 'rxjs'
 
-import { EndpointPair, ClosableEndpointPair } from '../../platform/context'
+import type { EndpointPair, ClosableEndpointPair } from '../../platform/context'
 
-// eslint-disable-next-line import/extensions
-import ExtensionHostWorker from './main.worker.ts'
+/* eslint-disable import/extensions, @typescript-eslint/ban-ts-comment */
+// @ts-ignore
+import ExtensionHostWorker from './main.worker'
+
+/* eslint-enable import/extensions, @typescript-eslint/ban-ts-comment */
 
 /**
  * Creates a web worker with the extension host and sets up a bidirectional MessageChannel-based communication channel.

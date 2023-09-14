@@ -24,6 +24,8 @@ type PullRequestPayload struct {
 	Body   string `json:"body"`
 	Draft  bool   `json:"draft"`
 
+	Labels []Label `json:"labels"`
+
 	ReviewComments int `json:"review_comments"`
 
 	Merged   bool        `json:"merged"`
@@ -33,6 +35,10 @@ type PullRequestPayload struct {
 
 	Base RefPayload `json:"base"`
 	Head RefPayload `json:"head"`
+}
+
+type Label struct {
+	Name string `json:"name"`
 }
 
 type UserPayload struct {

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "tracking-issue_lib",
@@ -38,6 +39,7 @@ go_binary(
 
 go_test(
     name = "tracking-issue_test",
+    timeout = "short",
     srcs = ["main_test.go"],
     data = glob(["testdata/**"]),
     embed = [":tracking-issue_lib"],

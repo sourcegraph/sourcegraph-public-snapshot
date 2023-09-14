@@ -2,6 +2,8 @@ package grpc
 
 import (
 	"context"
+	"fmt"
+	"runtime/debug"
 
 	"github.com/sourcegraph/log"
 
@@ -20,7 +22,7 @@ func NewStreamPanicCatcher(logger log.Logger) grpc.StreamServerInterceptor {
 			if val := recover(); val != nil {
 				err = newPanicErr(val)
 				logger.Error(
-					"caught panic",
+					fmt.Sprintf("caught panic: %s", string(debug.Stack())),
 					log.String("method", info.FullMethod),
 					log.Error(err),
 				)
@@ -37,7 +39,7 @@ func NewUnaryPanicCatcher(logger log.Logger) grpc.UnaryServerInterceptor {
 			if val := recover(); val != nil {
 				err = newPanicErr(val)
 				logger.Error(
-					"caught panic",
+					fmt.Sprintf("caught panic: %s", string(debug.Stack())),
 					log.String("method", info.FullMethod),
 					log.Error(err),
 				)

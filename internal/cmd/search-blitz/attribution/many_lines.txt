@@ -1,0 +1,17 @@
+func run(ctx context.Context, wg *sync.WaitGroup, env string) {
+	defer wg.Done()
+
+	bc, err := newClient()
+	if err != nil {
+		panic(err)
+	}
+
+	sc, err := newStreamClient()
+	if err != nil {
+		panic(err)
+	}
+
+	config, err := loadQueries(env)
+	if err != nil {
+		panic(err)
+	}

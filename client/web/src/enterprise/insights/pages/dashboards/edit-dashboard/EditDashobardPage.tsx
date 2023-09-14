@@ -1,4 +1,4 @@
-import { FC, useContext, useMemo } from 'react'
+import { type FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -11,7 +11,7 @@ import {
     PageHeader,
     useObservable,
     Link,
-    SubmissionErrors,
+    type SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -20,8 +20,8 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon, CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
-    CustomInsightDashboard,
-    InsightsDashboardOwner,
+    type CustomInsightDashboard,
+    type InsightsDashboardOwner,
     InsightsDashboardOwnerType,
     isGlobalOwner,
     isPersonalOwner,
@@ -29,7 +29,7 @@ import {
     useInsightDashboard,
 } from '../../../core'
 import {
-    DashboardCreationFields,
+    type DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from '../creation/components/InsightsDashboardCreationContent'
 
@@ -38,7 +38,7 @@ import styles from './EditDashboardPage.module.scss'
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: FC = () => {
+export const EditDashboardPage: FC = props => {
     const navigate = useNavigate()
     const { dashboardId } = useParams()
 

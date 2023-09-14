@@ -108,8 +108,10 @@ func newDB(logger log.Logger, t testing.TB, name string, schemas ...*schemas.Sch
 	return newFromDSN(logger, t, name)
 }
 
-var onceByNameMap = map[string]*sync.Once{}
-var onceByNameMutex sync.Mutex
+var (
+	onceByNameMap   = map[string]*sync.Once{}
+	onceByNameMutex sync.Mutex
+)
 
 func onceByName(name string) *sync.Once {
 	onceByNameMutex.Lock()
@@ -157,7 +159,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 	t.Cleanup(func() {
 		defer db.Close()
 
-		if t.Failed() {
+		if t.Failed() && os.Getenv("CI") != "true" {
 			t.Logf("DATABASE %s left intact for inspection", dbname)
 			return
 		}
@@ -228,6 +230,12 @@ func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.S
 	t.Helper()
 	db, err := connections.NewTestDB(t, logger, cfg.String(), schemas...)
 	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") && os.Getenv("BAZEL_TEST") == "1" {
+			t.Fatalf(`failed to connect to database %q: %s
+PROTIP: Ensure the below is part of the go_test rule in BUILD.bazel
+  tags = ["requires-network"]
+See https://docs.sourcegraph.com/dev/background-information/bazel/faq#tests-fail-with-connection-refuse`, cfg, err)
+		}
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
 	return db

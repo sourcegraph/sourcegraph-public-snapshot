@@ -6,11 +6,11 @@ import { noop } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import {
+import type { AuthenticatedUser } from '../../../auth'
+import type {
     BatchChangeFields,
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,
@@ -85,27 +85,47 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         CreateBatchSpecFromRawVariables
     >(CREATE_BATCH_SPEC_FROM_RAW)
 
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(
-        authenticatedUser,
-        batchChange?.namespace.id || initialNamespaceID
-    )
-
-    // When creating a batch change we want to disable the `Create` button, to avoid user's clicking
-    // on it again.
+    // When creating a batch change we want to disable the `Create` button, to avoid
+    // users clicking on it again.
     const isButtonDisabled = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError
 
-    // The namespace selected for creating the new batch change under.
+    // The set of namespaces the user has permissions to create batch changes in, and the
+    // namespace among those that should be selected by default.
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(authenticatedUser, initialNamespaceID)
+
+    // If the user is creating a new batch change, this is the namespace selected.
     const [selectedNamespace, setSelectedNamespace] = useState<
         Pick<UserSettingFields, 'id'> | Pick<OrgSettingFields, 'id'>
     >(defaultSelectedNamespace)
+
+    // If the batch change already exists and we're in read-only mode, the namespace it
+    // was created in is the only one we care about showing in the selector. The current
+    // viewer may or may not have permissions to create batch changes in this namespace,
+    // so it's important that we don't necessarily include it for the non-read-only
+    // version.
+    const namespaceSelector = isReadOnly ? (
+        <NamespaceSelector
+            namespaces={[batchChange.namespace]}
+            selectedNamespace={batchChange.namespace.id}
+            onSelect={noop}
+            disabled={true}
+        />
+    ) : (
+        <NamespaceSelector
+            namespaces={namespaces}
+            selectedNamespace={selectedNamespace.id}
+            onSelect={setSelectedNamespace}
+        />
+    )
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
 
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setNameInput(event.target.value)
-        setIsNameValid(NAME_PATTERN.test(event.target.value))
+        const newName = event.target.value.replaceAll(' ', '-')
+        setNameInput(newName)
+        setIsNameValid(NAME_PATTERN.test(newName))
     }, [])
 
     const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()
@@ -167,12 +187,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     </Alert>
                 )}
                 {error && <ErrorAlert error={error} />}
-                <NamespaceSelector
-                    namespaces={namespaces}
-                    selectedNamespace={selectedNamespace.id}
-                    onSelect={setSelectedNamespace}
-                    disabled={isReadOnly}
-                />
+                {namespaceSelector}
                 <Input
                     label="Batch change name"
                     value={nameInput}

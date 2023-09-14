@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gocheckcompilerdirectives",
+    srcs = ["gocheckcompilerdirectives.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/gocheckcompilerdirectives",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "@com_4d63_gocheckcompilerdirectives//checkcompilerdirectives:go_default_library",
+    ],
+)

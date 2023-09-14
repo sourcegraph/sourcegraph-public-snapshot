@@ -1,0 +1,41 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "jaeger-all-in-one is runnable"
+    command: "jaeger-all-in-one"
+    args:
+      - --help
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "running as jaeger"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    expectedOutput: ["^10001"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: '/etc/jaeger/sampling_strategies.json'
+  path: '/etc/jaeger/sampling_strategies.json'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/tmp'
+  path: '/tmp'
+  shouldExist: true
+  uid: 10001
+  gid: 0
+  permissions: 'drwxr-xr-x'
+
+metadataTest:
+  envVars:
+    - key: QUERY_BASE_PATH
+      value: '/-/debug/jaeger'
+    - key: SAMPLING_STRATEGIES_FILE
+      value: '/etc/jaeger/sampling_strategies.json'

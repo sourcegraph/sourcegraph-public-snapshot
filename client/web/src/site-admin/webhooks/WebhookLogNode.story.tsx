@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 
 import { Container } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
-import { WebhookLogFields } from '../../graphql-operations'
+import type { WebhookLogFields } from '../../graphql-operations'
 
 import {
     webhookLogNode,

@@ -1,11 +1,11 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
-import { ListNotebooksResult } from '../../graphql-operations'
+import type { ListNotebooksResult } from '../../graphql-operations'
 
 import { NotebooksListPage } from './NotebooksListPage'
 

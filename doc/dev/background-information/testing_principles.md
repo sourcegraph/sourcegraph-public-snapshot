@@ -19,7 +19,10 @@ Engineers should budget an appropriate amount of time for ensuring [test plans](
 
 **All pull requests must provide test plans** that indicate what has been done to test the changes being introduced. This can be done with a "Test plan" section within a pull request's description.
 
-Some pull requests may not require a rigorous test plan—see [Exceptions](#exceptions).
+These plans are here to demonstrate we're complying with industry standards which are critical for our customers. They may be read by auditors, customers, who are seeking to understand if with we uphold these standards. 
+Therefore, it's perfectly fine to be succint as long as the substance is here. And because the audience for these test plans are engineers, they will understand the context. Changing a README for example can simply covered by stating you rendered it locally and it was fine.
+
+Some pull requests may not require a rigorous test plan in certain situations, see [Exceptions](#exceptions).
 
 ## Types of tests
 
@@ -37,7 +40,7 @@ The testing pyramid is a helpful way to determine the most appropriate type of t
 
 ![Testing pyramid](testing-pyramid.svg)
 
-The closer a test is to the bottom, the larger the scope of that test is. It means that failures will be harder to link to the actual cause. Tests at the bottom are notoriously slower than at the top.
+The closer a test is to the top, the larger the scope of that test is. It means that failures will be harder to link to the actual cause. Tests at the top are notoriously slower than at the bottom.
 
 It's important to take these trade-offs into account when deciding at which level to implement a test. Please refer to each testing level below for more details.
 
@@ -124,6 +127,12 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
 
 If for a situational reason, a pull request needs to be exempted from the testing guidelines, skipping reviews or not providing a [test plan](#test-plans) will trigger an automated process that create and link an issue requesting that the author document a reason for the exception within [sourcegraph/sec-pr-audit-trail](https://github.com/sourcegraph/sec-pr-audit-trail).
 
+### Why does it matter?
+
+In order to comply with industry standards that we share with our customers, we have to demonstrate that even when we're deviating from the standard process we're taking the necessary actions. This exception process is what gives us the flexibility to deal with edge cases when the normal process would slow us down to land some changes that we need to be merged right now. This automated exception mechanism gives us flexibility rather than forcing us to blindly comply with the process even if the situation clearly requires to go around it. 
+
+Remember that auditors may look at these exception explanations, and might eventually ask you about what happened exactly six month from now. It's a small price to pay for a bit of flexibility. The created issues contains example on how to explain the most common scenarios to help you write a good explanation.
+
 ### Fixed exceptions
 
 The list below designates source code exempt from the testing guidelines because they do not directly impact the behaviour of the application in any way.
@@ -146,6 +155,9 @@ For these PRs a review may not be required. This can be indicated by creating a 
 No review required: deploys tested changes.
 ```
 
+Or, you may also attach `automerge` or `no-review-required` label to the PR to indicate the status of the PR and include a normal test plan without the `No review required:` prefix.
+
+
 ## Test health
 
 ### Failures on the `main` branch
@@ -161,6 +173,13 @@ Why are flaky tests undesirable? Because these tests stop being an informative s
 When fixing a flaky test, make sure to re-run the test in a loop to assess whether the fix actually worked. ([Go example](languages/testing_go_code.md#verifying-fixes-to-flaky-tests))
 
 Other kinds of flakes include [flaky steps](ci/index.md#flaky-steps) and [flaky infrastructure](ci/index.md#laky-infrastructure)
+
+#### Analytics about flakes 
+
+Our pipeline exports test results to Buildkite Test Analytics. Rather than doing it at the individual test level, we record them at the test suite level (Bazel test targets). Therefore, any kind of test suite running with Bazel is recorded. 
+You can find the statistics for all targets in the [`sourcegraph-bazel`](https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main) dashboard. 
+
+These numbers are extremely useful to prioritize work toward making a test suite more stable: you can instantly see if a test suite is failing often and costs time to every engineer, or if that's a rare occurence.
 
 ## Ownership
 

@@ -7,8 +7,8 @@ export TEMPLATES="${SCRIPT_ROOT}/templates"
 
 set -euo pipefail
 
-export P4USER="${P4USER:-"admin"}"                   # the name of the Perforce superuser that the script will use to create the depot
-export P4PORT="${P4PORT:-"perforce.sgdev.org:1666"}" # the address of the Perforce server to connect to
+export P4USER="${P4USER:-"admin"}"                         # the name of the Perforce superuser that the script will use to create the depot
+export P4PORT="${P4PORT:-"perforce-tests.sgdev.org:1666"}" # the address of the Perforce server to connect to
 
 export DEPOT_NAME="${DEPOT_NAME:-"integration-test-depot"}" # the name of the depot that the script will create on the server
 export P4CLIENT="${P4CLIENT:-"integration-test-client"}"    # the name of the temporary client that the script will use while it creates the depot
@@ -109,12 +109,12 @@ delete_perforce_client() {
 }
 
 # ensure that user is logged into the Perforce server
-if ! p4 ping &>/dev/null; then
+if ! p4 login -s &>/dev/null; then
   handbook_link="https://handbook.sourcegraph.com/departments/ce-support/support/process/p4-enablement/#generate-a-session-ticket"
   address="${P4USER}:${P4PORT}"
 
   cat <<END
-'p4 ping' command failed. This indicates that you might not be logged into '$address'.
+'p4 login -s' command failed. This indicates that you might not be logged into '$address'.
 Try using 'p4 -u ${P4USER} login -a' to generate a session ticket.
 See '${handbook_link}' for more information.
 END

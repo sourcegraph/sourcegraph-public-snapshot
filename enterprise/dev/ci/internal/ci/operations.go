@@ -1,9 +1,7 @@
 package ci
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -24,13 +21,13 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept  bool
-	MinimumUpgradeableVersion  string
-	ClientLintOnlyChangedFiles bool
-	ForceReadyForReview        bool
-	// for addWebApp
+	ChromaticShouldAutoAccept bool
+	MinimumUpgradeableVersion string
+	ForceReadyForReview       bool
+	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
+	IsMainBranch         bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -43,15 +40,20 @@ type CoreTestOperationsOptions struct {
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
-func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
+func CoreTestOperations(buildOpts bk.BuildOptions, diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
 
-	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if diff.Has(changed.GraphQL) {
-		linterOps.Append(addGraphQLLint)
+	// If the only thing that has change is the Client Jetbrains, then we skip:
+	// - BazelOperations
+	// - Sg Lint
+	if diff.Only(changed.ClientJetbrains) {
+		return ops
 	}
+
+	// Simple, fast-ish linter checks
+	ops.Append(BazelOperations(buildOpts, opts.IsMainBranch)...)
+	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
@@ -60,43 +62,13 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	if diff.Has(changed.Client | changed.GraphQL) {
 		// If there are any Graphql changes, they are impacting the client as well.
 		clientChecks := operations.NewNamedSet("Client checks",
-			clientIntegrationTests,
 			clientChromaticTests(opts),
-			frontendTests,                // ~4.5m
-			addWebApp(opts),              // ~5.5m
-			addBrowserExtensionUnitTests, // ~4.5m
-			addJetBrainsUnitTests,        // ~2.5m
-			addTypescriptCheck,           // ~4m
+			addWebAppEnterpriseBuild(opts),
+			addJetBrainsUnitTests, // ~2.5m
+			addVsceTests,          // ~3.0m
+			addStylelint,
 		)
-
-		if opts.ClientLintOnlyChangedFiles {
-			clientChecks.Append(addClientLintersForChangedFiles)
-		} else {
-			clientChecks.Append(addClientLintersForAllFiles)
-		}
-
 		ops.Merge(clientChecks)
-	}
-
-	if diff.Has(changed.Go | changed.GraphQL) {
-		// If there are any Graphql changes, they are impacting the backend as well.
-		ops.Merge(operations.NewNamedSet("Go checks",
-			addGoTests,
-			addGoBuild))
-	}
-
-	if diff.Has(changed.DatabaseSchema) {
-		// If there are schema changes, ensure the tests of the last minor release continue
-		// to succeed when the new version of the schema is applied. This ensures that the
-		// schema can be rolled forward pre-upgrade without negatively affecting the running
-		// instance (which was working fine prior to the upgrade).
-		ops.Merge(operations.NewNamedSet("DB backcompat tests",
-			addGoTestsBackcompat(opts.MinimumUpgradeableVersion)))
-	}
-
-	// CI script testing
-	if diff.Has(changed.CIScripts) {
-		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
 	}
 
 	return ops
@@ -129,18 +101,8 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
-		lintCachePath := "/root/buildkite/build/sourcegraph/.golangci-lint-cache"
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withPnpmCache(),
-			bk.Env("GOLANGCI_LINT_CACHE", lintCachePath),
-			buildkite.Cache(&bk.CacheOptions{
-				ID:                "golangci-lint",
-				Key:               "golangci-lint-{{ git.branch }}",
-				RestoreKeys:       []string{"golangci-lint-main"}, // We only restore the main branch cache.
-				Paths:             []string{".golangci-lint-cache"},
-				Compress:          true,
-				IgnorePullRequest: true,
-			}),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					IncludeNames: true,
@@ -150,35 +112,12 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	}
 }
 
-// Run enterprise/dev/ci/scripts tests
-func addCIScriptsTests(pipeline *bk.Pipeline) {
-	testDir := "./enterprise/dev/ci/scripts/tests"
-	files, err := os.ReadDir(testDir)
-	if err != nil {
-		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
-	}
-
-	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".sh" {
-			pipeline.AddStep(fmt.Sprintf(":bash: %s", f.Name()),
-				bk.RawCmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
-		}
-	}
-}
-
 // Adds the terraform scanner step.  This executes very quickly ~6s
 // func addTerraformScan(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
-//}
-
-// pnpm ~41s + ~1s
-func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:graphql"))
-}
+// }
 
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
@@ -187,30 +126,14 @@ func addTypescriptCheck(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/pnpm-run.sh build-ts"))
 }
 
-// Adds client linters to check all files.
-func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (all)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
-
+func addStylelint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-// Adds client linters to check changed in PR files.
-func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (changed)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:changed"))
-
-	pipeline.AddStep(":stylelint: Stylelint (changed)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:css:changed"))
-}
-
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+func addWebAppOSSBuild(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Webapp build
 		pipeline.AddStep(":webpack::globe_with_meridians: Build",
@@ -218,9 +141,11 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""))
+	}
+}
 
-		addWebEnterpriseBuild(pipeline, opts)
-
+func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
 		// Webapp tests
 		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
 			withPnpmCache(),
@@ -234,38 +159,30 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 }
 
 // Webapp enterprise build
-func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	branch := os.Getenv("BUILDKITE_BRANCH")
+func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		commit := os.Getenv("BUILDKITE_COMMIT")
 
-	cmds := []bk.StepOpt{
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("CHECK_BUNDLESIZE", "1"),
-		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
-	}
-
-	if opts.CacheBundleSize {
-		cmds = append(cmds,
+		cmds := []bk.StepOpt{
+			withPnpmCache(),
+			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "1"),
+			bk.Env("CHECK_BUNDLESIZE", "1"),
 			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			withBundleSizeCache(commit))
-	}
+			bk.Env("WEBPACK_EXPORT_STATS", "true"),
+		}
 
-	if opts.CreateBundleSizeDiff {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			bk.Env("BRANCH", branch),
-			bk.Env("COMMIT", commit),
-			bk.Cmd("dev/ci/report-bundle-diff.sh"),
-		)
-	}
+		if opts.CacheBundleSize {
+			cmds = append(cmds, withBundleSizeCache(commit))
+		}
 
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
+		if opts.CreateBundleSizeDiff {
+			cmds = append(cmds, bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"))
+		}
+
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
+	}
 }
 
 var browsers = []string{"chrome"}
@@ -275,15 +192,16 @@ func getParallelTestCount(webParallelTestCount int) int {
 }
 
 // Builds and tests the VS Code extensions.
-func addVsceIntegrationTests(pipeline *bk.Pipeline) {
+func addVsceTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode: Puppeteer tests for VS Code extension",
+		":vscode: Tests for VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run build:test"),
-		bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
-		bk.AutomaticRetry(1),
+		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
+		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
+		// bk.AutomaticRetry(1),
 	)
 }
 
@@ -344,7 +262,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 }
 
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
+	pipeline.AddStep(":java: Build (client/jetbrains)",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
@@ -434,120 +352,6 @@ func frontendTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Adds the Go test step.
-func addGoTests(pipeline *bk.Pipeline) {
-	buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
-		opts := []bk.StepOpt{
-			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
-			// Because we run tests concurrently, the following must hold to avoid connection issues:
-			//
-			//   GOMAXPROCS * TESTDB_MAXOPENCONNS < 200
-			//
-			// We aim a bit below the threshold to be safe.
-			bk.Env("GOMAXPROCS", "10"),
-			bk.Env("TESTDB_MAXOPENCONNS", "15"),
-			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
-		}
-		opts = append(opts, additionalOpts...)
-
-		pipeline.AddStep(
-			fmt.Sprintf(":go: Test (%s)", description),
-			opts...,
-		)
-	})
-}
-
-// Adds the Go backcompat test step.
-func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
-			pipeline.AddStep(
-				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
-				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-					Annotations: &bk.AnnotationOpts{},
-				}),
-			)
-		})
-	}
-}
-
-// buildGoTests invokes the given function once for each subset of tests that should
-// be run as part of complete coverage. The description will be the specific test path
-// broken out to be run independently (or "all"), and the testSuffix will be the string
-// to pass to go test to filter test packaes (e.g., "only <pkg>" or "exclude <pkgs...>").
-func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.StepOpt)) {
-	// This is a bandage solution to speed up the go tests by running the slowest ones
-	// concurrently. As a results, the PR time affecting only Go code is divided by two.
-
-	// These are the slow packages that we do not want to run twice (once with gRPC, once without).
-	slowGoTestPackagesNonGRPC := []string{
-		"github.com/sourcegraph/sourcegraph/internal/database",            // 253s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/database", // 94s
-	}
-
-	// These are the slow packages that we _do_ want to run twice (once with gRPC, once without).
-	slowGoTestPackagesGRPC := []string{
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
-		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
-		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
-		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
-	}
-
-	allSlowPackages := append(slowGoTestPackagesGRPC, slowGoTestPackagesGRPC...)
-	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
-
-	// Run all tests that aren't slow both with and without gRPC enabled
-	f("all", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")))
-	f("all (gRPC)", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")), enableGRPCEnvOpt)
-
-	// Run most slow packages both with and without gRPC
-	for _, slowPkg := range slowGoTestPackagesGRPC {
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")+" (gRPC)", "only "+slowPkg, enableGRPCEnvOpt)
-	}
-
-	// These packages won't benefit from duplicating the tests with gRPC enabled, so only run them once.
-	for _, slowPkg := range slowGoTestPackagesNonGRPC {
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
-	}
-}
-
-// Builds the OSS and Enterprise Go commands.
-func addGoBuild(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":go: Build",
-		bk.Cmd("./dev/ci/go-build.sh"),
-	)
-}
-
-// Adds backend integration tests step.
-//
-// Runtime: ~11m
-func backendIntegrationTests(candidateImageTag string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		for _, enableGRPC := range []bool{true, false} {
-			description := ":chains: Backend integration tests"
-			if enableGRPC {
-				description += " (gRPC)"
-			}
-			pipeline.AddStep(
-				description,
-				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey("server")),
-				bk.Env("IMAGE",
-					images.DevRegistryImage("server", candidateImageTag)),
-				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
-				bk.Cmd("dev/ci/integration/backend/run.sh"),
-				bk.ArtifactPaths("./*.log"))
-		}
-	}
-}
-
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
@@ -602,13 +406,22 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release a snapshot of App.
-func addAppSnapshotReleaseSteps(c Config) operations.Operation {
-	// TODO(sqs): Use goreleaser-pro nightly feature? Blocked on
-	// https://github.com/goreleaser/goreleaser-cross/issues/22.
-
-	// goreleaser requires that the version is semver-compatible
-	// (https://goreleaser.com/limitations/semver/). This is fine for now in alpha.
-	version := fmt.Sprintf("0.0.%d-snapshot+%s-%.6s", c.BuildNumber, c.Time.Format("20060102"), c.Commit)
+func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
+	// The version scheme we use for App is one of:
+	//
+	// * yyyy.mm.dd+$BUILDNUM.$COMMIT
+	// * yyyy.mm.dd-insiders+$BUILDNUM.$COMMIT
+	//
+	// We do not follow the Sourcegraph enterprise versioning scheme, because Sourcegraph App is
+	// released much more frequently than the enterprise versions by nature of being a desktop
+	// app.
+	//
+	// Also note that goreleaser requires the version is semver-compatible.
+	insidersStr := ""
+	if insiders {
+		insidersStr = "-insiders"
+	}
+	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
 
 	return func(pipeline *bk.Pipeline) {
 		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
@@ -645,6 +458,8 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
 		if version.Major() == 4 && version.Minor() == 0 {
 			previousMinorVersion = "3.43"
+		} else if version.Major() == 5 && version.Minor() == 0 {
+			previousMinorVersion = "4.5"
 		}
 
 		for _, branch := range []string{
@@ -666,7 +481,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::brain: Code Intel QA",
+		p.AddStep(":bazel::docker::brain: Code Intel QA",
 			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
 				ChannelName: "code-intel-buildkite",
@@ -676,6 +491,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -689,10 +505,10 @@ func codeIntelQA(candidateTag string) operations.Operation {
 
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::packer: Executors E2E",
+		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.DependsOn("bazel-push-images-candidate"),
+			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -705,25 +521,6 @@ func executorsE2E(candidateTag string) operations.Operation {
 			bk.Cmd("enterprise/dev/ci/integration/executors/run.sh"),
 			bk.ArtifactPaths("./*.log"),
 		)
-	}
-}
-
-func serverE2E(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":chromium: Sourcegraph E2E",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("DISPLAY", ":99"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
 
@@ -752,7 +549,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
@@ -835,13 +632,16 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			cmds = append(cmds,
 				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
 				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+		} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
+			// Building Docker image located under $REPO_ROOT/client/
+			cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
 				folder := app
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default
@@ -872,9 +672,19 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			// Retry in case of flakes when pushing
 			bk.AutomaticRetryStatus(3, 222),
 		)
-
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
 	}
+}
+
+// Run a Sonarcloud scanning step in Buildkite
+func sonarcloudScan() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(
+			"Sonarcloud Scan",
+			bk.Cmd("dev/ci/sonarcloud-scan.sh"),
+		)
+	}
+
 }
 
 // Ask trivy, a security scanning tool, to scan the candidate image
@@ -895,10 +705,25 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 	// this step.
 	vulnerabilityExitCode := 27
 
+	// For most images, waiting on the server is fine. But with the recent migration to Bazel,
+	// this can lead to confusing failures. This will be completely refactored soon.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/52833 for the ticket tracking
+	// the cleanup once we're out of the dual building process.
+	dependsOnImage := candidateImageStepKey("server")
+	if app == "syntax-highlighter" {
+		dependsOnImage = candidateImageStepKey("syntax-highlighter")
+	}
+	if app == "symbols" {
+		dependsOnImage = candidateImageStepKey("symbols")
+	}
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
-			bk.DependsOn(candidateImageStepKey(app)),
-
+			// These are the first images in the arrays we use to build images
+			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
+			bk.DependsOn(candidateImageStepKey("batcheshelper")),
+			bk.DependsOn(dependsOnImage),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 
 			// have trivy use a shorter name in its output
@@ -908,6 +733,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
+			bk.AutomaticRetryStatus(1, 1), // exit status 1 is what happens this flakes on container pulling
 
 			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
@@ -929,7 +755,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
@@ -998,10 +824,10 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 			stepOpts = append(stepOpts,
 				// Soft-fail with code 222 if nothing has changed
 				bk.SoftFail(222),
-				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
+				bk.Cmd(fmt.Sprintf("%s ./cmd/executor/hash.sh", compareHashScript)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/vm-image/build.sh"))
+			bk.Cmd("./cmd/executor/vm-image/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
@@ -1015,7 +841,7 @@ func buildExecutorBinary(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/build_binary.sh"))
+			bk.Cmd("./cmd/executor/build_binary.sh"))
 
 		pipeline.AddStep(":construction: Build executor binary", stepOpts...)
 	}
@@ -1040,7 +866,7 @@ func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
+			bk.Cmd("./cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
@@ -1055,7 +881,7 @@ func publishExecutorBinary(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/release_binary.sh"))
+			bk.Cmd("./cmd/executor/release_binary.sh"))
 
 		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
 	}
@@ -1087,7 +913,7 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
+			bk.Cmd("./cmd/executor/docker-mirror/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build docker registry mirror image", stepOpts...)
 	}
@@ -1104,56 +930,8 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
+			bk.Cmd("./cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
-	}
-}
-
-func uploadBuildeventTrace() operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":arrow_heading_up: Upload build trace",
-			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
-		)
-	}
-}
-
-func exposeBuildMetadata(c Config) (operations.Operation, error) {
-	overview := struct {
-		RunType      string       `json:"RunType"`
-		Version      string       `json:"Version"`
-		Diff         string       `json:"Diff"`
-		MessageFlags MessageFlags `json:"MessageFlags"`
-	}{
-		RunType:      c.RunType.String(),
-		Diff:         c.Diff.String(),
-		MessageFlags: c.MessageFlags,
-	}
-	data, err := json.Marshal(&overview)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(p *bk.Pipeline) {
-		p.AddStep(":memo::pipeline: Pipeline metadata",
-			bk.SoftFail(),
-			bk.Env("BUILD_METADATA", string(data)),
-			bk.AnnotatedCmd("dev/ci/gen-metadata-annotation.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{
-					Type:         bk.AnnotationTypeInfo,
-					IncludeNames: false,
-				},
-			}),
-		)
-	}, nil
-}
-
-// Request render.com to create client preview app for current PR
-// Preview is deleted from render.com in GitHub Action when PR is closed
-func prPreview() operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			bk.SoftFail(),
-			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }

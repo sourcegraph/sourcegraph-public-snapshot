@@ -26,7 +26,7 @@ docker exec -it codeintel-db psql -U sg #access codeintel-db container and run p
 
 The `frontend` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
 
-To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#docker--docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
+To execute the database migrations independently, follow the [docker-compose instructions on how to manually run database migrations](../../updates/migrator/migrator-operations.md#docker-compose). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
 ## Backup and restore
 
@@ -89,8 +89,8 @@ docker-compose -f db-only-migrate.docker-compose.yaml up -d
 5\. Generate the database dumps
 
 ```bash
-docker exec pgsql sh -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
-docker exec codeintel-db -c 'pg_dump -C --username sg sg' > codeintel_db.out
+docker exec pgsql sh -c 'pg_dump -C --clean --if-exists --username sg sg' > sourcegraph_db.out
+docker exec codeintel-db -c 'pg_dump -C --clean --if-exists --username sg sg' > codeintel_db.out
 ```
 
 6\. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location. 

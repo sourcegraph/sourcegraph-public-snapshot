@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { Link, H3, Badge, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { type ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import { BranchMerge } from '../../Branch'
 
 import { ChangesetLabel } from './ChangesetLabel'
@@ -35,15 +35,26 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<
     return (
         <div className={classNames('d-flex flex-column', className)}>
             <div className="m-0">
-                <H3 className={classNames('m-0 d-md-inline-block', { 'mr-2': node.labels.length > 0 })}>
+                <H3
+                    className={classNames('m-0 d-md-inline-block', {
+                        'mr-2': node.labels.length > 0 || node.commitVerification?.verified,
+                    })}
+                >
                     {changesetTitle}
                 </H3>
                 {node.labels.length > 0 && (
-                    <span className="d-block d-md-inline-block mr-2">
+                    <>
                         {node.labels.map(label => (
                             <ChangesetLabel label={label} key={label.text} />
                         ))}
-                    </span>
+                    </>
+                )}
+                {node.commitVerification?.verified && (
+                    <Tooltip content="This commit was signed and verified by the code host.">
+                        <Badge pill={true} className="mr-2">
+                            Verified
+                        </Badge>
+                    </Tooltip>
                 )}
             </div>
             <div>

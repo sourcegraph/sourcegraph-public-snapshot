@@ -1,16 +1,14 @@
-import { Remote } from 'comlink'
-import { from } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import type { Remote } from 'comlink'
 
-import { ExposedToClient, initMainThreadAPI } from '../api/client/mainthread-api'
-import { FlatExtensionHostAPI } from '../api/contract'
+import { type ExposedToClient, initMainThreadAPI } from '../api/client/mainthread-api'
+import type { FlatExtensionHostAPI } from '../api/contract'
 import { createExtensionHostAPI } from '../api/extension/extensionHostApi'
 import { createExtensionHostState } from '../api/extension/extensionHostState'
 import { pretendRemote, syncPromiseSubscription } from '../api/util'
-import { PlatformContext } from '../platform/context'
+import type { PlatformContext } from '../platform/context'
 import { isSettingsValid } from '../settings/settings'
 
-import { Controller } from './controller'
+import type { Controller } from './controller'
 
 export function createNoopController(platformContext: PlatformContext): Controller {
     const api: Promise<{
@@ -52,9 +50,7 @@ export function createNoopController(platformContext: PlatformContext): Controll
         })
     })
     return {
-        executeCommand: (parameters, suppressNotificationOnError) =>
-            api.then(({ exposedToClient }) => exposedToClient.executeCommand(parameters, suppressNotificationOnError)),
-        commandErrors: from(api).pipe(switchMap(({ exposedToClient }) => exposedToClient.commandErrors)),
+        executeCommand: parameters => api.then(({ exposedToClient }) => exposedToClient.executeCommand(parameters)),
         registerCommand: entryToRegister =>
             syncPromiseSubscription(
                 api.then(({ exposedToClient }) => exposedToClient.registerCommand(entryToRegister))

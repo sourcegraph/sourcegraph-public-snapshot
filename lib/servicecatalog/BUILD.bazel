@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "servicecatalog",
@@ -14,6 +15,7 @@ go_library(
 
 go_test(
     name = "servicecatalog_test",
+    timeout = "short",
     srcs = ["servicecatalog_test.go"],
     embed = [":servicecatalog"],
     deps = [

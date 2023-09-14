@@ -1,6 +1,6 @@
-import { DiffPart } from '@sourcegraph/codeintellify'
+import type { DiffPart } from '@sourcegraph/codeintellify'
 
-import { DOMFunctions } from '../shared/codeViews'
+import type { DOMFunctions } from '../shared/codeViews'
 
 const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement => {
     const lineNumberElement = codeView.querySelector<HTMLElement>(`[data-line-number="${line}"]`)
@@ -132,6 +132,10 @@ const newGetDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number
 
 export const newDiffDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => {
+        if (target.closest('.additional-line-content')) {
+            // ignore additional (non-code) content inside a diff line: comments, etc.
+            return null
+        }
         const container = target.closest<HTMLElement>('.diff-line')
         return container
     },

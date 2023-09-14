@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "lsif-index-tester_lib",
@@ -28,6 +29,7 @@ go_binary(
 
 go_test(
     name = "lsif-index-tester_test",
+    timeout = "short",
     srcs = ["range_differ_test.go"],
     embed = [":lsif-index-tester_lib"],
     deps = ["@com_github_google_go_cmp//cmp"],

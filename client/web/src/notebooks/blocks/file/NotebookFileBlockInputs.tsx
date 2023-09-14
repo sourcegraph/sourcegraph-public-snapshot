@@ -6,13 +6,13 @@ import { debounce } from 'lodash'
 
 import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
-import { PathMatch } from '@sourcegraph/shared/src/search/stream'
+import type { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
-import { BlockProps, FileBlockInput } from '../..'
-import { HighlightLineRange } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
+import type { BlockProps, FileBlockInput } from '../..'
+import type { HighlightLineRange } from '../../../graphql-operations'
 import { parseLineRange, serializeLineRange } from '../../serialize'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
@@ -28,7 +28,6 @@ interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'> {
     onLineRangeChange: (lineRange: HighlightLineRange | null) => void
     onFileSelected: (file: FileBlockInput) => void
     isSourcegraphDotCom: boolean
-    globbing: boolean
 }
 
 function getFileSuggestionsQuery(queryInput: string): string {
@@ -46,7 +45,7 @@ const editorAttributes = [
 
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
-> = ({ id, lineRange, onFileSelected, onLineRangeChange, globbing, isSourcegraphDotCom, ...inputProps }) => {
+> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, ...inputProps }) => {
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -99,11 +98,10 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         () =>
             createDefaultSuggestions({
                 isSourcegraphDotCom,
-                globbing,
                 fetchSuggestions: fetchStreamSuggestions,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     return (

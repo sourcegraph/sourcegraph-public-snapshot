@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { ModalVideo } from '@sourcegraph/branded'
 import { isExternalLink } from '@sourcegraph/common'
-import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { TourLanguage, type TourTaskStepType, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'

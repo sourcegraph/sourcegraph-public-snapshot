@@ -1,7 +1,7 @@
-import { Args, useMemo } from '@storybook/addons'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { type Args, useMemo } from '@storybook/addons'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { addDays, subDays } from 'date-fns'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -9,10 +9,10 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import {
-    ApplyPreviewStatsFields,
-    BatchSpecApplyPreviewConnectionFields,
-    BatchSpecFields,
-    ChangesetApplyPreviewFields,
+    type ApplyPreviewStatsFields,
+    type BatchSpecApplyPreviewConnectionFields,
+    type BatchSpecFields,
+    type ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'

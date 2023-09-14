@@ -1,4 +1,4 @@
-import { Series } from '../../../../types'
+import type { Series } from '../../../../types'
 import { isValidNumber } from '../data-guards'
 
 export enum SeriesType {

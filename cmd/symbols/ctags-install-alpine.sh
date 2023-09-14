@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# This script installs ctags within an alpine container.
+# This script installs universal-ctags within an alpine container.
 
 # Commit hash of github.com/universal-ctags/ctags.
 # Last bumped 2022-04-04.

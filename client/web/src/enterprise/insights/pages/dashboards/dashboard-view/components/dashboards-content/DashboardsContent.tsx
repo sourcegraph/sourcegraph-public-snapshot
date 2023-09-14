@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -6,12 +6,12 @@ import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { LimitedAccessLabel } from '../../../../../components'
-import { CustomInsightDashboard } from '../../../../../core'
+import { type GridApi, LimitedAccessLabel } from '../../../../../components'
+import type { CustomInsightDashboard } from '../../../../../core'
 import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
 import { AddInsightModal } from '../add-insight-modal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -38,6 +38,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const [copyURL, isCopied] = useCopyURLHandler()
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
+    const [dashboardGridApi, setDashboardGridApi] = useState<GridApi>()
 
     useEffect(() => telemetryService.logViewEvent('Insights'), [telemetryService])
     useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
@@ -59,6 +60,10 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
             }
             case DashboardMenuAction.CopyLink: {
                 copyURL()
+                return
+            }
+            case DashboardMenuAction.ResetGridLayout: {
+                dashboardGridApi?.resetGridLayout()
                 return
             }
         }
@@ -110,6 +115,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
                     telemetryService={telemetryService}
                     className={styles.insights}
                     onAddInsightRequest={() => setAddInsightsState(true)}
+                    onDashboardCreate={setDashboardGridApi}
                 />
             ) : (
                 <DashboardEmptyContent dashboards={dashboards} />

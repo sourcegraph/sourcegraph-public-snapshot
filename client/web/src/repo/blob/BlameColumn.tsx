@@ -2,9 +2,9 @@ import React, { useLayoutEffect } from 'react'
 
 import ReactDOM from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-import { ReplaySubject } from 'rxjs'
+import type { ReplaySubject } from 'rxjs'
 
-import { BlameHunk } from '../blame/useBlameHunks'
+import type { BlameHunk } from '../blame/useBlameHunks'
 
 import { BlameDecoration } from './BlameDecoration'
 

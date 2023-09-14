@@ -1,4 +1,4 @@
-import { Observable, Subject, Subscription } from 'rxjs'
+import { Observable, type Subject, Subscription } from 'rxjs'
 
 /**
  * commitIDFromPermalink finds the permalink element on the page and extracts
@@ -19,7 +19,7 @@ export function commitIDFromPermalink({ selector, hrefRegex }: { selector: strin
         )
     }
     const commitIDMatch = hrefRegex.exec(href)
-    if (!commitIDMatch || !commitIDMatch[1]) {
+    if (!commitIDMatch?.[1]) {
         throw new Error(
             `Unable to determine the commit ID (40 character hash) you're on because the permalink shortcut element's (query selector ${selector}) href is ${href}, which doesn't match the regex /${hrefRegex.source}/.`
         )

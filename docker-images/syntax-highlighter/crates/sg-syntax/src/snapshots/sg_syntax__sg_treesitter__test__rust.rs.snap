@@ -1,0 +1,727 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  #![allow(all)]
+  #![allow(unreachable_patterns)]
+//   ^^^^^ Identifier
+//         ^^^^^^^^^^^^^^^^^^^^ Identifier
+  
+  fn main() {
+//^^ Keyword
+//   ^^^^ IdentifierFunction
+      let mut vector = vec![1, 2, 3];
+//    ^^^ Keyword
+//        ^^^ Keyword
+//            ^^^^^^ Identifier
+//                     ^^^ IdentifierFunction
+//                        ^ IdentifierBuiltin
+//                          ^ NumericLiteral
+//                             ^ NumericLiteral
+//                                ^ NumericLiteral
+      // Destructuring assignment
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      let (first, second, third) = vector;
+//    ^^^ Keyword
+//         ^^^^^ Identifier
+//                ^^^^^^ Identifier
+//                        ^^^^^ Identifier
+//                                 ^^^^^^ Identifier
+      // Enum variant
+//    ^^^^^^^^^^^^^^^ Comment
+      let option = Some(5);
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                 ^^^^ IdentifierConstant
+//                      ^ NumericLiteral
+      // Match arm
+//    ^^^^^^^^^^^^ Comment
+      match option {
+//    ^^^^^ Keyword
+//          ^^^^^^ Identifier
+          Some(x) => println!("Got a value: {}", x),
+//        ^^^^ IdentifierConstant
+//             ^ Identifier
+//                   ^^^^^^^ IdentifierFunction
+//                          ^ IdentifierBuiltin
+//                            ^^^^^^^^^^^^^^^^^ StringLiteral
+//                                               ^ Identifier
+          None => println!("No value"),
+//        ^^^^ IdentifierConstant
+//                ^^^^^^^ IdentifierFunction
+//                       ^ IdentifierBuiltin
+//                         ^^^^^^^^^^ StringLiteral
+      }
+      // Loop
+//    ^^^^^^^ Comment
+      loop {
+//    ^^^^ Keyword
+          // If let
+//        ^^^^^^^^^ Comment
+          if let Some(x) = vector.pop() {
+//        ^^ Keyword
+//           ^^^ Keyword
+//               ^^^^ IdentifierConstant
+//                    ^ Identifier
+//                         ^^^^^^ Identifier
+//                                ^^^ IdentifierFunction
+              println!("Popped: {}", x);
+//            ^^^^^^^ IdentifierFunction
+//                   ^ IdentifierBuiltin
+//                     ^^^^^^^^^^^^ StringLiteral
+//                                   ^ Identifier
+          } else {
+//          ^^^^ Keyword
+              break;
+//            ^^^^^ Keyword
+          }
+      }
+      // While loop
+//    ^^^^^^^^^^^^^ Comment
+      while vector.len() > 0 {
+//    ^^^^^ Keyword
+//          ^^^^^^ Identifier
+//                 ^^^ IdentifierFunction
+//                         ^ NumericLiteral
+          vector.pop();
+//        ^^^^^^ Identifier
+//               ^^^ IdentifierFunction
+      }
+      // For loop
+//    ^^^^^^^^^^^ Comment
+      for num in 1..4 {
+//    ^^^ Keyword
+//        ^^^ Identifier
+//            ^^ Keyword
+//               ^ NumericLiteral
+//                  ^ NumericLiteral
+          println!("Counted to: {}", num);
+//        ^^^^^^^ IdentifierFunction
+//               ^ IdentifierBuiltin
+//                 ^^^^^^^^^^^^^^^^ StringLiteral
+//                                   ^^^ Identifier
+      }
+      // Closures
+//    ^^^^^^^^^^^ Comment
+      let square = |x| x * x;
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                  ^ Identifier
+//                     ^ Identifier
+//                       ^ IdentifierOperator
+//                         ^ Identifier
+      println!("3 squared is: {:?}", square(3));
+//    ^^^^^^^ IdentifierFunction
+//           ^ IdentifierBuiltin
+//             ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                   ^^^^^^ Identifier
+//                                          ^ NumericLiteral
+      // Structs
+//    ^^^^^^^^^^ Comment
+      struct Point {
+//    ^^^^^^ Keyword
+//           ^^^^^ IdentifierType
+          x: i32,
+//        ^ IdentifierConstant
+//           ^^^ IdentifierBuiltin
+          y: i32,
+//        ^ IdentifierConstant
+//           ^^^ IdentifierBuiltin
+      }
+      let origin = Point { x: 0, y: 0 };
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                 ^^^^^ IdentifierType
+//                         ^ IdentifierConstant
+//                            ^ NumericLiteral
+//                               ^ IdentifierConstant
+//                                  ^ NumericLiteral
+      // Methods
+//    ^^^^^^^^^^ Comment
+      impl Point {
+//    ^^^^ Keyword
+//         ^^^^^ IdentifierType
+          fn x(&self) -> i32 {
+//        ^^ Keyword
+//           ^ IdentifierFunction
+//             ^ IdentifierOperator
+//              ^^^^ IdentifierBuiltin
+//                       ^^^ IdentifierBuiltin
+              self.x
+//            ^^^^ IdentifierBuiltin
+//                 ^ IdentifierConstant
+          }
+      }
+      println!("Origin x: {}", origin.x());
+//    ^^^^^^^ IdentifierFunction
+//           ^ IdentifierBuiltin
+//             ^^^^^^^^^^^^^^ StringLiteral
+//                             ^^^^^^ Identifier
+//                                    ^ Identifier
+      // Associated functions
+//    ^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      impl Point {
+//    ^^^^ Keyword
+//         ^^^^^ IdentifierType
+          fn origin() -> Point {
+//        ^^ Keyword
+//           ^^^^^^ IdentifierFunction
+//                       ^^^^^ IdentifierType
+              Point { x: 0, y: 0 }
+//            ^^^^^ IdentifierType
+//                    ^ IdentifierConstant
+//                       ^ NumericLiteral
+//                          ^ IdentifierConstant
+//                             ^ NumericLiteral
+          }
+      }
+      let origin = Point::origin();
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                 ^^^^^ IdentifierType
+//                        ^^^^^^ IdentifierFunction
+  }
+  
+  // interfaces:
+//^^^^^^^^^^^^^^ Comment
+  trait Printable {
+//^^^^^ Keyword
+//      ^^^^^^^^^ IdentifierType
+      fn print(&self);
+//    ^^ Keyword
+//       ^^^^^ IdentifierFunction
+//             ^ IdentifierOperator
+//              ^^^^ IdentifierBuiltin
+  }
+  // Generics - Allows abstracting over types:
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fn largest<T: Ord>(list: &[T]) -> T {
+//^^ Keyword
+//   ^^^^^^^ IdentifierFunction
+//           ^ IdentifierType
+//              ^^^ IdentifierType
+//                   ^^^^ IdentifierParameter
+//                         ^ IdentifierOperator
+//                           ^ IdentifierType
+//                                  ^ IdentifierType
+      // ...
+//    ^^^^^^ Comment
+      return list[0];
+//    ^^^^^^ Keyword
+//           ^^^^ Identifier
+//                ^ NumericLiteral
+  }
+  
+  // Function
+//^^^^^^^^^^^ Comment
+  pub fn add(a: i32, b: i32) -> i32 {
+//^^^ Keyword
+//    ^^ Keyword
+//       ^^^ IdentifierFunction
+//           ^ IdentifierParameter
+//              ^^^ IdentifierBuiltin
+//                   ^ IdentifierParameter
+//                      ^^^ IdentifierBuiltin
+//                              ^^^ IdentifierBuiltin
+      a + b
+//    ^ Identifier
+//        ^ Identifier
+  }
+  
+  fn examples() {
+//^^ Keyword
+//   ^^^^^^^^ IdentifierFunction
+      // Crates and Cargo - For building, testing, and sharing crates of Rust code.
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      // Ownership - Each value has a single owning reference:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      let vec = Vec::new(); // vec owns the memory
+//    ^^^ Keyword
+//        ^^^ Identifier
+//              ^^^ IdentifierType
+//                   ^^^ IdentifierFunction
+//                          ^^^^^^^^^^^^^^^^^^^^^^ Comment
+      let elem = vec[0]; // elem borrows the memory
+//    ^^^ Keyword
+//        ^^^^ Identifier
+//               ^^^ Identifier
+//                   ^ NumericLiteral
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+      // Borrowing - Immutable or mutable non-owning references:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      let vec = vec![1, 2, 3];
+//    ^^^ Keyword
+//        ^^^ Identifier
+//              ^^^ IdentifierFunction
+//                 ^ IdentifierBuiltin
+//                   ^ NumericLiteral
+//                      ^ NumericLiteral
+//                         ^ NumericLiteral
+      let elem = &vec[0]; // immutable borrow
+//    ^^^ Keyword
+//        ^^^^ Identifier
+//               ^ IdentifierOperator
+//                ^^^ Identifier
+//                    ^ NumericLiteral
+//                        ^^^^^^^^^^^^^^^^^^^ Comment
+      let mut vec = vec![1, 2, 3];
+//    ^^^ Keyword
+//        ^^^ Keyword
+//            ^^^ Identifier
+//                  ^^^ IdentifierFunction
+//                     ^ IdentifierBuiltin
+//                       ^ NumericLiteral
+//                          ^ NumericLiteral
+//                             ^ NumericLiteral
+      let elem = &mut vec[0]; // mutable borrow
+//    ^^^ Keyword
+//        ^^^^ Identifier
+//               ^ IdentifierOperator
+//                ^^^ Keyword
+//                    ^^^ Identifier
+//                        ^ NumericLiteral
+//                            ^^^^^^^^^^^^^^^^^ Comment
+  }
+  
+  enum Weekend {
+//^^^^ Keyword
+//     ^^^^^^^ IdentifierType
+      Saturday,
+//    ^^^^^^^^ IdentifierConstant
+      Sunday(String, i32),
+//    ^^^^^^ IdentifierConstant
+//           ^^^^^^ IdentifierType
+//                   ^^^ IdentifierBuiltin
+  }
+  
+  fn use_enum() {
+//^^ Keyword
+//   ^^^^^^^^ IdentifierFunction
+      let saturday = Weekend::Saturday;
+//    ^^^ Keyword
+//        ^^^^^^^^ Identifier
+//                   ^^^^^^^ IdentifierType
+//                            ^^^^^^^^ IdentifierConstant
+      let sunday = Weekend::Sunday("Sunday".to_string(), 1);
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                 ^^^^^^^ IdentifierType
+//                          ^^^^^^ IdentifierConstant
+//                                 ^^^^^^^^ StringLiteral
+//                                          ^^^^^^^^^ IdentifierFunction
+//                                                       ^ NumericLiteral
+  }
+  
+  // Decorators
+//^^^^^^^^^^^^^ Comment
+  #[derive(Debug)]
+//  ^^^^^^ Identifier
+//         ^^^^^ IdentifierConstant
+  struct Point {
+//^^^^^^ Keyword
+//       ^^^^^ IdentifierType
+      x: i32,
+//    ^ IdentifierConstant
+//       ^^^ IdentifierBuiltin
+      y: i32,
+//    ^ IdentifierConstant
+//       ^^^ IdentifierBuiltin
+  }
+  
+  #[test]
+//  ^^^^ Identifier
+  fn it_works() {
+//^^ Keyword
+//   ^^^^^^^^ IdentifierFunction
+      let point = Point { x: 1, y: 2 };
+//    ^^^ Keyword
+//        ^^^^^ Identifier
+//                ^^^^^ IdentifierType
+//                        ^ IdentifierConstant
+//                           ^ NumericLiteral
+//                              ^ IdentifierConstant
+//                                 ^ NumericLiteral
+      assert_eq!(point.x, 1);
+//    ^^^^^^^^^ IdentifierFunction
+//             ^ IdentifierBuiltin
+//               ^^^^^ Identifier
+//                     ^ Identifier
+//                        ^ NumericLiteral
+  }
+  
+  // Macros
+//^^^^^^^^^ Comment
+  macro_rules! double {
+//^^^^^^^^^^^^ Keyword
+//             ^^^^^^ Identifier
+      ($x:expr) => {
+//     ^^ IdentifierAttribute
+//        ^^^^ IdentifierType
+          $x * 2
+//        ^^ IdentifierAttribute
+//           ^ IdentifierOperator
+//             ^ NumericLiteral
+      };
+  }
+  fn macro_example() {
+//^^ Keyword
+//   ^^^^^^^^^^^^^ IdentifierFunction
+      let result = double!(5);
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                 ^^^^^^ IdentifierFunction
+//                       ^ IdentifierBuiltin
+//                         ^ NumericLiteral
+      println!("Double is: {}", result);
+//    ^^^^^^^ IdentifierFunction
+//           ^ IdentifierBuiltin
+//             ^^^^^^^^^^^^^^^ StringLiteral
+//                              ^^^^^^ Identifier
+  }
+  
+  // Inline assembly example
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fn asmExample() {
+//^^ Keyword
+//   ^^^^^^^^^^ IdentifierFunction
+      let mut x = 0;
+//    ^^^ Keyword
+//        ^^^ Keyword
+//            ^ Identifier
+//                ^ NumericLiteral
+      unsafe {
+//    ^^^^^^ Keyword
+          asm!("add $0, $0, $1"
+//        ^^^ IdentifierFunction
+//           ^ IdentifierBuiltin
+//             ^^^^^^^^^^^^^^^^ StringLiteral
+              : "+r"(x)
+//              ^^^^ StringLiteral
+//                   ^ Identifier
+              : "r"(1)
+//              ^^^ StringLiteral
+//                  ^ NumericLiteral
+              : "cc"
+//              ^^^^ StringLiteral
+          );
+      }
+      println!("x is {}", x);
+//    ^^^^^^^ IdentifierFunction
+//           ^ IdentifierBuiltin
+//             ^^^^^^^^^ StringLiteral
+//                        ^ Identifier
+  }
+  
+  // Extern
+//^^^^^^^^^ Comment
+  extern "C" {
+//^^^^^^ Keyword
+//       ^^^ StringLiteral
+      fn say_hello();
+//    ^^ Keyword
+//       ^^^^^^^^^ IdentifierFunction
+  }
+  fn extern_example() {
+//^^ Keyword
+//   ^^^^^^^^^^^^^^ IdentifierFunction
+      unsafe {
+//    ^^^^^^ Keyword
+          say_hello();
+//        ^^^^^^^^^ IdentifierFunction
+      }
+  }
+  
+  // More macro + enum examples
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  macro_rules! m {
+//^^^^^^^^^^^^ Keyword
+//             ^ Identifier
+      ($expr:expr) => {
+//     ^^^^^ IdentifierAttribute
+//           ^^^^ IdentifierType
+          match $expr {
+//        ^^^^^ Keyword
+//              ^^^^^ IdentifierAttribute
+              foo => bar!(baz),
+//            ^^^ Identifier
+//                   ^^^ Identifier
+//                        ^^^ Identifier
+              _ => quux,
+//                 ^^^^ Identifier
+          }
+      };
+  }
+  enum FooBar {
+//^^^^ Keyword
+//     ^^^^^^ IdentifierType
+      BazQux(i32, &'static str),
+//    ^^^^^^ IdentifierConstant
+//           ^^^ IdentifierBuiltin
+//                ^ IdentifierOperator
+//                 ^ IdentifierOperator
+//                  ^^^^^^ IdentifierAttribute
+//                         ^^^ IdentifierBuiltin
+      QuxBaz(bool, (i32, char)),
+//    ^^^^^^ IdentifierConstant
+//           ^^^^ IdentifierBuiltin
+//                  ^^^ IdentifierBuiltin
+//                       ^^^^ IdentifierBuiltin
+  }
+  fn macro_enum_example() {
+//^^ Keyword
+//   ^^^^^^^^^^^^^^^^^^ IdentifierFunction
+      let slice = &[1, 2, 3];
+//    ^^^ Keyword
+//        ^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^ NumericLiteral
+//                     ^ NumericLiteral
+//                        ^ NumericLiteral
+      let foobar = m!(slice[0]);
+//    ^^^ Keyword
+//        ^^^^^^ Identifier
+//                 ^ IdentifierFunction
+//                  ^ IdentifierBuiltin
+//                    ^^^^^ Identifier
+//                          ^ NumericLiteral
+      match foobar {
+//    ^^^^^ Keyword
+//          ^^^^^^ Identifier
+          FooBar::BazQux(n, s) if n > 1 => println!("{}", s),
+//        ^^^^^^ IdentifierType
+//                ^^^^^^ IdentifierConstant
+//                       ^ Identifier
+//                          ^ Identifier
+//                             ^^ Keyword
+//                                ^ Identifier
+//                                    ^ NumericLiteral
+//                                         ^^^^^^^ IdentifierFunction
+//                                                ^ IdentifierBuiltin
+//                                                  ^^^^ StringLiteral
+//                                                        ^ Identifier
+          FooBar::QuxBaz(b, (n, c)) if b => println!("{}{}", n, c),
+//        ^^^^^^ IdentifierType
+//                ^^^^^^ IdentifierConstant
+//                       ^ Identifier
+//                           ^ Identifier
+//                              ^ Identifier
+//                                  ^^ Keyword
+//                                     ^ Identifier
+//                                          ^^^^^^^ IdentifierFunction
+//                                                 ^ IdentifierBuiltin
+//                                                   ^^^^^^ StringLiteral
+//                                                           ^ Identifier
+//                                                              ^ Identifier
+          _ => (),
+      }
+  }
+  
+  enum Expr {
+//^^^^ Keyword
+//     ^^^^ IdentifierType
+      Lit(i32),
+//    ^^^ IdentifierConstant
+//        ^^^ IdentifierBuiltin
+      Add(Box<Expr>, Box<Expr>),
+//    ^^^ IdentifierConstant
+//        ^^^ IdentifierType
+//            ^^^^ IdentifierType
+//                   ^^^ IdentifierType
+//                       ^^^^ IdentifierType
+      // Many more variants...
+//    ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  }
+  fn eval(expr: Expr) -> i32 {
+//^^ Keyword
+//   ^^^^ IdentifierFunction
+//        ^^^^ IdentifierParameter
+//              ^^^^ IdentifierType
+//                       ^^^ IdentifierBuiltin
+      match expr {
+//    ^^^^^ Keyword
+//          ^^^^ Identifier
+          Expr::Lit(n) => n,
+//        ^^^^ IdentifierType
+//              ^^^ IdentifierConstant
+//                  ^ Identifier
+//                        ^ Identifier
+          Expr::Add(lhs, rhs) => eval(*lhs) + eval(*rhs),
+//        ^^^^ IdentifierType
+//              ^^^ IdentifierConstant
+//                  ^^^ Identifier
+//                       ^^^ Identifier
+//                               ^^^^ IdentifierFunction
+//                                    ^ IdentifierOperator
+//                                     ^^^ Identifier
+//                                            ^^^^ IdentifierFunction
+//                                                 ^ IdentifierOperator
+//                                                  ^^^ Identifier
+          // Arms for Sub, Mul, Div, etc.
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+          Expr::FunctionCall(name, args) => {
+//        ^^^^ IdentifierType
+//              ^^^^^^^^^^^^ IdentifierConstant
+//                           ^^^^ Identifier
+//                                 ^^^^ Identifier
+              match name.as_str() {
+//            ^^^^^ Keyword
+//                  ^^^^ Identifier
+//                       ^^^^^^ IdentifierFunction
+                  "pow" => {
+//                ^^^^^ StringLiteral
+                      let base = eval(args[0]);
+//                    ^^^ Keyword
+//                        ^^^^ Identifier
+//                               ^^^^ IdentifierFunction
+//                                    ^^^^ Identifier
+//                                         ^ NumericLiteral
+                      let expo = eval(args[1]);
+//                    ^^^ Keyword
+//                        ^^^^ Identifier
+//                               ^^^^ IdentifierFunction
+//                                    ^^^^ Identifier
+//                                         ^ NumericLiteral
+                      base.pow(expo)
+//                    ^^^^ Identifier
+//                         ^^^ IdentifierFunction
+//                             ^^^^ Identifier
+                  } // More function cases...
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+              }
+          } // Even more variants...
+//          ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      }
+  }
+  
+  // Pattern matching examples
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  fn match_example() {
+//^^ Keyword
+//   ^^^^^^^^^^^^^ IdentifierFunction
+      let x = 42;
+//    ^^^ Keyword
+//        ^ Identifier
+//            ^^ NumericLiteral
+      // match - Match on enums, tuples, structs, etc.:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      match x {
+//    ^^^^^ Keyword
+//          ^ Identifier
+          foo => println!("Foo!"),
+//        ^^^ Identifier
+//               ^^^^^^^ IdentifierFunction
+//                      ^ IdentifierBuiltin
+//                        ^^^^^^ StringLiteral
+          bar => println!("Bar!"),
+//        ^^^ Identifier
+//               ^^^^^^^ IdentifierFunction
+//                      ^ IdentifierBuiltin
+//                        ^^^^^^ StringLiteral
+      }
+      // if let - Match and bind:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      if let foo = x {
+//    ^^ Keyword
+//       ^^^ Keyword
+//           ^^^ Identifier
+//                 ^ Identifier
+          println!("x is foo!");
+//        ^^^^^^^ IdentifierFunction
+//               ^ IdentifierBuiltin
+//                 ^^^^^^^^^^^ StringLiteral
+      }
+      // while let - Loop while a pattern matches:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      while let Some(x) = iter.next() {
+//    ^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^ IdentifierConstant
+//                   ^ Identifier
+//                        ^^^^ Identifier
+//                             ^^^^ IdentifierFunction
+          println!("{}", x);
+//        ^^^^^^^ IdentifierFunction
+//               ^ IdentifierBuiltin
+//                 ^^^^ StringLiteral
+//                       ^ Identifier
+      }
+      // for bindings in iterable - Destructure and loop:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      for (a, b) in pairs {
+//    ^^^ Keyword
+//         ^ Identifier
+//            ^ Identifier
+//               ^^ Keyword
+//                  ^^^^^ Identifier
+          println!("a: {}, b: {}", a, b);
+//        ^^^^^^^ IdentifierFunction
+//               ^ IdentifierBuiltin
+//                 ^^^^^^^^^^^^^^ StringLiteral
+//                                 ^ Identifier
+//                                    ^ Identifier
+      }
+      // let bindings = value - Destructure in a let statement:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      let (a, b) = (1, 2);
+//    ^^^ Keyword
+//         ^ Identifier
+//            ^ Identifier
+//                  ^ NumericLiteral
+//                     ^ NumericLiteral
+      // | (the "or" pattern) - Match multiple variants:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      match x {
+//    ^^^^^ Keyword
+//          ^ Identifier
+          foo | bar => println!("Foo or bar!"),
+//        ^^^ Identifier
+//              ^^^ Identifier
+//                     ^^^^^^^ IdentifierFunction
+//                            ^ IdentifierBuiltin
+//                              ^^^^^^^^^^^^^ StringLiteral
+          baz => println!("Baz!"),
+//        ^^^ Identifier
+//               ^^^^^^^ IdentifierFunction
+//                      ^ IdentifierBuiltin
+//                        ^^^^^^ StringLiteral
+      }
+      // _ to ignore bindings:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+      let (_a, b) = (1, 2); // Ignore the first element
+//    ^^^ Keyword
+//         ^^ Identifier
+//             ^ Identifier
+//                   ^ NumericLiteral
+//                      ^ NumericLiteral
+//                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+      for (a, b) in [1, 2, 3].iter().zip([4, 5, 6].iter()) {
+//    ^^^ Keyword
+//         ^ Identifier
+//            ^ Identifier
+//               ^^ Keyword
+//                   ^ NumericLiteral
+//                      ^ NumericLiteral
+//                         ^ NumericLiteral
+//                            ^^^^ IdentifierFunction
+//                                   ^^^ IdentifierFunction
+//                                        ^ NumericLiteral
+//                                           ^ NumericLiteral
+//                                              ^ NumericLiteral
+//                                                 ^^^^ IdentifierFunction
+          println!("a = {}, b = {}", a, b);
+//        ^^^^^^^ IdentifierFunction
+//               ^ IdentifierBuiltin
+//                 ^^^^^^^^^^^^^^^^ StringLiteral
+//                                   ^ Identifier
+//                                      ^ Identifier
+      }
+      let (a, b) = (1, 2);
+//    ^^^ Keyword
+//         ^ Identifier
+//            ^ Identifier
+//                  ^ NumericLiteral
+//                     ^ NumericLiteral
+  }
+

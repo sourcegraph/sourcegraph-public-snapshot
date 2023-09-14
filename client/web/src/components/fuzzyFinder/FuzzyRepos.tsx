@@ -1,15 +1,15 @@
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import gql from 'tagged-template-noop'
 
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
-import { FuzzyFinderRepoResult, FuzzyFinderRepoVariables } from '../../graphql-operations'
-import { UserHistory } from '../useUserHistory'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type { FuzzyFinderRepoResult, FuzzyFinderRepoVariables } from '../../graphql-operations'
+import type { UserHistory } from '../useUserHistory'
 
-import { FuzzyStorageCache, PersistableQueryResult } from './FuzzyLocalCache'
+import { FuzzyStorageCache, type PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
 
 export const FUZZY_REPOS_QUERY = gql`

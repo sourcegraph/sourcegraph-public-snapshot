@@ -1,8 +1,8 @@
-import * as sourcegraph from '../api'
-import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
+import type * as sourcegraph from '../api'
+import { queryGraphQL as sgQueryGraphQL, type QueryGraphQLFn } from '../util/graphql'
 import { parseGitURI } from '../util/uri'
 
-import { GenericLSIFResponse } from './api'
+import type { GenericLSIFResponse } from './api'
 
 export interface LocationConnectionNode {
     resource: {

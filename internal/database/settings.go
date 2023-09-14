@@ -149,11 +149,8 @@ func (o *settingsStore) GetLatestSchemaSettings(ctx context.Context, subject api
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
 func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
-	tr, ctx := trace.New(ctx, "database.Settings.ListAll", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "database.Settings.ListAll")
+	defer tr.EndWithErr(&err)
 
 	q := sqlf.Sprintf(`
 		WITH q AS (

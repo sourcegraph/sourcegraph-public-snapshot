@@ -1,0 +1,5 @@
+cody.version.inc
+bin/
+obj/
+.wix/
+.vs/

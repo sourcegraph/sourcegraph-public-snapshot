@@ -1,11 +1,11 @@
-import { Optional } from 'utility-types'
+import type { Optional } from 'utility-types'
 
-import { BatchChangeState } from '../../graphql-operations'
+import type { BatchChangeState } from '../../graphql-operations'
 
-import { DiffMode } from './diffMode'
-import { RecentSearch } from './recentSearches'
-import { SectionID, NoResultsSectionID } from './searchSidebar'
-import { TourListState } from './tourState'
+import type { DiffMode } from './diffMode'
+import type { RecentSearch } from './recentSearches'
+import type { SectionID, NoResultsSectionID } from './searchSidebar'
+import type { TourListState } from './tourState'
 
 // Prior to this type we store in settings list of MultiSelectState
 // we no longer use MultiSelect UI but for backward compatibility we still
@@ -50,19 +50,33 @@ export interface TemporarySettingsSchema {
         author: string
     }
     'search.results.collapseSmartSearch': boolean
+    'search.results.collapseUnownedResultsAlert': boolean
     'search.input.recentSearches': RecentSearch[]
+    /**
+     * Keeps track of which of the query examples shown as suggestions
+     * the user has used so that we don't suggest them anymore.
+     */
+    'search.input.usedExamples': string[]
     'search.input.usedInlineHistory': boolean
     // This is a temporary (no pun intended) setting to allow users to easily
     // switch been the current and the new search input. It's only used when
     // the feature flag `"searchQueryInput": "experimental"` is set.
     'search.input.experimental': boolean
-    // TODO #41002: Remove this temporary setting.
-    // This temporary setting is now turned on by default with no UI to toggle it off.
-    'coreWorkflowImprovements.enabled_deprecated': boolean
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
+    'app-setup.activeStepId': string
+    'own.panelExplanationHidden': boolean
+    'cody.showSidebar': boolean
+    'cody.blobPageCta.dismissed': boolean
+    'cody.searchPageCta.dismissed': boolean
+    'cody.chatPageCta.dismissed': boolean
+    'cody.survey.submitted': boolean
+    'app.codyStandalonePage.selectedRepo': string
+    'cody.contextCallout.dismissed': boolean
+    'admin.hasDismissedCodeHostPrivacyWarning': boolean
+    'simple.search.toggle': boolean
 }
 
 /**

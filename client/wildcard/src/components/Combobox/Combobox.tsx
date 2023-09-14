@@ -3,26 +3,26 @@ import {
     forwardRef,
     useContext,
     useState,
-    HTMLAttributes,
-    RefObject,
+    type HTMLAttributes,
+    type RefObject,
     useMemo,
     useRef,
     useEffect,
     useLayoutEffect,
-    InputHTMLAttributes,
+    type InputHTMLAttributes,
 } from 'react'
 
 import {
     Combobox as ReachCombobox,
-    ComboboxProps as ReachComboboxProps,
+    type ComboboxProps as ReachComboboxProps,
     ComboboxInput as ReachComboboxInput,
-    ComboboxInputProps as ReachComboboxInputProps,
+    type ComboboxInputProps as ReachComboboxInputProps,
     ComboboxPopover as ReachComboboxPopover,
-    ComboboxContextValue as ReachComboboxContextValue,
+    type ComboboxContextValue as ReachComboboxContextValue,
     ComboboxList as ReachComboboxList,
-    ComboboxListProps as ReachComboboxListProps,
+    type ComboboxListProps as ReachComboboxListProps,
     ComboboxOption as ReachComboboxOption,
-    ComboboxOptionProps as ReachComboboxOptionProps,
+    type ComboboxOptionProps as ReachComboboxOptionProps,
     ComboboxOptionText as ReachComboboxOptionText,
     useComboboxOptionContext,
     useComboboxContext,
@@ -31,10 +31,10 @@ import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useMeasure } from '../../hooks'
-import { ForwardReferenceComponent } from '../../types'
-import { Input, InputProps } from '../Form'
+import type { ForwardReferenceComponent } from '../../types'
+import { Input, type InputProps } from '../Form'
 import { PopoverContent, Position } from '../Popover'
-import { Heading, HeadingElement } from '../Typography'
+import { Heading, type HeadingElement } from '../Typography'
 
 import styles from './Combobox.module.scss'
 
@@ -62,7 +62,7 @@ export interface ComboboxProps extends ReachComboboxProps {}
  * Combobox UI wrapper over Reach UI combobox component https://reach.tech/combobox
  * In order to enforce Sourcegraph specific styles.
  */
-export const Combobox = forwardRef((props, ref) => {
+export const Combobox = forwardRef(function Combobox(props, ref) {
     const { children, className, ...attributes } = props
 
     // Store and share through combobox context combobox input HTML element
@@ -89,7 +89,7 @@ interface ComboboxInputProps
  * in order to get access to its ref value and share across all over other compound combobox
  * wrappers (for example: use input ref as Popover target in the {@link ComboboxPopover} component)
  */
-export const ComboboxInput = forwardRef((props, ref) => {
+export const ComboboxInput = forwardRef(function ComboboxInput(props, ref) {
     const { as: Component = Input, ...attributes } = props
 
     const { setInputRef } = useContext(ComboboxContext)
@@ -103,7 +103,7 @@ interface ComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
     open?: boolean
 }
 
-export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>((props, ref) => {
+export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(function ComboboxPopover(props, ref) {
     const { target, open, className, style, ...attributes } = props
 
     const { inputRef, isExpanded } = useContext(ComboboxContext)
@@ -160,7 +160,7 @@ const ComboboxListContext = createContext<ComboboxListContextData>({
 
 interface ComboboxListProps extends ReachComboboxListProps, HTMLAttributes<HTMLUListElement> {}
 
-export const ComboboxList = forwardRef<HTMLUListElement, ComboboxListProps>((props, ref) => {
+export const ComboboxList = forwardRef<HTMLUListElement, ComboboxListProps>(function ComboboxList(props, ref) {
     const { className, ...attributes } = props
 
     const mergedRefs = useMergeRefs([ref])
@@ -178,7 +178,7 @@ interface ComboboxOptionGroupProps {
     headingElement?: HeadingElement
 }
 
-export const ComboboxOptionGroup = forwardRef((props, ref) => {
+export const ComboboxOptionGroup = forwardRef(function ComboboxOptionGroup(props, ref) {
     const { heading, headingElement = 'h6', as: Component = 'div', className, children, ...attributes } = props
 
     return (
@@ -196,7 +196,7 @@ export interface ComboboxOptionProps extends ReachComboboxOptionProps {
     selected?: boolean
 }
 
-export const ComboboxOption = forwardRef((props, ref) => {
+export const ComboboxOption = forwardRef(function ComboboxOption(props, ref) {
     const { value, disabled, children, className, selected, ...attributes } = props
     const context = useComboboxOptionContext()
     const { navigationValue } = useComboboxContext()
@@ -240,7 +240,7 @@ export const ComboboxOption = forwardRef((props, ref) => {
             <li
                 ref={mergedRef}
                 data-option-disabled={true}
-                className={classNames(className, styles.item, styles.itemDisabled)}
+                className={classNames(className, styles.itemDisabled)}
                 {...attributes}
             >
                 {typeof children === 'function' ? children(context) : children ?? value}
@@ -249,12 +249,7 @@ export const ComboboxOption = forwardRef((props, ref) => {
     }
 
     return (
-        <ReachComboboxOption
-            ref={mergedRef}
-            value={value}
-            className={classNames(styles.item, className)}
-            {...attributes}
-        >
+        <ReachComboboxOption ref={mergedRef} value={value} className={className} {...attributes}>
             {children}
         </ReachComboboxOption>
     )

@@ -10,8 +10,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	ownsearch "github.com/sourcegraph/sourcegraph/internal/own/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -44,16 +44,22 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
-		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
-	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
-		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
+
+	if inputs.PatternType == query.SearchTypeKeyword {
+		if inputs.SearchMode == search.SmartSearch {
+			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
+		}
+
+		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
 		if err != nil {
 			return nil, err
 		}
-		if newJobTree != nil {
-			jobTree = newJobTree
-		}
+
+		jobTree = newJobTree
+	}
+
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
+		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	}
 
 	alertJob := NewAlertJob(inputs, jobTree)
@@ -87,13 +93,14 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// a basic query rather than first being expanded into
 		// flat queries.
 		resultTypes := computeResultTypes(b, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol, inputs.Features))
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
 		builder := &jobBuilder{
 			query:          b,
+			patternType:    inputs.PatternType,
 			resultTypes:    resultTypes,
 			repoOptions:    repoOptions,
 			features:       inputs.Features,
@@ -148,6 +155,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			_, _, own := isOwnershipSearch(b)
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
@@ -156,7 +164,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
 				Concurrency:          4,
 			})
 		}
@@ -181,13 +189,25 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 
 	{ // Apply file:contains.content() post-filter
 		if len(fileContainsPatterns) > 0 {
-			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+			var err error
+			basicJob, err = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners, ok := isOwnershipSearch(b, inputs.Features); ok {
-			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
+		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
+			basicJob = ownsearch.NewFileHasOwnersJob(basicJob, includeOwners, excludeOwners)
+		}
+	}
+
+	{ // Apply file:has.contributor() post-search filter
+		if includeContributors, excludeContributors, ok := isContributorSearch(b); ok {
+			includeRe := contributorsAsRegexp(includeContributors, b.IsCaseSensitive())
+			excludeRe := contributorsAsRegexp(excludeContributors, b.IsCaseSensitive())
+			basicJob = NewFileHasContributorsJob(basicJob, includeRe, excludeRe)
 		}
 	}
 
@@ -201,9 +221,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			if isSelectOwnersSearch(sp, inputs.Features) {
+			if isSelectOwnersSearch(sp) {
 				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-				basicJob = codeownershipjob.NewSelectOwners(basicJob)
+				basicJob = ownsearch.NewSelectOwnersJob(basicJob)
 			} else {
 				basicJob = NewSelectJob(sp, basicJob)
 			}
@@ -507,9 +527,9 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 	return pathRegexps
 }
 
-func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Features) int {
+func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// Temporary fix:
-	// If doing ownership search, we post-filter results so we may need more than
+	// If doing ownership or contributor search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
 	// sent down the stream.
 	//
@@ -519,13 +539,17 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Fe
 	// the stream once enough results have been consumed. We will revisit this
 	// post-Starship March 2023 as part of search performance improvements for
 	// ownership search.
-	if _, _, ok := isOwnershipSearch(b, features); ok {
+	if _, _, ok := isContributorSearch(b); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
+	if _, _, ok := isOwnershipSearch(b); ok {
 		// This is the int equivalent of count:all.
 		return query.CountAllLimit
 	}
 	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-		if isSelectOwnersSearch(sp, features) {
+		if isSelectOwnersSearch(sp) {
 			// This is the int equivalent of count:all.
 			return query.CountAllLimit
 		}
@@ -544,17 +568,34 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Fe
 	panic("unreachable")
 }
 
-func isOwnershipSearch(b query.Basic, features *search.Features) (include, exclude []string, ok bool) {
-	if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipSearch && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
 		return includeOwners, excludeOwners, true
 	}
 	return nil, nil, false
 }
 
-func isSelectOwnersSearch(sp filter.SelectPath, features *search.Features) bool {
-	// If the feature flag is enabled, and the filter is for file.owners, this is
-	// a select:file.owners search and we should apply special limits.
-	return features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
+func isSelectOwnersSearch(sp filter.SelectPath) bool {
+	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
+	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
+}
+
+func isContributorSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeContributors, excludeContributors := b.FileHasContributor(); len(includeContributors) > 0 || len(excludeContributors) > 0 {
+		return includeContributors, excludeContributors, true
+	}
+	return nil, nil, false
+}
+
+func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*regexp.Regexp) {
+	for _, pattern := range contributors {
+		if isCaseSensitive {
+			res = append(res, regexp.MustCompile(pattern))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+		}
+	}
+	return res
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
@@ -731,6 +772,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		CommitAfter:         b.RepoContainsCommitAfter(),
 		UseIndex:            b.Index(),
 		HasKVPs:             b.RepoHasKVPs(),
+		HasTopics:           b.RepoHasTopics(),
 	}
 }
 
@@ -748,6 +790,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 // If in doubt, ask the search team.
 type jobBuilder struct {
 	query          query.Basic
+	patternType    query.SearchType
 	resultTypes    result.Types
 	repoOptions    search.RepoOptions
 	features       *search.Features
@@ -769,7 +812,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
 	globalZoektQuery := zoekt.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
-	zoektArgs := &search.ZoektParameters{
+	zoektParams := &search.ZoektParameters{
 		// TODO(rvantonder): the Query value is set when the global zoekt query is
 		// enriched with private repository data in the search job's Run method, and
 		// is therefore set to `nil` below.
@@ -780,19 +823,20 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
+		KeywordScoring: b.patternType == query.SearchTypeKeyword,
 	}
 
 	switch typ {
 	case search.SymbolRequest:
 		return &zoekt.GlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
-			ZoektArgs:        zoektArgs,
+			ZoektParams:      zoektParams,
 			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.GlobalTextSearchJob{
 			GlobalZoektQuery:        globalZoektQuery,
-			ZoektArgs:               zoektArgs,
+			ZoektParams:             zoektParams,
 			RepoOpts:                b.repoOptions,
 			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query),
 		}, nil
@@ -806,22 +850,25 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		return nil, err
 	}
 
+	zoektParams := &search.ZoektParameters{
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Features:       *b.features,
+		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+	}
+
 	switch typ {
 	case search.SymbolRequest:
 		return &zoekt.SymbolSearchJob{
-			Query:          zoektQuery,
-			FileMatchLimit: b.fileMatchLimit,
-			Select:         b.selector,
-			Features:       *b.features,
+			Query:       zoektQuery,
+			ZoektParams: zoektParams,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
 			Query:             zoektQuery,
 			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery),
 			Typ:               typ,
-			FileMatchLimit:    b.fileMatchLimit,
-			Select:            b.selector,
-			Features:          *b.features,
+			ZoektParams:       zoektParams,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
@@ -996,6 +1043,12 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
 	// database to handle this filter.
 	if len(op.HasKVPs) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo topics, so we depend on the database to
+	// handle this filter.
+	if len(op.HasTopics) > 0 {
 		return false
 	}
 

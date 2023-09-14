@@ -1,10 +1,10 @@
-import { FC, useEffect, useRef, useState } from 'react'
+import { type FC, useLayoutEffect, useRef, useState } from 'react'
 
-import { Location, useLocation } from 'react-router-dom'
+import { type Location, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
@@ -36,11 +36,11 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
 
     const [locationSubject] = useState(() => new BehaviorSubject<Location>(location))
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         locationSubject.next(location)
     }, [location, locationSubject])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const subscription = getQueryStateFromLocation({
             location: locationSubject,
             isSearchContextAvailable: (searchContext: string) =>

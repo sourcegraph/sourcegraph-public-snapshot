@@ -2,8 +2,8 @@ import { of } from 'rxjs'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 
-import { SearchSidebarAPI } from '../../../contract'
-import { WebviewPageProps } from '../../platform/context'
+import type { SearchSidebarAPI } from '../../../contract'
+import type { WebviewPageProps } from '../../platform/context'
 
 import { createVSCodeExtensionsController } from './extension-host'
 

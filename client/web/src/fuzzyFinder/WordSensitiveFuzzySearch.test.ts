@@ -1,4 +1,4 @@
-import { FuzzySearchParameters } from './FuzzySearch'
+import type { FuzzySearchParameters } from './FuzzySearch'
 import { WordSensitiveFuzzySearch, allFuzzyParts, fuzzyMatchesQuery } from './WordSensitiveFuzzySearch'
 
 const all = [

@@ -1,8 +1,8 @@
-import { useMemo, FC, PropsWithChildren } from 'react'
+import { useMemo, type FC, type PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 

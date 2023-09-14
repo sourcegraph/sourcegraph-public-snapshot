@@ -63,12 +63,12 @@ func (e *recordEncrypter) handleDecryptBatch(ctx context.Context, config databas
 	return nil
 }
 
-func (m *recordEncrypter) HandleError(err error) {
+func (e *recordEncrypter) HandleError(err error) {
 	verb := "encrypt"
-	if m.decrypt {
+	if e.decrypt {
 		verb = "decrypt"
 	}
 
-	m.metrics.numErrors.Add(1)
-	m.logger.Error(fmt.Sprintf("failed to %s batch of records", verb), log.Error(err))
+	e.metrics.numErrors.Add(1)
+	e.logger.Error(fmt.Sprintf("failed to %s batch of records", verb), log.Error(err))
 }

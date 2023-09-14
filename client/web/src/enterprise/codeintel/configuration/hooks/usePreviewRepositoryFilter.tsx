@@ -1,8 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables } from '../../../../graphql-operations'
+import type { PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables } from '../../../../graphql-operations'
 
 interface SearchRepositoriesResult {
     previewResult: RepositoryPreviewResult | null

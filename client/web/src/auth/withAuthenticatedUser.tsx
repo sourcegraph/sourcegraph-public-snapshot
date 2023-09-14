@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Navigate } from 'react-router-dom'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 
 /**
  * Wraps a React component and requires an authenticated user. If the viewer is not authenticated, it redirects to

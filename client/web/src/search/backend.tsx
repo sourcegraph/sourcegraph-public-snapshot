@@ -1,11 +1,11 @@
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import {
+import type {
     EventLogsDataResult,
     EventLogsDataVariables,
     CreateSavedSearchResult,
@@ -37,7 +37,7 @@ export function fetchReposByQuery(query: string): Observable<{ name: string; url
         { query }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results || !data.search.results.repositories) {
+            if (!data?.search?.results?.repositories) {
                 throw createAggregateError(errors)
             }
             return data.search.results.repositories

@@ -5,14 +5,14 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
 
 import styles from './FormTriggerArea.module.scss'
 
@@ -240,7 +240,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
-                                    globbing={false}
                                     preventNewLine={true}
                                     autoFocus={true}
                                     applySuggestionsOnEnter={applySuggestionsOnEnter}

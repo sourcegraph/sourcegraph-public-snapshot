@@ -70,7 +70,13 @@ func getPaths(ctx context.Context, bucket *storage.BucketHandle) (paths []string
 func downloadAll(ctx context.Context, bucket *storage.BucketHandle, paths []string) error {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return err
+		if err == root.ErrNotInsideSourcegraph && os.Getenv("BAZEL_TEST") != "" {
+			// If we're running inside Bazel, we do not have access to the repo root.
+			// In that case, we simply use CWD instead.
+			repoRoot = "."
+		} else {
+			return err
+		}
 	}
 	indexesDir := filepath.Join(repoRoot, relativeIndexesDir)
 

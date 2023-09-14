@@ -1,0 +1,110 @@
+.subject-container {
+    max-width: 16rem;
+
+    svg {
+        min-width: 1.5rem;
+        min-height: 1.5rem;
+    }
+}
+
+.visible-actions-on-hover {
+    .actions-button {
+        visibility: hidden;
+    }
+
+    &:hover {
+        .actions-button {
+            visibility: visible;
+        }
+    }
+}
+
+.reason-group-container {
+    max-width: 10rem;
+}
+
+.status-container {
+    min-width: 5.7rem; /** Fixed the width to the width of "PROCESSING" status which is the longest so that column width don't "jump". */
+}
+
+.page {
+    @media (min-width: 768px) {
+        &__header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+        }
+    }
+}
+
+.jobs {
+    &__grid {
+        display: grid;
+        grid-template-columns: [status] max-content [name] minmax(auto, 1fr) [reason] minmax(auto, 1fr) [added] min-content [removed] min-content [total] min-content;
+        column-gap: 1rem;
+        align-items: center;
+    }
+}
+
+.filters {
+    &__grid {
+        display: grid;
+        grid-template-columns: [reason] max-content [state] max-content [searchType] max-content [search] auto;
+        column-gap: 1rem;
+        align-items: center;
+    }
+}
+
+.search-input {
+    margin-top: 0.6rem;
+
+    input:disabled {
+        background: var(--input-bg) !important;
+        color: var(--text-muted) !important;
+    }
+}
+
+.table-row {
+    td {
+        padding-bottom: var(--spacer);
+    }
+}
+
+.modal {
+    &__grid {
+        display: grid;
+        grid-template-columns: max-content max-content;
+        column-gap: 1rem;
+        row-gap: 0.5rem;
+    }
+}
+
+.user-avatar {
+    max-width: 1.5rem;
+    max-height: 1.5rem;
+}
+
+.text-success-muted {
+    color: var(--success-2);
+}
+
+.text-danger-muted {
+    color: var(--danger-2);
+}
+
+.text-total-number {
+    color: var(--icon-muted);
+}
+
+.stats-box {
+    border: none;
+}
+
+.stat {
+    border-right: 1px solid var(--border-color-2);
+    flex: 1;
+    padding-bottom: 0.1rem;
+}
+.stat:last-child {
+    border-right: none;
+}

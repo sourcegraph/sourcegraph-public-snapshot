@@ -1,6 +1,6 @@
-import { Attributes } from '@opentelemetry/api'
-import { ExportResultCode, hrTimeToMilliseconds, ExportResult } from '@opentelemetry/core'
-import { SpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace-base'
+import type { Attributes } from '@opentelemetry/api'
+import { ExportResultCode, hrTimeToMilliseconds, type ExportResult } from '@opentelemetry/core'
+import type { SpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { logger } from '@sourcegraph/common'
 

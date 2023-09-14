@@ -1,10 +1,10 @@
-import { FC, PropsWithChildren, createContext, useContext, useCallback } from 'react'
+import { type FC, type PropsWithChildren, createContext, useContext, useCallback } from 'react'
 
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { isMacPlatform } from '@sourcegraph/common'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     fetchSearchContextBySpec,
     fetchSearchContexts,
@@ -14,17 +14,17 @@ import {
     updateSearchContext,
     deleteSearchContext,
     isSearchContextSpecAvailable,
-    SearchContextProps,
+    type SearchContextProps,
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { isBatchChangesExecutionEnabled } from './batches'
-import { useBreadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from './components/Breadcrumbs'
-import { SearchStreamingProps } from './search'
-import { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
-import { StaticAppConfig } from './staticAppConfig'
+import { useBreadcrumbs, type BreadcrumbSetters, type BreadcrumbsProps } from './components/Breadcrumbs'
+import { NotFoundPage } from './components/HeroPage'
+import type { SearchStreamingProps } from './search'
+import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
+import type { StaticAppConfig } from './staticAppConfig'
 import { eventLogger } from './tracking/eventLogger'
 
 export interface StaticLegacyRouteContext extends LegacyRouteComputedContext, LegacyRouteStaticInjections {}
@@ -39,7 +39,6 @@ export interface LegacyRouteComputedContext {
     /**
      * TODO: expose these fields in the new `useSettings()` hook, calculate next to source.
      */
-    globbing: boolean
     batchChangesExecutionEnabled: boolean
 
     /**
@@ -104,7 +103,7 @@ export const LegacyRoute: FC<LegacyRouteProps> = ({ render, condition }) => {
     }
 
     if (condition && !condition(context)) {
-        return null
+        return <NotFoundPage pageType="" />
     }
 
     return render(context)
@@ -153,21 +152,35 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
     } satisfies LegacyRouteStaticInjections
 
     const computedContextFields = {
-        globbing: globbingEnabledFromSettings(settingsCascade),
         batchChangesExecutionEnabled: isBatchChangesExecutionEnabled(settingsCascade),
         isMacPlatform: isMacPlatform(),
     } satisfies LegacyRouteComputedContext
 
     const legacyContext = {
-        ...context,
         ...injections,
         ...computedContextFields,
+        ...context,
     } satisfies LegacyLayoutRouteContext
 
     return <LegacyRouteContext.Provider value={legacyContext}>{children}</LegacyRouteContext.Provider>
 }
 
 export const LegacyRouteContext = createContext<LegacyLayoutRouteContext | null>(null)
+
+/**
+ * DO NOT USE OUTSIDE OF STORM ROUTES!
+ * A convenience hook to return the LegacyRouteContext.
+ *
+ * @deprecated This can be used only in components migrated under Storm routes.
+ * Please use Apollo instead to make GraphQL requests and `useSettings` to access settings.
+ */
+export const useLegacyContext_onlyInStormRoutes = (): LegacyLayoutRouteContext => {
+    const context = useContext(LegacyRouteContext)
+    if (!context) {
+        throw new Error('LegacyRoute must be used inside a LegacyRouteContext.Provider')
+    }
+    return context
+}
 
 /**
  * A convenience hook to return the platform context.

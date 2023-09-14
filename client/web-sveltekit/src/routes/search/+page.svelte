@@ -1,16 +1,17 @@
 <script lang="ts">
-    import QueryExamples from './QueryExamples.svelte'
     import { getQueryExamples } from '$lib/search/queryExamples'
-
-    import type { PageData } from './$types'
-    import SearchHome from './SearchHome.svelte'
-    import SearchResults from './SearchResults.svelte'
     import { queryStateStore } from '$lib/search/state'
     import { settings } from '$lib/stores'
 
+    import type { PageData } from './$types'
+    import QueryExamples from './QueryExamples.svelte'
+    import SearchHome from './SearchHome.svelte'
+    import SearchResults from './SearchResults.svelte'
+
     export let data: PageData
 
-    $: queryState = queryStateStore(data.queryOptions ?? {}, $settings)
+    const queryState = queryStateStore(data.queryOptions ?? {}, $settings)
+    $: queryState.set(data.queryOptions ?? {})
     $: queryState.setSettings($settings)
 </script>
 

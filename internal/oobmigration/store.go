@@ -13,8 +13,10 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -381,9 +383,50 @@ WHERE m.id = %s
 ORDER BY e.created desc
 `
 
-// ReturnEnterpriseMigrations is set by the enterprise application to enable the
-// inclusion of enterprise-only migration records in the output of oobmigration.List.
-var ReturnEnterpriseMigrations = false
+func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migration, err error) {
+	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(getByIDsQuery, pq.Array(ids))))
+	if err != nil {
+		return nil, err
+	}
+
+	wanted := collections.NewSet(ids...)
+	received := collections.NewSet[int]()
+	for _, migration := range migrations {
+		received.Add(migration.ID)
+	}
+	difference := wanted.Difference(received).Values()
+	if len(difference) > 0 {
+		slices.Sort(difference)
+		return nil, errors.Newf("unknown migration id(s) %v", difference)
+	}
+
+	return migrations, nil
+}
+
+const getByIDsQuery = `
+SELECT
+	m.id,
+	m.team,
+	m.component,
+	m.description,
+	m.introduced_version_major,
+	m.introduced_version_minor,
+	m.deprecated_version_major,
+	m.deprecated_version_minor,
+	m.progress,
+	m.created,
+	m.last_updated,
+	m.non_destructive,
+	m.is_enterprise,
+	m.apply_reverse,
+	m.metadata,
+	e.message,
+	e.created
+FROM out_of_band_migrations m
+LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE m.id = ANY(%s)
+ORDER BY m.id ASC, e.created DESC
+`
 
 // List returns the complete list of out-of-band migrations.
 //
@@ -391,16 +434,13 @@ var ReturnEnterpriseMigrations = false
 // so that upgrades of historic instances work with the migrator. This is true of select methods
 // in this store, but not all methods.
 func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
-	conds := make([]*sqlf.Query, 0, 2)
-	if !ReturnEnterpriseMigrations {
-		conds = append(conds, sqlf.Sprintf("NOT m.is_enterprise"))
+	conds := []*sqlf.Query{
+		// Syncing metadata does not remove unknown migration fields. If we've removed them,
+		// we want to block them from returning from old instances. We also want to ignore
+		// any database content that we don't have metadata for. Similar checks should not
+		// be necessary on the other access methods, as they use ids returned by this method.
+		sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)),
 	}
-
-	// Syncing metadata does not remove unknown migration fields. If we've removed them,
-	// we want to block them from returning from old instances. We also want to ignore
-	// any database content that we don't have metadata for. Similar checks should not
-	// be necessary on the other access methods, as they use ids returned by this method.
-	conds = append(conds, sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)))
 
 	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {

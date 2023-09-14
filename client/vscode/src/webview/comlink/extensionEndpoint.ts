@@ -1,15 +1,15 @@
 import * as Comlink from 'comlink'
-import vscode from 'vscode'
+import type vscode from 'vscode'
 
-import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import type { EndpointPair } from '@sourcegraph/shared/src/platform/context'
 
 import {
     generateUUID,
     isNestedConnection,
     isProxyMarked,
     isUnsubscribable,
-    NestedConnectionData,
-    RelationshipType,
+    type NestedConnectionData,
+    type RelationshipType,
 } from '.'
 
 // Used to scope message to panel (and `connectionId` further scopes to function call).

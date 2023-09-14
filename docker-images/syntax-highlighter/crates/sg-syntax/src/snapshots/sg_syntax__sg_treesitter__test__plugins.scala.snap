@@ -1,0 +1,137 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation",
+//^^^^^^^^^^^^^ Identifier
+//              ^^^ Identifier
+//                  ^^^ IdentifierFunction
+//                      ^^^^^^^^^^^^ StringLiteral
+//                                    ^^^^^^^^^^ StringLiteral
+//                                                ^^^^^^^^^^^^^^ StringLiteral
+    "-Xlint:-unused,_", "-Xfatal-warnings")
+//  ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                      ^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.12.0"
+//^^^^^^^^^^^^^^^^^^^ Identifier
+//                    ^^ Identifier
+//                       ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                            ^ Identifier
+//                                              ^^^^^^^^^^^^^^^ StringLiteral
+//                                                              ^ Identifier
+//                                                                ^^^^^^^^ StringLiteral
+  
+  libraryDependencies += "biz.aQute.bnd" % "biz.aQute.bndlib" % "6.1.0"
+//^^^^^^^^^^^^^^^^^^^ Identifier
+//                    ^^ Identifier
+//                       ^^^^^^^^^^^^^^^ StringLiteral
+//                                       ^ Identifier
+//                                         ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                            ^ Identifier
+//                                                              ^^^^^^^ StringLiteral
+  
+  enablePlugins(BuildInfoPlugin)
+//^^^^^^^^^^^^^ IdentifierFunction
+//              ^^^^^^^^^^^^^^^ IdentifierConstant
+  
+  // configure sbt-buildinfo to send the externalDependencyClasspath to the main build, which allows using it for the IntelliJ project config
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  
+  lazy val buildClasspath = taskKey[String]("Colon-separated (or semicolon-separated in case of Windows) list of entries on the sbt build classpath.")
+//^^^^ Keyword
+//     ^^^ Keyword
+//         ^^^^^^^^^^^^^^ Identifier
+//                          ^^^^^^^ Identifier
+//                                  ^^^^^^ IdentifierType
+//                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+  
+  buildClasspath := (Compile / externalDependencyClasspath).value.map(_.data).mkString(java.io.File.pathSeparator)
+//^^^^^^^^^^^^^^ Identifier
+//               ^^ Identifier
+//                   ^^^^^^^ IdentifierConstant
+//                           ^ Identifier
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                                          ^^^^^ Identifier
+//                                                                ^^^ IdentifierFunction
+//                                                                      ^^^^ Identifier
+//                                                                            ^^^^^^^^ IdentifierFunction
+//                                                                                     ^^^^ Identifier
+//                                                                                          ^^ Identifier
+//                                                                                             ^^^^ IdentifierConstant
+//                                                                                                  ^^^^^^^^^^^^^ Identifier
+  
+  buildInfoKeys := Seq[BuildInfoKey](buildClasspath)
+//^^^^^^^^^^^^^ Identifier
+//              ^^ Identifier
+//                 ^^^ IdentifierConstant
+//                     ^^^^^^^^^^^^ IdentifierType
+//                                   ^^^^^^^^^^^^^^ Identifier
+  
+  buildInfoPackage := "scalabuild"
+//^^^^^^^^^^^^^^^^ Identifier
+//                 ^^ Identifier
+//                    ^^^^^^^^^^^^ StringLiteral
+  
+  addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.1")
+//^^^^^^^^^^^^ IdentifierFunction
+//             ^^^^^^^^^^^^^^ StringLiteral
+//                            ^ Identifier
+//                              ^^^^^^^^^^^^^^^^^ StringLiteral
+//                                                ^ Identifier
+//                                                  ^^^^^^^ StringLiteral
+  
+  libraryDependencies ++= Seq(
+//^^^^^^^^^^^^^^^^^^^ Identifier
+//                    ^^^ Identifier
+//                        ^^^ IdentifierFunction
+    "org.eclipse.jgit" % "org.eclipse.jgit" % "4.11.9.201909030838-r",
+//  ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                     ^ Identifier
+//                       ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                          ^ Identifier
+//                                            ^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+    "org.slf4j" % "slf4j-nop" % "2.0.0",
+//  ^^^^^^^^^^^ StringLiteral
+//              ^ Identifier
+//                ^^^^^^^^^^^ StringLiteral
+//                            ^ Identifier
+//                              ^^^^^^^ StringLiteral
+    "com.googlecode.java-diff-utils" % "diffutils" % "1.3.0",
+//  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                   ^ Identifier
+//                                     ^^^^^^^^^^^ StringLiteral
+//                                                 ^ Identifier
+//                                                   ^^^^^^^ StringLiteral
+  )
+  
+  Global / concurrentRestrictions := Seq(
+//^^^^^^ IdentifierConstant
+//       ^ Identifier
+//         ^^^^^^^^^^^^^^^^^^^^^^ Identifier
+//                                ^^ Identifier
+//                                   ^^^ IdentifierFunction
+    Tags.limitAll(1) // workaround for https://github.com/sbt/sbt/issues/2970
+//  ^^^^ IdentifierConstant
+//       ^^^^^^^^ IdentifierFunction
+//                ^ NumericLiteral
+//                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+  )
+  
+  addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.9.0")
+//^^^^^^^^^^^^ IdentifierFunction
+//             ^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                 ^ Identifier
+//                                   ^^^^^^^^^^^^ StringLiteral
+//                                                ^ Identifier
+//                                                  ^^^^^^^ StringLiteral
+  
+  addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
+//^^^^^^^^^^^^ IdentifierFunction
+//             ^^^^^^^^^^^^^^^^^^^^ StringLiteral
+//                                  ^ Identifier
+//                                    ^^^^^^^^^ StringLiteral
+//                                              ^ Identifier
+//                                                ^^^^^^^ StringLiteral
+  
+

@@ -1,17 +1,17 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { useExperimentalFeatures } from '../stores'
 
-import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
+import { GlobalNavbar, type GlobalNavbarProps } from './GlobalNavbar'
 
 const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
@@ -21,7 +21,6 @@ const defaultProps: GlobalNavbarProps = {
         subjects: null,
     },
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    globbing: false,
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
@@ -38,6 +37,7 @@ const defaultProps: GlobalNavbarProps = {
     setFuzzyFinderIsVisible: () => {},
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
     showFeedbackModal: () => undefined,
 }
 
@@ -58,7 +58,7 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
 }
 
 const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ codeMonitoring: true })
+    updateJSContextBatchChangesLicense('full')
 
     return (
         <WebStory>
@@ -77,7 +77,10 @@ const config: Meta = {
     parameters: {
         chromatic: {
             disableSnapshot: false,
-            viewports: [320, 576, 978],
+            viewports: [
+                // 320, // TODO: Mobile size detection is not working in Storybook
+                576, 978,
+            ],
         },
     },
 }

@@ -1,4 +1,4 @@
-import { MutableRefObject, useRef, useState } from 'react'
+import { type MutableRefObject, useRef, useState } from 'react'
 
 type UseIsTruncated<Element extends HTMLElement = HTMLDivElement> = [
     /**

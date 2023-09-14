@@ -1,4 +1,35 @@
 import { registerLanguage } from 'highlight.js/lib/core'
+import bash from 'highlight.js/lib/languages/bash'
+import cLike from 'highlight.js/lib/languages/c-like'
+import clojure from 'highlight.js/lib/languages/clojure'
+import cpp from 'highlight.js/lib/languages/cpp'
+import csharp from 'highlight.js/lib/languages/csharp'
+import css from 'highlight.js/lib/languages/css'
+import dart from 'highlight.js/lib/languages/dart'
+import diff from 'highlight.js/lib/languages/diff'
+import dockerfile from 'highlight.js/lib/languages/dockerfile'
+import elixir from 'highlight.js/lib/languages/elixir'
+import goLang from 'highlight.js/lib/languages/go'
+import haskell from 'highlight.js/lib/languages/haskell'
+import http from 'highlight.js/lib/languages/http'
+import java from 'highlight.js/lib/languages/java'
+import javascript from 'highlight.js/lib/languages/javascript'
+import json from 'highlight.js/lib/languages/json'
+import kotlin from 'highlight.js/lib/languages/kotlin'
+import lua from 'highlight.js/lib/languages/lua'
+import markdown from 'highlight.js/lib/languages/markdown'
+import ocaml from 'highlight.js/lib/languages/ocaml'
+import perl from 'highlight.js/lib/languages/perl'
+import php from 'highlight.js/lib/languages/php'
+import python from 'highlight.js/lib/languages/python'
+import rLang from 'highlight.js/lib/languages/r'
+import ruby from 'highlight.js/lib/languages/ruby'
+import rust from 'highlight.js/lib/languages/rust'
+import scala from 'highlight.js/lib/languages/scala'
+import swift from 'highlight.js/lib/languages/swift'
+import typescript from 'highlight.js/lib/languages/typescript'
+import xml from 'highlight.js/lib/languages/xml'
+import yaml from 'highlight.js/lib/languages/yaml'
 import { definer as graphQLLanguage } from 'highlightjs-graphql'
 
 let registered = false
@@ -16,46 +47,42 @@ export function registerHighlightContributions(): void {
         return
     }
     registered = true
-    /* eslint-disable @typescript-eslint/no-require-imports */
-    /* eslint-disable @typescript-eslint/no-var-requires */
-    registerLanguage('go', require('highlight.js/lib/languages/go'))
-    registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
-    registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
-    registerLanguage('java', require('highlight.js/lib/languages/java'))
-    registerLanguage('python', require('highlight.js/lib/languages/python'))
-    registerLanguage('php', require('highlight.js/lib/languages/php'))
-    registerLanguage('bash', require('highlight.js/lib/languages/bash'))
-    registerLanguage('clojure', require('highlight.js/lib/languages/clojure'))
+    registerLanguage('go', goLang)
+    registerLanguage('javascript', javascript)
+    registerLanguage('typescript', typescript)
+    registerLanguage('java', java)
+    registerLanguage('python', python)
+    registerLanguage('php', php)
+    registerLanguage('bash', bash)
+    registerLanguage('clojure', clojure)
     // This is a dependency of cpp.
-    registerLanguage('c-like', require('highlight.js/lib/languages/c-like'))
-    registerLanguage('cpp', require('highlight.js/lib/languages/cpp'))
-    registerLanguage('cs', require('highlight.js/lib/languages/csharp'))
-    registerLanguage('csharp', require('highlight.js/lib/languages/csharp'))
-    registerLanguage('css', require('highlight.js/lib/languages/css'))
-    registerLanguage('dockerfile', require('highlight.js/lib/languages/dockerfile'))
-    registerLanguage('elixir', require('highlight.js/lib/languages/elixir'))
-    registerLanguage('haskell', require('highlight.js/lib/languages/haskell'))
-    registerLanguage('html', require('highlight.js/lib/languages/xml'))
-    registerLanguage('lua', require('highlight.js/lib/languages/lua'))
-    registerLanguage('ocaml', require('highlight.js/lib/languages/ocaml'))
-    registerLanguage('r', require('highlight.js/lib/languages/r'))
-    registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
-    registerLanguage('rust', require('highlight.js/lib/languages/rust'))
-    registerLanguage('swift', require('highlight.js/lib/languages/swift'))
-    registerLanguage('markdown', require('highlight.js/lib/languages/markdown'))
-    registerLanguage('diff', require('highlight.js/lib/languages/diff'))
-    registerLanguage('json', require('highlight.js/lib/languages/json'))
-    registerLanguage('jsonc', require('highlight.js/lib/languages/json'))
-    registerLanguage('yaml', require('highlight.js/lib/languages/yaml'))
-    registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
-    registerLanguage('dart', require('highlight.js/lib/languages/dart'))
-    registerLanguage('perl', require('highlight.js/lib/languages/perl'))
-    registerLanguage('scala', require('highlight.js/lib/languages/scala'))
+    registerLanguage('c-like', cLike)
+    registerLanguage('cpp', cpp)
+    registerLanguage('cs', csharp)
+    registerLanguage('csharp', csharp)
+    registerLanguage('css', css)
+    registerLanguage('dockerfile', dockerfile)
+    registerLanguage('elixir', elixir)
+    registerLanguage('haskell', haskell)
+    registerLanguage('html', xml)
+    registerLanguage('lua', lua)
+    registerLanguage('ocaml', ocaml)
+    registerLanguage('r', rLang)
+    registerLanguage('ruby', ruby)
+    registerLanguage('rust', rust)
+    registerLanguage('swift', swift)
+    registerLanguage('markdown', markdown)
+    registerLanguage('diff', diff)
+    registerLanguage('json', json)
+    registerLanguage('jsonc', json)
+    registerLanguage('yaml', yaml)
+    registerLanguage('kotlin', kotlin)
+    registerLanguage('dart', dart)
+    registerLanguage('perl', perl)
+    registerLanguage('scala', scala)
     registerLanguage('graphql', graphQLLanguage)
     // Apex is not supported by highlight.js, but it's very close to Java.
-    registerLanguage('apex', require('highlight.js/lib/languages/java'))
+    registerLanguage('apex', java)
     // We use HTTP to render incoming webhook deliveries.
-    registerLanguage('http', require('highlight.js/lib/languages/http'))
-    /* eslint-enable @typescript-eslint/no-require-imports */
-    /* eslint-enable @typescript-eslint/no-var-requires */
+    registerLanguage('http', http)
 }

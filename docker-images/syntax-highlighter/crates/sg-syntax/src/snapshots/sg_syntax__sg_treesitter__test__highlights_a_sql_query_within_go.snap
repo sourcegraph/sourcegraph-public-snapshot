@@ -1,16 +1,17 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-expression: "dump_document(&document, src)"
+assertion_line: 314
+expression: "snapshot_treesitter_syntax_kinds(&document, src)"
 ---
   package main
-//^^^^^^^ IdentifierKeyword 
-//        ^^^^ IdentifierNamespace 
+//^^^^^^^ Keyword
+//        ^^^^ IdentifierNamespace
   
   const MySqlQuery = `
-//^^^^^ IdentifierKeyword 
-//      ^^^^^^^^^^ IdentifierConstant 
-//                 ^ IdentifierOperator 
-//                   ^ StringLiteral 2:19..4:1 
+//^^^^^ Keyword
+//      ^^^^^^^^^^ IdentifierConstant
+//                 ^ IdentifierOperator
+//                   ^ StringLiteral 2:19..4:1
   SELECT * FROM my_table
   `
 

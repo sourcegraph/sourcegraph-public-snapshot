@@ -12,6 +12,25 @@
             // Codemirror shows a focus ring by default. Since we handle that
             // differently, disable it here.
             outline: none;
+
+            :global(.sg-query-filter-placeholder) {
+                display: inline;
+            }
+
+            // The placeholder needs to explicilty have the same background color because it
+            // appears to be placed outside of active filter decoration rather than within it.
+            :global(.sg-query-filter-placeholder),
+            :global(.sg-query-filter-active) {
+                background-color: var(--gray-02);
+
+                :global(.theme-dark) & {
+                    background-color: var(--gray-08);
+                }
+            }
+        }
+
+        :global(.sg-query-filter-placeholder) {
+            display: none;
         }
 
         :global(.cm-scroller) {
@@ -137,22 +156,10 @@
         }
     }
 
-    // .placeholder needs to explicilty have the same background color because it
-    // appears to be placed outside of .focusedFilter rather than within it.
-    .placeholder,
-    .focusedFilter {
-        background-color: var(--gray-02);
-
-        :global(.theme-dark) & {
-            background-color: var(--gray-08);
-        }
+    :global(.sg-query-filter-placeholder) {
+        color: var(--text-muted);
+        font-style: italic;
     }
-}
-
-.placeholder {
-    color: var(--text-muted);
-    font-style: italic;
-    pointer-events: none;
 }
 
 // Copied and adapted from the Wildcard LoadingSpinner component

@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 
 import { CopyableText } from '../components/CopyableText'
-import { WebhookFields } from '../graphql-operations'
+import type { WebhookFields } from '../graphql-operations'
 
 import styles from './WebhookInformation.module.scss'
 

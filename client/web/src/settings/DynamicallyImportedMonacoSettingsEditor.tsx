@@ -1,16 +1,17 @@
 import * as React from 'react'
 
-import * as _monaco from 'monaco-editor' // type only
+// type only
+import type * as _monaco from 'monaco-editor'
 import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
-import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
+import { type SaveToolbarProps, SaveToolbar, type SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 
-import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
+import { type EditorAction, EditorActionsGroup } from './EditorActionsGroup'
+import type * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -29,6 +30,7 @@ interface Props<T extends object>
     saving?: boolean
 
     canEdit?: boolean
+    controlled?: boolean
 
     className?: string
 
@@ -79,10 +81,18 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     }
 
     private get effectiveValue(): string {
+        if (this.props.controlled) {
+            return this.props.value
+        }
+
         return this.state.value === undefined ? this.props.value : this.state.value
     }
 
     private get isDirty(): boolean {
+        if (this.props.controlled) {
+            return true
+        }
+
         return this.effectiveValue !== this.props.value
     }
 

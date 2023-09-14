@@ -1,25 +1,23 @@
-import React from 'react'
+import { type HTMLAttributes, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { LoadingSpinner } from '../../LoadingSpinner/LoadingSpinner'
+import { LoadingSpinner } from '../../LoadingSpinner'
 
 import styles from './LoaderInput.module.scss'
 
-/** Takes loading prop, input component as child */
-interface LoaderInputProps {
+interface LoaderInputProps extends HTMLAttributes<HTMLDivElement> {
     loading: boolean
     children: React.ReactNode
-    className?: string
 }
 
-export const LoaderInput: React.FunctionComponent<React.PropsWithChildren<LoaderInputProps>> = ({
-    loading,
-    children,
-    className,
-}) => (
-    <div className={classNames(styles.container, className)}>
-        {children}
-        {loading && <LoadingSpinner inline={false} className={styles.spinner} />}
-    </div>
-)
+export const LoaderInput = forwardRef<HTMLDivElement, LoaderInputProps>((props, ref) => {
+    const { loading, children, className, ...attributes } = props
+
+    return (
+        <div ref={ref} className={classNames(styles.container, className)} {...attributes}>
+            {children}
+            {loading && <LoadingSpinner inline={false} className={styles.spinner} />}
+        </div>
+    )
+})

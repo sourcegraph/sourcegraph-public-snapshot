@@ -37,6 +37,18 @@ type TransactableHandle interface {
 	Done(error) error
 }
 
+// Transactable marks an interface that returns a type that returns a transactable
+// store that is polymorphic on a generic type. The type `TransactableHandle` is a
+// related type, but is stricter in that returns a hard-coded interface type, not
+// the type of the implementor.
+//
+// Many stores return their *self* as the return for Transaction.
+// See the `InTransaction` function for a concrete use-case.
+type Transactable[T any] interface {
+	Transact(context.Context) (T, error)
+	Done(error) error
+}
+
 var (
 	_ TransactableHandle = (*dbHandle)(nil)
 	_ TransactableHandle = (*txHandle)(nil)

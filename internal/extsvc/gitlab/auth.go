@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
@@ -50,15 +49,8 @@ func (pat *SudoableToken) Hash() string {
 func RequestedOAuthScopes(defaultAPIScope string) []string {
 	scopes := []string{"read_user"}
 	if defaultAPIScope == "" {
-		defaultAPIScope = "api"
-	}
-	if envvar.SourcegraphDotComMode() {
-		// By default, request `read_api`. User's who are allowed to add private code
-		// will request full `api` access via extraScopes.
-		scopes = append(scopes, "read_api")
+		scopes = append(scopes, "api")
 	} else {
-		// For customer instances we default to api scope so that they can clone private
-		// repos but in they can optionally override this in config.
 		scopes = append(scopes, defaultAPIScope)
 	}
 

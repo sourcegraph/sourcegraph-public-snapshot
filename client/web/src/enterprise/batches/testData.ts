@@ -1,10 +1,10 @@
 import { subSeconds } from 'date-fns'
 
 import {
-    BatchSpecListFields,
+    type BatchSpecListFields,
     BatchSpecSource,
     BatchSpecState,
-    BatchSpecWorkspaceFileResult,
+    type BatchSpecWorkspaceFileResult,
 } from '../../graphql-operations'
 
 const COMMON_NODE_FIELDS = {

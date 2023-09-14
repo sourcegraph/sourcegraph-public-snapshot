@@ -113,7 +113,7 @@ func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.Slo
 		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisFIFOList, n, r.perPage)
 		size, err := slowRequestRedisFIFOList.Size()
 		if err != nil {
-			errors.Append(r.err, err)
+			r.err = errors.Append(r.err, err)
 		} else {
 			r.totalCount = int32(size)
 		}
@@ -164,7 +164,7 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 	}
 }
 
-// ID returns an opaque ID for that node.
+// Index returns an opaque ID for that node.
 func (r *slowRequestResolver) Index() string {
 	return r.req.Index
 }

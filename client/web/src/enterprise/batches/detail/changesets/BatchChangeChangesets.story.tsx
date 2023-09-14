@@ -1,4 +1,4 @@
-import { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { Story, Meta, DecoratorFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
@@ -8,7 +8,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
 import { BatchChangeState } from '../../../../graphql-operations'
-import { CHANGESETS, queryExternalChangesetWithFileDiffs } from '../backend'
+import { CHANGESETS, type queryExternalChangesetWithFileDiffs } from '../backend'
 
 import { BatchChangeChangesets } from './BatchChangeChangesets'
 import { BATCH_CHANGE_CHANGESETS_RESULT, EMPTY_BATCH_CHANGE_CHANGESETS_RESULT } from './BatchChangeChangesets.mock'

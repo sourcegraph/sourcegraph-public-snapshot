@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+# This target is used by //lib/batches/schema:generate_stringdata_code
+# to generate code based on json schemas found in schema/
+#
+# The reason that this is in it's own folder is to make it easier to invoke
+# from Bazel, otherwise the `//go:build +ignore` directive makes that Bazel
+# can't invoke this binary. Consequently it is very difficult to use `go run`
+# within Bazel as you would have to set GOCACHE, HOME dirs etc - so moving it
+# to it's own package side steps some unneeded complexity
+go_binary(
+    name = "stringdata",
+    embed = [":gen_lib"],
+    visibility = ["//lib/batches/schema:__pkg__"],
+)
+
+go_library(
+    name = "gen_lib",
+    srcs = ["gen.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/schema/gen",
+    visibility = ["//visibility:private"],
+)

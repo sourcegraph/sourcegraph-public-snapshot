@@ -9,7 +9,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,17 +27,21 @@ var totalErroredRepos = promauto.NewGauge(prometheus.GaugeOpts{
 	Help: "Total number of repos with last error currently.",
 })
 
-func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) {
-	for {
-		s.ObsvCtx.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
-		err := s.SyncReposWithLastErrors(ctx, rateLimiter)
-		if err != nil {
-			s.ObsvCtx.Logger.Error("Error syncing repos w/ errors", log.Error(err))
-		}
-
-		// Wait and run task again
-		time.Sleep(syncInterval)
-	}
+func (s *Syncer) NewSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			s.ObsvCtx.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
+			err := s.SyncReposWithLastErrors(ctx, rateLimiter)
+			if err != nil {
+				return errors.Wrap(err, "Error syncing repos with errors")
+			}
+			return nil
+		}),
+		goroutine.WithName("repo-updater.repos-with-last-errors-syncer"),
+		goroutine.WithDescription("iterates through all repos which have a non-empty last_error column in the gitserver_repos table, indicating there was an issue updating the repo, and syncs each of these repos. Repos which are no longer visible (i.e. deleted or made private) will be deleted from the DB. Sourcegraph.com only."),
+		goroutine.WithInterval(syncInterval),
+	)
 }
 
 // SyncReposWithLastErrors iterates through all repos which have a non-empty last_error column in the gitserver_repos
@@ -46,18 +51,23 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) error {
 	erroredRepoGauge.Set(0)
 	s.setTotalErroredRepos(ctx)
-	err := s.Store.GitserverReposStore().IterateWithNonemptyLastError(ctx, func(repo api.RepoName) error {
+	repoNames, err := s.Store.GitserverReposStore().ListReposWithLastError(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to list gitserver_repos with last_error not null")
+	}
+
+	for _, repoName := range repoNames {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
-		_, err = s.SyncRepo(ctx, repo, false)
+		_, err = s.SyncRepo(ctx, repoName, false)
 		if err != nil {
-			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(repo)), log.Error(err))
+			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(repoName)), log.Error(err))
 		}
 		erroredRepoGauge.Inc()
-		return nil
-	})
+	}
+
 	return err
 }
 

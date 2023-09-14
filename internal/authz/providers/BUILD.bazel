@@ -1,0 +1,58 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "providers",
+    srcs = ["authz.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authz",
+        "//internal/authz/providers/azuredevops",
+        "//internal/authz/providers/bitbucketcloud",
+        "//internal/authz/providers/bitbucketserver",
+        "//internal/authz/providers/gerrit",
+        "//internal/authz/providers/github",
+        "//internal/authz/providers/gitlab",
+        "//internal/authz/providers/perforce",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/licensing",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "providers_test",
+    srcs = [
+        "authz_test.go",
+        "main_test.go",
+    ],
+    embed = [":providers"],
+    deps = [
+        "//cmd/frontend/globals",
+        "//internal/auth/providers",
+        "//internal/authz",
+        "//internal/authz/providers/gitlab",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/licensing",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_json_iterator_go//:go",
+        "@com_github_kr_pretty//:pretty",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

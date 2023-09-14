@@ -1,9 +1,14 @@
-import { createPoint, Point } from '../models/geometry/point'
-import { createRectangle, createRectangleFromPoints, EMPTY_RECTANGLE, Rectangle } from '../models/geometry/rectangle'
-import { Constraint, Flipping, Overlapping, Padding, Position, Strategy } from '../models/tether-models'
+import { createPoint, type Point } from '../models/geometry/point'
+import {
+    createRectangle,
+    createRectangleFromPoints,
+    EMPTY_RECTANGLE,
+    type Rectangle,
+} from '../models/geometry/rectangle'
+import { type Constraint, Flipping, Overlapping, type Padding, Position, Strategy } from '../models/tether-models'
 
 import { getAbsoluteAnchorOffset, getScrollParents } from './tether-browser'
-import { Tether, TetherLayout } from './types'
+import type { Tether, TetherLayout } from './types'
 
 /**
  * Collects all information about current layout (tether and popover elements rectangle),

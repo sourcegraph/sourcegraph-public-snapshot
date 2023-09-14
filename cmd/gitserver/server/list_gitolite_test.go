@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,11 +9,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -25,7 +27,8 @@ func Test_Gitolite_listRepos(t *testing.T) {
 		configs         []*schema.GitoliteConnection
 		gitoliteHost    string
 		expResponseCode int
-		expResponseBody string
+		expResponseBody []*gitolite.Repo
+		wantedErr       string
 	}{
 		{
 			name: "Simple case (git@sourcegraph.com)",
@@ -42,7 +45,9 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			},
 			gitoliteHost:    "git@sourcegraph.com",
 			expResponseCode: 200,
-			expResponseBody: `[{"Name":"myrepo","URL":"git@sourcegraph.com:myrepo"}]` + "\n",
+			expResponseBody: []*gitolite.Repo{
+				{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
+			},
 		},
 		{
 			name: "Invalid gitoliteHost (--invalidhostnexample.com)",
@@ -59,7 +64,8 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			},
 			gitoliteHost:    "--invalidhostnexample.com",
 			expResponseCode: 500,
-			expResponseBody: `invalid hostname` + "\n",
+			expResponseBody: nil,
+			wantedErr:       "invalid gitolite host",
 		},
 		{
 			name: "Empty (but valid) gitoliteHost",
@@ -76,7 +82,7 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			},
 			gitoliteHost:    "",
 			expResponseCode: 200,
-			expResponseBody: `null` + "\n",
+			expResponseBody: nil,
 		},
 	}
 
@@ -89,26 +95,28 @@ func Test_Gitolite_listRepos(t *testing.T) {
 					},
 				},
 			}
-			w := httptest.NewRecorder()
-			g.listRepos(context.Background(), test.gitoliteHost, w)
-			resp := w.Result()
-			respBody, err := io.ReadAll(resp.Body)
+			resp, err := g.listRepos(context.Background(), test.gitoliteHost)
 			if err != nil {
-				t.Fatal(err)
+				if test.wantedErr != "" {
+					if diff := cmp.Diff(test.wantedErr, err.Error()); diff != "" {
+						t.Errorf("unexpected error diff:\n%s", diff)
+					}
+				} else {
+
+					t.Fatal(err)
+				}
 			}
-			if diff := cmp.Diff(test.expResponseBody, string(respBody)); diff != "" {
+
+			if diff := cmp.Diff(test.expResponseBody, resp); diff != "" {
 				t.Errorf("unexpected response body diff:\n%s", diff)
-			}
-			if diff := cmp.Diff(test.expResponseCode, resp.StatusCode); diff != "" {
-				t.Errorf("unexpected response code diff:\n%s", diff)
 			}
 		})
 	}
 }
 
 func TestCheckSSRFHeader(t *testing.T) {
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := dbmocks.NewMockDB()
+	gr := dbmocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
@@ -119,9 +127,11 @@ func TestCheckSSRFHeader(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: db,
+		DB:         db,
+		Locker:     NewRepositoryLocker(),
+		RPSLimiter: ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	}
 	h := s.Handler()
 

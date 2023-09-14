@@ -3,6 +3,7 @@
 package ci
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -14,7 +15,19 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var legacyDockerImages = []string{
+	"dind",
+	"executor-vm",
+
+	// See RFC 793, those images will be dropped in 5.1.x.
+	"alpine-3.14",
+	"codeinsights-db",
+	"codeintel-db",
+	"postgres-12-alpine",
+}
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
 // main CI cases, which are defined in the main switch statement in the function.
@@ -76,45 +89,62 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.5.0"
+	const minimumUpgradeableVersion = "5.1.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
-
-	if op, err := exposeBuildMetadata(c); err == nil {
-		ops.Merge(operations.NewNamedSet("Metadata", op))
-	}
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
-	case runtype.BazelExpBranch:
-		ops.Merge(BazelOperations())
-	case runtype.WolfiExpBranch:
-		if c.Diff.Has(changed.WolfiPackages) {
-			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
-		}
-		if c.Diff.Has(changed.WolfiBaseImages) {
-			ops.Merge(
-				WolfiBaseImagesOperations(
-					c.ChangedFiles[changed.WolfiBaseImages],
-					c.Version,
-					c.Diff.Has(changed.WolfiPackages),
-				),
-			)
+	case runtype.BazelDo:
+		// parse the commit message, looking for the bazel command to run
+		var bzlCmd string
+		scanner := bufio.NewScanner(strings.NewReader(env["CI_COMMIT_MESSAGE"]))
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if strings.HasPrefix(line, "!bazel") {
+				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
+
+				// sanitize the input
+				if err := verifyBazelCommand(bzlCmd); err != nil {
+					return nil, errors.Wrapf(err, "cannot generate bazel-do")
+				}
+
+				ops.Append(func(pipeline *bk.Pipeline) {
+					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
+						bk.Key("bazel-do"),
+						bk.Agent("queue", "bazel"),
+						bk.Cmd(bazelCmd(bzlCmd)),
+					)
+				})
+				break
+			}
 		}
 
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+
+		if bzlCmd == "" {
+			return nil, errors.Newf("no bazel command was given")
+		}
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
-		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(buildOptions, c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-			CreateBundleSizeDiff:       true,
+			CreateBundleSizeDiff:      true,
 		}))
+
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
+
+		// Wolfi package and base images
+		addWolfiOps(c, ops)
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -122,45 +152,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
-
-			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
-			// preview behavior, because only Client code is used to deploy application preview.
-			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
-				ops.Append(prPreview())
-			}
-		}
-		if c.Diff.Has(changed.DockerImages) {
-			// Build and scan docker images
-			testBuilds := operations.NewNamedSet("Test builds")
-			scanBuilds := operations.NewNamedSet("Scan test builds")
-			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
-				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
-			}
-			ops.Merge(testBuilds)
-			ops.Merge(scanBuilds)
 		}
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
-	case runtype.BackendIntegrationTests:
-		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
-			backendIntegrationTests(c.candidateImageTag()))
-
-		// always include very backend-oriented changes in this set of tests
-		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
-		ops.Merge(CoreTestOperations(
-			testDiff,
-			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
-		))
-
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
@@ -170,8 +170,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.VsceReleaseBranch:
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
-			addVsceIntegrationTests,
+			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
 
@@ -179,7 +178,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			recordBrowserExtensionIntegrationTests,
 			frontendTests,
@@ -189,14 +187,30 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.VsceNightly:
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
-			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
-			// addVsceIntegrationTests,
+			addVsceTests,
 		)
 
-	case runtype.AppSnapshotRelease:
-		// If this is an App snapshot build, release a snapshot.
-		ops = operations.NewSet(addAppSnapshotReleaseSteps(c))
+	case runtype.AppRelease:
+		ops = operations.NewSet(addAppReleaseSteps(c, false))
+
+	case runtype.AppInsiders:
+		ops = operations.NewSet(addAppReleaseSteps(c, true))
+
+	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images")
+		publishOps.Append(bazelPushImagesNoTest(c.Version))
+
+		for _, dockerImage := range legacyDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -210,10 +224,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
+		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
 		// Publish images after everything is done
@@ -231,30 +245,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			wait,
 			publishFinalDockerImage(c, patchImage))
-
-	case runtype.CandidatesNoTest:
-		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
-		}
-		ops.Merge(imageBuildOps)
-
-		ops.Append(wait)
-
-		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		}
-		ops.Merge(publishOps)
-
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
@@ -271,18 +268,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
 
-		// Slow image builds
-		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			// Only upload sourcemaps for the "frontend" image, on the Main branch build
-			uploadSourcemaps := false
-			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
-				uploadSourcemaps = true
-			}
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
-		}
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
+		// Slow image builds
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
 			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
 			imageBuildOps.Append(buildExecutorBinary(c))
@@ -292,41 +283,41 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(imageBuildOps)
 
-		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
-
 		// Core tests
-		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
+		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			IsMainBranch:              true,
 		}))
 
-		// Integration tests
-		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag()),
-			codeIntelQA(c.candidateImageTag()),
-		))
+		// Security scanning - sonarcloud
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
+
+		// Publish candidate images to dev registry
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		ops.Merge(publishOpsDev)
+
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			executorsE2E(c.candidateImageTag()),
-			serverE2E(c.candidateImageTag()),
-			serverQA(c.candidateImageTag()),
-			clusterQA(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
+
+		// Wolfi package and base images
+		addWolfiOps(c, ops)
 
 		// All operations before this point are required
 		ops.Append(wait)
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
+		// Add final artifacts
+		for _, dockerImage := range legacyDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
@@ -337,13 +328,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+		// Final Bazel images
+		publishOps.Append(bazelPushImagesFinal(c.Version))
 		ops.Merge(publishOps)
 	}
-
-	ops.Append(
-		wait,                    // wait for all steps to pass
-		uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
-	)
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
@@ -421,4 +409,34 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
+}
+
+// addWolfiOps adds operations to rebuild modified Wolfi packages and base images.
+func addWolfiOps(c Config, ops *operations.Set) {
+	// Rebuild Wolfi packages that have config changes
+	var updatedPackages []string
+	if c.Diff.Has(changed.WolfiPackages) {
+		var packageOps *operations.Set
+		packageOps, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+		ops.Merge(packageOps)
+	}
+
+	// Rebuild Wolfi base images
+	// Inspect package dependencies, and rebuild base images with updated packages
+	_, imagesWithChangedPackages, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
+	if err != nil {
+		panic(err)
+	}
+	// Rebuild base images with package changes AND with config changes
+	imagesToRebuild := append(imagesWithChangedPackages, c.ChangedFiles[changed.WolfiBaseImages]...)
+	imagesToRebuild = sortUniq(imagesToRebuild)
+
+	if len(imagesToRebuild) > 0 {
+		baseImageOps, _ := WolfiBaseImagesOperations(
+			imagesToRebuild,
+			c.Version,
+			(len(updatedPackages) > 0),
+		)
+		ops.Merge(baseImageOps)
+	}
 }

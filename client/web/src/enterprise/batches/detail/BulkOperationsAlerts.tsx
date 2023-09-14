@@ -7,7 +7,7 @@ import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
-import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
+import type { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
 
 import { TabName } from './BatchChangeDetailsTabs'
 

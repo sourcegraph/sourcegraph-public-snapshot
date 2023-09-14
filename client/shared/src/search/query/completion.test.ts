@@ -1,10 +1,10 @@
 import { SymbolKind } from '../../graphql-operations'
-import { isSearchMatchOfType, SearchMatch } from '../stream'
+import { isSearchMatchOfType, type SearchMatch } from '../stream'
 
-import { FetchSuggestions, getCompletionItems } from './completion'
+import { type FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
-import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
-import { Token } from './token'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -333,6 +333,11 @@ describe('getCompletionItems()', () => {
                 label: 'has.owner(...)',
             },
             {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.contributor(${1}) ',
+                label: 'has.contributor(...)',
+            },
+            {
                 insertText: '^connect\\.go$ ',
                 label: 'connect.go',
             },
@@ -355,7 +360,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['has.content(...)', 'has.owner(...)', '^jsonrpc'])
+        ).toStrictEqual(['has.content(...)', 'has.owner(...)', 'has.contributor(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -379,6 +384,8 @@ describe('getCompletionItems()', () => {
             'has.content(${1:TODO}) ',
             // eslint-disable-next-line no-template-curly-in-string
             'has.owner(${1}) ',
+            // eslint-disable-next-line no-template-curly-in-string
+            'has.contributor(${1}) ',
             '^some/path/main\\.go$ ',
         ])
     })
@@ -404,11 +411,10 @@ describe('getCompletionItems()', () => {
               "has.path(\${1:CHANGELOG}) ",
               "has.content(\${1:TODO}) ",
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.topic(\${1}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
-              "has.tag(\${1}) ",
-              "has(\${1:key}:\${2:value}) ",
-              "has.key(\${1}) ",
+              "has.meta(\${1:key}:\${2:value}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -429,11 +435,10 @@ describe('getCompletionItems()', () => {
               "has.path(\${1:CHANGELOG}) ",
               "has.content(\${1:TODO}) ",
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.topic(\${1}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
-              "has.tag(\${1}) ",
-              "has(\${1:key}:\${2:value}) ",
-              "has.key(\${1}) "
+              "has.meta(\${1:key}:\${2:value}) "
             ]
         `)
     })

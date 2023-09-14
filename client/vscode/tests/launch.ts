@@ -3,7 +3,7 @@ import { mkdtempSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 
-import puppeteer, { Page } from 'puppeteer'
+import puppeteer, { type Page } from 'puppeteer'
 import rimraf from 'rimraf'
 
 const PORT = 29378

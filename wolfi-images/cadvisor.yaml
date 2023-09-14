@@ -1,0 +1,12 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## cadvisor dependencies
+    - cadvisor
+
+# MANUAL REBUILD: Tue Sep 12 12:34:03 EDT 2023

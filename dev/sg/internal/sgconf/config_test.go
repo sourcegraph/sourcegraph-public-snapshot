@@ -78,10 +78,10 @@ commandsets:
 func TestParseAndMerge(t *testing.T) {
 	a := `
 commands:
-  enterprise-frontend:
-    cmd: .bin/enterprise-frontend
-    install: go build .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    checkBinary: .bin/enterprise-frontend
+  frontend:
+    cmd: .bin/frontend
+    install: go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    checkBinary: .bin/frontend
     env:
       ENTERPRISE: 1
       EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
@@ -90,7 +90,6 @@ commands:
       - internal
       - cmd/frontend
       - enterprise/internal
-      - enterprise/cmd/frontend
 `
 	config, err := parseConfig([]byte(a))
 	if err != nil {
@@ -99,7 +98,7 @@ commands:
 
 	b := `
 commands:
-  enterprise-frontend:
+  frontend:
     env:
       EXTSVC_CONFIG_FILE: ''
 `
@@ -111,23 +110,22 @@ commands:
 
 	config.Merge(overwrite)
 
-	cmd, ok := config.Commands["enterprise-frontend"]
+	cmd, ok := config.Commands["frontend"]
 	if !ok {
 		t.Fatalf("command not found")
 	}
 
 	want := run.Command{
-		Name:        "enterprise-frontend",
-		Cmd:         ".bin/enterprise-frontend",
-		Install:     "go build .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend",
-		CheckBinary: ".bin/enterprise-frontend",
+		Name:        "frontend",
+		Cmd:         ".bin/frontend",
+		Install:     "go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
+		CheckBinary: ".bin/frontend",
 		Env:         map[string]string{"ENTERPRISE": "1", "EXTSVC_CONFIG_FILE": ""},
 		Watch: []string{
 			"lib",
 			"internal",
 			"cmd/frontend",
 			"enterprise/internal",
-			"enterprise/cmd/frontend",
 		},
 	}
 

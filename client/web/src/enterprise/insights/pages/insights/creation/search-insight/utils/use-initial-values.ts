@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CreateInsightFormFields } from '../types'
+import type { CreateInsightFormFields } from '../types'
 
 import { decodeSearchInsightUrl } from './search-insight-url-parsers/search-insight-url-parsers'
 import { useURLQueryInsight } from './use-url-query-insight/use-url-query-insight'

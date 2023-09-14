@@ -1,56 +1,64 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, useObservable, Markdown } from '@sourcegraph/wildcard'
+import { gql, useQuery } from '@sourcegraph/http-client'
+import { useSettings } from '@sourcegraph/shared/src/settings/settings'
+import { Link, Markdown } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { siteFlags } from '../site/backend'
-import { DockerForMacAlert } from '../site/DockerForMacAlert'
+import type { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
+import { siteFlagFieldsFragment } from '../storm/pages/LayoutPage/LayoutPage.loader'
 
 import { GlobalAlert } from './GlobalAlert'
 import { Notices, VerifyEmailNotices } from './Notices'
 
 import styles from './GlobalAlerts.module.scss'
 
-interface Props extends SettingsCascadeProps {
+interface Props {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
+// NOTE: The name of the query is also added in the refreshSiteFlags() function
+// found in client/web/src/site/backend.tsx
+const QUERY = gql`
+    query GlobalAlertsSiteFlags {
+        site {
+            ...SiteFlagFields
+        }
+        codeIntelligenceConfigurationPolicies(forEmbeddings: true) {
+            totalCount
+        }
+    }
+
+    ${siteFlagFieldsFragment}
+`
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({
-    authenticatedUser,
-    settingsCascade,
-    isSourcegraphDotCom,
-}) => {
-    const siteFlagsValue = useObservable(siteFlags)
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphApp }) => {
+    const settings = useSettings()
+    const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
+        fetchPolicy: 'cache-and-network',
+    })
+    const siteFlagsValue = data?.site
 
-    const verifyEmailProps = useMemo(() => {
-        if (!authenticatedUser || !isSourcegraphDotCom) {
-            return
-        }
-        return {
-            emails: authenticatedUser.emails.filter(({ verified }) => !verified).map(({ email }) => email),
-            settingsURL: authenticatedUser.settingsURL as string,
-        }
-    }, [authenticatedUser, isSourcegraphDotCom])
+    const showNoEmbeddingPoliciesAlert =
+        window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
+
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue.needsRepositoryConfiguration && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isSourcegraphApp && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (
@@ -58,10 +66,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                             noLicenseWarningUserCount={siteFlagsValue.productSubscription.noLicenseWarningUserCount}
                             className={styles.alert}
                         />
-                    )}
-                    {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                    {window.context.likelyDockerOnMac && window.context.deployType === 'docker-container' && (
-                        <DockerForMacAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.alerts.map((alert, index) => (
                         <GlobalAlert key={index} alert={alert} className={styles.alert} />
@@ -81,10 +85,9 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                         })()}
                 </>
             )}
-            {isSettingsValid<Settings>(settingsCascade) &&
-                settingsCascade.final.motd &&
-                Array.isArray(settingsCascade.final.motd) &&
-                settingsCascade.final.motd.map(motd => (
+            {settings?.motd &&
+                Array.isArray(settings.motd) &&
+                settings.motd.map(motd => (
                     <DismissibleAlert
                         key={motd}
                         partialStorageKey={`motd.${motd}`}
@@ -110,9 +113,28 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                     .
                 </DismissibleAlert>
             )}
-            <Notices alertClassName={styles.alert} location="top" settingsCascade={settingsCascade} />
-            {!!verifyEmailProps?.emails.length && (
-                <VerifyEmailNotices alertClassName={styles.alert} {...verifyEmailProps} />
+            {/* Sourcegraph app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
+            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && !isSourcegraphApp && (
+                <DismissibleAlert
+                    key="no-embeddings-policies-alert"
+                    partialStorageKey="no-embeddings-policies-alert"
+                    variant="danger"
+                    className={styles.alert}
+                >
+                    <div>
+                        <strong>Warning!</strong> No embeddings policies have been configured. This will lead to poor
+                        results from Cody, Sourcegraph’s AI assistant. Add an{' '}
+                        <Link to="/site-admin/embeddings/configuration">embedding policy</Link>
+                    </div>
+                    .
+                </DismissibleAlert>
+            )}
+            <Notices alertClassName={styles.alert} location="top" />
+
+            {/* The link in the notice doesn't work in the Sourcegraph app since it's rendered by Markdown,
+            so don't show it there for now. */}
+            {!isSourcegraphApp && (
+                <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
             )}
         </div>
     )

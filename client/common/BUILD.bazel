@@ -1,10 +1,24 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "ts_project")
+load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
-# gazelle:aspect_js enabled
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/extension-api-types:tsconfig",
+    ],
+)
 
 ts_project(
-    name = "common",
+    name = "common_lib",
     srcs = [
         "src/errors/constants.ts",
         "src/errors/errors.ts",
@@ -29,6 +43,7 @@ ts_project(
         "src/util/markdown/contributions.ts",
         "src/util/markdown/index.ts",
         "src/util/markdown/markdown.ts",
+        "src/util/path.ts",
         "src/util/rxjs/asObservable.ts",
         "src/util/rxjs/combineLatestOrDefault.ts",
         "src/util/rxjs/index.ts",
@@ -38,29 +53,31 @@ ts_project(
         "src/util/types.ts",
         "src/util/url.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
-        ":node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",
+        "//:node_modules/@types/dompurify",
         "//:node_modules/@types/highlight.js",
-        "//:node_modules/@types/history",  #keep
+        "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",  #keep
-        "//:node_modules/@types/sanitize-html",
+        "//:node_modules/dompurify",
         "//:node_modules/highlight.js",
         "//:node_modules/highlightjs-graphql",
-        "//:node_modules/history",  #keep
+        "//:node_modules/history",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/marked",
-        "//:node_modules/react-router-dom-v5-compat",  #keep
+        "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
-        "//:node_modules/sanitize-html",
-        "//:node_modules/utility-types",  #keep
+        "//:node_modules/utility-types",
     ],
 )
 
 ts_project(
     name = "common_tests",
+    testonly = True,
     srcs = [
         "src/errors/errors.test.ts",
         "src/util/fetchCache.test.ts",
@@ -74,9 +91,9 @@ ts_project(
         "src/util/string.test.ts",
         "src/util/url.test.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
-        ":common",
-        "//:node_modules/@types/jest",  #keep
+        ":common_lib",
         "//:node_modules/@types/mockdate",
         "//:node_modules/@types/node",
         "//:node_modules/jest-fetch-mock",
@@ -85,4 +102,17 @@ ts_project(
     ],
 )
 
-npm_link_all_packages(name = "node_modules")
+npm_package(
+    name = "common_pkg",
+    srcs = [
+        "package.json",
+        ":common_lib",
+    ],
+)
+
+jest_test(
+    name = "test",
+    data = [
+        ":common_tests",
+    ],
+)

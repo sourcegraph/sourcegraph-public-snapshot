@@ -1,4 +1,4 @@
-import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
+import type { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 
 import { tryCatch } from '../errors'
 
@@ -125,15 +125,6 @@ export const encodeURIPathComponent = (component: string): string =>
  */
 export const isExternalLink = (url: string): boolean =>
     !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
-
-/**
- * Appends the query parameter subtree=true to URLs.
- */
-export const appendSubtreeQueryParameter = (url: string): string => {
-    const newUrl = new URL(url, window.location.href)
-    newUrl.searchParams.set('subtree', 'true')
-    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
 
 /**
  * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,

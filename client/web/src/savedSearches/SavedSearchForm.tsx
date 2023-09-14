@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Container,
     PageHeader,
@@ -20,11 +21,10 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { Scalars, SearchPatternType } from '../graphql-operations'
-import { NamespaceProps } from '../namespaces'
-import { useExperimentalFeatures } from '../stores'
+import { type Scalars, SearchPatternType } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -105,10 +105,7 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
-            <PageHeader
-                description="Get notifications when there are new results for specific search queries."
-                className="mb-3"
-            >
+            <PageHeader className="mb-3">
                 <PageTitle title={props.title} />
                 <PageHeader.Heading as="h3" styleAs="h2">
                     <PageHeader.Breadcrumb>{props.title}</PageHeader.Breadcrumb>
@@ -135,7 +132,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                             caseSensitive={false}
                             queryState={queryState}
                             onChange={setQueryState}
-                            globbing={false}
                             preventNewLine={true}
                             applySuggestionsOnEnter={applySuggestionsOnEnter}
                         />

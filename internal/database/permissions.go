@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,6 +36,9 @@ type PermissionStore interface {
 	BulkCreate(ctx context.Context, opts []CreatePermissionOpts) ([]*types.Permission, error)
 	// BulkDelete deletes a permission with the provided ID
 	BulkDelete(ctx context.Context, opts []DeletePermissionOpts) error
+	// GetPermissionForUser retrieves a permission for a user. If the user doesn't have the permission
+	// it returns an error.
+	GetPermissionForUser(ctx context.Context, opts GetPermissionForUserOpts) (*types.Permission, error)
 	// Count returns the number of permissions in the database matching the options provided.
 	Count(ctx context.Context, opts PermissionListOpts) (int, error)
 	// Create inserts the given permission into the database.
@@ -47,9 +51,16 @@ type PermissionStore interface {
 	List(ctx context.Context, opts PermissionListOpts) ([]*types.Permission, error)
 }
 
+type GetPermissionForUserOpts struct {
+	UserID int32
+
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
+}
+
 type CreatePermissionOpts struct {
-	Namespace types.PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 }
 
 type PermissionOpts struct {
@@ -70,9 +81,15 @@ type PermissionListOpts struct {
 
 type PermissionNotFoundErr struct {
 	ID int32
+
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 }
 
 func (p *PermissionNotFoundErr) Error() string {
+	if p.ID == 0 {
+		return fmt.Sprintf("permission %s#%s not found for user", p.Namespace, p.Action)
+	}
 	return fmt.Sprintf("permission with ID %d not found", p.ID)
 }
 
@@ -88,6 +105,49 @@ var _ PermissionStore = &permissionStore{}
 
 func PermissionsWith(other basestore.ShareableStore) PermissionStore {
 	return &permissionStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+const getPermissionForUserQuery = `
+SELECT %s FROM permissions
+INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
+INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
+WHERE permissions.action = %s AND permissions.namespace = %s AND user_roles.user_id = %s
+LIMIT 1
+`
+
+func (p *permissionStore) GetPermissionForUser(ctx context.Context, opts GetPermissionForUserOpts) (*types.Permission, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("missing user id")
+	}
+
+	if !opts.Namespace.Valid() {
+		return nil, errors.New("invalid permission namespace")
+	}
+
+	if opts.Action == "" {
+		return nil, errors.New("missing permission action")
+	}
+
+	q := sqlf.Sprintf(
+		getPermissionForUserQuery,
+		sqlf.Join(permissionColumns, ", "),
+		opts.Action,
+		opts.Namespace,
+		opts.UserID,
+	)
+
+	permission, err := scanPermission(p.QueryRow(ctx, q))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &PermissionNotFoundErr{
+				Namespace: opts.Namespace,
+				Action:    opts.Action,
+			}
+		}
+		return nil, errors.Wrap(err, "scanning permission")
+	}
+
+	return permission, nil
 }
 
 const permissionCreateQueryFmtStr = `
@@ -192,7 +252,7 @@ func (p *permissionStore) Delete(ctx context.Context, opts DeletePermissionOpts)
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&PermissionNotFoundErr{opts.ID}, "failed to delete permission")
+		return errors.Wrap(&PermissionNotFoundErr{ID: opts.ID}, "failed to delete permission")
 	}
 	return nil
 }

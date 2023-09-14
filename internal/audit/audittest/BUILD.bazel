@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "audittest",
+    srcs = ["audittest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/audit/audittest",
+    visibility = ["//:__subpackages__"],
+    deps = ["@com_github_sourcegraph_log//logtest"],
+)
+
+go_test(
+    name = "audittest_test",
+    srcs = ["audittest_test.go"],
+    embed = [":audittest"],
+    deps = [
+        "//internal/actor",
+        "//internal/audit",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

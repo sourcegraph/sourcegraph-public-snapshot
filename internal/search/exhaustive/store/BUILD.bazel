@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "exhaustive_search_jobs.go",
+        "exhaustive_search_repo_jobs.go",
+        "exhaustive_search_repo_revision_jobs.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/search/exhaustive/types",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = [
+        "exhaustive_search_jobs_test.go",
+        "exhaustive_search_repo_jobs_test.go",
+        "exhaustive_search_repo_revision_jobs_test.go",
+        "store_test.go",
+    ],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        ":store",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/auth",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "//internal/search/exhaustive/types",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

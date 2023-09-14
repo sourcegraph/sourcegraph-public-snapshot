@@ -107,7 +107,7 @@
           "uuid": {
             "description": "The UUID of a Bitbucket Cloud repo (as returned by the Bitbucket Cloud's API) to exclude from mirroring.",
             "type": "string",
-            "pattern": "^\\{[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}\\}$"
+            "pattern": "^\\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\}$"
           },
           "pattern": {
             "description": "Regular expression which matches against the name of a Bitbucket Cloud repo.",
@@ -123,7 +123,7 @@
     },
     "webhookSecret": {
       "description": "A shared secret used to authenticate incoming webhooks (minimum 12 characters).",
-      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks#deprecation-notice",
+      "deprecationMessage": "Deprecated in favour of first class webhooks. See https://docs.sourcegraph.com/admin/config/webhooks/incoming#deprecation-notice",
       "type": "string",
       "minLength": 12
     }

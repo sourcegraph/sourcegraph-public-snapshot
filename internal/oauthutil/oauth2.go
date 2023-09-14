@@ -1,7 +1,9 @@
 package oauthutil
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -27,6 +29,9 @@ type OAuthContext struct {
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
+
+	// CustomQueryParams are URL parameters which may be needed by a specific provider that may have a custom OAuth2 implementation.
+	CustomQueryParams map[string]string
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
@@ -50,10 +55,20 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		}
 	}
 
-	if err := auther.Authenticate(req); err != nil {
+	var err error
+	if err = auther.Authenticate(req); err != nil {
 		return nil, errors.Wrap(err, "authenticating request")
 	}
 
+	// Store the body first in case we need to retry the request
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+	}
+	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	// Do first request
 	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
@@ -70,6 +85,8 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		if err = autherWithRefresh.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request after token refresh")
 		}
+		// We need to reset the body before retrying the request
+		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 		resp, err = doer.Do(req.WithContext(ctx))
 	}
 

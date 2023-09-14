@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "iface.go",
+        "observability.go",
+        "root_resolver.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/transport/graphql",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/ranking",
+        "//internal/codeintel/ranking/internal/shared",
+        "//internal/codeintel/ranking/shared",
+        "//internal/codeintel/resolvers",
+        "//internal/codeintel/shared/resolvers",
+        "//internal/gqlutil",
+        "//internal/metrics",
+        "//internal/observation",
+    ],
+)

@@ -22,10 +22,13 @@ export const esbuildDevelopmentServer = async (
     // is rare enough to ignore here).
     if (!ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS) {
         const ctx = await buildMonaco(STATIC_ASSETS_PATH)
+        await ctx.rebuild()
         await ctx.dispose()
     }
 
     const ctx = await esbuildContext(BUILD_OPTIONS)
+
+    await ctx.watch()
 
     // Start esbuild's server on a random local port.
     const { host: esbuildHost, port: esbuildPort } = await ctx.serve({

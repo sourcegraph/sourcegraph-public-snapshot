@@ -3,238 +3,232 @@
 # This is a test CODEOWNERS file generated from all the CODENOTIFY files in this repository. It is not intended as a
 # move to use CODEOWNERS again, but rather to dogfood our Own product within Sourcegraph (hence the `.test` naming)
 
-.github/workflows/codenotify.yml @unknwon
-.github/workflows/licenses-check.yml          @bobheadxi
-.github/workflows/licenses-update.yml         @bobheadxi
-.github/workflows/renovate-downstream.yml     @bobheadxi
-.github/workflows/renovate-downstream.json    @bobheadxi
+/.github/workflows/codenotify.yml @unknwon
+/.github/workflows/licenses-check.yml          @bobheadxi
+/.github/workflows/licenses-update.yml         @bobheadxi
+/.github/workflows/renovate-downstream.yml     @bobheadxi
+/.github/workflows/renovate-downstream.json    @bobheadxi
 
-client/branded/src/search-ui/components/** @limitedmage @fkling
+/client/branded/src/search-ui/components/** @fkling
 
-client/jetbrains/** @vdavid @philipp-spiess
+/client/jetbrains/** @vdavid @philipp-spiess
 
-client/shared/src/search/**/* @fkling
+/client/shared/src/search/**/* @fkling
 
-client/shared/src/search/query/**/* @fkling
+/client/shared/src/search/query/**/* @fkling
 
-client/web/src/enterprise/batches/**/* @eseliger @courier-new @BolajiOlajide
+/client/web/src/enterprise/batches/**/* @eseliger @BolajiOlajide
 
-client/web/src/enterprise/code-monitoring/**/* @limitedmage
+/client/web/src/enterprise/codeintel/**/* @efritz
 
-client/web/src/enterprise/codeintel/**/* @efritz
+/client/web/src/enterprise/executors/**/* @efritz @eseliger
 
-client/web/src/enterprise/executors/**/* @efritz @eseliger
+/client/web/src/integration/batches* @eseliger @BolajiOlajide
 
-client/web/src/integration/batches* @eseliger @courier-new @BolajiOlajide
-client/web/src/integration/search* @limitedmage
-client/web/src/integration/code-monitoring* @limitedmage
+/client/web/src/search/**/* @fkling
 
-client/web/src/search/**/* @limitedmage @fkling
+/cmd/blobstore/**/* @slimsag
 
-cmd/blobstore/**/* @slimsag
+/cmd/frontend/graphqlbackend/observability.go @bobheadxi
+/cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
+/cmd/frontend/graphqlbackend/*search*.go @keegancsmith
+/cmd/frontend/graphqlbackend/*zoekt*.go @keegancsmith
+/cmd/frontend/graphqlbackend/batches.go @eseliger
+/cmd/frontend/graphqlbackend/insights.go @sourcegraph/code-insights-backend
+/cmd/frontend/graphqlbackend/codeintel.go @efritz
+/cmd/frontend/graphqlbackend/oobmigrations.go @efritz
 
-cmd/frontend/graphqlbackend/observability.go @bobheadxi
-cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
-cmd/frontend/graphqlbackend/*search*.go @keegancsmith
-cmd/frontend/graphqlbackend/*zoekt*.go @keegancsmith
-cmd/frontend/graphqlbackend/batches.go @eseliger @courier-new
-cmd/frontend/graphqlbackend/insights.go @sourcegraph/code-insights-backend
-cmd/frontend/graphqlbackend/codeintel.go @efritz
-cmd/frontend/graphqlbackend/oobmigrations.go @efritz
+/cmd/frontend/internal/search/** @keegancsmith
+/cmd/frontend/internal/search/**/* @camdencheek
+/cmd/frontend/internal/search/**/* @jtibshirani
 
-cmd/frontend/internal/search/** @keegancsmith
-cmd/frontend/internal/search/**/* @camdencheek
+/cmd/searcher/**/* @keegancsmith
 
-cmd/gitserver/server/* @indradhanush @sashaostrikov
+/cmd/server/internal/goreman/** @keegancsmith
 
-cmd/repo-updater/* @indradhanush @sashaostrikov
+/cmd/server/internal/goremancmd/** @keegancsmith
 
-cmd/searcher/**/* @keegancsmith
+/cmd/symbols/** @keegancsmith
 
-cmd/server/internal/goreman/** @keegancsmith
+/cmd/worker/**/* @efritz
 
-cmd/server/internal/goremancmd/** @keegancsmith
+/dev/authtest/**/* @unknwon
 
-cmd/symbols/** @keegancsmith
+/dev/codeintel-qa/**/* @efritz
 
-cmd/worker/**/* @efritz
+/dev/depgraph/**/* @efritz
 
-dev/authtest/**/* @unknwon
+/dev/gqltest/**/* @unknwon
 
-dev/codeintel-qa/**/* @efritz
+/doc/**/admin/** @sourcegraph/delivery
+/doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
 
-dev/depgraph/**/* @efritz
+/doc/batch_changes/**/* @eseliger
 
-dev/gqltest/**/* @unknwon
+/doc/code_navigation/**/* @efritz
 
-doc/**/admin/** @sourcegraph/delivery
-doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
+/doc/code_search/**/* @rvantonder
 
-doc/batch_changes/**/* @eseliger @courier-new
+/doc/dev/adr/**/* @unknwon
 
-doc/code_navigation/**/* @efritz
+/doc/dev/background-information/codeintel/**/* @efritz
 
-doc/code_search/**/* @rvantonder
+/docker-images/cadvisor/**/* @bobheadxi
 
-doc/dev/adr/**/* @unknwon
+/docker-images/grafana/**/* @bobheadxi
 
-doc/dev/background-information/codeintel/**/* @efritz
+/docker-images/postgres-12-alpine/**/* @sourcegraph/delivery
 
-docker-images/cadvisor/**/* @bobheadxi
+/docker-images/prometheus/**/* @bobheadxi
 
-docker-images/grafana/**/* @bobheadxi
+/cmd/executor/**/* @efritz
 
-docker-images/postgres-12-alpine/**/* @sourcegraph/delivery
+/cmd/frontend/internal/auth/**/* @unknwon
 
-docker-images/prometheus/**/* @bobheadxi
+/cmd/frontend/internal/authz/**/* @unknwon
 
-enterprise/cmd/executor/**/* @efritz
+/cmd/frontend/internal/codeintel/**/* @efritz
 
-enterprise/cmd/frontend/internal/auth/**/* @unknwon
+/cmd/frontend/internal/executorqueue/**/* @efritz @eseliger
 
-enterprise/cmd/frontend/internal/authz/**/* @unknwon
+/cmd/frontend/internal/licensing/**/* @unknwon
 
-enterprise/cmd/frontend/internal/codeintel/**/* @efritz
+/enterprise/cmd/migrator/**/* @efritz
 
-enterprise/cmd/frontend/internal/executorqueue/**/* @efritz @eseliger
+/cmd/precise-code-intel-worker/**/* @efritz
 
-enterprise/cmd/frontend/internal/licensing/**/* @unknwon
+/cmd/repo-updater/internal/authz/**/* @unknwon
 
-enterprise/cmd/migrator/**/* @efritz
+/enterprise/cmd/worker/**/* @efritz
 
-enterprise/cmd/precise-code-intel-worker/**/* @efritz
+/enterprise/cmd/worker/internal/batches/**/* @eseliger
 
-enterprise/cmd/repo-updater/**/* @indradhanush
+/enterprise/cmd/worker/internal/executorqueue/**/* @efritz @eseliger
 
-enterprise/cmd/repo-updater/internal/authz/**/* @unknwon
+/enterprise/cmd/worker/internal/executors/**/* @efritz
 
-enterprise/cmd/worker/**/* @efritz
+/enterprise/dev/ci/**/* @bobheadxi
 
-enterprise/cmd/worker/internal/batches/**/* @eseliger
+/enterprise/internal/authz/**/* @unknwon
 
-enterprise/cmd/worker/internal/executorqueue/**/* @efritz @eseliger
+/internal/batches/**/* @eseliger
 
-enterprise/cmd/worker/internal/executors/**/* @efritz
+/enterprise/internal/cloud/**/* @unknwon @michaellzc
 
-enterprise/dev/ci/**/* @bobheadxi
+/internal/codeintel/**/* @efritz @Strum355
 
-enterprise/internal/authz/**/* @unknwon
+/enterprise/internal/database/external_services* @unknwon
+/enterprise/internal/database/perms_store* @unknwon
 
-enterprise/internal/batches/**/* @eseliger
+/enterprise/internal/executor/**/* @efritz
 
-enterprise/internal/cloud/**/* @unknwon @michaellzc
+/enterprise/internal/insights/**/* @sourcegraph/code-insights-backend
 
-enterprise/internal/codeintel/**/* @efritz @Strum355
+/enterprise/internal/license/**/* @unknwon
 
-enterprise/internal/database/external_services* @unknwon
-enterprise/internal/database/perms_store* @unknwon
+/enterprise/internal/licensing/**/* @unknwon
 
-enterprise/internal/executor/**/* @efritz
+/internal/authz/**/* @unknwon
 
-enterprise/internal/insights/**/* @sourcegraph/code-insights-backend
+/internal/codeintel/**/* @efritz
 
-enterprise/internal/license/**/* @unknwon
+/internal/codeintel/dependencies/**/* @mrnugget
 
-enterprise/internal/licensing/**/* @unknwon
+/internal/database/external* @eseliger
+/internal/database/namespaces* @eseliger
+/internal/database/repos* @eseliger
+/internal/database/permissions* @BolajiOlajide
+/internal/database/user_roles* @BolajiOlajide
+/internal/database/roles* @BolajiOlajide
+/internal/database/role_permissions* @BolajiOlajide
 
-internal/authz/**/* @unknwon
+/internal/database/basestore/**/* @efritz
 
-internal/codeintel/**/* @efritz
+/internal/database/batch/**/* @efritz
 
-internal/codeintel/dependencies/**/* @mrnugget
+/internal/database/connections/**/* @efritz
 
-internal/database/external* @eseliger
-internal/database/namespaces* @eseliger
-internal/database/repos* @eseliger
-internal/database/permissions* @BolajiOlajide
-internal/database/user_roles* @BolajiOlajide
-internal/database/roles* @BolajiOlajide
-internal/database/role_permissions* @BolajiOlajide
+/internal/database/dbconn/**/* @efritz
 
-internal/database/basestore/**/* @efritz
+/internal/database/dbtest/**/* @efritz
 
-internal/database/batch/**/* @efritz
+/internal/database/dbutil/**/* @efritz
 
-internal/database/connections/**/* @efritz
+/internal/database/locker/**/* @efritz
 
-internal/database/dbconn/**/* @efritz
+/internal/database/migration/**/* @efritz
 
-internal/database/dbtest/**/* @efritz
+/internal/database/postgresdsn/**/* @efritz
 
-internal/database/dbutil/**/* @efritz
+/internal/debugserver/** @keegancsmith
 
-internal/database/locker/**/* @efritz
+/internal/diskcache/** @keegancsmith
 
-internal/database/migration/**/* @efritz
+/internal/endpoint/** @keegancsmith
 
-internal/database/postgresdsn/**/* @efritz
+/internal/env/baseconfig.go @efritz
 
-internal/debugserver/** @keegancsmith
+/internal/extsvc/**/* @eseliger
 
-internal/diskcache/** @keegancsmith
+/internal/extsvc/auth/**/* @unknwon
 
-internal/endpoint/** @keegancsmith
+/internal/goroutine/**/* @efritz
 
-internal/env/baseconfig.go @efritz
+/internal/gqltestutil/**/* @unknwon
 
-internal/extsvc/**/* @eseliger
+/internal/honey/** @keegancsmith
 
-internal/extsvc/auth/**/* @unknwon
+/internal/httpcli/** @keegancsmith
 
-internal/gitserver/* @indradhanush @sashaostrikov
+/internal/lazyregexp/** @keegancsmith
 
-internal/goroutine/**/* @efritz
+/internal/luasandbox/**/* @efritz
 
-internal/gqltestutil/**/* @unknwon
+/internal/mutablelimiter/** @keegancsmith
 
-internal/honey/** @keegancsmith
+/internal/observation/**/* @sourcegraph/dev-experience
 
-internal/httpcli/** @keegancsmith
+/internal/oobmigration/**/* @efritz
 
-internal/lazyregexp/** @keegancsmith
+/internal/rcache/** @keegancsmith
 
-internal/luasandbox/**/* @efritz
+/internal/redispool/** @keegancsmith
 
-internal/mutablelimiter/** @keegancsmith
+/internal/search/**/* @keegancsmith @camdencheek
 
-internal/observation/**/* @sourcegraph/dev-experience
+/internal/src-cli/**/* @eseliger @BolajiOlajide
 
-internal/oobmigration/**/* @efritz
+/internal/symbols/** @keegancsmith
 
-internal/rcache/** @keegancsmith
+/internal/sysreq/** @keegancsmith
 
-internal/redispool/** @keegancsmith
+/internal/trace/** @keegancsmith
+/internal/trace/**/* @sourcegraph/dev-experience
 
-internal/repos/* @indradhanush @sashaostrikov
+/internal/tracer/** @keegancsmith
+/internal/tracer/**/* @sourcegraph/dev-experience
 
-internal/search/**/* @keegancsmith @camdencheek
+/internal/usagestats/batches.go @eseliger
+/internal/usagestats/batches_test.go @eseliger
+/internal/usagestats/*codeintel*.go @efritz
 
-internal/src-cli/**/* @eseliger @BolajiOlajide @courier-new
+/internal/vcs/** @keegancsmith
 
-internal/symbols/** @keegancsmith
+/internal/workerutil/**/* @efritz
 
-internal/sysreq/** @keegancsmith
+/lib/codeintel/**/* @efritz
 
-internal/trace/** @keegancsmith
-internal/trace/**/* @sourcegraph/dev-experience
+/lib/errors/**/* @sourcegraph/dev-experience
 
-internal/tracer/** @keegancsmith
-internal/tracer/**/* @sourcegraph/dev-experience
+/lib/servicecatalog/**/* @sourcegraph/cloud @sourcegraph/security
 
-internal/usagestats/batches.go @eseliger
-internal/usagestats/batches_test.go @eseliger
-internal/usagestats/*codeintel*.go @efritz
+/monitoring/**/* @bobheadxi @slimsag @sourcegraph/delivery
+/monitoring/frontend.go @efritz
+/monitoring/precise_code_intel_* @efritz @sourcegraph/code-intelligence
 
-internal/vcs/** @keegancsmith
-
-internal/workerutil/**/* @efritz
-
-lib/codeintel/**/* @efritz
-
-lib/errors/**/* @sourcegraph/dev-experience
-
-lib/servicecatalog/**/* @sourcegraph/cloud @sourcegraph/security
-
-monitoring/**/* @bobheadxi @slimsag @sourcegraph/delivery
-monitoring/frontend.go @efritz
-monitoring/precise_code_intel_* @efritz @sourcegraph/code-intelligence
+/enterprise/internal/own/ @sourcegraph/own
+/enterprise/internal/database/codeowners* @sourcegraph/own
+/cmd/frontend/internal/own/ @sourcegraph/own
+/client/web/src/**/own/ @sourcegraph/own
+/cmd/frontend/graphqlbackend/own* @sourcegraph/own
+/internal/usagestats/own* @sourcegraph/own

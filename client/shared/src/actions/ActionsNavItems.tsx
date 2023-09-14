@@ -6,17 +6,17 @@ import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { Contributions, Evaluated } from '@sourcegraph/client-api'
-import { Context } from '@sourcegraph/template-parser'
+import type { Contributions, Evaluated } from '@sourcegraph/client-api'
+import type { Context } from '@sourcegraph/template-parser'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { ContributionScope } from '../api/extension/api/context/context'
+import type { ContributionScope } from '../api/extension/api/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
-import { TelemetryProps } from '../telemetry/telemetryService'
+import type { TelemetryProps } from '../telemetry/telemetryService'
 
-import { ActionItem, ActionItemProps } from './ActionItem'
-import { ActionsProps } from './ActionsContainer'
+import { ActionItem, type ActionItemProps } from './ActionItem'
+import type { ActionsProps } from './ActionsContainer'
 
 import styles from './ActionsNavItems.module.scss'
 

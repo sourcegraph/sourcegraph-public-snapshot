@@ -3,8 +3,8 @@ import React, { useCallback, useMemo } from 'react'
 import classNames from 'classnames'
 import { ReplaySubject } from 'rxjs'
 
-import { FileDiffFields } from '../../graphql-operations'
-import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
+import type { FileDiffFields } from '../../graphql-operations'
+import type { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 
 import { DiffHunk } from './DiffHunk'
 import { DiffSplitHunk } from './DiffSplitHunk'

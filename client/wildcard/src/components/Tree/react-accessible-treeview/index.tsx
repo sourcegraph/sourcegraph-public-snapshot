@@ -9,8 +9,11 @@
  *  - Apply fix from https://github.com/dgreene1/react-accessible-treeview/pull/81
  *  - Remove PropTypes API
  */
-import cx from 'classnames'
+
 import React, { useEffect, useReducer, useRef } from 'react'
+
+import cx from 'classnames'
+
 import {
     composeHandlers,
     difference,
@@ -1441,24 +1444,6 @@ const handleKeyDown =
                 expandOnKeyboardSelect && dispatch({ type: treeTypes.toggle, id, lastInteractedWith: id })
                 return
             default:
-                if (event.key.length === 1) {
-                    let currentId = getNextAccessible(data, id, expandedIds)
-                    while (currentId !== id) {
-                        if (currentId == null) {
-                            currentId = data[0].children[0]
-                            continue
-                        }
-                        if (data[currentId].name[0].toLowerCase() === event.key.toLowerCase()) {
-                            dispatch({
-                                type: treeTypes.focus,
-                                id: currentId,
-                                lastInteractedWith: id,
-                            })
-                            return
-                        }
-                        currentId = getNextAccessible(data, currentId, expandedIds)
-                    }
-                }
                 return
         }
     }

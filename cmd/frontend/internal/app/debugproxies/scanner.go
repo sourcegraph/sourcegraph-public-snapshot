@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Represents an endpoint
+// Endpoint represents an endpoint
 type Endpoint struct {
 	// Service to which the endpoint belongs
 	Service string
@@ -53,7 +53,7 @@ func startClusterScannerWithClient(client *kubernetes.Clientset, ns string, cons
 	return nil
 }
 
-// Starts a cluster scanner with the specified consumer. Does not block.
+// StartClusterScanner starts a cluster scanner with the specified consumer. Does not block.
 func StartClusterScanner(consumer ScanConsumer) error {
 	config, err := rest.InClusterConfig()
 	if err != nil {

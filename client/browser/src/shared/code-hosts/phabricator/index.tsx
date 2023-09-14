@@ -1,4 +1,4 @@
-import { FileSpec, RawRepoSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { FileSpec, RawRepoSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 export enum PhabricatorMode {
     Diffusion = 1,

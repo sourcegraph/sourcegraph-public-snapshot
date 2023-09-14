@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 
 	sglog "github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 )
 
 func maybeBlobstore(logger sglog.Logger) []string {
@@ -14,7 +16,7 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	}
 
 	// Point at local blobstore endpoint.
-	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://127.0.0.1:9000")
+	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", deploy.BlobstoreDefaultEndpoint())
 	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
 
 	// cmd/server-specific blobstore env vars
@@ -50,6 +52,10 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	SetDefaultEnv("JCLOUDS_KEYSTONE_SCOPE", "")
 	SetDefaultEnv("JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME", "")
 	// SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir) // overridden above; here for equality with Dockerfile
+	// We don't use the secure endpoint, but these values must be set
+	SetDefaultEnv("S3PROXY_SECURE_ENDPOINT", "https://0.0.0.0:9443")
+	SetDefaultEnv("S3PROXY_KEYSTORE_PATH", "/opt/s3proxy/test-classes/keystore.jks")
+	SetDefaultEnv("S3PROXY_KEYSTORE_PASSWORD", "password")
 
 	// Configure blobstore service
 	blobstoreDataDir := os.Getenv("JCLOUDS_FILESYSTEM_BASEDIR")

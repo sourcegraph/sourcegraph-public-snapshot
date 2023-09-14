@@ -1,11 +1,11 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '../../../../../../stories/BrandedStory'
 import { H2 } from '../../../../../Typography'
-import { Series } from '../../../../types'
-import { getSeriesData, SeriesWithData } from '../../utils'
+import type { Series } from '../../../../types'
+import { getSeriesData, type SeriesWithData } from '../../utils'
 
-import { MinimumPointInfo, TooltipContent } from './TooltipContent'
+import { type MinimumPointInfo, TooltipContent } from './TooltipContent'
 
 const StoryConfig: Meta = {
     title: 'wildcard/Charts/Core',

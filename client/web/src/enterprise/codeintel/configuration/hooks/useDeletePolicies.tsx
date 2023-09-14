@@ -1,8 +1,8 @@
-import { ApolloError, FetchResult, MutationFunctionOptions } from '@apollo/client'
+import type { ApolloError, FetchResult, MutationFunctionOptions } from '@apollo/client'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 
-import {
+import type {
     DeleteCodeIntelligenceConfigurationPolicyResult,
     DeleteCodeIntelligenceConfigurationPolicyVariables,
     Exact,

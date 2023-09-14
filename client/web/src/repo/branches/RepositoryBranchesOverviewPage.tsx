@@ -1,17 +1,24 @@
 import * as React from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, createAggregateError, ErrorLike, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
+import {
+    asError,
+    createAggregateError,
+    type ErrorLike,
+    isErrorLike,
+    logger,
+    memoizeObservable,
+} from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     GitRefFields,
     RepositoryGitBranchesOverviewRepository,
     RepositoryGitBranchesOverviewResult,
@@ -19,7 +26,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
-import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+import type { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 import styles from './RepositoryBranchesOverviewPage.module.scss'
 
@@ -57,11 +64,11 @@ export const queryGitBranches = memoizeObservable(
             { ...args, withBehindAhead: true }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node) {
+                if (!data?.node) {
                     throw createAggregateError(errors)
                 }
                 const repo = data.node as RepositoryGitBranchesOverviewRepository
-                if (!repo.gitRefs || !repo.gitRefs.nodes) {
+                if (!repo.gitRefs?.nodes) {
                     throw createAggregateError(errors)
                 }
                 return {

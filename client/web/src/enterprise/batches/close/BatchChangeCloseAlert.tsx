@@ -6,7 +6,7 @@ import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
 import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { Scalars } from '../../../graphql-operations'
+import type { Scalars } from '../../../graphql-operations'
 
 import { closeBatchChange as _closeBatchChange } from './backend'
 

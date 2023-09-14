@@ -1,4 +1,4 @@
-import { Token } from './token'
+import type { Token } from './token'
 
 /**
  * stringHuman creates a valid query string from a scanned query formatted for human

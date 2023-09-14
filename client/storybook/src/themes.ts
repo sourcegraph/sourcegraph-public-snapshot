@@ -1,4 +1,4 @@
-import { ThemeVars, themes } from '@storybook/theming'
+import { type ThemeVars, themes } from '@storybook/theming'
 import openColor from 'open-color'
 
 export const THEME_DARK_CLASS = 'theme-dark'

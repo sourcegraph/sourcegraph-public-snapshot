@@ -5,9 +5,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -23,23 +24,23 @@ func TestComparePermissions(t *testing.T) {
 	t.Run("no changes to permissions", func(t *testing.T) {
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []string{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []string{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-3", Actions: []string{"READ"}},
+				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"READ"}},
 			},
 		}
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 0)
-		assert.Len(t, deleted, 0)
+		require.Len(t, added, 0)
+		require.Len(t, deleted, 0)
 	})
 
 	t.Run("permissions deleted", func(t *testing.T) {
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []string{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []string{"READ"}},
+				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ"}},
 			},
 		}
 
@@ -50,8 +51,8 @@ func TestComparePermissions(t *testing.T) {
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 0)
-		assert.Len(t, deleted, 2)
+		require.Len(t, added, 0)
+		require.Len(t, deleted, 2)
 		if diff := cmp.Diff(want, deleted, cmpopts.SortSlices(sortDeletePermissionOptSlice)); diff != "" {
 			t.Error(diff)
 		}
@@ -60,10 +61,10 @@ func TestComparePermissions(t *testing.T) {
 	t.Run("permissions added", func(t *testing.T) {
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []string{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []string{"READ", "WRITE", "EXECUTE"}},
-				{Name: "TEST-NAMESPACE-3", Actions: []string{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-4", Actions: []string{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE", "EXECUTE"}},
+				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE-4", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
 			},
 		}
 
@@ -76,8 +77,8 @@ func TestComparePermissions(t *testing.T) {
 
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 4)
-		assert.Len(t, deleted, 0)
+		require.Len(t, added, 4)
+		require.Len(t, deleted, 0)
 		if diff := cmp.Diff(want, added); diff != "" {
 			t.Error(diff)
 		}
@@ -86,10 +87,10 @@ func TestComparePermissions(t *testing.T) {
 	t.Run("permissions deleted and added", func(t *testing.T) {
 		schemaPerms := Schema{
 			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []string{"READ"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []string{"READ", "WRITE", "EXECUTE"}},
-				{Name: "TEST-NAMESPACE-3", Actions: []string{"WRITE"}},
-				{Name: "TEST-NAMESPACE-4", Actions: []string{"READ", "WRITE"}},
+				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ"}},
+				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE", "EXECUTE"}},
+				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"WRITE"}},
+				{Name: "TEST-NAMESPACE-4", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
 			},
 		}
 
@@ -110,12 +111,12 @@ func TestComparePermissions(t *testing.T) {
 		// do stuff
 		added, deleted := ComparePermissions(dbPerms, schemaPerms)
 
-		assert.Len(t, added, 4)
+		require.Len(t, added, 4)
 		if diff := cmp.Diff(wantAdded, added); diff != "" {
 			t.Error(diff)
 		}
 
-		assert.Len(t, deleted, 2)
+		require.Len(t, deleted, 2)
 		less := func(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
 		if diff := cmp.Diff(wantDeleted, deleted, cmpopts.SortSlices(less)); diff != "" {
 			t.Error(diff)

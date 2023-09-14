@@ -45,9 +45,7 @@ var DockerContainer = conftypes.RawUnified{
 			"type": "builtin",
 			"allowSignup": true
 		}
-	],
-
-	"disablePublicRepoRedirects": true,
+	]
 }`,
 }
 
@@ -75,22 +73,33 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 }`,
 }
 
-// SingleProgramInMemoryExecutorPassword is an in-memory generated shared access token for communication
+// AppInMemoryExecutorPassword is an in-memory generated shared access token for communication
 // between the bundled executor and the publicly-facing executor API.
-var SingleProgramInMemoryExecutorPassword = uuid.NewV4().String()
+var AppInMemoryExecutorPassword = uuid.NewV4().String()
 
-// SingleProgram is the default configuration for the single-program (Go static binary)
-// distribution.
-var SingleProgram = conftypes.RawUnified{
+// App is the default configuration for the Sourcegraph app (which is also a single Go static binary.)
+var App = conftypes.RawUnified{
 	Site: `{
 	"auth.providers": [
 		{ "type": "builtin" }
 	],
 	"externalURL": "http://localhost:3080",
-
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
+	"experimentalFeatures": {
+		"structuralSearch": "disabled"
+	},
+	"cody.enabled": true,
+	"repoListUpdateInterval": 0,
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	}
 }`,
 }
 

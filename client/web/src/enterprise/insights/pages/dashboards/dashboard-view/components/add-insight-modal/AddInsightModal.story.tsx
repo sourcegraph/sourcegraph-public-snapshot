@@ -1,17 +1,17 @@
 import { useState } from 'react'
 
-import { MockedResponse } from '@apollo/client/testing/core'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing/core'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import {
+import type {
     FindInsightsBySearchTermResult,
     FindInsightsBySearchTermVariables,
 } from '../../../../../../../graphql-operations'
-import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
+import { type CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
 import { AddInsightModal } from './AddInsightModal'
 import { GET_INSIGHTS_BY_SEARCH_TERM } from './query'

@@ -98,20 +98,15 @@ func SetString(ptr *string) func(lua.LValue) error {
 // on invocation. For use in DecodeTable.
 func SetStrings(ptr *[]string) func(lua.LValue) error {
 	return func(value lua.LValue) (err error) {
-		values, err := DecodeSlice(value)
+		table, ok := value.(*lua.LTable)
+		if !ok {
+			return NewTypeError("table", value)
+		}
+		strs, err := MapSlice(table, assertLuaString)
 		if err != nil {
 			return err
 		}
-
-		for _, v := range values {
-			str, err := assertLuaString(v)
-			if err != nil {
-				return err
-			}
-
-			*ptr = append(*ptr, str)
-		}
-
+		*ptr = append(*ptr, strs...)
 		return nil
 	}
 }
@@ -125,24 +120,34 @@ func SetLuaFunction(ptr **lua.LFunction) func(lua.LValue) error {
 	}
 }
 
-// DecodeSlice reads the values off of the given table and collects them into a
-// slice. This function returns an error if the value has an unexpected type.
-func DecodeSlice(value lua.LValue) (values []lua.LValue, _ error) {
-	table, ok := value.(*lua.LTable)
-	if !ok {
-		return nil, NewTypeError("table", value)
-	}
+type notSliceError struct {
+	value lua.LValue
+}
 
-	if err := ForEach(table, func(key, value lua.LValue) error {
+func (n *notSliceError) Error() string {
+	return NewTypeError("array", n.value).Error()
+}
+
+var _ error = &notSliceError{}
+
+func MapSlice[T any](table *lua.LTable, f func(lua.LValue) (T, error)) (values []T, _ error) {
+	return MapTableValues(table, func(value lua.LValue) (t T, _ error) {
 		if table.Len() == 0 {
-			// There are key/value pairs but they're associative, not indexed.
-			// Throw here as we're decoding a table that's of an unexpected
-			// shape.
-			return NewTypeError("array", value)
+			// At least one key-value pair is present but Len() == 0
+			// ==> This table is map-like, not slice-like.
+			return t, &notSliceError{value}
 		}
+		return f(value)
+	})
+}
 
-		values = append(values, value)
-		return nil
+// MapTableValues reads the values off of the given table and collects them into a
+// slice. Returns an error if the callback hits an error.
+func MapTableValues[T any](table *lua.LTable, f func(lua.LValue) (T, error)) (values []T, _ error) {
+	if err := ForEach(table, func(key, value lua.LValue) error {
+		v, err := f(value)
+		values = append(values, v)
+		return err
 	}); err != nil {
 		return nil, err
 	}
@@ -150,34 +155,45 @@ func DecodeSlice(value lua.LValue) (values []lua.LValue, _ error) {
 	return values, nil
 }
 
-// UnwrapLuaUserData invokes the given callback with the value within the given
+// MapUserData invokes the given callback with the value within the given
 // user data value. This function returns an error if the given type is not a
 // pointer to user data.
-func UnwrapLuaUserData(value lua.LValue, f func(any) error) error {
+func MapUserData[T any](value lua.LValue, f func(any) (T, error)) (T, error) {
 	userData, err := assertUserData(value)
 	if err != nil {
-		return err
+		var t T
+		return t, err
 	}
-
 	return f(userData.Value)
 }
 
-// UnwrapSliceOrSingleton attempts to unwrap the given Lua value as a slice, then
+// TypecheckUserData is a specialized version of MapUserData which just performs
+// a type assertion. T should be instantiated to a pointer type
+func TypecheckUserData[T any](value lua.LValue, expectedType string) (T, error) {
+	return MapUserData(value, func(value any) (T, error) {
+		v, ok := value.(T)
+		if !ok {
+			return v, NewTypeError(expectedType, value)
+		}
+		return v, nil
+	})
+}
+
+// MapSliceOrSingleton attempts to unwrap the given Lua value as a slice, then
 // call the given callback over each element of the slice. If the given value does
 // not seem to be a slice, then the callback is invoked once with the entire payload.
-func UnwrapSliceOrSingleton(value lua.LValue, f func(lua.LValue) error) error {
-	values, err := DecodeSlice(value)
-	if err != nil {
-		return f(value)
-	}
-
-	for _, value := range values {
-		if err := f(value); err != nil {
-			return err
+func MapSliceOrSingleton[T any](value lua.LValue, f func(lua.LValue) (T, error)) ([]T, error) {
+	if table, ok := value.(*lua.LTable); ok {
+		ts, err := MapSlice(table, f)
+		if _, ok := err.(*notSliceError); !ok {
+			return ts, err
 		}
 	}
-
-	return nil
+	ret, err := f(value)
+	if err != nil {
+		return nil, err
+	}
+	return []T{ret}, nil
 }
 
 // NewTypeError creates an error with the given expected and actual value type.

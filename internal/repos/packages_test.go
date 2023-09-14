@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -12,13 +13,20 @@ import (
 
 func TestPackagesSource_GetRepo(t *testing.T) {
 	ctx := context.Background()
+	svc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
+		{
+			Scheme:   "go",
+			Name:     "github.com/sourcegraph-testing/go-repo-a",
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "1.0.0"}},
+		},
+	})
 
 	dummySrc := &dummyPackagesSource{}
 	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{
 		ID:     1,
 		Kind:   extsvc.KindGoPackages,
 		Config: extsvc.NewEmptyConfig(),
-	}}
+	}, depsSvc: svc}
 
 	src.GetRepo(ctx, "go/github.com/sourcegraph-testing/go-repo-a")
 
@@ -33,7 +41,6 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 }
 
 var _ packagesSource = &dummyPackagesSource{}
-var _ packagesDownloadSource = &dummyPackagesSource{}
 
 // dummyPackagesSource is a tiny shim around Go-specific methods to track when they're called.
 type dummyPackagesSource struct {

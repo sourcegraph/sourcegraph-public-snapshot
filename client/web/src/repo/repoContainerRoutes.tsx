@@ -1,7 +1,10 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { canWriteRepoMetadata } from '../util/rbac'
+
+import { RepositoryChangelistPage } from './commit/RepositoryCommitPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
-import { RepoContainerRoute } from './RepoContainer'
+import type { RepoContainerRoute } from './RepoContainer'
 
 const RepositoryCommitPage = lazyComponent(() => import('./commit/RepositoryCommitPage'), 'RepositoryCommitPage')
 const RepositoryBranchesArea = lazyComponent(
@@ -18,6 +21,8 @@ const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsA
 
 export const compareSpecPath = '/-/compare/*'
 
+const RepositoryMetadataPage = lazyComponent(() => import('./RepoMetadataPage'), 'RepoMetadataPage')
+
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec',
@@ -28,11 +33,23 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         ),
     },
     {
+        path: '/-/changelist/:changelistID',
+        render: context => (
+            <RepoRevisionWrapper>
+                <RepositoryChangelistPage {...context} />
+            </RepoRevisionWrapper>
+        ),
+    },
+    {
         path: '/-/branches/*',
         render: context => <RepositoryBranchesArea {...context} />,
     },
     {
         path: '/-/tags',
+        render: context => <RepositoryReleasesArea {...context} />,
+    },
+    {
+        path: '/-/versions',
         render: context => <RepositoryReleasesArea {...context} />,
     },
     {
@@ -46,5 +63,10 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/stats/contributors',
         render: context => <RepositoryStatsArea {...context} />,
+    },
+    {
+        path: '/-/metadata',
+        condition: ({ authenticatedUser }) => canWriteRepoMetadata(authenticatedUser),
+        render: context => <RepositoryMetadataPage {...context} />,
     },
 ]

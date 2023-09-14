@@ -1,0 +1,95 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    min-height: 2.0625rem;
+    margin-bottom: 0.25rem;
+}
+
+.history-panel {
+    padding: 0;
+    display: flex;
+    align-items: stretch;
+    vertical-align: middle;
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: normal;
+    font-size: 0.75rem;
+    overflow: hidden;
+
+    // Hide on small screen sizes
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
+.history {
+    min-width: 0;
+    padding: 0;
+    font-size: 0.75rem;
+    flex-shrink: 1000000; // Very high value to shrink this before shrinking the ownership side.
+}
+
+.own {
+    padding: 0;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    background-color: var(--color-bg-1);
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: normal;
+    font-size: 0.75rem;
+    overflow: hidden;
+}
+
+.own-branding {
+    text-transform: uppercase;
+    background-color: var(--color-bg-2);
+    display: flex;
+    align-items: center;
+    padding-left: 0.25rem;
+    padding-right: 0.5rem;
+}
+
+.own-icon {
+    font-size: 0.875rem;
+    color: var(--purple);
+    margin-bottom: 0.0625rem; // Optically-align with text
+}
+
+.own-items {
+    padding: 0.125rem 0.5rem 0.125rem 0; // Assymetic padding to account for the avatar
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.own-item {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.own-item-empty {
+    // Same height and margin as a user avatar
+    min-height: 1.5rem;
+    margin-left: 0.5rem;
+    align-items: center;
+}
+
+.own-more {
+    color: var(--link-color);
+    margin-left: 0.5rem;
+    white-space: nowrap;
+
+    .own:hover & {
+        text-decoration: underline;
+    }
+}

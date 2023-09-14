@@ -1,4 +1,4 @@
-import { SettingsEdit } from '../api/client/services/settings'
+import type { SettingsEdit } from '../api/client/services/settings'
 
 import { convertUpdateConfigurationCommandArguments } from './commands'
 

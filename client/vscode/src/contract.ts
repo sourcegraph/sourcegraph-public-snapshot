@@ -1,14 +1,14 @@
-import { GraphQLResult } from '@sourcegraph/http-client'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import { ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { GraphQLResult } from '@sourcegraph/http-client'
+import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import type { ProxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import type { ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { EventSource } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchMatch, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import type { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { Event } from './graphql-operations'
-import { VSCEQueryState, VSCEState, VSCEStateMachine } from './state'
+import type { Event } from './graphql-operations'
+import type { VSCEQueryState, VSCEState, VSCEStateMachine } from './state'
 
 export interface ExtensionCoreAPI {
     /** For search panel webview to signal that it is ready for messages. */

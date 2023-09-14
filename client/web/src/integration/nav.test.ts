@@ -3,14 +3,14 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
+import type { NotebookFields, WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,
@@ -19,7 +19,7 @@ import {
     createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI } from './utils'
+import { createEditorAPI, removeContextFromQuery } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -103,7 +103,9 @@ describe('GlobalNavbar', () => {
             await (await driver.page.waitForSelector('.test-breadcrumb-part-last'))?.click()
 
             const input = await createEditorAPI(driver, '.test-query-input')
-            expect(await input.getValue()).toEqual('repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md')
+            expect(removeContextFromQuery((await input.getValue()) ?? '')).toStrictEqual(
+                'repo:^github\\.com/sourcegraph/sourcegraph$ file:^README\\.md'
+            )
         })
     })
 

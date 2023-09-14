@@ -1,0 +1,69 @@
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//dev:oci_defs.bzl", "image_repository")
+
+oci_image(
+    name = "s3_proxy_image",
+    base = "@wolfi_s3proxy_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/opt/s3proxy/run-docker-container.sh",
+    ],
+    env = {
+        "LOG_LEVEL": "info",
+        "S3PROXY_AUTHORIZATION": "none",
+        "S3PROXY_ENDPOINT": "http://0.0.0.0:9000",
+        "S3PROXY_IDENTITY": "local-identity",
+        "S3PROXY_CREDENTIAL": "local-credential",
+        "S3PROXY_VIRTUALHOST": "",
+        "S3PROXY_CORS_ALLOW_ALL": "false",
+        "S3PROXY_CORS_ALLOW_ORIGINS": "",
+        "S3PROXY_CORS_ALLOW_METHODS": "",
+        "S3PROXY_CORS_ALLOW_HEADERS": "",
+        "S3PROXY_IGNORE_UNKNOWN_HEADERS": "false",
+        "S3PROXY_ENCRYPTED_BLOBSTORE": "",
+        "S3PROXY_ENCRYPTED_BLOBSTORE_PASSWORD": "",
+        "S3PROXY_ENCRYPTED_BLOBSTORE_SALT": "",
+        "S3PROXY_V4_MAX_NON_CHUNKED_REQ_SIZE": "33554432",
+        "JCLOUDS_PROVIDER": "filesystem",
+        "JCLOUDS_ENDPOINT": "",
+        "JCLOUDS_REGION": "",
+        "JCLOUDS_REGIONS": "us-east-1",
+        "JCLOUDS_IDENTITY": "remote-identity",
+        "JCLOUDS_CREDENTIAL": "remote-credential",
+        "JCLOUDS_KEYSTONE_VERSION": "",
+        "JCLOUDS_KEYSTONE_SCOPE": "",
+        "JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME": "",
+        "JCLOUDS_FILESYSTEM_BASEDIR": "/data",
+        # We don't use the secure endpoint, but these values must be set
+        "S3PROXY_SECURE_ENDPOINT": "https://0.0.0.0:9443",
+        "S3PROXY_KEYSTORE_PATH": "test-classes/keystore.jks",
+        "S3PROXY_KEYSTORE_PASSWORD": "password",
+    },
+    user = "sourcegraph",
+)
+
+container_structure_test(
+    name = "s3_proxy_image_test",
+    timeout = "short",
+    configs = ["s3_proxy_image_test.yaml"],
+    driver = "docker",
+    image = ":s3_proxy_image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_tarball(
+    name = "s3_proxy_image_tarball",
+    image = ":s3_proxy_image",
+    repo_tags = ["blobstore:candidate"],
+)
+
+oci_push(
+    name = "s3_proxy_candidate_push",
+    image = ":s3_proxy_image",
+    repository = image_repository("blobstore"),
+)

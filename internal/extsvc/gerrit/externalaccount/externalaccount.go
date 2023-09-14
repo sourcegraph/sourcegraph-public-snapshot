@@ -43,5 +43,6 @@ func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32,
 	if err = db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, accountSpec, accountData); err != nil {
 		return err
 	}
+
 	return nil
 }

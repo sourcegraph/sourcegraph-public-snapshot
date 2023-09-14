@@ -1,0 +1,6 @@
+{
+  "URL": "https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/ready-to-update",
+  "Code": 422,
+  "Message": "The sha parameter must be exactly 40 characters and contain only [0-9a-f].",
+  "documentation_url": "https://docs.github.com/rest/reference/git#update-a-reference"
+ }

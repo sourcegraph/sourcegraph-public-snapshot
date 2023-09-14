@@ -1,10 +1,10 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { SiteProductVersionResult } from '../../graphql-operations'
+import type { SiteProductVersionResult } from '../../graphql-operations'
 
 export const fetchSite = (
     requestGraphQL: PlatformContext['requestGraphQL']

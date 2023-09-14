@@ -1,9 +1,11 @@
-import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 'react'
+import React, { type FC, useCallback, useRef, useState, useMemo, useEffect } from 'react'
 
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
+import { basename, dirname } from '@sourcegraph/common'
+import type { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
     CardHeader,
@@ -18,8 +20,9 @@ import {
     useElementObscuredArea,
 } from '@sourcegraph/wildcard'
 
-import { BlobFileFields } from '../../graphql-operations'
-import { basename, dirname } from '../../util/path'
+import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
+import type { BlobFileFields } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 
@@ -29,9 +32,16 @@ interface ReadmePreviewCardProps {
     entry: TreeFields['entries'][number]
     repoName: string
     revision: string
+    className?: string
 }
-export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({ entry, repoName, revision }) => {
+export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({
+    entry,
+    repoName,
+    revision,
+    className,
+}) => {
     const [readmeInfo, setReadmeInfo] = useState<null | BlobFileFields>(null)
+    const { setEditorScope } = useCodySidebar()
 
     useEffect(() => {
         const subscription = fetchBlob({
@@ -49,8 +59,22 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
         return () => subscription.unsubscribe()
     }, [repoName, revision, entry.path])
 
+    useEffect(() => {
+        if (readmeInfo) {
+            setEditorScope(
+                new FileContentEditor({ filePath: entry.path, repoName, revision, content: readmeInfo.content })
+            )
+        }
+
+        return () => {
+            if (readmeInfo) {
+                setEditorScope(new NoopEditor())
+            }
+        }
+    }, [repoName, revision, entry.path, readmeInfo, setEditorScope])
+
     return (
-        <section className="mb-4">
+        <section className={classNames('mb-4', className)}>
             {readmeInfo ? (
                 <RenderedReadmeFile blob={readmeInfo} entryUrl={entry.url} />
             ) : (

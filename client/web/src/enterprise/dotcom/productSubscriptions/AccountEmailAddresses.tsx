@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import { DotComProductSubscriptionEmailFields } from '../../../graphql-operations'
+import type { DotComProductSubscriptionEmailFields } from '../../../graphql-operations'
 
 /**
  * Displays an inline list of email addresses for an account.

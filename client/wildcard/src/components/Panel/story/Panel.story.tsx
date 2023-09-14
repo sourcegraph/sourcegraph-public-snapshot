@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { useState } from '@storybook/addons'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
@@ -12,7 +12,7 @@ import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
 import { Tabs, Tab, TabList, TabPanel, TabPanels } from '../../Tabs'
-import { PANEL_POSITIONS } from '../constants'
+import type { PANEL_POSITIONS } from '../constants'
 import { Panel } from '../Panel'
 
 import { panels } from './TabbedPanelContent.fixtures'

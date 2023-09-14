@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -72,7 +73,7 @@ func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.E
 	return err
 }
 
-// ExcludeRepoFromExternalService excludes given repo from given external service config.
+// ExcludeRepoFromExternalServices excludes given repo from given external service config.
 //
 // Function is pretty beefy, what it does is:
 // - finds an external service by ID and checks if it supports repo exclusion
@@ -221,7 +222,7 @@ func ExcludableRepoName(repository *types.Repo, logger log.Logger) (name string)
 			if repo.Project == nil {
 				return
 			}
-			name = fmt.Sprintf("%s/%s", repo.Project.Name, repo.Name)
+			name = fmt.Sprintf("%s/%s", repo.Project.Key, repo.Name)
 		} else {
 			logger.Error("invalid repo metadata schema", log.String("extSvcType", extsvc.TypeBitbucketServer))
 		}

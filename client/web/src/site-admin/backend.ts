@@ -1,18 +1,18 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     AllConfigResult,
     CheckMirrorRepositoryConnectionResult,
     CreateUserResult,
@@ -55,6 +55,9 @@ import {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    GitserversVariables,
+    GitserversResult,
+    GitserverFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -110,7 +113,9 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
+        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
+        nextSyncAt
         isCorrupted
         corruptionLogs {
             timestamp
@@ -146,6 +151,7 @@ const siteAdminRepositoryFieldsFragment = gql`
         externalRepository {
             ...ExternalRepositoryFields
         }
+        embeddingExists
     }
 `
 export const REPOSITORIES_QUERY = gql`
@@ -157,12 +163,15 @@ export const REPOSITORIES_QUERY = gql`
         $query: String
         $indexed: Boolean
         $notIndexed: Boolean
+        $embedded: Boolean
+        $notEmbedded: Boolean
         $failedFetch: Boolean
         $corrupted: Boolean
         $cloneStatus: CloneStatus
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
+        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -172,6 +181,8 @@ export const REPOSITORIES_QUERY = gql`
             query: $query
             indexed: $indexed
             notIndexed: $notIndexed
+            embedded: $embedded
+            notEmbedded: $notEmbedded
             failedFetch: $failedFetch
             corrupted: $corrupted
             cloneStatus: $cloneStatus
@@ -577,16 +588,16 @@ export function createUser(username: string, email: string | undefined): Observa
     )
 }
 
-export function deleteOrganization(organization: Scalars['ID'], hard?: boolean): Promise<void> {
+export function deleteOrganization(organization: Scalars['ID']): Promise<void> {
     return requestGraphQL<DeleteOrganizationResult, DeleteOrganizationVariables>(
         gql`
-            mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-                deleteOrganization(organization: $organization, hard: $hard) {
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
                     alwaysNil
                 }
             }
         `,
-        { organization, hard: hard ?? null }
+        { organization }
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -625,12 +636,35 @@ export const SITE_UPGRADE_READINESS = gql`
     query SiteUpgradeReadiness {
         site {
             upgradeReadiness {
-                schemaDrift
+                schemaDrift {
+                    name
+                    problem
+                    solution
+                    diff
+                    statements
+                    urlHint
+                }
                 requiredOutOfBandMigrations {
                     id
                     description
                 }
             }
+            autoUpgradeEnabled
+        }
+    }
+`
+export const GET_AUTO_UPGRADE = gql`
+    query AutoUpgradeEnabled {
+        site {
+            autoUpgradeEnabled
+        }
+    }
+`
+
+export const SET_AUTO_UPGRADE = gql`
+    mutation SetAutoUpgrade($enable: Boolean!) {
+        setAutoUpgrade(enable: $enable) {
+            alwaysNil
         }
     }
 `
@@ -691,6 +725,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
                 ... on FeatureFlagRollout {
                     name
@@ -698,6 +734,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
             }
 
@@ -713,8 +751,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
     )
 }
 
-export const REPOSITORY_STATS = gql`
-    query RepositoryStats {
+export const STATUS_AND_REPO_STATS = gql`
+    query StatusAndRepoStats {
         repositoryStats {
             __typename
             total
@@ -724,6 +762,48 @@ export const REPOSITORY_STATS = gql`
             failedFetch
             corrupted
             indexed
+            embedded
+        }
+        statusMessages {
+            ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on NoRepositoriesDetected {
+                __typename
+
+                message
+            }
+
+            ... on CloningProgress {
+                __typename
+
+                message
+            }
+
+            ... on IndexingProgress {
+                __typename
+
+                notIndexed
+                indexed
+            }
+
+            ... on SyncError {
+                __typename
+
+                message
+            }
+
+            ... on ExternalServiceSyncError {
+                __typename
+
+                externalService {
+                    id
+                    displayName
+                }
+            }
         }
     }
 `
@@ -921,7 +1001,8 @@ const siteAdminPackageFieldsFragment = gql`
     fragment SiteAdminPackageFields on PackageRepoReference {
         id
         name
-        scheme
+        kind
+        blocked
         repository {
             id
             name
@@ -937,8 +1018,14 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($scheme: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
-        packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
+    query Packages(
+        $kind: PackageRepoReferenceKind
+        $name: String
+        $first: Int!
+        $after: String
+        $displayCloneProgress: Boolean = false
+    ) {
+        packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
             }
@@ -952,3 +1039,70 @@ export const PACKAGES_QUERY = gql`
 
     ${siteAdminPackageFieldsFragment}
 `
+
+export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
+    query SiteConfigurationHistory($first: Int, $last: Int, $after: String, $before: String) {
+        site {
+            __typename
+            configuration {
+                history(first: $first, last: $last, after: $after, before: $before) {
+                    __typename
+                    totalCount
+                    nodes {
+                        __typename
+                        ...SiteConfigurationChangeNode
+                    }
+                    pageInfo {
+                        hasNextPage
+                        hasPreviousPage
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+        }
+    }
+
+    fragment SiteConfigurationChangeNode on SiteConfigurationChange {
+        id
+        author {
+            id
+            username
+            displayName
+            avatarURL
+        }
+        diff
+        createdAt
+    }
+`
+
+const gitserverFieldsFragment = gql`
+    fragment GitserverFields on GitserverInstance {
+        id
+        address
+        freeDiskSpaceBytes
+        totalDiskSpaceBytes
+    }
+`
+
+export const GITSERVERS = gql`
+    query Gitservers {
+        gitservers {
+            nodes {
+                ...GitserverFields
+            }
+        }
+    }
+
+    ${gitserverFieldsFragment}
+`
+
+export const useGitserversConnection = (): UseShowMorePaginationResult<GitserversResult, GitserverFields> =>
+    useShowMorePagination<GitserversResult, GitserversVariables, GitserverFields>({
+        query: GITSERVERS,
+        variables: {},
+        getConnection: result => {
+            const { gitservers } = dataOrThrowErrors(result)
+            return gitservers
+        },
+    })

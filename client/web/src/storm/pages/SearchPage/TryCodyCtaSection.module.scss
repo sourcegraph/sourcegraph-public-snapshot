@@ -1,0 +1,43 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    gap: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+.cody-illustration {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cody-illustration svg {
+    margin-bottom: 1rem;
+}
+
+.card {
+    background-color: var(--color-bg-1);
+}
+
+.try-cody-link {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.015625em;
+}
+
+.close-button {
+    top: 0;
+    right: 0;
+}
+
+.not-enabled-block {
+    margin: 0 auto;
+    position: relative;
+    max-width: 720px;
+    padding: 2rem;
+    padding-top: 0;
+}

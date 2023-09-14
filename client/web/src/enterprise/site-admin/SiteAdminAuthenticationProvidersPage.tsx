@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -10,7 +10,7 @@ import { Badge, Link, H2, Text } from '@sourcegraph/wildcard'
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { AuthProviderFields, AuthProvidersResult } from '../../graphql-operations'
+import type { AuthProviderFields, AuthProvidersResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface AuthProviderNodeProps {
@@ -105,7 +105,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.site || !data.site.authProviders || errors) {
+                if (!data?.site?.authProviders || errors) {
                     throw createAggregateError(errors)
                 }
                 return data.site.authProviders

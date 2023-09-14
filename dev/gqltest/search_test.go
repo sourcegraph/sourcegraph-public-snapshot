@@ -91,8 +91,8 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// Run the search tests with file-based ranking enabled
-	err = client.SetFeatureFlag("search-ranking", true)
+	// Run the search tests with file-based ranking disabled
+	err = client.SetFeatureFlag("search-ranking", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,23 +143,22 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 		t.Fatal(err)
 	}
 
-	err = client.SetFeatureFlag("repository-metadata", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	testVal := "testval"
-	err = client.AddRepoKVP(repo1.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo1.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo2.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testtag", nil)
+	err = client.AddRepoMetadata(repo2.ID, "testtag", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,12 +332,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		require.NoError(t, err)
 
 		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
-		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
-			t.Fatalf("Missing repositories: %v", missingRepos)
-		}
-
-		if len(wantRepos) != len(results) {
-			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		if d := cmp.Diff(wantRepos, results.Names()); d != "" {
+			t.Fatalf("unexpected repositories (-want +got):\n%s", d)
 		}
 	})
 
@@ -371,12 +366,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		require.NoError(t, err)
 
 		wantRepos := []string{"github.com/sgtest/java-langserver"}
-		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
-			t.Fatalf("Missing repositories: %v", missingRepos)
-		}
-
-		if len(wantRepos) != len(results) {
-			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		if d := cmp.Diff(wantRepos, results.Names()); d != "" {
+			t.Fatalf("unexpected repositories (-want +got):\n%s", d)
 		}
 	})
 
@@ -1309,6 +1300,21 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo has kvp and not nonexistent kvp`,
 				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic`,
+				query:  `repo:has.topic(go)`, // jsonrpc2 and go-diff
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic plus exclusion`,
+				query:  `repo:has.topic(go) -repo:has.topic(json)`, // go-diff (not jsonrpc2)
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `nonexistent topic`,
+				query:  `repo:has.topic(noexist)`,
+				counts: counts{Repo: 0},
 			},
 		}
 

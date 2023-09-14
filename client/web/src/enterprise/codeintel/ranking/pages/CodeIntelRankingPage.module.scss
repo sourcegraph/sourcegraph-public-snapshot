@@ -1,0 +1,58 @@
+.title-container {
+    font-size: 0.9rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.table-container {
+    h4 {
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding-bottom: 0.25rem;
+    }
+
+    p {
+        border-bottom: 1px solid #808080;
+        font-style: italic;
+        padding-bottom: 0.25rem;
+    }
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 0.5fr 1fr;
+    font-size: 0.8rem;
+}
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    padding-bottom: 1rem;
+
+    &-item {
+        margin: 0 auto;
+        display: block;
+        text-align: center;
+
+        &:hover {
+            text-decoration: none;
+        }
+    }
+
+    &-number {
+        font-size: 3rem;
+    }
+
+    &-label {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--body-color);
+        }
+    }
+}
+
+.summary-item-extended {
+    // Maintain similar spacing with additional copy
+    max-width: 16rem;
+}

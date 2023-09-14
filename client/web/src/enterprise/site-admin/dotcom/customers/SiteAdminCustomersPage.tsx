@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { Observable, Subject } from 'rxjs'
+import { type Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -10,7 +10,7 @@ import { H2 } from '@sourcegraph/wildcard'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
+import type { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
@@ -98,7 +98,7 @@ function queryCustomers(args: Partial<CustomersVariables>): Observable<Customers
         }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.users || (errors && errors.length > 0)) {
+            if (!data?.users || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.users

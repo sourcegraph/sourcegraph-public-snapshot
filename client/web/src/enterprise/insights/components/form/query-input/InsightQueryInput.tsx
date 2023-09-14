@@ -1,10 +1,10 @@
-import { forwardRef, InputHTMLAttributes, PropsWithChildren } from 'react'
+import { forwardRef, type InputHTMLAttributes, type PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 
 import type { MonacoFieldProps } from '../monaco-field'
 import * as Monaco from '../monaco-field'

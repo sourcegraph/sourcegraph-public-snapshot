@@ -1,23 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { ApolloError, gql, useApolloClient } from '@apollo/client'
-import { Duration } from 'date-fns'
+import { type ApolloError, gql, useApolloClient } from '@apollo/client'
+import type { Duration } from 'date-fns'
 import { noop } from 'lodash'
 
 import { HTTPStatusError } from '@sourcegraph/http-client'
-import { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
-import { Series } from '@sourcegraph/wildcard'
+import type { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
+import type { Series } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GetInsightPreviewResult,
     GetInsightPreviewVariables,
     SearchSeriesPreviewInput,
 } from '../../../../../graphql-operations'
 import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from '../../../constants'
 import { getStepInterval } from '../../backend/gql-backend/utils/get-step-interval'
-import { generateLinkURL, InsightDataSeriesData } from '../../backend/utils/create-line-chart-content'
+import { generateLinkURL, type InsightDataSeriesData } from '../../backend/utils/create-line-chart-content'
 
-import { LivePreviewStatus, State } from './types'
+import { LivePreviewStatus, type State } from './types'
 
 export const GET_INSIGHT_PREVIEW_GQL = gql`
     query GetInsightPreview($input: SearchInsightPreviewInput!) {

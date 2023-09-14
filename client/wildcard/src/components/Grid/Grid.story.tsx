@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 
-import { Grid, GridProps } from './Grid'
+import { Grid, type GridProps } from './Grid'
 
 const config: Meta = {
     title: 'wildcard/Grid',

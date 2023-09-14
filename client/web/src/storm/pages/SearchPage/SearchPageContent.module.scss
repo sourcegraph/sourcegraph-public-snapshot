@@ -1,0 +1,54 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.search-page {
+    justify-content: flex-start;
+    width: 100%;
+    overflow: auto;
+}
+
+.logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    width: 20rem;
+    margin-top: 6rem;
+    max-width: 90%;
+
+    /* Reserve the image's height to avoid jitter before it loads. */
+    min-height: 54px;
+}
+
+.search-container {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    width: 100%;
+    flex-grow: 0;
+    margin-top: 2.5rem;
+    margin-bottom: 2.25rem;
+
+    @media (--xl-breakpoint-up) {
+        max-width: var(--max-homepage-container-width);
+    }
+}
+
+.translucent {
+    opacity: 0.7;
+}
+
+.panels-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+
+    @media (--xl-breakpoint-up) {
+        min-width: var(--max-homepage-container-width);
+    }
+
+    // We do not use our custom media queries below since they do not compile
+    // properly on production when chained via `and` (see #33109).
+    @media (min-width: #{$viewport-lg}) and (max-width: #{$viewport-xl - .02}) {
+        width: 100%;
+    }
+}

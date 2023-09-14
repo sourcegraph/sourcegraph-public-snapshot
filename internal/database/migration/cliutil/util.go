@@ -2,21 +2,20 @@ package cliutil
 
 import (
 	"context"
-	"database/sql"
 	"flag"
+	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -42,7 +41,7 @@ func flagHelp(out *output.Output, message string, args ...any) error {
 }
 
 // setupRunner initializes and returns the runner associated witht the given schema.
-func setupRunner(factory RunnerFactory, schemaNames ...string) (Runner, error) {
+func setupRunner(factory RunnerFactory, schemaNames ...string) (*runner.Runner, error) {
 	r, err := factory(schemaNames)
 	if err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func setupRunner(factory RunnerFactory, schemaNames ...string) (Runner, error) {
 }
 
 // setupStore initializes and returns the store associated witht the given schema.
-func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (Store, error) {
+func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (runner.Store, error) {
 	r, err := setupRunner(factory, schemaName)
 	if err != nil {
 		return nil, err
@@ -67,7 +66,7 @@ func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (
 }
 
 // sanitizeSchemaNames sanitizies the given string slice from the user.
-func sanitizeSchemaNames(schemaNames []string) []string {
+func sanitizeSchemaNames(schemaNames []string, out *output.Output) []string {
 	if len(schemaNames) == 1 && schemaNames[0] == "" {
 		schemaNames = nil
 	}
@@ -76,7 +75,30 @@ func sanitizeSchemaNames(schemaNames []string) []string {
 		return schemas.SchemaNames
 	}
 
+	for i, name := range schemaNames {
+		schemaNames[i] = TranslateSchemaNames(name, out)
+	}
+
 	return schemaNames
+}
+
+var dbNameToSchema = map[string]string{
+	"pgsql":           "frontend",
+	"codeintel-db":    "codeintel",
+	"codeinsights-db": "codeinsights",
+}
+
+// TranslateSchemaNames translates a string with potentially the value of the service/container name
+// of the db schema the user wants to operate on into the schema name.
+func TranslateSchemaNames(name string, out *output.Output) string {
+	// users might input the name of the service e.g. pgsql instead of frontend, so we
+	// translate to what it actually should be
+	if translated, ok := dbNameToSchema[name]; ok {
+		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, "Translating container/service name %q to schema name %q", name, translated))
+		name = translated
+	}
+
+	return name
 }
 
 // parseTargets parses the given strings as integers.
@@ -117,39 +139,91 @@ func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilege
 	return runner.ApplyPrivilegedMigrations, nil
 }
 
-func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
-	db, err := extractDB(ctx, r, "frontend")
-	if err != nil {
-		return nil, err
-	}
-
-	return database.NewDB(log.Scoped("migrator", ""), db), nil
-}
-
-func extractDB(ctx context.Context, r Runner, schemaName string) (*sql.DB, error) {
-	store, err := r.Store(ctx, schemaName)
-	if err != nil {
-		return nil, err
-	}
-
-	// NOTE: The migration runner package cannot import basestore without
-	// creating a cyclic import in db connection packages. Hence, we cannot
-	// embed basestore.ShareableStore here and must "backdoor" extract the
-	// database connection.
-	shareableStore, ok := basestore.Raw(store)
-	if !ok {
-		return nil, errors.New("store does not support direct database handle access")
-	}
-
-	return shareableStore, nil
-}
-
 var migratorObservationCtx = &observation.TestContext
 
 func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
 	return oobmigration.NewRunnerWithDB(migratorObservationCtx, db, time.Second)
 }
 
-func outOfBandMigrationRunnerWithStore(store *oobmigration.Store) *oobmigration.Runner {
-	return oobmigration.NewRunner(migratorObservationCtx, store, time.Second)
+// checks if a known good version's schema can be reached through either Github
+// or GCS, to report whether the migrator may be operating in an airgapped environment.
+func isAirgapped(ctx context.Context) (err error) {
+	// known good version and filename in both GCS and Github
+	filename, _ := schemas.GetSchemaJSONFilename("frontend")
+	const version = "v3.41.1"
+
+	timedCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	url := schemas.GithubExpectedSchemaPath(filename, version)
+	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
+	resp, gherr := http.DefaultClient.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	ghUnreachable := gherr != nil || resp.StatusCode != http.StatusOK
+
+	timedCtx, cancel = context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	url = schemas.GcsExpectedSchemaPath(filename, version)
+	req, _ = http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
+	resp, gcserr := http.DefaultClient.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	gcsUnreachable := gcserr != nil || resp.StatusCode != http.StatusOK
+
+	switch {
+	case ghUnreachable && gcsUnreachable:
+		err = errors.New("Neither Github nor GCS reachable, some features may not work as expected")
+	case ghUnreachable:
+		err = errors.New("Github not reachable, GCS is reachable, some features may not work as expected")
+	case gcsUnreachable:
+		err = errors.New("Github is reachable, GCS not reachable, some features may not work as expected")
+	}
+
+	return err
+}
+
+func checkForMigratorUpdate(ctx context.Context) (latest string, hasUpdate bool, err error) {
+	migratorVersion, migratorPatch, ok := oobmigration.NewVersionAndPatchFromString(version.Version())
+	if !ok || migratorVersion.Dev {
+		return "", false, nil
+	}
+
+	timedCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, "https://github.com/sourcegraph/sourcegraph/releases/latest", nil)
+	resp, err := (&http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}).Do(req)
+	if err != nil {
+		return "", false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusFound {
+		return "", false, errors.Newf("unexpected status code %d", resp.StatusCode)
+	}
+
+	location, err := resp.Location()
+	if err != nil {
+		return "", false, err
+	}
+
+	pathParts := strings.Split(location.Path, "/")
+	if len(pathParts) == 0 {
+		return "", false, errors.Newf("empty path in Location header URL: %s", location.String())
+	}
+	latest = pathParts[len(pathParts)-1]
+
+	latestVersion, latestPatch, ok := oobmigration.NewVersionAndPatchFromString(latest)
+	if !ok {
+		return "", false, errors.Newf("last section in path is an invalid format: %s", latest)
+	}
+
+	isMigratorOutOfDate := oobmigration.CompareVersions(latestVersion, migratorVersion) == oobmigration.VersionOrderBefore || (latestPatch > migratorPatch)
+
+	return latest, isMigratorOutOfDate, nil
 }

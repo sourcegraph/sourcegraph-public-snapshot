@@ -1,0 +1,79 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:defs.bzl", "ts_project")
+
+# regression/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/node",
+        "//client/shared/src/testing:tsconfig",
+        "//client/web:tsconfig",
+        "//schema:tsconfig",
+    ],
+)
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(["**/*.*"]),
+    visibility = ["//client/web:__pkg__"],
+)
+
+ts_project(
+    name = "regression",
+    srcs = [
+        "util/GraphQlClient.ts",
+        "util/ScreenshotVerifier.ts",
+        "util/TestResourceManager.ts",
+        "util/api.ts",
+        "util/helpers.ts",
+        "util/init.ts",
+        "util/settings.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/puppeteer",
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/lodash",
+        "//:node_modules/puppeteer",
+        "//:node_modules/rxjs",
+        "//:node_modules/ts-key-enum",
+        "//client/web:graphql_operations",
+        "//client/web:node_modules/@sourcegraph/common",
+        "//client/web:node_modules/@sourcegraph/http-client",
+        "//client/web:node_modules/@sourcegraph/shared",
+    ],
+)
+
+ts_project(
+    name = "regression_tests",
+    testonly = True,
+    srcs = [
+        "codeintel.test.ts",
+        "core.test.ts",
+        "init.test.ts",
+        "integrations.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":regression",
+        "//:node_modules/@types/mocha",
+        "//:node_modules/delay",
+        "//:node_modules/expect",
+        "//:node_modules/jsonc-parser",
+        "//:node_modules/mocha",
+        "//:node_modules/rxjs",
+        "//:node_modules/ts-key-enum",
+        "//client/web:graphql_operations",
+        "//client/web:node_modules/@sourcegraph/common",
+        "//client/web:node_modules/@sourcegraph/http-client",
+        "//client/web:node_modules/@sourcegraph/shared",
+    ],
+)

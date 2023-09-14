@@ -1,20 +1,21 @@
-import { useState, useMemo, useEffect, FC } from 'react'
+import { useState, useMemo, useEffect, type FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, type Series } from '@sourcegraph/wildcard'
 
-import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
+import type { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { ToggleSelect } from '../components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
+import { type StandardDatum, type FrequencyDatum, buildFrequencyDatum } from '../utils'
 
 import { USERS_STATISTICS } from './queries'
 
@@ -38,7 +39,7 @@ export const AnalyticsUsersPage: FC = () => {
             return []
         }
         const { users } = data.site.analytics
-        const legends: ValueLegendListProps['items'] = [
+        let legends: ValueLegendListProps['items'] = [
             {
                 value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
@@ -60,6 +61,21 @@ export const AnalyticsUsersPage: FC = () => {
                 tooltip: 'The number of user licenses your current account is provisioned for.',
             },
         ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
+        if (isRequestAccessAllowed) {
+            legends = [
+                ...legends.slice(0, 1),
+                {
+                    value: data.pendingAccessRequests.totalCount,
+                    description: 'Pending requests',
+                    color: 'var(--cyan)',
+                    position: 'right',
+                    tooltip: 'The number of users who have requested access to your Sourcegraph instance.',
+                },
+                ...legends.slice(1),
+            ]
+        }
 
         const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, uniqueOrPercentage, 30)
 

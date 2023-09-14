@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { BlobContentResult, BlobContentVariables } from '../graphql-operations'
+import type { BlobContentResult, BlobContentVariables } from '../graphql-operations'
 
 import { requestGraphQLFromVSCode } from './requestGraphQl'
 

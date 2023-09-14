@@ -1,0 +1,15 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "byteutils",
+    srcs = ["linereader.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/byteutils",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "byteutils_test",
+    srcs = ["linereader_test.go"],
+    deps = [":byteutils"],
+)

@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +34,7 @@ type crateSyncerJob struct {
 	archiveWindowSize int
 	autoindexingSvc   AutoIndexingService
 	dependenciesSvc   DependenciesService
-	gitClient         GitserverClient
+	gitClient         gitserver.Client
 	extSvcStore       ExternalServiceStore
 	clock             glock.Clock
 	operations        *operations
@@ -43,15 +44,17 @@ func NewCrateSyncer(
 	observationCtx *observation.Context,
 	autoindexingSvc AutoIndexingService,
 	dependenciesSvc DependenciesService,
-	gitClient GitserverClient,
+	gitClient gitserver.Client,
 	extSvcStore ExternalServiceStore,
 ) goroutine.BackgroundRoutine {
+	ctx := actor.WithInternalActor(context.Background())
+
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
-	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
+	_, externalService, _ := singleRustExternalService(ctx, extSvcStore)
 	if externalService != nil {
-		config, err := rustPackagesConfig(context.Background(), externalService)
+		config, err := rustPackagesConfig(ctx, externalService)
 		if err == nil { // silently ignore config errors.
 			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
 			if err == nil { // silently ignore duration decoding error.
@@ -73,12 +76,13 @@ func NewCrateSyncer(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.crates-syncer", "syncs the crates list from the index to dependency repos table",
-		interval,
+		ctx,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleCrateSyncer(ctx, interval)
 		}),
+		goroutine.WithName("codeintel.crates-syncer"),
+		goroutine.WithDescription("syncs the crates list from the index to dependency repos table"),
+		goroutine.WithInterval(interval),
 	)
 }
 
@@ -224,7 +228,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 				if err := j.autoindexingSvc.QueueIndexesForPackage(clientCtx, shared.MinimialVersionedPackageRepo{
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
-					Version: version,
+					Version: version.Version,
 				}, true); err != nil {
 					queueErrs = errors.Append(queueErrs, err)
 				}
@@ -314,7 +318,13 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, error) {
 	result := make([]shared.MinimalPackageRepoRef, 0, 1)
 
-	for _, line := range bytes.Split(contents, []byte("\n")) {
+	instant := time.Now()
+
+	lr := byteutils.NewLineReader(contents)
+
+	for lr.Scan() {
+		line := lr.Line()
+
 		if len(line) == 0 {
 			continue
 		}
@@ -331,9 +341,12 @@ func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, err
 
 		name := reposource.PackageName(info.Name)
 		result = append(result, shared.MinimalPackageRepoRef{
-			Scheme:   shared.RustPackagesScheme,
-			Name:     name,
-			Versions: []string{info.Version},
+			Scheme: shared.RustPackagesScheme,
+			Name:   name,
+			// doing a bit of a dot-com specific assumption here, that all these packages are resolvable
+			// and not covered by a filter.
+			Versions:      []shared.MinimalPackageRepoRefVersion{{Version: info.Version, LastCheckedAt: &instant}},
+			LastCheckedAt: &instant,
 		})
 	}
 

@@ -58,9 +58,9 @@ CONTAINER ID        IMAGE
 
 ```bash
 # Use the CONTAINER_ID found in the previous step
-docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph' > /tmp/sourcegraph_db.out
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --clean --if-exists --username=postgres sourcegraph' > /tmp/sourcegraph_db.out
 
-docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph-codeintel' > /tmp/codeintel_db.out
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --clean --if-exists --username=postgres sourcegraph-codeintel' > /tmp/codeintel_db.out
 ```
 
 * Copy Postgres dump from the `sourcegraph/server` container to the host machine

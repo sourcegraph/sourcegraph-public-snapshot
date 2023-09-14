@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "versions",
@@ -30,10 +31,11 @@ go_library(
 
 go_test(
     name = "versions_test",
+    timeout = "short",
     srcs = ["sync_test.go"],
     embed = [":versions"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/repos",
         "//internal/types",

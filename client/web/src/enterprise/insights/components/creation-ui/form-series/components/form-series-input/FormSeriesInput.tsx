@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'rxjs'
@@ -7,7 +7,7 @@ import { Button, Card, Input, Code, useForm, useField, getDefaultInputProps } fr
 
 import { DEFAULT_DATA_SERIES_COLOR } from '../../../../../constants'
 import { InsightQueryInput } from '../../../../form'
-import { EditableDataSeries } from '../../types'
+import type { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
 
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'

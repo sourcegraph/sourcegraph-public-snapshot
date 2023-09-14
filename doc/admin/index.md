@@ -13,12 +13,12 @@ Administration is usually handled by site administrators are the admins responsi
 - [PostgreSQL configuration](config/postgres-conf.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
-- <span class="badge badge-beta">Beta</span> [Executors](executors.md)
-- <span class="badge badge-beta">Beta</span> [Deploy executors](deploy_executors.md)
+- [Executors](executors/index.md)
+- [Deploy executors](executors/deploy_executors.md)
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
-> NOTE: The Sourcegraph 4.0 [`migrator`](./how-to/manual_database_migrations.md) can now perform upgrades across [multiple versions](updates/index.md#multi-version-upgrades) on any instance 3.20 or later.
+> NOTE: The Sourcegraph 4.0 [`migrator`](./updates/migrator/migrator-operations.md) can now perform upgrades across [multiple versions](updates/index.md#multi-version-upgrades) on any instance 3.20 or later.
 
 - [Upgrade Sourcegraph](updates/index.md)
   - [Single-minor-version "standard" upgrades](updates/index.md#standard-upgrades)
@@ -37,11 +37,13 @@ Administration is usually handled by site administrators are the admins responsi
   - [Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate](ssl_https_self_signed_cert_nginx.md)
 - [User authentication](auth/index.md)
   - [User data deletion](user_data_deletion.md)
+- <span class="badge badge-beta">Beta</span> [Provision users through SCIM](scim.md)
+- <span class="badge badge-beta">Beta</span> [Access control](access_control/index.md)
 - [Setting the URL for your instance](url.md)
-- [Repository permissions](repo/permissions.md)
+- [Repository permissions](permissions/index.md)
   - [Row-level security](repo/row_level_security.md)
 - [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
-- [Configure incoming webhooks](config/webhooks.md)
+- [Configure webhooks](config/webhooks/index.md)
 
 For deployment configuration, please refer to the relevant [installation guide](deploy/index.md).
 
@@ -63,11 +65,9 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Batch Changes](../batch_changes/index.md)
 - [Beta and experimental features](beta_and_experimental_features.md)
 - [Code navigation](../code_navigation/index.md)
-- [Federation](federation/index.md)
 - [Pings](pings.md)
 - [Pricing and subscriptions](subscriptions/index.md)
 - [Search](search.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
 - [Audit logs](audit_log.md)
-

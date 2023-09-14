@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/grafana/regexp"
+	"go.opentelemetry.io/otel/attribute"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -28,7 +28,7 @@ func (j *sanitizeJob) Name() string {
 	return "SanitizeJob"
 }
 
-func (j *sanitizeJob) Fields(job.Verbosity) []otlog.Field {
+func (j *sanitizeJob) Attributes(job.Verbosity) []attribute.KeyValue {
 	return nil
 }
 

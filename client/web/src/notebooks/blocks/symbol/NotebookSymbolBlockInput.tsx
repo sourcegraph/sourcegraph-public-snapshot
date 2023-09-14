@@ -3,13 +3,13 @@ import React, { useCallback, useMemo } from 'react'
 import { EditorView } from '@codemirror/view'
 
 import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/branded'
-import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Button, Code } from '@sourcegraph/wildcard'
 
-import { BlockProps, SymbolBlockInput } from '../..'
-import { useExperimentalFeatures } from '../../../stores'
+import type { BlockProps, SymbolBlockInput } from '../..'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
 
@@ -21,7 +21,6 @@ interface NotebookSymbolBlockInputProps extends Pick<BlockProps, 'onRunBlock'> {
     onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
     onSymbolSelected: (symbol: SymbolBlockInput) => void
-    globbing: boolean
     isSourcegraphDotCom: boolean
 }
 
@@ -40,7 +39,7 @@ const editorAttributes = [
 
 export const NotebookSymbolBlockInput: React.FunctionComponent<
     React.PropsWithChildren<NotebookSymbolBlockInputProps>
-> = ({ onSymbolSelected, isSourcegraphDotCom, globbing, ...inputProps }) => {
+> = ({ onSymbolSelected, isSourcegraphDotCom, ...inputProps }) => {
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -70,12 +69,11 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<
         () =>
             createDefaultSuggestions({
                 isSourcegraphDotCom,
-                globbing,
                 fetchSuggestions: fetchStreamSuggestions,
                 applyOnEnter: applySuggestionsOnEnter,
                 disableSymbolCompletion: true,
             }),
-        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     return (

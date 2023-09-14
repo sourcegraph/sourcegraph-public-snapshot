@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,7 +39,7 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		{name: "resolve namespaced search context with / in name", searchContextSpec: "@user/test/version", wantSearchContextName: "test/version"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmocks.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name == "user" {
 			return &database.Namespace{Name: name, User: 1}, nil
@@ -49,12 +50,12 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		return nil, errors.Errorf(`want "user" or "org", got %q`, name)
 	})
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmocks.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultHook(func(_ context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		return &types.SearchContext{Name: opts.Name}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
@@ -84,13 +85,13 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmocks.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultReturn(&database.Namespace{}, nil)
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmocks.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultReturn(nil, errors.New("search context not found"))
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
@@ -120,7 +121,7 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 		{name: "org not a member with sub-context", searchContextSpec: "@org-not-member/random", wantErr: "namespace not found"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmocks.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name == "org-not-member" {
 			return &database.Namespace{Name: name, Organization: 1}, nil
@@ -128,10 +129,10 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 		return &database.Namespace{}, nil
 	})
 
-	orgs := database.NewMockOrgMemberStore()
+	orgs := dbmocks.NewMockOrgMemberStore()
 	orgs.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.OrgMembersFunc.SetDefaultReturn(orgs)
 
@@ -717,6 +718,69 @@ func TestParseRepoOpts(t *testing.T) {
 			opts := cmpopts.IgnoreUnexported(database.ReposListOptions{})
 			if diff := cmp.Diff(have, want, opts); diff != "" {
 				t.Errorf("mismatch: (-have, +want): %s", diff)
+			}
+		})
+	}
+}
+
+func Test_validateSearchContextQuery(t *testing.T) {
+	cases := []struct {
+		query   string
+		wantErr bool
+	}{{
+		query:   "repo:has(key:value)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.tag(mytag)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.key(mykey)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.topic(mytopic)",
+		wantErr: false,
+	}, {
+		query:   "repo:has.path(mytopic)",
+		wantErr: true,
+	}, {
+		query:   "repo:has.description(mytopic)",
+		wantErr: false,
+	}, {
+		query:   "lang:go",
+		wantErr: false,
+	}, {
+		query:   "fork:yes",
+		wantErr: false,
+	}, {
+		query:   "archived:yes",
+		wantErr: false,
+	}, {
+		query:   "case:yes",
+		wantErr: false,
+	}, {
+		query:   "file:test",
+		wantErr: false,
+	}, {
+		query:   "visibility:public",
+		wantErr: false,
+	}, {
+		query:   "type:commit author:camden",
+		wantErr: true,
+	}, {
+		query:   "type:diff author:camden",
+		wantErr: true,
+	}, {
+		query:   "testpattern",
+		wantErr: true,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.query, func(t *testing.T) {
+			err := validateSearchContextQuery(tc.query)
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}

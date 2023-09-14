@@ -15,12 +15,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type s3Store struct {
@@ -85,11 +85,38 @@ const maxZeroReads = 3
 // in a row.
 var errNoDownloadProgress = errors.New("no download progress")
 
+func (s *s3Store) List(ctx context.Context) (*iterator.Iterator[string], error) {
+	// We wrap the client's paginator and just return the keys.
+	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{Bucket: &s.bucket})
+
+	next := func() ([]string, error) {
+		if !paginator.HasMorePages() {
+			return nil, nil
+		}
+
+		nextPage, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		keys := make([]string, 0, len(nextPage.Contents))
+		for _, c := range nextPage.Contents {
+			if c.Key != nil {
+				keys = append(keys, *c.Key)
+			}
+		}
+
+		return keys, nil
+	}
+
+	return iterator.New[string](next), nil
+}
+
 func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
-	defer endObservation(1, observation.Args{})
+	done := func() { endObservation(1, observation.Args{}) }
 
 	reader := writeToPipe(func(w io.Writer) error {
 		zeroReads := 0
@@ -116,7 +143,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 		}
 	})
 
-	return io.NopCloser(reader), nil
+	return NewExtraCloser(io.NopCloser(reader), done), nil
 }
 
 // ioCopyHook is a pointer to io.Copy. This function is replaced in unit tests so that we can
@@ -147,8 +174,8 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 }
 
 func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -166,9 +193,9 @@ func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64,
 }
 
 func (s *s3Store) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("destination", destination),
-		log.String("sources", strings.Join(sources, ", ")),
+	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("destination", destination),
+		attribute.StringSlice("sources", sources),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -201,7 +228,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	var m sync.Mutex
 	etags := map[int]*string{}
 
-	if err := goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	if err := ForEachString(sources, func(index int, source string) error {
 		partNumber := index + 1
 
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
@@ -255,8 +282,8 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
-	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -269,9 +296,9 @@ func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
 }
 
 func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
-	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("prefix", prefix),
-		log.String("maxAge", maxAge.String()),
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+		attribute.Stringer("maxAge", maxAge),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -332,7 +359,7 @@ func (s *s3Store) create(ctx context.Context) error {
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
-	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	return ForEachString(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(source),

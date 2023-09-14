@@ -5,8 +5,6 @@
 .markdown-body pre.chroma { font-size: 0.75em; }
 </style>
 
-> NOTE: This feature is available in Sourcegraph 3.25 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25.0 and later.</p>
-
 ## Overview
 
 Large repositories often contain multiple projects, making them so-called monorepos. It can make sense to run the batch spec [`steps`][steps] separately in each project and create one changeset per project.

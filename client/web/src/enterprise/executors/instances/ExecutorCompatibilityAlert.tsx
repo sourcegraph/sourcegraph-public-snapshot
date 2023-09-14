@@ -19,7 +19,7 @@ export const ExecutorCompatibilityAlert: React.FunctionComponent<
                     <Text className="m-0">{hostname} is outdated.</Text>
                     <Text className="m-0">
                         Please{' '}
-                        <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
+                        <Link to="/help/admin/executors/deploy_executors" target="_blank" rel="noopener">
                             upgrade this executor
                         </Link>{' '}
                         to a version compatible with your Sourcegraph version.
@@ -36,7 +36,7 @@ export const ExecutorCompatibilityAlert: React.FunctionComponent<
                             upgrade your Sourcegraph instance
                         </Link>
                         or{' '}
-                        <Link to="/help/admin/deploy_executors" target="_blank" rel="noopener">
+                        <Link to="/help/admin/executors/deploy_executors" target="_blank" rel="noopener">
                             downgrade this executor
                         </Link>
                         .

@@ -3,11 +3,14 @@ package wrexec
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -17,11 +20,21 @@ const KeyPrefix = "recording-cmd"
 
 // RecordedCommand stores a command record in Redis.
 type RecordedCommand struct {
-	Start    time.Time `json:"start"`
-	Duration float64   `json:"duration_seconds"`
-	Args     []string  `json:"args"`
-	Dir      string    `json:"dir"`
-	Path     string    `json:"path"`
+	Start     time.Time `json:"start"`
+	Duration  float64   `json:"duration_seconds"`
+	Args      []string  `json:"args"`
+	Dir       string    `json:"dir"`
+	Path      string    `json:"path"`
+	Output    string    `json:"output"`
+	IsSuccess bool      `json:"success"`
+}
+
+func UnmarshalCommand(rawCommand []byte) (RecordedCommand, error) {
+	var command RecordedCommand
+	if err := json.Unmarshal(rawCommand, &command); err != nil {
+		return RecordedCommand{}, err
+	}
+	return command, nil
 }
 
 // RecordingCmd is a Cmder that allows one to record the executed commands with their arguments when
@@ -36,11 +49,12 @@ type RecordingCmd struct {
 	done         bool
 }
 
-// ShouldRecordFunc is a predicate to signifiy if a command should be recorded or just pass through.
+// ShouldRecordFunc is a predicate to signify if a command should be recorded or just pass through.
 type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 
-// RecordingCommand contructs a RecordingCommand that implements Cmder. The predicate shouldRecord can be passed to decide on whether
-// or not the command should be recorded.
+// RecordingCommand constructs a RecordingCommand that implements Cmder. The
+// predicate shouldRecord can be passed to decide on whether the command should
+// be recorded.
 //
 // The recording is only done after the commands is considered finished (.ie after Wait, Run, ...).
 func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcache.FIFOList, name string, args ...string) *RecordingCmd {
@@ -68,7 +82,7 @@ func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRe
 	return rc
 }
 
-func (rc *RecordingCmd) before(ctx context.Context, logger log.Logger, cmd *exec.Cmd) error {
+func (rc *RecordingCmd) before(ctx context.Context, _ log.Logger, cmd *exec.Cmd) error {
 	// Do not run the hook again if the caller calls let's say Start() twice. Instead, we just
 	// let the exec.Cmd.Start() function returns its error.
 	if rc.done {
@@ -82,7 +96,7 @@ func (rc *RecordingCmd) before(ctx context.Context, logger log.Logger, cmd *exec
 	return nil
 }
 
-func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.Cmd) {
+func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
 	// ensure we don't record ourselves twice if the caller calls Wait() twice for example.
 	defer func() { rc.done = true }()
 	if rc.done {
@@ -101,6 +115,9 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 		Args:     cmd.Args,
 		Dir:      cmd.Dir,
 		Path:     cmd.Path,
+
+		IsSuccess: cmd.ProcessState.Success(),
+		Output:    rc.Cmd.GetExecutionOutput(),
 	}
 
 	data, err := json.Marshal(&val)
@@ -109,7 +126,7 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 		return
 	}
 
-	rc.store.Insert(data)
+	_ = rc.store.Insert(data)
 }
 
 // RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand
@@ -135,10 +152,16 @@ func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc, max int
 	rf.maxSize = max
 }
 
+// Disable will modify the RecordingCommandFactory so that from that point, it
+// will not record. This is a convenience around Update.
+func (rf *RecordingCommandFactory) Disable() {
+	rf.Update(nil, 0)
+}
+
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
-func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, name string, args ...string) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
-	return RecordingCommand(ctx, logger, rf.shouldRecord, store, name, args...)
+func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
+	store := rcache.NewFIFOList(GetFIFOListKey(repoName), rf.maxSize)
+	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
@@ -146,4 +169,22 @@ func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logge
 func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
 	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
+}
+
+// WrapWithRepoName constructs a new RecordingCommand based of an existing
+// os/exec.Cmd, while also setting up the ShouldRecordFunc currently set in the
+// factory. It uses repoName to create a new Redis list using it.
+func (rf *RecordingCommandFactory) WrapWithRepoName(ctx context.Context, logger log.Logger, repoName api.RepoName, cmd *exec.Cmd) *RecordingCmd {
+	store := rcache.NewFIFOList(GetFIFOListKey(string(repoName)), rf.maxSize)
+	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
+}
+
+// NewNoOpRecordingCommandFactory is a recording command factory that is intialised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
+func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
+	return &RecordingCommandFactory{shouldRecord: nil, maxSize: 0}
+}
+
+// GetFIFOListKey returns the name of FIFO list in Redis for a given repo name.
+func GetFIFOListKey(repoName string) string {
+	return fmt.Sprintf("%s-%s", KeyPrefix, repoName)
 }

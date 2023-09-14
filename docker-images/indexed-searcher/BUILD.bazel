@@ -1,0 +1,58 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+DEPS = ["@com_github_sourcegraph_zoekt//cmd/zoekt-webserver"]
+
+container_dependencies(DEPS)
+
+filegroup(
+    name = "entrypoint",
+    srcs = ["entry.sh"],
+)
+
+pkg_tar(
+    name = "entry_tar",
+    srcs = [":entrypoint"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/entry.sh",
+    ],
+    env = {
+        "DATA_DIR": "/data/index",
+        "GOGC": "25",
+    },
+    tars = dependencies_tars(DEPS) + [":entry_tar"],
+    user = "sourcegraph",
+    workdir = "/home/sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["zoekt-webserver:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("indexed-searcher"),
+)

@@ -1,33 +1,39 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { asError } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
-import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    type AlertKind,
+    LATEST_VERSION,
+    type SmartSearchAlertKind,
+    type StreamSearchOptions,
+} from '@sourcegraph/shared/src/search/stream'
+import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { SearchAggregationProps, SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../codeMonitoring'
+import type { SearchAggregationProps, SearchStreamingProps } from '..'
+import type { AuthenticatedUser } from '../../auth'
+import type { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { CodeInsightsProps } from '../../insights/types'
-import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
+import type { CodeInsightsProps } from '../../insights/types'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
+import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
+import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -35,10 +41,12 @@ import { DidYouMean } from '../suggestion/DidYouMean'
 import { SmartSearch, smartSearchEvent } from '../suggestion/SmartSearch'
 
 import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './components/aggregation'
+import { SearchResultsCsvExportModal } from './export/SearchResultsCsvExportModal'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { SearchFiltersSidebar } from './sidebar/SearchFiltersSidebar'
+import { UnownedResultsAlert } from './UnownedResultsAlert'
 
 import styles from './StreamingSearchResults.module.scss'
 
@@ -50,7 +58,8 @@ export interface StreamingSearchResultsProps
         TelemetryProps,
         CodeInsightsProps,
         SearchAggregationProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -64,6 +73,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         isSourcegraphDotCom,
         searchAggregationEnabled,
         codeMonitoringEnabled,
+        platformContext,
     } = props
 
     const location = useLocation()
@@ -72,8 +82,8 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Feature flags
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
-    const prefetchBlobFormat = usePrefetchBlobFormat()
-
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
     // Global state
@@ -82,13 +92,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const searchMode = useNavbarQueryState(state => state.searchMode)
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+    const queryState = useNavbarQueryState(state => state.queryState)
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
     const submitQuerySearch = useNavbarQueryState(state => state.submitSearch)
     const [aggregationUIMode] = useAggregationUIMode()
 
     // Local state
-    const [allExpanded, setAllExpanded] = useState(false)
-    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
     // Derived state
@@ -113,6 +122,21 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, telemetryService)
+
+    const resultsLength = results?.results.length || 0
+    const logSearchResultClicked = useCallback(
+        (index: number, type: string) => {
+            telemetryService.log('SearchResultClicked')
+            // This data ends up in Prometheus and is not part of the ping payload.
+            telemetryService.log('search.ranking.result-clicked', {
+                index,
+                type,
+                resultsLength,
+                ranked: rankingEnabled,
+            })
+        },
+        [telemetryService, resultsLength, rankingEnabled]
+    )
 
     // Log view event on first load
     useEffect(
@@ -238,22 +262,27 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         )
     )
 
+    // Expand/contract all results
+    const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, telemetryService])
+    useEffect(() => {
+        setAllExpanded(false) // Reset expanded state when new search is started
+    }, [location.search])
 
+    // Save search
+    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const onSaveQueryClick = useCallback(() => setShowSavedSearchModal(true), [])
-
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
-    // Reset expanded state when new search is started
-    useEffect(() => {
-        setAllExpanded(false)
-    }, [location.search])
+    // Export results to CSV
+    const [showCsvExportModal, setShowCsvExportModal] = useState(false)
+    const onExportCsvClick = useCallback(() => setShowCsvExportModal(true), [])
 
     const handleSidebarSearchSubmit = useCallback(
         /**
@@ -344,9 +373,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         params =>
             fetchBlob({
                 ...params,
-                format: prefetchBlobFormat,
+                format: HighlightResponseFormat.JSON_SCIP,
             }),
-        [prefetchBlobFormat]
+        []
     )
 
     return (
@@ -396,17 +425,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         query={submittedURLQuery}
-                        enableCodeMonitoring={codeMonitoringEnabled}
                         results={results}
+                        options={options}
+                        enableCodeMonitoring={codeMonitoringEnabled}
                         className={styles.infobar}
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
+                        onExportCsvClick={onExportCsvClick}
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
                         stats={
                             <StreamingProgress
+                                query={`${submittedURLQuery} patterntype:${patternType}`}
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                                 state={results?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}
@@ -424,7 +456,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
 
-                        {results?.alert?.kind && (
+                        {results?.alert?.kind && isSmartSearchAlert(results.alert.kind) && (
                             <SmartSearch alert={results?.alert} onDisableSmartSearch={onDisableSmartSearch} />
                         )}
 
@@ -443,28 +475,57 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 onDidCancel={onSaveQueryModalClose}
                             />
                         )}
-                        {results?.alert && !results?.alert.kind && (
+                        {showCsvExportModal && (
+                            <SearchResultsCsvExportModal
+                                query={submittedURLQuery}
+                                options={options}
+                                results={results}
+                                sourcegraphURL={platformContext.sourcegraphURL}
+                                telemetryService={telemetryService}
+                                onClose={() => setShowCsvExportModal(false)}
+                            />
+                        )}
+                        {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
                             <div className={classNames(styles.alertArea, 'mt-4')}>
-                                <SearchAlert
-                                    alert={results.alert}
-                                    caseSensitive={caseSensitive}
-                                    patternType={patternType}
-                                />
+                                {results?.alert?.kind === 'unowned-results' ? (
+                                    <UnownedResultsAlert
+                                        alertTitle={results.alert.title}
+                                        alertDescription={results.alert.description}
+                                        queryState={queryState}
+                                        patternType={patternType}
+                                        caseSensitive={caseSensitive}
+                                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                                    />
+                                ) : (
+                                    <SearchAlert
+                                        alert={results.alert}
+                                        caseSensitive={caseSensitive}
+                                        patternType={patternType}
+                                    />
+                                )}
                             </div>
                         )}
 
                         <StreamingSearchResultsList
                             {...props}
+                            enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
-                            assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                             enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
                             showQueryExamplesOnNoResultsPage={true}
+                            queryState={queryState}
                             setQueryState={setQueryState}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
+                            submitSearch={submitSearch}
+                            caseSensitive={caseSensitive}
+                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            logSearchResultClicked={logSearchResultClicked}
                         />
                     </div>
                 </>
@@ -480,4 +541,13 @@ const applyAdditionalFilters = (query: string, additionalFilters: string[]): str
         newQuery = updateFilters(newQuery, fieldValue[0], fieldValue[1])
     }
     return newQuery
+}
+
+function isSmartSearchAlert(kind: AlertKind): kind is SmartSearchAlertKind {
+    switch (kind) {
+        case 'smart-search-additional-results':
+        case 'smart-search-pure-results':
+            return true
+    }
+    return false
 }

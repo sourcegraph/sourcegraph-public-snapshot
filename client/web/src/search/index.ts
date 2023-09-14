@@ -1,6 +1,6 @@
 import { escapeRegExp, memoize } from 'lodash'
-import { Location } from 'react-router-dom'
-import { from, Observable, of, Subject } from 'rxjs'
+import type { Location } from 'react-router-dom'
+import { from, type Observable, of, type Subject } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -12,7 +12,7 @@ import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegra
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
 export type { SearchAggregationProps } from './results/sidebar/search-aggregation-types'
 
@@ -141,15 +141,12 @@ export function parseSearchURL(
     }
 }
 
-export function repoFilterForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
-    if (globbing) {
-        return `${escapeSpaces(`${repoName}${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
-    }
+export function repoFilterForRepoRevision(repoName: string, revision?: string): string {
     return `${escapeSpaces(`^${escapeRegExp(repoName)}$${revision ? `@${abbreviateOID(revision)}` : ''}`)}`
 }
 
-export function searchQueryForRepoRevision(repoName: string, globbing: boolean, revision?: string): string {
-    return `repo:${repoFilterForRepoRevision(repoName, globbing, revision)} `
+export function searchQueryForRepoRevision(repoName: string, revision?: string): string {
+    return `repo:${repoFilterForRepoRevision(repoName, revision)} `
 }
 
 function abbreviateOID(oid: string): string {

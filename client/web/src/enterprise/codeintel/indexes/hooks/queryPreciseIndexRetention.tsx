@@ -1,11 +1,11 @@
-import { ApolloClient } from '@apollo/client'
-import { from, Observable } from 'rxjs'
+import type { ApolloClient } from '@apollo/client'
+import { from, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import { Connection } from '../../../../components/FilteredConnection'
-import {
+import type { Connection } from '../../../../components/FilteredConnection'
+import type {
     GitObjectType,
     PreciseIndexRetentionResult,
     PreciseIndexRetentionVariables,

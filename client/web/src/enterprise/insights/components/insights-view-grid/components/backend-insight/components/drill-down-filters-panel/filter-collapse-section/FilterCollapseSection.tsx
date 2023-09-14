@@ -1,4 +1,4 @@
-import { FunctionComponent, HTMLAttributes, PropsWithChildren, ReactElement } from 'react'
+import type { FunctionComponent, HTMLAttributes, PropsWithChildren, ReactElement } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'

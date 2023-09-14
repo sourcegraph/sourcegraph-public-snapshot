@@ -3,228 +3,144 @@ package com.sourcegraph.config;
 import com.google.gson.JsonObject;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.extensions.PluginId;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.find.Search;
+import com.intellij.openapi.project.ProjectManager;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentCodebase;
+import com.sourcegraph.cody.agent.ExtensionConfiguration;
+import com.sourcegraph.cody.config.CodyAccount;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
+import com.sourcegraph.cody.config.ServerAuth;
+import com.sourcegraph.cody.config.ServerAuthLoader;
+import com.sourcegraph.cody.config.SourcegraphServerPath;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
-
 public class ConfigUtil {
-    public static final String DOTCOM_URL = "https://sourcegraph.com/";
+  public static final String DOTCOM_URL = "https://sourcegraph.com/";
+  public static final String SERVICE_DISPLAY_NAME = "Sourcegraph Cody + Code Search";
+  public static final String CODY_DISPLAY_NAME = "Cody AI";
+  public static final String CODE_SEARCH_DISPLAY_NAME = "Code Search";
+  public static final String SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph";
 
-    @NotNull
-    public static JsonObject getConfigAsJson(@NotNull Project project) {
-        JsonObject configAsJson = new JsonObject();
-        configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-        configAsJson.addProperty("accessToken", ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null);
-        configAsJson.addProperty("customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
-        configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
-        configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
-        configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
-        return configAsJson;
+  @NotNull
+  public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
+    ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
+    CodyAgentCodebase codebase = CodyAgent.getClient(project).codebase;
+
+    ExtensionConfiguration config =
+        new ExtensionConfiguration()
+            .setServerEndpoint(serverAuth.getInstanceUrl())
+            .setAccessToken(serverAuth.getAccessToken())
+            .setCustomHeaders(getCustomRequestHeadersAsMap(serverAuth.getCustomRequestHeaders()))
+            .setProxy(UserLevelConfig.getProxy())
+            .setAutocompleteAdvancedServerEndpoint(UserLevelConfig.getAutocompleteServerEndpoint())
+            .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
+            .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
+            .setDebug(isCodyDebugEnabled())
+            .setVerboseDebug(isCodyVerboseDebugEnabled())
+            .setCodebase(codebase != null ? codebase.currentCodebase : null);
+
+    if (UserLevelConfig.getAutocompleteProviderType() != null) {
+      config.setAutocompleteAdvancedProvider(
+          UserLevelConfig.getAutocompleteProviderType().vscodeSettingString());
     }
+    return config;
+  }
 
-    @NotNull
-    public static SettingsComponent.InstanceType getInstanceType(Project project) {
-        // Project level
-        String projectLevelSetting = getProjectLevelConfig(project).getInstanceType();
-        if (projectLevelSetting != null && !projectLevelSetting.isEmpty()) {
-            return projectLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
-                ? SettingsComponent.InstanceType.ENTERPRISE : SettingsComponent.InstanceType.DOTCOM;
-        }
+  @NotNull
+  public static JsonObject getConfigAsJson(@NotNull Project project) {
+    JsonObject configAsJson = new JsonObject();
+    ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
+    CodyApplicationSettings codyApplicationSettings = CodyApplicationSettings.getInstance();
+    configAsJson.addProperty("instanceURL", serverAuth.getInstanceUrl());
+    configAsJson.addProperty("accessToken", serverAuth.getAccessToken());
+    configAsJson.addProperty("customRequestHeadersAsString", serverAuth.getCustomRequestHeaders());
+    configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
+    configAsJson.addProperty("anonymousUserId", codyApplicationSettings.getAnonymousUserId());
+    return configAsJson;
+  }
 
+  @NotNull
+  public static SourcegraphServerPath getServerPath(@NotNull Project project) {
+    CodyAccount activeAccount = CodyAuthenticationManager.getInstance().getActiveAccount(project);
 
-        // Application level
-        String applicationLevelSetting = getApplicationLevelConfig().getInstanceType();
-        if (applicationLevelSetting != null && !applicationLevelSetting.isEmpty()) {
-            return applicationLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
-                ? SettingsComponent.InstanceType.ENTERPRISE : SettingsComponent.InstanceType.DOTCOM;
-        }
+    return activeAccount != null
+        ? activeAccount.getServer()
+        : SourcegraphServerPath.from(DOTCOM_URL, "");
+  }
 
-        // User level or default
-        String enterpriseUrl = getEnterpriseUrl(project);
-        return (enterpriseUrl.equals("") || enterpriseUrl.startsWith(DOTCOM_URL))
-            ? SettingsComponent.InstanceType.DOTCOM : SettingsComponent.InstanceType.ENTERPRISE;
+  public static Map<String, String> getCustomRequestHeadersAsMap(
+      @NotNull String customRequestHeaders) {
+    Map<String, String> result = new HashMap<>();
+    String[] pairs = customRequestHeaders.split(",");
+    for (int i = 0; i + 1 < pairs.length; i = i + 2) {
+      result.put(pairs[i], pairs[i + 1]);
     }
+    return result;
+  }
 
-    @NotNull
-    public static String getSourcegraphUrl(@NotNull Project project) {
-        if (getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM) {
-            return DOTCOM_URL;
-        } else {
-            String enterpriseUrl = getEnterpriseUrl(project);
-            return !enterpriseUrl.isEmpty() ? enterpriseUrl : DOTCOM_URL;
-        }
+  @NotNull
+  @Contract(pure = true)
+  public static String getPluginVersion() {
+    // Internal version
+    IdeaPluginDescriptor plugin =
+        PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
+    return plugin != null ? plugin.getVersion() : "unknown";
+  }
+
+  public static boolean isCodyEnabled() {
+    return CodyApplicationSettings.getInstance().isCodyEnabled();
+  }
+
+  public static boolean isCodyDebugEnabled() {
+    return CodyApplicationSettings.getInstance().isCodyDebugEnabled();
+  }
+
+  public static boolean isCodyVerboseDebugEnabled() {
+    return CodyApplicationSettings.getInstance().isCodyVerboseDebugEnabled();
+  }
+
+  public static boolean isCodyAutocompleteEnabled() {
+    return CodyApplicationSettings.getInstance().isCodyAutocompleteEnabled();
+  }
+
+  public static boolean isCustomAutocompleteColorEnabled() {
+    return CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled();
+  }
+
+  public static Integer getCustomAutocompleteColor() {
+    return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
+  }
+
+  @Nullable
+  public static String getWorkspaceRoot(@NotNull Project project) {
+    if (project.getBasePath() != null) {
+      return project.getBasePath();
     }
+    // The base path should only be null for the default project. The agent server assumes that the
+    // workspace root is not null, so we have to provide some default value. Feel free to change to
+    // something else than the home directory if this is causing problems.
+    return System.getProperty("user.home");
+  }
 
-    @NotNull
-    public static String getEnterpriseUrl(@NotNull Project project) {
-        // Project level
-        String projectLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
-        if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
-            return addSlashIfNeeded(projectLevelUrl);
-        }
+  public static List<Editor> getAllEditors() {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+    return Arrays.stream(openProjects)
+        .flatMap(project -> Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
+        .filter(fileEditor -> fileEditor instanceof com.intellij.openapi.fileEditor.TextEditor)
+        .map(fileEditor -> ((com.intellij.openapi.fileEditor.TextEditor) fileEditor).getEditor())
+        .collect(Collectors.toList());
+  }
 
-        // Application level
-        String applicationLevelUrl = getApplicationLevelConfig().getSourcegraphUrl();
-        if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
-            return addSlashIfNeeded(applicationLevelUrl);
-        }
-
-        // User level or default
-        String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
-        return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
-    }
-
-    @Nullable
-    public static String getAccessToken(Project project) {
-        // Project level → application level
-        String projectLevelAccessToken = getProjectLevelConfig(project).getAccessToken();
-        return projectLevelAccessToken != null ? projectLevelAccessToken : getApplicationLevelConfig().getAccessToken();
-    }
-
-    @NotNull
-    public static String getCustomRequestHeaders(@NotNull Project project) {
-        // Project level
-        String projectLevelCustomRequestHeaders = getProjectLevelConfig(project).getCustomRequestHeaders();
-        if (projectLevelCustomRequestHeaders != null && projectLevelCustomRequestHeaders.length() > 0) {
-            return projectLevelCustomRequestHeaders;
-        }
-
-        // Application level
-        String applicationLevelCustomRequestHeaders = getApplicationLevelConfig().getCustomRequestHeaders();
-        if (applicationLevelCustomRequestHeaders != null && applicationLevelCustomRequestHeaders.length() > 0) {
-            return applicationLevelCustomRequestHeaders;
-        }
-
-        // Default
-        return "";
-    }
-
-    @NotNull
-    public static String getDefaultBranchName(@NotNull Project project) {
-        // Project level
-        String projectLevelDefaultBranchName = getProjectLevelConfig(project).getDefaultBranchName();
-        if (projectLevelDefaultBranchName != null && projectLevelDefaultBranchName.length() > 0) {
-            return projectLevelDefaultBranchName;
-        }
-
-        // Application level
-        String applicationLevelDefaultBranchName = getApplicationLevelConfig().getDefaultBranchName();
-        if (applicationLevelDefaultBranchName != null && applicationLevelDefaultBranchName.length() > 0) {
-            return applicationLevelDefaultBranchName;
-        }
-
-        // User level or default
-        String userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName();
-        return userLevelDefaultBranchName != null ? userLevelDefaultBranchName : "main";
-    }
-
-    @NotNull
-    public static String getRemoteUrlReplacements(@NotNull Project project) {
-        // Project level
-        String projectLevelReplacements = getProjectLevelConfig(project).getRemoteUrlReplacements();
-        if (projectLevelReplacements != null && projectLevelReplacements.length() > 0) {
-            return projectLevelReplacements;
-        }
-
-        // Application level
-        String applicationLevelReplacements = getApplicationLevelConfig().getRemoteUrlReplacements();
-        if (applicationLevelReplacements != null && applicationLevelReplacements.length() > 0) {
-            return applicationLevelReplacements;
-        }
-
-        // User level or default
-        String userLevelRemoteUrlReplacements = UserLevelConfig.getRemoteUrlReplacements();
-        return userLevelRemoteUrlReplacements != null ? userLevelRemoteUrlReplacements : "";
-    }
-
-    public static boolean isGlobbingEnabled(@NotNull Project project) {
-        // Project level → application level
-        Boolean projectLevelIsGlobbingEnabled = getProjectLevelConfig(project).isGlobbingEnabled();
-        return projectLevelIsGlobbingEnabled != null ? projectLevelIsGlobbingEnabled : getApplicationLevelConfig().isGlobbingEnabled();
-    }
-
-    @Nullable
-    public static Search getLastSearch(@NotNull Project project) {
-        // Project level
-        return getProjectLevelConfig(project).getLastSearch();
-    }
-
-    public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
-        // Project level
-        SourcegraphProjectService settings = getProjectLevelConfig(project);
-        settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
-        settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
-        settings.lastSearchPatternType = lastSearch.getPatternType() != null ? lastSearch.getPatternType() : "literal";
-        settings.lastSearchContextSpec = lastSearch.getSelectedSearchContextSpec() != null ? lastSearch.getSelectedSearchContextSpec() : "global";
-    }
-
-    @NotNull
-    @Contract(pure = true)
-    public static String getPluginVersion() {
-        // Internal version
-        IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
-        return plugin != null ? plugin.getVersion() : "unknown";
-    }
-
-    @Nullable
-    public static String getAnonymousUserId() {
-        return getApplicationLevelConfig().getAnonymousUserId();
-    }
-
-    public static void setAnonymousUserId(@Nullable String anonymousUserId) {
-        getApplicationLevelConfig().anonymousUserId = anonymousUserId;
-    }
-
-    public static boolean isInstallEventLogged() {
-        return getApplicationLevelConfig().isInstallEventLogged();
-    }
-
-    public static void setInstallEventLogged(boolean value) {
-        getApplicationLevelConfig().isInstallEventLogged = value;
-    }
-
-    public static boolean isUrlNotificationDismissed() {
-        return getApplicationLevelConfig().isUrlNotificationDismissed();
-    }
-
-    public static void setUrlNotificationDismissed(boolean value) {
-        getApplicationLevelConfig().isUrlNotificationDismissed = value;
-    }
-
-    @NotNull
-    private static String addSlashIfNeeded(@NotNull String url) {
-        return url.endsWith("/") ? url : url + "/";
-    }
-
-    public static boolean didAuthenticationFailLastTime() {
-        Boolean failedLastTime = getApplicationLevelConfig().getAuthenticationFailedLastTime();
-        return failedLastTime != null ? failedLastTime : true;
-    }
-
-    public static void setAuthenticationFailedLastTime(boolean value) {
-        SourcegraphApplicationService.getInstance().authenticationFailedLastTime = value;
-    }
-
-    public static String getLastUpdateNotificationPluginVersion() {
-        return SourcegraphApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
-    }
-
-    public static void setLastUpdateNotificationPluginVersionToCurrent() {
-        SourcegraphApplicationService.getInstance().lastUpdateNotificationPluginVersion = getPluginVersion();
-    }
-
-    @NotNull
-    private static SourcegraphApplicationService getApplicationLevelConfig() {
-        return Objects.requireNonNull(SourcegraphApplicationService.getInstance());
-    }
-
-    @NotNull
-    private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
-        return Objects.requireNonNull(SourcegraphProjectService.getInstance(project));
-    }
+  public static List<String> getBlacklistedAutocompleteLanguageIds() {
+    return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
+  }
 }

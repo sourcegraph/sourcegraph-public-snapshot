@@ -34,7 +34,8 @@ func TestMain(m *testing.M) {
 // v3.38.0 -> privileged migrations introduced
 
 func TestStitchFrontendDefinitions(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip()
 		return
 	}
 	t.Parallel()
@@ -79,7 +80,8 @@ func TestStitchFrontendDefinitions(t *testing.T) {
 }
 
 func TestStitchCodeintelDefinitions(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip()
 		return
 	}
 	t.Parallel()
@@ -124,7 +126,8 @@ func TestStitchCodeintelDefinitions(t *testing.T) {
 }
 
 func TestStitchCodeinsightsDefinitions(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip()
 		return
 	}
 	t.Parallel()
@@ -169,7 +172,8 @@ func TestStitchCodeinsightsDefinitions(t *testing.T) {
 }
 
 func TestStitchAndApplyFrontendDefinitions(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip()
 		return
 	}
 	t.Parallel()
@@ -183,7 +187,8 @@ func TestStitchAndApplyFrontendDefinitions(t *testing.T) {
 }
 
 func TestStitchAndApplyCodeintelDefinitions(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip()
 		return
 	}
 	t.Parallel()
@@ -197,7 +202,8 @@ func TestStitchAndApplyCodeintelDefinitions(t *testing.T) {
 }
 
 func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
-	if testing.Short() {
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
+		t.Skip()
 		return
 	}
 	t.Parallel()

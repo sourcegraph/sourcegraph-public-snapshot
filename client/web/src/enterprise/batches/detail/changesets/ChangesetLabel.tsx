@@ -4,19 +4,17 @@ import classNames from 'classnames'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-import { ChangesetLabelFields } from '../../../../graphql-operations'
-
-import styles from './ChangesetLabel.module.scss'
+import type { ChangesetLabelFields } from '../../../../graphql-operations'
 
 interface Props {
     label: ChangesetLabelFields
 }
 
 /**
- * Converts a hex color to a perceived brightness. Algorithm to determine color brightness taken from https://www.w3.org/TR/AERT/#color-contrast
+ * Converts a hex color to a perceived brightness. Algorithm to determine color brightness
+ * taken from https://www.w3.org/TR/AERT/#color-contrast
  *
  * @param color The hex encoded RGB color without the #
- *
  * @returns The perceived brightness from 0 to 255
  */
 export function colorBrightness(color: string): number {
@@ -33,9 +31,10 @@ export const ChangesetLabel: React.FunctionComponent<React.PropsWithChildren<Pro
     return (
         <Badge
             variant="secondary"
-            className={classNames('mr-2', labelBrightness < 127 ? 'text-white' : styles.changesetLabelTextDark)}
+            className={classNames('mr-2', labelBrightness < 127 ? 'text-white' : 'text-dark')}
             style={{ backgroundColor: '#' + label.color }}
             tooltip={label.description || undefined}
+            pill={true}
         >
             {label.text}
         </Badge>

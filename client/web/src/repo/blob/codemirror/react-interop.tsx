@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { BrowserRouter, NavigateFunction, useLocation } from 'react-router-dom'
+import { BrowserRouter, type NavigateFunction, useLocation } from 'react-router-dom'
 
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
@@ -46,7 +46,7 @@ const SyncInnerRouterWithParent: React.FC<{ navigate: NavigateFunction }> = ({ n
         ) {
             return
         }
-        navigate(location)
+        navigate(location, { replace: true })
     }, [location, navigate, initialLocation])
     return null
 }

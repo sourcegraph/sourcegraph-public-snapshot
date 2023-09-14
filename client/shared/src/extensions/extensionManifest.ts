@@ -1,4 +1,4 @@
-import { ExtensionManifest as ExtensionManifestSchema } from '../schema/extensionSchema'
+import type { ExtensionManifest as ExtensionManifestSchema } from '../schema/extensionSchema'
 
 /**
  * Represents an input object that is validated against a subset of properties of the {@link ExtensionManifest}

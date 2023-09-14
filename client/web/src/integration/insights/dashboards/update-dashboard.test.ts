@@ -1,10 +1,10 @@
 import assert from 'assert'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetDashboardInsightsResult, InsightsDashboardsResult } from '../../../graphql-operations'
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
+import type { GetDashboardInsightsResult, InsightsDashboardsResult } from '../../../graphql-operations'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../../context'
 import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from '../fixtures/calculated-insights'
 import { createJITMigrationToGQLInsightMetadataFixture } from '../fixtures/insights-metadata'
 import { overrideInsightsGraphQLApi } from '../utils/override-insights-graphql-api'
@@ -102,7 +102,7 @@ describe('Code insights dashboard', () => {
                         id: 'user_001',
                         organizations: { nodes: [] },
                     },
-                    site: { __typename: 'Site', id: 'site_id' },
+                    site: { __typename: 'Site', id: 'TestSiteID' },
                 }),
 
                 UpdateDashboard: () => ({

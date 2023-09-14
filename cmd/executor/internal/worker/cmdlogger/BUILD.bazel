@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "cmdlogger",
+    srcs = ["logger.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger",
+    visibility = ["//cmd/executor:__subpackages__"],
+    deps = [
+        "//internal/executor",
+        "//internal/executor/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "cmdlogger_test",
+    srcs = [
+        "logger_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":cmdlogger"],
+    deps = [
+        "//internal/executor",
+        "//internal/executor/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

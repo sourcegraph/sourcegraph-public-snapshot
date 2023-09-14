@@ -1,4 +1,4 @@
-import { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
+import type { RepositoryScopeInput } from '@sourcegraph/shared/src/graphql-operations'
 
 /**
  * Returns parsed by string repositories list.

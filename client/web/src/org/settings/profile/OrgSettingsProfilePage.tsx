@@ -7,7 +7,7 @@ import { Container, PageHeader, Button, LoadingSpinner, Input, Text, ErrorAlert,
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { OrgAreaRouteContext } from '../../area/OrgArea'
+import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 
 interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'> {}

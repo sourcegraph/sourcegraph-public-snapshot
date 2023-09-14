@@ -1,6 +1,6 @@
 import { mdiCheckCircle, mdiMagnify, mdiPuzzleOutline, mdiShieldSearch, mdiNotebook, mdiCursorPointer } from '@mdi/js'
 
-import { TourLanguage, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import { TourLanguage, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Code, Icon } from '@sourcegraph/wildcard'
 
 /**
@@ -286,7 +286,7 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
             action: {
                 type: 'new-tab-link',
                 variant: 'button-primary',
-                value: 'https://signup.sourcegraph.com',
+                value: 'https://about.sourcegraph.com/get-started?t=enterprise',
             },
             // This is done to mimic user creating an account, and signed in there is a different tour
             completeAfterEvents: ['non-existing-event'],

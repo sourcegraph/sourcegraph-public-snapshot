@@ -14,9 +14,12 @@ const (
 	SCIPUpload       = "scip.upload"
 	SCIPUploadExists = "scip.upload.exists"
 
-	SearchStream   = "search.stream"
-	ComputeStream  = "compute.stream"
-	GitBlameStream = "git.blame.stream"
+	SearchStream          = "search.stream"
+	SearchJob             = "search.job"
+	ComputeStream         = "compute.stream"
+	GitBlameStream        = "git.blame.stream"
+	ChatCompletionsStream = "completions.stream"
+	CodeCompletions       = "completions.code"
 
 	SrcCli             = "src-cli"
 	SrcCliVersionCache = "src-cli.version-cache"
@@ -25,7 +28,6 @@ const (
 
 	RepoShield  = "repo.shield"
 	RepoRefresh = "repo.refresh"
-	Telemetry   = "telemetry"
 
 	Webhooks                = "webhooks"
 	GitHubWebhooks          = "github.webhooks"
@@ -41,18 +43,15 @@ const (
 
 	CodeInsightsDataExport = "insights.data.export"
 
-	ExternalURL            = "internal.app-url"
-	SendEmail              = "internal.send-email"
-	GitInfoRefs            = "internal.git.info-refs"
-	GitUploadPack          = "internal.git.upload-pack"
-	ReposIndex             = "internal.repos.index"
-	Configuration          = "internal.configuration"
-	SearchConfiguration    = "internal.search-configuration"
-	ExternalServiceConfigs = "internal.external-services.configs"
-	StreamingSearch        = "internal.stream-search"
-	RepoRank               = "internal.repo-rank"
-	DocumentRanks          = "internal.document-ranks"
-	UpdateIndexStatus      = "internal.update-index-status"
+	GitInfoRefs         = "internal.git.info-refs"
+	GitUploadPack       = "internal.git.upload-pack"
+	ReposIndex          = "internal.repos.index"
+	Configuration       = "internal.configuration"
+	SearchConfiguration = "internal.search-configuration"
+	StreamingSearch     = "internal.stream-search"
+	RepoRank            = "internal.repo-rank"
+	DocumentRanks       = "internal.document-ranks"
+	UpdateIndexStatus   = "internal.update-index-status"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -79,11 +78,14 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
 	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
+	base.Path("/search/export/{id}").Methods("GET").Name(SearchJob)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
 	base.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Name(GitBlameStream)
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 	base.Path("/insights/export/{id}").Methods("GET").Name(CodeInsightsDataExport)
+	base.Path("/completions/stream").Methods("POST").Name(ChatCompletionsStream)
+	base.Path("/completions/code").Methods("POST").Name(CodeCompletions)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -105,18 +107,14 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/app-url").Methods("POST").Name(ExternalURL)
-	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
-	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/ranks/{RepoName:.*}/documents").Methods("GET").Name(DocumentRanks)
 	base.Path("/ranks/{RepoName:.*}").Methods("GET").Name(RepoRank)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/search/index-status").Methods("POST").Name(UpdateIndexStatus)
-	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
 	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)

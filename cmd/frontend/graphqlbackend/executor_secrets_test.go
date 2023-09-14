@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
@@ -32,8 +33,6 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
 		t.Fatal(err)
 	}
-
-	gqlIDPtr := func(id graphql.ID) *graphql.ID { return &id }
 
 	tts := []struct {
 		name    string
@@ -86,7 +85,7 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 				Key:       "GITHUB_TOKEN",
 				Value:     "1234",
 				Scope:     ExecutorSecretScopeBatches,
-				Namespace: gqlIDPtr(MarshalUserID(user.ID)),
+				Namespace: pointers.Ptr(MarshalUserID(user.ID)),
 			},
 			actor: actor.FromUser(user.ID),
 		},

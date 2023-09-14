@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { RuleSetRule } from 'webpack'
+import type { RuleSetRule } from 'webpack'
 
 import { ROOT_PATH } from '../paths'
 

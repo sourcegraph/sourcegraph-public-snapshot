@@ -2,24 +2,21 @@ import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
 import { fromEvent } from 'rxjs'
 import { filter, map, mapTo, tap } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { fetchCache, LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
+import { fetchCache, type LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
-import { ResolveRepoNameResult, ResolveRepoNameVariables } from '../../../graphql-operations'
+import type { ResolveRepoNameResult, ResolveRepoNameVariables } from '../../../graphql-operations'
 import { isInPage } from '../../context'
-import { CodeHost } from '../shared/codeHost'
-import { CodeView } from '../shared/codeViews'
-import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
+import type { CodeHost } from '../shared/codeHost'
+import type { CodeView } from '../shared/codeViews'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
-import { queryWithSelector, ViewResolver } from '../shared/views'
+import { queryWithSelector, type ViewResolver } from '../shared/views'
 
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
-import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import {
     getPageInfo,
@@ -121,14 +118,6 @@ const codeViewResolver: ViewResolver<CodeView> = {
     resolveView,
 }
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'alert alert-secondary',
-    [NotificationType.Success]: 'alert alert-success',
-    [NotificationType.Info]: 'alert alert-info',
-    [NotificationType.Warning]: 'alert alert-warning',
-    [NotificationType.Error]: 'alert alert-danger',
-}
-
 /**
  * Checks whether repository is private or not using Gitlab API
  *
@@ -202,7 +191,6 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     name: 'GitLab',
     check: checkIsGitlab,
     codeViewResolvers: [codeViewResolver],
-    getCommandPaletteMount,
     getContext: async () => {
         const { repoName, ...pageInfo } = getPageInfo()
         return {
@@ -252,16 +240,6 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         }
         return url.href
     },
-    notificationClassNames,
-    commandPaletteClassProps: {
-        popoverClassName: classNames('dropdown-menu', styles.commandListPopover),
-        formClassName: 'dropdown-input',
-        inputClassName: 'dropdown-input-field',
-        resultsContainerClassName: 'dropdown-content',
-        selectedActionItemClassName: 'is-focused',
-        noResultsClassName: 'px-3',
-        iconClassName: 's16 align-bottom',
-    },
     codeViewToolbarClassProps: {
         className: 'pl-0',
         actionItemClass: 'btn btn-md gl-button btn-icon',
@@ -274,7 +252,6 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
         iconClassName: 'square s16',
-        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
     codeViewsRequireTokenization: true,
     getHoverOverlayMountLocation: (): string | null => {

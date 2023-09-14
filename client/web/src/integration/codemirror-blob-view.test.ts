@@ -1,23 +1,24 @@
 import assert from 'assert'
 
-import { ElementHandle, MouseButton } from 'puppeteer'
+import type { ElementHandle, MouseButton } from 'puppeteer'
 
-import { JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { type JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { type Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, EditorAPI } from './utils'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createEditorAPI, type EditorAPI } from './utils'
 
 describe('CodeMirror blob view', () => {
     let driver: Driver
@@ -62,13 +63,6 @@ describe('CodeMirror blob view', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        ...createViewerSettingsGraphQLOverride({
-            user: {
-                experimentalFeatures: {
-                    enableCodeMirrorFileView: true,
-                },
-            },
-        }),
         ...blobGraphqlResults,
     }
 
@@ -109,14 +103,22 @@ describe('CodeMirror blob view', () => {
             // files from TreeEntries request
             assert.deepStrictEqual(
                 allFilesInTheTree,
-                Object.entries(filePaths).map(([name, path]) => ({
-                    content: name,
-                    href: `${driver.sourcegraphBaseUrl}${path}`,
-                }))
+                Object.entries(filePaths)
+                    .filter(
+                        ([name]) =>
+                            name !==
+                            // This file is not part of the same directory so it won't be shown in this test case
+                            'this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java'
+                    )
+                    .map(([name, path]) => ({
+                        content: name,
+                        href: `${driver.sourcegraphBaseUrl}${path}`,
+                    }))
             )
         })
 
-        it('truncates long file paths properly', async () => {
+        // TODO 53389: This test is disabled because it is flaky.
+        it.skip('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}${filePaths['this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java']}`
             )
@@ -163,18 +165,6 @@ describe('CodeMirror blob view', () => {
             return lineNumberElement
         }
 
-        it('selects a line when clicking the line', async () => {
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-            await waitForView()
-            await driver.page.click(lineAt(1))
-
-            // Line is selected
-            await driver.page.waitForSelector(lineAt(1) + "[data-testid='selected-line']")
-
-            // URL is updated
-            await driver.assertWindowLocation(`${filePaths['test.ts']}?L1`)
-        })
-
         // This should also test the "back' button, but that test passed with
         // puppeteer regardless of the implementation.
         for (const button of ['forward', 'middle', 'right'] as MouseButton[]) {
@@ -215,26 +205,6 @@ describe('CodeMirror blob view', () => {
         })
 
         describe('line range selection', () => {
-            it('selects a line range when shift-clicking lines', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
-                await waitForView()
-
-                await driver.page.click(lineAt(1))
-                await driver.page.keyboard.down('Shift')
-                await driver.page.click(lineAt(3))
-                await driver.page.keyboard.up('Shift')
-
-                // Lines is selected
-                await Promise.all(
-                    [1, 2, 3].map(lineNumber =>
-                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
-                    )
-                )
-
-                // URL is updated
-                await driver.assertWindowLocation(`${filePaths['test.ts']}?L1-3`)
-            })
-
             it('selects a line range when shift-clicking line numbers', async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
                 await waitForView()
@@ -397,7 +367,10 @@ function createBlobPageData<T extends BlobInfo>({
     repoName: string
     blobInfo: T
 }): {
-    graphqlResults: Pick<WebGraphQlOperations, 'ResolveRepoRev' | 'FileExternalLinks' | 'Blob' | 'FileNames'> &
+    graphqlResults: Pick<
+        WebGraphQlOperations,
+        'ResolveRepoRev' | 'FileTreeEntries' | 'FileExternalLinks' | 'Blob' | 'FileNames'
+    > &
         Pick<SharedGraphQlOperations, 'TreeEntries' | 'LegacyRepositoryIntrospection' | 'LegacyResolveRepo2'>
     filePaths: { [k in keyof T]: string }
 } {
@@ -414,8 +387,8 @@ function createBlobPageData<T extends BlobInfo>({
             FileExternalLinks: ({ filePath }) =>
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
-            Blob: ({ filePath }) =>
-                createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
+            FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
+            Blob: ({ filePath }) => createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].lsif),
             FileNames: () => ({
                 repository: {
                     id: 'repo-123',

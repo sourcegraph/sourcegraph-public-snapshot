@@ -1,0 +1,17 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "response",
+    srcs = ["response.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = ["@com_github_sourcegraph_log//:log"],
+)
+
+go_test(
+    name = "response_test",
+    srcs = ["response_test.go"],
+    embed = [":response"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

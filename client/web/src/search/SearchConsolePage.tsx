@@ -4,52 +4,45 @@ import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, of } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import {
     StreamingSearchResultsList,
-    StreamingSearchResultsListProps,
+    type StreamingSearchResultsListProps,
     CodeMirrorQueryInput,
     createDefaultSuggestions,
     changeListener,
 } from '@sourcegraph/branded'
-import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
-import { eventLogger } from '../tracking/eventLogger'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
+import { setSearchMode, useNavbarQueryState } from '../stores'
 
-import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType, type SearchStreamingProps } from '.'
+import { submitSearch } from './helpers'
 
 import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<
-            StreamingSearchResultsListProps,
-            'allExpanded' | 'extensionsController' | 'executedQuery' | 'showSearchContext'
-        >,
-        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
-    globbing: boolean
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'executedQuery' | 'showSearchContext'>,
+        OwnConfigProps {
     isMacPlatform: boolean
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { globbing, streamSearch, isSourcegraphDotCom } = props
-    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
-        features => features.enableGoImportsSearchQueryTransform
-    )
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-
+    const { streamSearch, isSourcegraphDotCom } = props
+    const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
+        applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
+    }))
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
         [location.search]
@@ -60,6 +53,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         [location.search]
     )
 
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const searchMode = useNavbarQueryState(state => state.searchMode)
+    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+
     const triggerSearch = useCallback(() => {
         navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [navigate, searchQuery])
@@ -68,22 +65,17 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         let query = parseSearchURLQuery(location.search)
         query = query?.replace(/\/\/.*/g, '') || ''
 
-        return transformSearchQuery({
-            query,
-            enableGoImportsSearchQueryTransform,
-            eventLogger,
-        })
-    }, [location.search, enableGoImportsSearchQueryTransform])
+        return query
+    }, [location.search])
 
     const autocompletion = useMemo(
         () =>
             createDefaultSuggestions({
                 fetchSuggestions: query => fetchStreamSuggestions(query),
-                globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [globbing, isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(
@@ -99,7 +91,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const results = useObservable(
         useMemo(
             () =>
-                streamSearch(transformedQuery, {
+                streamSearch(of(transformedQuery), {
                     version: LATEST_VERSION,
                     patternType: patternType ?? SearchPatternType.standard,
                     caseSensitive: false,
@@ -136,8 +128,12 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 {...props}
                                 allExpanded={false}
                                 results={results}
-                                assetsRoot={window.context?.assetsRoot || ''}
                                 executedQuery={location.search}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={submittedURLQuery}
                             />
                         ))}
                 </div>

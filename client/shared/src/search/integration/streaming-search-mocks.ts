@@ -1,11 +1,11 @@
 /* eslint-disable no-template-curly-in-string */
-import {
+import type {
     SymbolKind,
     HighlightedFileResult,
     SharedGraphQlOperations,
     HighlightedFileVariables,
 } from '../../graphql-operations'
-import { SearchEvent } from '../stream'
+import type { SearchEvent } from '../stream'
 
 export const diffSearchStreamEvents: SearchEvent[] = [
     {
@@ -482,6 +482,39 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         line: 4633,
                     },
                 ],
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
+
+export const ownerSearchStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [
+            {
+                type: 'person',
+                handle: 'example-unknown',
+            },
+            {
+                type: 'person',
+                email: 'test@example.com',
+            },
+            {
+                type: 'person',
+                handle: 'example-user',
+                email: 'user@example.com',
+                user: {
+                    username: 'example-user',
+                    displayName: 'Example User',
+                    avatarURL:
+                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAaQAAAGkAQMAAABEgsN2AAAABlBMVEWD1qfw8PD3jxSNAAAAiklEQVR42u3cMQrAIAwFUKEH8/638AgdO9UOkl0qosL7Y+CR+RNIqj9yUxRFURTVoUrqT6YoiqIoiqIoiqKoc1WuLW8MrqjIhaIoiqIoiqIoiqJG1LzmGyseiqIoiqIoiqIoihpRu11vKYqiKIqiKIqiKIqiKIqiKIqiKIqiqKYO+lVFURRFUcvUB5Q0nNnSPJFEAAAAAElFTkSuQmCC',
+                },
+            },
+            {
+                type: 'team',
+                name: 'example-team',
+                displayName: 'Example Team',
             },
         ],
     },

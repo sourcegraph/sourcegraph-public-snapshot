@@ -8,9 +8,10 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+import type { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     header: {
         label: 'Analytics',
         icon: ChartLineVariantIcon,
@@ -36,10 +37,12 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Insights',
             to: '/site-admin/analytics/code-insights',
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
         {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
             label: 'Notebooks',
@@ -50,8 +53,13 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/extensions',
         },
         {
+            label: 'Code ownership',
+            to: '/site-admin/analytics/own',
+        },
+        {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -69,6 +77,12 @@ export const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'Global settings',
             to: '/site-admin/global-settings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: 'End user onboarding',
+            to: '/site-admin/end-user-onboarding',
+            condition: ({ endUserOnboardingEnabled }) => endUserOnboardingEnabled,
         },
         {
             label: 'Feature flags',
@@ -84,19 +98,25 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Manage code hosts',
+            label: 'Code host connections',
             to: '/site-admin/external-services',
         },
         {
             label: 'Repositories',
             to: '/site-admin/repositories',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Packages',
             to: '/site-admin/packages',
             condition: isPackagesEnabled,
         },
+        {
+            label: 'Gitservers',
+            to: '/site-admin/gitservers',
+        },
     ],
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
 }
 
 export const usersGroup: SiteAdminSideBarGroup = {
@@ -104,20 +124,17 @@ export const usersGroup: SiteAdminSideBarGroup = {
         label: 'Users & auth',
         icon: AccountMultipleIcon,
     },
+
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'Users',
             to: '/site-admin/users',
         },
         {
-            label: 'Access requests',
-            to: '/site-admin/access-requests',
-            condition: context =>
-                checkRequestAccessAllowed(
-                    context.isSourcegraphDotCom,
-                    window.context.allowSignup,
-                    window.context.experimentalFeatures
-                ),
+            label: 'Account requests',
+            to: '/site-admin/account-requests',
+            condition: () => checkRequestAccessAllowed(window.context),
         },
         {
             label: 'Organizations',
@@ -130,14 +147,27 @@ export const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const maintenanceGroupHeaderLabel = 'Maintenance'
+
+export const maintenanceGroupMonitoringItemLabel = 'Monitoring'
+
+export const maintenanceGroupInstrumentationItemLabel = 'Instrumentation'
+
+export const maintenanceGroupUpdatesItemLabel = 'Updates'
+
+export const maintenanceGroupMigrationsItemLabel = 'Migrations'
+
+export const maintenanceGroupTracingItemLabel = 'Tracing'
+
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Maintenance',
+        label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
-            label: 'Updates',
+            label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
         },
         {
@@ -153,38 +183,35 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/report-bug',
         },
         {
-            label: 'Migrations',
+            label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
         },
         {
-            label: 'Instrumentation',
+            label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
         },
         {
-            label: 'Monitoring',
+            label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
         },
         {
-            label: 'Tracing',
+            label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
         },
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
-            source: 'server',
         },
         {
             label: 'Slow requests',
             to: '/site-admin/slow-requests',
-            source: 'server',
         },
         {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
-            source: 'server',
         },
     ],
 }
@@ -194,6 +221,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'API Console',

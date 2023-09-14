@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { ChangesetFields } from '../../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs } from '../backend'
+import type { ChangesetFields } from '../../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs } from '../backend'
 
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'

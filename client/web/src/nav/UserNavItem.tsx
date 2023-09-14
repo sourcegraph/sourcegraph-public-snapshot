@@ -1,12 +1,14 @@
-import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
+import { useCallback, useMemo, type ChangeEventHandler, type FC } from 'react'
 
-import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -24,10 +26,10 @@ import {
     ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import type { AuthenticatedUser } from '../auth'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
-import { useExperimentalFeatures } from '../stores'
+
+import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
 
 import styles from './UserNavItem.module.scss'
 
@@ -38,10 +40,10 @@ type MinimalAuthenticatedUser = Pick<
     'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
 >
 
-export interface UserNavItemProps {
+export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
-    codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
+    isSourcegraphApp: boolean
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
@@ -55,15 +57,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
         authenticatedUser,
         isSourcegraphDotCom,
-        codeHostIntegrationMessaging,
+        isSourcegraphApp,
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
+        telemetryService,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
-    const [enableTeams] = useFeatureFlag('search-ownership')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -85,6 +87,14 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
     const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
 
+    const onExperimentalQueryInputChange = useCallback(
+        (enabled: boolean) => {
+            telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
+            setExperimentalQueryInputEnabled(enabled)
+        },
+        [telemetryService, setExperimentalQueryInputEnabled]
+    )
+
     return (
         <>
             {keyboardShortcutSwitchTheme?.keybindings.map((keybinding, index) => (
@@ -104,7 +114,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    <UserAvatar user={authenticatedUser} className={styles.avatar} />
+                                    {isSourcegraphApp ? (
+                                        <Icon svgPath={mdiCogOutline} aria-hidden={true} />
+                                    ) : (
+                                        <UserAvatar user={authenticatedUser} className={styles.avatar} />
+                                    )}
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
@@ -115,17 +129,27 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             className={styles.dropdownMenu}
                             aria-label="User. Open menu"
                         >
-                            <MenuHeader className={styles.dropdownHeader}>
-                                Signed in as <strong>@{authenticatedUser.username}</strong>
-                            </MenuHeader>
-                            <MenuDivider className={styles.dropdownDivider} />
-                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
+                            {!isSourcegraphApp ? (
+                                <>
+                                    <MenuHeader className={styles.dropdownHeader}>
+                                        Signed in as <strong>@{authenticatedUser.username}</strong>
+                                    </MenuHeader>
+                                    <MenuDivider className={styles.dropdownDivider} />
+                                </>
+                            ) : null}
+                            <MenuLink
+                                as={Link}
+                                to={isSourcegraphApp ? '/user/app-settings' : authenticatedUser.settingsURL!}
+                            >
                                 Settings
                             </MenuLink>
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
-                                Saved searches
-                            </MenuLink>
-                            {enableTeams && !isSourcegraphDotCom && (
+                            {!isSourcegraphApp && (
+                                <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                    Saved searches
+                                </MenuLink>
+                            )}
+                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
+                            {!isSourcegraphDotCom && !isSourcegraphApp && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
                                 </MenuLink>
@@ -163,16 +187,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {searchQueryInputFeature === 'experimental' && (
+                            {!isSourcegraphApp && searchQueryInputFeature === 'experimental' && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">
-                                            New Search Input{' '}
-                                            <ProductStatusBadge status="experimental" className="ml-1" />
+                                            New search input <ProductStatusBadge status="beta" className="ml-1" />
                                         </div>
                                         <Toggle
                                             value={experimentalQueryInputEnabled}
-                                            onToggle={setExperimentalQueryInputEnabled}
+                                            onToggle={onExperimentalQueryInputChange}
                                         />
                                     </div>
                                 </div>
@@ -194,26 +217,28 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     )}
                                 </>
                             )}
-                            <MenuDivider className={styles.dropdownDivider} />
-                            {authenticatedUser.siteAdmin && (
-                                <MenuLink as={Link} to="/site-admin">
-                                    Site admin
-                                </MenuLink>
+                            {!isSourcegraphApp && (
+                                <>
+                                    <MenuDivider className={styles.dropdownDivider} />
+                                    {authenticatedUser.siteAdmin && (
+                                        <MenuLink as={Link} to="/site-admin">
+                                            Site admin
+                                        </MenuLink>
+                                    )}
+                                    <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
+                                        Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                    </MenuLink>
+                                    <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                                    <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                                    {authenticatedUser.session?.canSignOut && (
+                                        <MenuLink as={AnchorLink} to="/-/sign-out">
+                                            Sign out
+                                        </MenuLink>
+                                    )}
+                                </>
                             )}
-                            <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                                Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                            </MenuLink>
 
-                            <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
-
-                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
-
-                            {authenticatedUser.session?.canSignOut && (
-                                <MenuLink as={AnchorLink} to="/-/sign-out">
-                                    Sign out
-                                </MenuLink>
-                            )}
-                            <MenuDivider className={styles.dropdownDivider} />
+                            {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
@@ -222,16 +247,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     rel="noopener"
                                 >
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                                </MenuLink>
-                            )}
-                            {codeHostIntegrationMessaging === 'browser-extension' && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="/help/integration/browser_extension"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    Browser extension <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                         </MenuList>

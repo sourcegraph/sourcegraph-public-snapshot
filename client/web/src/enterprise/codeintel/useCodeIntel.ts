@@ -1,31 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
-import { Location, buildPreciseLocation } from '../../codeintel/location'
+import { type Location, buildPreciseLocation } from '../../codeintel/location'
 import {
     LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
+    LOAD_ADDITIONAL_PROTOTYPES_QUERY,
     LOAD_ADDITIONAL_REFERENCES_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from '../../codeintel/ReferencesPanelQueries'
-import { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../../codeintel/useCodeIntel'
-import { ConnectionQueryArguments } from '../../components/FilteredConnection'
+import type { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../../codeintel/useCodeIntel'
+import type { ConnectionQueryArguments } from '../../components/FilteredConnection'
 import { asGraphQLResult } from '../../components/FilteredConnection/utils'
-import {
+import type {
     UsePreciseCodeIntelForPositionVariables,
     UsePreciseCodeIntelForPositionResult,
     LoadAdditionalReferencesResult,
     LoadAdditionalReferencesVariables,
     LoadAdditionalImplementationsResult,
     LoadAdditionalImplementationsVariables,
+    LoadAdditionalPrototypesResult,
+    LoadAdditionalPrototypesVariables,
 } from '../../graphql-operations'
 
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
 const EMPTY_CODE_INTEL_DATA = {
     implementations: { endCursor: null, nodes: [] },
+    prototypes: { endCursor: null, nodes: [] },
     definitions: { endCursor: null, nodes: [] },
     references: { endCursor: null, nodes: [] },
 }
@@ -110,6 +114,7 @@ export const useCodeIntel = ({
         error: searchBasedError,
         fetch: fetchSearchBasedCodeIntel,
         fetchReferences: fetchSearchBasedReferences,
+        fetchDefinitions: fetchSearchBasedDefinitions,
     } = useSearchBasedCodeIntel({
         repo: variables.repository,
         commit: variables.commit,
@@ -146,6 +151,12 @@ export const useCodeIntel = ({
                     if (lsifData.references.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
                         fetchSearchBasedReferences(deduplicateAndAddReferences)
                     }
+
+                    // When no definitions are found, the hover tooltip falls back to a search based
+                    // search, regardless of the mixPreciseAndSearchBasedReferences setting.
+                    if (lsifData.definitions.nodes.length === 0) {
+                        fetchSearchBasedDefinitions(setDefinitions)
+                    }
                 } else {
                     fellBackToSearchBased.current = true
 
@@ -171,6 +182,7 @@ export const useCodeIntel = ({
 
             setCodeIntelData({
                 implementations: previousData.implementations,
+                prototypes: previousData.prototypes,
                 definitions: previousData.definitions,
                 references: {
                     endCursor: newReferenceData.pageInfo.endCursor,
@@ -185,6 +197,35 @@ export const useCodeIntel = ({
             if (newReferenceData.pageInfo.endCursor === null && shouldMixPreciseAndSearchBasedReferences()) {
                 fetchSearchBasedReferences(deduplicateAndAddReferences)
             }
+        },
+    })
+
+    const [fetchAdditionalPrototypes, additionalPrototypesResult] = useLazyQuery<
+        LoadAdditionalPrototypesResult,
+        LoadAdditionalPrototypesVariables & ConnectionQueryArguments
+    >(LOAD_ADDITIONAL_PROTOTYPES_QUERY, {
+        fetchPolicy: 'no-cache',
+        onCompleted: result => {
+            const previousData = codeIntelData
+
+            const newPrototypesData = result.repository?.commit?.blob?.lsif?.prototypes
+
+            if (!previousData || !newPrototypesData) {
+                return
+            }
+
+            setCodeIntelData({
+                references: previousData.references,
+                definitions: previousData.definitions,
+                implementations: previousData.implementations,
+                prototypes: {
+                    endCursor: newPrototypesData.pageInfo.endCursor,
+                    nodes: dedupeLocations([
+                        ...previousData.prototypes.nodes,
+                        ...newPrototypesData.nodes.map(buildPreciseLocation),
+                    ]),
+                },
+            })
         },
     })
 
@@ -205,6 +246,7 @@ export const useCodeIntel = ({
             setCodeIntelData({
                 references: previousData.references,
                 definitions: previousData.definitions,
+                prototypes: previousData.prototypes,
                 implementations: {
                     endCursor: newImplementationsData.pageInfo.endCursor,
                     nodes: dedupeLocations([
@@ -244,6 +286,20 @@ export const useCodeIntel = ({
         }
     }
 
+    const fetchMorePrototypes = (): void => {
+        const cursor = codeIntelData?.prototypes.endCursor || null
+
+        if (cursor !== null) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            fetchAdditionalPrototypes({
+                variables: {
+                    ...variables,
+                    ...{ afterPrototypes: cursor },
+                },
+            })
+        }
+    }
+
     const combinedLoading = loading || (fellBackToSearchBased.current && searchBasedLoading)
 
     const combinedError = error || searchBasedError
@@ -261,6 +317,10 @@ export const useCodeIntel = ({
         fetchMoreImplementations,
         implementationsHasNextPage: codeIntelData ? codeIntelData.implementations.endCursor !== null : false,
         fetchMoreImplementationsLoading: additionalImplementationsResult.loading,
+
+        fetchMorePrototypes,
+        prototypesHasNextPage: codeIntelData ? codeIntelData.prototypes.endCursor !== null : false,
+        fetchMorePrototypesLoading: additionalPrototypesResult.loading,
     }
 }
 
@@ -273,7 +333,7 @@ const getLsifData = ({
     const extractedData = dataOrThrowErrors(result)
 
     // If there weren't any errors and we just didn't receive any data
-    if (!extractedData || !extractedData.repository?.commit?.blob?.lsif) {
+    if (!extractedData?.repository?.commit?.blob?.lsif) {
         return undefined
     }
 
@@ -283,6 +343,10 @@ const getLsifData = ({
         implementations: {
             endCursor: lsif.implementations.pageInfo.endCursor,
             nodes: dedupeLocations(lsif.implementations.nodes).map(buildPreciseLocation),
+        },
+        prototypes: {
+            endCursor: lsif.prototypes.pageInfo.endCursor,
+            nodes: dedupeLocations(lsif.prototypes.nodes).map(buildPreciseLocation),
         },
         references: {
             endCursor: lsif.references.pageInfo.endCursor,

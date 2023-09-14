@@ -8,15 +8,6 @@ import (
 
 const jsonTestInput = `
 {
-	"shared_steps": [
-		{
-			"root": "/",
-			"image": "node:12",
-			"commands": [
-				"yarn install --frozen-lockfile --non-interactive",
-			],
-		}
-	],
 	"index_jobs": [
 		{
 			"steps": [
@@ -46,13 +37,6 @@ func TestUnmarshalJSON(t *testing.T) {
 	}
 
 	expected := IndexConfiguration{
-		SharedSteps: []DockerStep{
-			{
-				Root:     "/",
-				Image:    "node:12",
-				Commands: []string{"yarn install --frozen-lockfile --non-interactive"},
-			},
-		},
 		IndexJobs: []IndexJob{
 			{
 				Steps: []DockerStep{

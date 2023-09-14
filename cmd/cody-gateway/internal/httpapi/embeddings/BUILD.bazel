@@ -1,0 +1,41 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "embeddings",
+    srcs = [
+        "handler.go",
+        "models.go",
+        "openai.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/httpapi/featurelimiter",
+        "//cmd/cody-gateway/internal/limiter",
+        "//cmd/cody-gateway/internal/notify",
+        "//cmd/cody-gateway/internal/response",
+        "//internal/codygateway",
+        "//internal/httpcli",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_golang_x_exp//slices",
+    ],
+)
+
+go_test(
+    name = "embeddings_test",
+    srcs = ["openai_test.go"],
+    embed = [":embeddings"],
+    deps = [
+        "//cmd/cody-gateway/internal/response",
+        "//internal/codygateway",
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
+    ],
+)

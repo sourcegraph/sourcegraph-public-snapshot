@@ -93,7 +93,7 @@ func Worker() *monitoring.Dashboard {
 						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
 						Owner:       owner,
 					}
-				}(monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				}(monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Percentage of encrypted database records
 				`).Observable(),
 
@@ -101,7 +101,7 @@ func Worker() *monitoring.Dashboard {
 					MetricNameRoot:        "records_encrypted",
 					MetricDescriptionRoot: "database",
 					By:                    []string{"tableName"},
-				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Number of encrypted database records every 5m
 				`).Observable(),
 
@@ -109,14 +109,14 @@ func Worker() *monitoring.Dashboard {
 					MetricNameRoot:        "records_decrypted",
 					MetricDescriptionRoot: "database",
 					By:                    []string{"tableName"},
-				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Number of encrypted database records every 5m
 				`).Observable(),
 
 				shared.Observation.Errors(shared.ObservableConstructorOptions{
 					MetricNameRoot:        "record_encryption",
 					MetricDescriptionRoot: "encryption",
-				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
 					Number of database record encryption/decryption errors every 5m
 				`).Observable(),
 			},
@@ -142,7 +142,6 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
-			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
@@ -158,6 +157,7 @@ func Worker() *monitoring.Dashboard {
 			// This is for the resetter only here, the queue is running in the frontend
 			// through executorqueue.
 			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewExecutorQueueGroup(),
 
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total
@@ -245,6 +245,12 @@ func Worker() *monitoring.Dashboard {
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+
+			// Sourcegraph Own background jobs
+			shared.SourcegraphOwn.NewOwnRepoIndexerStoreGroup(containerName),
+			shared.SourcegraphOwn.NewOwnRepoIndexerWorkerGroup(containerName),
+			shared.SourcegraphOwn.NewOwnRepoIndexerResetterGroup(containerName),
+			shared.SourcegraphOwn.NewOwnRepoIndexerSchedulerGroup(containerName),
 		},
 	}
 }

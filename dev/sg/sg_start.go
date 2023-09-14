@@ -8,14 +8,18 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
@@ -24,10 +28,21 @@ import (
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
-		// Create 'sg start' help text after flag (and config) initialization
-		startCommand.Description = constructStartCmdLongHelp()
-	})
+	postInitHooks = append(postInitHooks,
+		func(cmd *cli.Context) {
+			// Create 'sg start' help text after flag (and config) initialization
+			startCommand.Description = constructStartCmdLongHelp()
+		},
+		func(cmd *cli.Context) {
+			ctx, cancel := context.WithCancel(cmd.Context)
+			interrupt.Register(func() {
+				cancel()
+				// TODO wait for stuff properly.
+				time.Sleep(1 * time.Second)
+			})
+			cmd.Context = ctx
+		},
+	)
 }
 
 const devPrivateDefaultBranch = "master"
@@ -38,6 +53,8 @@ var (
 	warnStartServices  cli.StringSlice
 	errorStartServices cli.StringSlice
 	critStartServices  cli.StringSlice
+	exceptServices     cli.StringSlice
+	onlyServices       cli.StringSlice
 
 	startCommand = &cli.Command{
 		Name:      "start",
@@ -62,7 +79,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 # View configuration for a commandset
 sg start -describe oss
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "describe",
@@ -98,6 +115,16 @@ sg start -describe oss
 				Aliases:     []string{"c"},
 				Usage:       "Services to set at info crit level.",
 				Destination: &critStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "except",
+				Usage:       "List of services of the specified command set to NOT start",
+				Destination: &exceptServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "only",
+				Usage:       "List of services of the specified command set to start. Commands NOT in this list will NOT be started.",
+				Destination: &onlyServices,
 			},
 		},
 		BashComplete: completions.CompleteOptions(func() (options []string) {
@@ -195,7 +222,7 @@ func startExec(ctx *cli.Context) error {
 
 	// If the commandset requires the dev-private repository to be cloned, we
 	// check that it's at the right location here.
-	if set.RequiresDevPrivate {
+	if set.RequiresDevPrivate && !NoDevPrivateCheck {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
@@ -266,6 +293,18 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
+	exceptList := exceptServices.Value()
+	exceptSet := make(map[string]interface{}, len(exceptList))
+	for _, svc := range exceptList {
+		exceptSet[svc] = struct{}{}
+	}
+
+	onlyList := onlyServices.Value()
+	onlySet := make(map[string]interface{}, len(onlyList))
+	for _, svc := range onlyList {
+		onlySet[svc] = struct{}{}
+	}
+
 	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
 		cmd, ok := conf.Commands[name]
@@ -273,10 +312,34 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
 
-		cmds = append(cmds, cmd)
+		if _, excluded := exceptSet[name]; excluded {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.Name))
+			continue
+		}
+
+		// No --only specified, just add command
+		if len(onlySet) == 0 {
+			cmds = append(cmds, cmd)
+		} else {
+			if _, inSet := onlySet[name]; inSet {
+				cmds = append(cmds, cmd)
+			} else {
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.Name))
+			}
+		}
+
 	}
 
-	if len(cmds) == 0 {
+	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
+	for _, name := range set.BazelCommands {
+		bcmd, ok := conf.BazelCommands[name]
+		if !ok {
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
+		}
+
+		bcmds = append(bcmds, bcmd)
+	}
+	if len(cmds) == 0 && len(bcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
@@ -291,7 +354,20 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, verbose, cmds...)
+	// First we build everything once, to ensure all binaries are present.
+	if err := run.BazelBuild(ctx, bcmds...); err != nil {
+		return err
+	}
+
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error {
+		return run.Commands(ctx, env, verbose, cmds...)
+	})
+	p.Go(func(ctx context.Context) error {
+		return run.BazelCommands(ctx, env, verbose, bcmds...)
+	})
+
+	return p.Wait()
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

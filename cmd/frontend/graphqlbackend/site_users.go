@@ -6,8 +6,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	sgusers "github.com/sourcegraph/sourcegraph/internal/users"
 )
@@ -105,6 +105,8 @@ func (s *siteUserResolver) DeletedAt(ctx context.Context) *string {
 }
 
 func (s *siteUserResolver) SiteAdmin(ctx context.Context) bool { return s.user.SiteAdmin }
+
+func (s *siteUserResolver) SCIMControlled() bool { return s.user.SCIMControlled }
 
 func (s *siteUserResolver) EventsCount(ctx context.Context) float64 { return s.user.EventsCount }
 

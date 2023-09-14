@@ -1,13 +1,13 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { AuthenticatedUser } from '../../../../auth'
-import { WebStory, WebStoryChildrenProps } from '../../../../components/WebStory'
+import type { AuthenticatedUser } from '../../../../auth'
+import { WebStory, type WebStoryChildrenProps } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import {
     ACTIVE_EXECUTORS_MOCK,

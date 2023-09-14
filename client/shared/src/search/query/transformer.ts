@@ -3,7 +3,7 @@ import { replaceRange } from '@sourcegraph/common'
 import { FILTERS, FilterType } from './filters'
 import { findFilters, findFilter, FilterKind } from './query'
 import { scanSearchQuery } from './scanner'
-import { Filter, Token } from './token'
+import type { Filter, Token } from './token'
 import { operatorExists, filterExists } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {

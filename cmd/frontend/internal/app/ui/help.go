@@ -9,7 +9,10 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -21,10 +24,26 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 	versionStr := version.Version()
 
-	// For release builds, use the version string. Otherwise, don't use any version string because:
+	logger := sglog.Scoped("serveHelp", "")
+	logger.Info("redirecting to docs", sglog.String("page", page), sglog.String("versionStr", versionStr))
+
+	// For App, help links are handled in the frontend. We should never get here.
+	sourcegraphAppMode := deploy.IsApp()
+	if sourcegraphAppMode {
+		// This should never happen, but if it does, we want to know about it.
+		logger.Error("help link was clicked in App and handled in the backend, this should never happer")
+
+		// Redirect back to the homepage. We don't want App to ever leave the locally-hosted frontend.
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
+
+	// For release builds, use the version string. Otherwise, don't use any
+	// version string because:
 	//
 	// - For unreleased dev builds, we serve the contents from the working tree.
-	// - Sourcegraph.com users probably want the latest docs on the default branch.
+	// - Sourcegraph.com users probably want the latest docs on the default
+	//   branch.
 	var docRevPrefix string
 	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
 		v, err := semver.NewVersion(versionStr)

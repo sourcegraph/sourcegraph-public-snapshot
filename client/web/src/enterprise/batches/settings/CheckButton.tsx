@@ -21,7 +21,13 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
 }) => {
     if (!loading && !successMessage && !failedMessage) {
         return (
-            <Button className="text-primary text-nowrap" onClick={onClick} variant="link" aria-label={label}>
+            <Button
+                className="text-primary text-nowrap font-weight-normal"
+                onClick={onClick}
+                variant="link"
+                size="sm"
+                aria-label={label}
+            >
                 Check
             </Button>
         )
@@ -35,14 +41,14 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
     }
     if (successMessage && !failedMessage) {
         return (
-            <Alert className="text-success">
+            <Alert className="text-success m-0 small">
                 <Icon svgPath={mdiCheck} inline={false} aria-hidden={true} /> {successMessage}
             </Alert>
         )
     }
     if (failedMessage) {
         return (
-            <Alert className="text-danger">
+            <Alert className="text-danger m-0 small">
                 <Icon svgPath={mdiClose} inline={false} aria-hidden={true} /> {failedMessage}
             </Alert>
         )

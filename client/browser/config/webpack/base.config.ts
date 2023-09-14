@@ -2,7 +2,8 @@ import path from 'path'
 
 import CssMinimizerWebpackPlugin from 'css-minimizer-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import webpack, { optimize } from 'webpack'
+import type webpack from 'webpack'
+import { optimize } from 'webpack'
 
 import {
     ROOT_PATH,
@@ -13,7 +14,6 @@ import {
     getCSSModulesLoader,
     getBasicCSSLoader,
 } from '@sourcegraph/build-config'
-import { subtypeOf } from '@sourcegraph/common'
 
 export const browserWorkspacePath = path.resolve(ROOT_PATH, 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
@@ -25,7 +25,7 @@ const extensionEntry = path.resolve(browserSourcePath, 'config/extension.entry.j
 
 const extensionHostWorker = /main\.worker\.ts$/
 
-export const config = subtypeOf<webpack.Configuration>()({
+export const config = {
     target: 'browserslist',
     entry: {
         // Browser extension
@@ -111,4 +111,4 @@ export const config = subtypeOf<webpack.Configuration>()({
             },
         ],
     },
-})
+} satisfies webpack.Configuration

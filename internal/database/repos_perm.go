@@ -9,28 +9,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
+type BypassAuthzReasonsMap struct {
+	SiteAdmin       bool
+	IsInternal      bool
+	NoAuthzProvider bool
+}
 
-// AuthzQueryConds returns a query clause for enforcing repository permissions.
-// It uses `repo` as the table name to filter out repository IDs and should be
-// used as an AND condition in a complete SQL query.
-func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
+type AuthzQueryParameters struct {
+	BypassAuthz               bool
+	BypassAuthzReasons        BypassAuthzReasonsMap
+	UsePermissionsUserMapping bool
+	AuthenticatedUserID       int32
+	AuthzEnforceForSiteAdmins bool
+}
+
+func (p *AuthzQueryParameters) ToAuthzQuery() *sqlf.Query {
+	return authzQuery(p.BypassAuthz, p.AuthenticatedUserID)
+}
+
+func GetAuthzQueryParameters(ctx context.Context, db DB) (params *AuthzQueryParameters, err error) {
+	params = &AuthzQueryParameters{}
 	authzAllowByDefault, authzProviders := authz.GetProviders()
-	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
+	params.UsePermissionsUserMapping = globals.PermissionsUserMapping().Enabled
+	params.AuthzEnforceForSiteAdmins = conf.Get().AuthzEnforceForSiteAdmins
 
-	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
-	// provider(s) and permissions user mapping are configured.
-	if usePermissionsUserMapping {
-		if len(authzProviders) > 0 {
-			return nil, errPermissionsUserMappingConflict
-		}
-		authzAllowByDefault = false
-	}
-
-	authenticatedUserID := int32(0)
 	a := actor.FromContext(ctx)
 
 	// Authz is bypassed when the request is coming from an internal actor or
@@ -40,53 +44,64 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 	//
 	// 🚨 SECURITY: internal requests bypass authz provider permissions checks,
 	// so correctness is important here.
-	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
-	if !bypassAuthz && a.IsAuthenticated() {
+	if a.IsInternal() {
+		params.BypassAuthz = true
+		params.BypassAuthzReasons.IsInternal = true
+	}
+
+	// 🚨 SECURITY: If explicit permissions API is ON, we want to enforce authz
+	// even if there are no authz providers configured.
+	// Otherwise bypass authorization with no authz providers.
+	if !params.UsePermissionsUserMapping && authzAllowByDefault && len(authzProviders) == 0 {
+		params.BypassAuthz = true
+		params.BypassAuthzReasons.NoAuthzProvider = true
+	}
+
+	if a.IsAuthenticated() {
 		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
-			return nil, err
+			if !params.BypassAuthz {
+				return nil, err
+			} else {
+				return params, nil
+			}
 		}
-		authenticatedUserID = currentUser.ID
-		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
+
+		params.AuthenticatedUserID = currentUser.ID
+
+		if currentUser.SiteAdmin && !params.AuthzEnforceForSiteAdmins {
+			params.BypassAuthz = true
+			params.BypassAuthzReasons.SiteAdmin = true
+		}
 	}
 
-	q := authzQuery(bypassAuthz,
-		usePermissionsUserMapping,
-		authenticatedUserID,
-		authz.Read, // Note: We currently only support read for repository permissions.
-	)
-	return q, nil
+	return params, err
 }
 
-//nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
-	if bypassAuthz {
-		// if bypassAuthz is true, we don't care about any of the checks
-		return sqlf.Sprintf(`
-(
-    -- Bypass authz
-    TRUE
-)
-`)
+// AuthzQueryConds returns a query clause for enforcing repository permissions.
+// It uses `repo` as the table name to filter out repository IDs and should be
+// used as an AND condition in a complete SQL query.
+func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
+	params, err := GetAuthzQueryParameters(ctx, db)
+	if err != nil {
+		return nil, err
 	}
 
-	const unrestrictedReposSQL = `
-(
-	-- Unrestricted repos are visible to all users
-	EXISTS (
-		SELECT
-		FROM repo_permissions
-		WHERE repo_id = repo.id
-		AND unrestricted
-	)
-)
-`
-	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
-	conditions := []*sqlf.Query{unrestrictedReposQuery}
+	return params.ToAuthzQuery(), nil
+}
 
-	// Disregard unrestricted state when permissions user mapping is enabled
-	if !usePermissionsUserMapping {
-		const externalServiceUnrestrictedSQL = `
+func GetUnrestrictedReposCond() *sqlf.Query {
+	return sqlf.Sprintf(`
+			-- Unrestricted repos are visible to all users
+			EXISTS (
+				SELECT
+				FROM user_repo_permissions
+				WHERE repo_id = repo.id AND user_id IS NULL
+			)
+		`)
+}
+
+var ExternalServiceUnrestrictedCondition = sqlf.Sprintf(`
 (
     NOT repo.private          -- Happy path of non-private repositories
     OR  EXISTS (              -- Each external service defines if repositories are unrestricted
@@ -100,24 +115,31 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
         )
 	)
 )
-`
-		externalServiceUnrestrictedQuery := sqlf.Sprintf(externalServiceUnrestrictedSQL)
-		conditions = append(conditions, externalServiceUnrestrictedQuery)
-	}
+`)
 
-	const restrictedRepositoriesSQL = `
-(                             -- Restricted repositories require checking permissions
-    SELECT object_ids_ints @> INTSET(repo.id)
-    FROM user_permissions
-    WHERE
-        user_id = %s
-    AND permission = %s
-    AND object_type = 'repos'
+func getRestrictedReposCond(userID int32) *sqlf.Query {
+	return sqlf.Sprintf(`
+	-- Restricted repositories require checking permissions
+	EXISTS (
+		SELECT repo_id FROM user_repo_permissions
+		WHERE
+			repo_id = repo.id
+		AND user_id = %s
+	)
+	`, userID)
+}
+
+func authzQuery(bypassAuthz bool, authenticatedUserID int32) *sqlf.Query {
+	if bypassAuthz {
+		// if bypassAuthz is true, we don't care about any of the checks
+		return sqlf.Sprintf(`
+(
+    -- Bypass authz
+    TRUE
 )
-`
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
-
-	conditions = append(conditions, restrictedRepositoriesQuery)
+`)
+	}
+	conditions := []*sqlf.Query{GetUnrestrictedReposCond(), ExternalServiceUnrestrictedCondition, getRestrictedReposCond(authenticatedUserID)}
 
 	// Have to manually wrap the result in parenthesis so that they're evaluated together
 	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "\nOR\n"))

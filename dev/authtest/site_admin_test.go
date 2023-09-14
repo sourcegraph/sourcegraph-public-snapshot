@@ -46,8 +46,8 @@ func TestSiteAdminEndpoints(t *testing.T) {
 				}
 				defer func() { _ = resp.Body.Close() }()
 
-				if resp.StatusCode != http.StatusUnauthorized {
-					t.Fatalf(`Want status code %d error but got %d`, http.StatusUnauthorized, resp.StatusCode)
+				if resp.StatusCode != http.StatusForbidden {
+					t.Fatalf(`Want status code %d error but got %d`, http.StatusForbidden, resp.StatusCode)
 				}
 			})
 		}
@@ -157,10 +157,10 @@ mutation {
 	updateSiteConfiguration(input: "", lastID: 0)
 }`,
 			}, {
-				name: "deleteLSIFUpload",
+				name: "deletePreciseIndex",
 				query: `
 mutation {
-	deleteLSIFUpload(id: "TFNJRjox") {
+	deletePreciseIndex(id: "TFNJRjox") {
 		alwaysNil
 	}
 }`,
@@ -343,14 +343,6 @@ mutation {
 mutation {
 	randomizeUserPassword(user: "VXNlcjox") {
 		resetPasswordURL
-	}
-}`,
-			}, {
-				name: "setTag",
-				query: `
-mutation {
-	setTag(node: "VXNlcjox", tag: "tag", present: true) {
-		alwaysNil
 	}
 }`,
 			},

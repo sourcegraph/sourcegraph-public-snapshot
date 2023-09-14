@@ -5,13 +5,24 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
+import { EditorHint, type QueryState } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    Button,
+    H2,
+    Link,
+    Icon,
+    Tabs,
+    TabList,
+    TabPanels,
+    TabPanel,
+    Tab,
+    ProductStatusBadge,
+} from '@sourcegraph/wildcard'
 
 import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
-import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
+import { useQueryExamples, type QueryExamplesSection } from './useQueryExamples'
 
 import styles from './QueryExamples.module.scss'
 
@@ -20,6 +31,7 @@ export interface QueryExamplesProps extends TelemetryProps {
     queryState?: QueryState
     setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
+    enableOwnershipSearch?: boolean
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -185,10 +197,11 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
     <div className={styles.queryExamplesSectionsColumns}>
         {queryColumns.map((column, index) => (
             <div key={`column-${queryColumns[index][0].title}`}>
-                {column.map(({ title, queryExamples }) => (
+                {column.map(({ title, productStatus, queryExamples }) => (
                     <ExamplesSection
                         key={title}
                         title={title}
+                        productStatus={productStatus}
                         queryExamples={queryExamples}
                         onQueryExampleClick={onQueryExampleClick}
                     />
@@ -213,11 +226,20 @@ interface ExamplesSection extends QueryExamplesSection {
 
 export const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
     title,
+    productStatus,
     queryExamples,
     onQueryExampleClick,
 }) => (
     <div className={styles.queryExamplesSection}>
-        <H2 className={styles.queryExamplesSectionTitle}>{title}</H2>
+        <H2 className={styles.queryExamplesSectionTitle}>
+            {title}
+            {productStatus && (
+                <>
+                    {' '}
+                    <ProductStatusBadge status={productStatus} />
+                </>
+            )}
+        </H2>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)

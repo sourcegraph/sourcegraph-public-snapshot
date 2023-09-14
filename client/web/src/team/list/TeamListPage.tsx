@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, Link, Icon, PageHeader, Container, useDebounce, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import type { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -18,7 +18,7 @@ import {
 } from '../../components/FilteredConnection/ui'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../graphql-operations'
+import type { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../graphql-operations'
 
 import { useChildTeams, useTeams } from './backend'
 import { TeamNode } from './TeamNode'
@@ -47,7 +47,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
                 }
                 description={
                     <>
-                        A team is a set of users. See <Link to="/help/admin/teams/teams">Teams documentation</Link> for
+                        A team is a set of users. See the <Link to="/help/admin/teams">Teams documentation</Link> for
                         more information about configuring teams.
                     </>
                 }
@@ -55,7 +55,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={mdiAccountMultiple}>
-                        Teams <ProductStatusBadge status="prototype" />
+                        Teams <ProductStatusBadge status="experimental" />
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>

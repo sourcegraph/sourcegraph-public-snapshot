@@ -1,6 +1,6 @@
 import path from 'path'
 
-import webpack from 'webpack'
+import type webpack from 'webpack'
 
 import { ROOT_PATH, NODE_MODULES_PATH } from '../paths'
 
@@ -46,3 +46,5 @@ export const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.Rul
         },
     },
 ]
+
+export const getBazelCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => loaders

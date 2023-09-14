@@ -6,17 +6,17 @@ import classNames from 'classnames'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchPatternTypeProps,
-    CaseSensitivityProps,
-    SearchContextProps,
-    SearchPatternTypeMutationProps,
-    SubmitSearchProps,
+    type SearchPatternTypeProps,
+    type CaseSensitivityProps,
+    type SearchContextProps,
+    type SearchPatternTypeMutationProps,
+    type SubmitSearchProps,
     SearchMode,
-    SearchModeProps,
+    type SearchModeProps,
 } from '@sourcegraph/shared/src/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'

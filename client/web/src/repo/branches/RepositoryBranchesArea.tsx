@@ -1,10 +1,10 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Routes, Route } from 'react-router-dom'
 
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { NotFoundPage } from '../../components/HeroPage'
-import { RepositoryFields } from '../../graphql-operations'
+import type { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
@@ -40,7 +40,7 @@ export const RepositoryBranchesArea: FC<Props> = props => {
             <Routes>
                 <Route path="all" element={<RepositoryBranchesAllPage repo={repo} />} />
                 <Route path="" element={<RepositoryBranchesOverviewPage repo={repo} />} />
-                <Route element={<NotFoundPage pageType="repository branches" />} />
+                <Route path="*" element={<NotFoundPage pageType="repository branches" />} />
             </Routes>
         </div>
     )

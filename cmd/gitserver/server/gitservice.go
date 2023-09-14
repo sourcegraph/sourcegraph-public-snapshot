@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
@@ -74,10 +74,12 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 	logger := s.Logger.Scoped("gitServiceHandler", "smart Git HTTP transfer protocol")
 
 	return &gitservice.Handler{
-		Logger: logger,
-
 		Dir: func(d string) string {
-			return string(s.dir(api.RepoName(d)))
+			return string(repoDirFromName(s.ReposDir, api.RepoName(d)))
+		},
+
+		ErrorHook: func(err error, stderr string) {
+			logger.Error("git-service error", log.Error(err), log.String("stderr", stderr))
 		},
 
 		// Limit rate of stdout from git.

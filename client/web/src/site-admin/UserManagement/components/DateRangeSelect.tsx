@@ -20,7 +20,7 @@ import {
     Icon,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Checkbox,
     Tooltip,
@@ -91,7 +91,20 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
     const handleClear = useCallback(() => {
         setRange(() => undefined)
         setIsNegated(false)
-    }, [])
+
+        // When the user clicks on clear, we set the value of `range` to undefined
+        // and close the popover.
+        onChange?.(undefined, false)
+        setIsOpen(false)
+    }, [onChange])
+
+    // `isNegated` is true when we want to display users that don't meet a condition within
+    // the specified date range.
+    // Negation doesn't require the `Apply` button to be disabled because when no date range
+    // is selected we assume a date range from the beginning of time till the current time.
+    // If `isNegated` is false, we only need to disable the button if it is required and there
+    // is no date range selected.
+    const isApplyButtonDisabled = isNegated ? false : isRequired && !range
 
     const { tooltip, label } = useMemo(() => {
         let tooltipText = ''
@@ -174,12 +187,7 @@ export const DateRangeSelect: React.FunctionComponent<DateRangeSelectProps> = ({
                             <Button size="sm" className="mr-2" variant="secondary" onClick={handleCancel}>
                                 Cancel
                             </Button>
-                            <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={handleApply}
-                                disabled={isRequired && !range && isNegated}
-                            >
+                            <Button size="sm" variant="primary" onClick={handleApply} disabled={isApplyButtonDisabled}>
                                 Apply
                             </Button>
                         </div>

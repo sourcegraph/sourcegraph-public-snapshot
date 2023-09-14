@@ -56,7 +56,7 @@ func getCommit(client *http.Client, sha string) (Commit, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return commit, errors.Newf("received non-200 status code %v", resp.StatusCode)
+		return commit, errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
 	}
 
 	defer resp.Body.Close()
@@ -116,7 +116,7 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusOK {
-				return nil, errors.Newf("received non-200 status code %v", resp.StatusCode)
+				return nil, errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
 			}
 
 			body, err := io.ReadAll(resp.Body)

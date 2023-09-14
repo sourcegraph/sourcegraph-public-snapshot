@@ -87,7 +87,7 @@ func readDefinition(fs fs.FS, schemaBasePath string, version int, filename strin
 		return Definition{}, err
 	}
 
-	return hydrateMetadataFromFile(fs, schemaBasePath, metadataFilename, Definition{
+	return hydrateMetadataFromFile(fs, schemaBasePath, upFilename, metadataFilename, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
 		DownQuery: downQuery,
@@ -96,7 +96,7 @@ func readDefinition(fs fs.FS, schemaBasePath string, version int, filename strin
 
 // hydrateMetadataFromFile populates the given definition with metdata parsed
 // from the given file. The mutated definition is returned.
-func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, definition Definition) (_ Definition, _ error) {
+func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilename string, definition Definition) (_ Definition, _ error) {
 	file, err := fs.Open(metadataFilename)
 	if err != nil {
 		return Definition{}, err
@@ -132,6 +132,7 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 	definition.Parents = parents
 
 	schemaPath := filepath.Join(schemaBasePath, strconv.Itoa(definition.ID))
+	upPath := filepath.Join(schemaBasePath, upFilename)
 	metadataPath := filepath.Join(schemaBasePath, metadataFilename)
 
 	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
@@ -139,19 +140,28 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, metadataFilename string, 
 			class:       "malformed concurrent index creation",
 			description: fmt.Sprintf("did not expect down query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations.",
+				"Remove `CONCURRENTLY` when re-creating an old index in down migrations (if you're seeing this in a local dev environment, try running `sg update` to see if it fixes the issue first).",
 				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
 			}, " "),
 		}
 	}
 
-	if indexMetadata, ok := parseIndexMetadata(definition.UpQuery.Query(sqlf.PostgresBindVar)); ok {
+	upQueryText := definition.UpQuery.Query(sqlf.PostgresBindVar)
+	if indexMetadata, ok := parseIndexMetadata(upQueryText); ok {
 		if !payload.CreateIndexConcurrently {
 			return Definition{}, instructionalError{
 				class:       "malformed concurrent index creation",
 				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
 				instructions: strings.Join([]string{
 					fmt.Sprintf("Add `createIndexConcurrently: true` to the metadata file '%s'.", metadataPath),
+				}, " "),
+			}
+		} else if removeConcurrentIndexCreation(upQueryText) != "" {
+			return Definition{}, instructionalError{
+				class:       "malformed concurrent index creation",
+				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain additional statements", schemaPath),
+				instructions: strings.Join([]string{
+					fmt.Sprintf("Split the index creation from '%s' into a new migration file.", upPath),
 				}, " "),
 			}
 		}
@@ -229,7 +239,7 @@ func CanonicalizeQuery(query string) string {
 	)
 }
 
-var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
+var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
 
 func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 	matches := createIndexConcurrentlyPattern.FindStringSubmatch(queryText)
@@ -241,6 +251,28 @@ func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
 		TableName: matches[2],
 		IndexName: matches[1],
 	}, true
+}
+
+var createIndexConcurrentlyFullPattern = lazyregexp.New(createIndexConcurrentlyPattern.Re().String() + `[^;]+;`)
+
+func removeConcurrentIndexCreation(query string) string {
+	if matches := createIndexConcurrentlyFullPattern.FindStringSubmatch(query); len(matches) > 0 {
+		query = strings.Replace(query, matches[0], "", 1)
+	}
+
+	return removeComments(query)
+}
+
+func removeComments(query string) string {
+	filtered := []string{}
+	for _, line := range strings.Split(query, "\n") {
+		l := strings.TrimSpace(strings.Split(line, "--")[0])
+		if l != "" {
+			filtered = append(filtered, l)
+		}
+	}
+
+	return strings.TrimSpace(strings.Join(filtered, "\n"))
 }
 
 var alterExtensionPattern = lazyregexp.New(`(CREATE|COMMENT ON|DROP)\s+EXTENSION`)

@@ -1,12 +1,12 @@
-import { LineOrPositionOrRange, lprToRange, toPositionHashComponent } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { type LineOrPositionOrRange, lprToRange, toPositionHashComponent } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 import {
     encodeRepoRevision,
-    ParsedRepoRevision,
-    ParsedRepoURI,
+    type ParsedRepoRevision,
+    type ParsedRepoURI,
     parseQueryAndHash,
     parseRepoRevision,
-    RepoFile,
+    type RepoFile,
 } from '@sourcegraph/shared/src/util/url'
 
 export function toTreeURL(target: RepoFile): string {
@@ -91,6 +91,8 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     const treeSeparator = pathname.indexOf('/-/tree/')
     const blobSeparator = pathname.indexOf('/-/blob/')
     const comparisonSeparator = pathname.indexOf('/-/compare/')
+    const commitsSeparator = pathname.indexOf('/-/commits/')
+    const changelistsSeparator = pathname.indexOf('/-/changelists/')
     if (treeSeparator !== -1) {
         filePath = decodeURIComponent(pathname.slice(treeSeparator + '/-/tree/'.length))
     }
@@ -99,6 +101,12 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     }
     if (comparisonSeparator !== -1) {
         commitRange = pathname.slice(comparisonSeparator + '/-/compare/'.length)
+    }
+    if (commitsSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(commitsSeparator + '/-/commits/'.length))
+    }
+    if (changelistsSeparator !== -1) {
+        filePath = decodeURIComponent(pathname.slice(changelistsSeparator + '/-/changelists/'.length))
     }
     let position: Position | undefined
     let range: Range | undefined

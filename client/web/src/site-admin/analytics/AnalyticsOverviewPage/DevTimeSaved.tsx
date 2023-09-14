@@ -8,8 +8,8 @@ import { H2, H3, Text, LoadingSpinner, Link, Icon, Tooltip } from '@sourcegraph/
 
 import { BatchChangesIconNav } from '../../../batches/icons'
 import {
-    OverviewDevTimeSavedResult,
-    OverviewDevTimeSavedVariables,
+    type OverviewDevTimeSavedResult,
+    type OverviewDevTimeSavedVariables,
     AnalyticsDateRange,
 } from '../../../graphql-operations'
 import { ValueLegendItem } from '../components/ValueLegendList'

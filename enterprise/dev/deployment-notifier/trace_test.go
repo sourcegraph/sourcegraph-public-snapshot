@@ -7,20 +7,18 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
 
-func intPtr(v int) *int {
-	return &v
-}
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+)
 
 func TestGenerateDeploymentTrace(t *testing.T) {
 	trace, err := GenerateDeploymentTrace(&DeploymentReport{
 		Environment: "preprepod",
 		DeployedAt:  time.RFC822Z,
 		PullRequests: []*github.PullRequest{
-			{Number: intPtr(32996)},
-			{Number: intPtr(32871)},
-			{Number: intPtr(32767)},
+			{Number: pointers.Ptr(32996)},
+			{Number: pointers.Ptr(32871)},
+			{Number: pointers.Ptr(32767)},
 		},
 		ServicesPerPullRequest: map[int][]string{
 			32996: {"frontend", "gitserver", "worker"},

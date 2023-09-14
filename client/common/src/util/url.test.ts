@@ -1,9 +1,4 @@
-import {
-    lprToSelectionsZeroIndexed,
-    appendSubtreeQueryParameter,
-    encodeURIPathComponent,
-    appendLineRangeQueryParameter,
-} from './url'
+import { lprToSelectionsZeroIndexed, encodeURIPathComponent, appendLineRangeQueryParameter } from './url'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -144,19 +139,6 @@ describe('lprToSelectionsZeroIndexed', () => {
                 },
             ]
         )
-    })
-})
-
-describe('appendSubtreeQueryParam', () => {
-    it('appends subtree=true to urls', () => {
-        expect(appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24')).toBe(
-            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24&subtree=true'
-        )
-    })
-    it('appends subtree=true to urls with other query params', () => {
-        expect(
-            appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24')
-        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24&subtree=true')
     })
 })
 

@@ -1,0 +1,29 @@
+name: Merge embeddings list updates
+
+on:
+  schedule:
+  # everyday at 0:10 UTC
+  - cron: 10 0 * * *
+  workflow_dispatch: {}
+
+permissions: write-all
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.MERGE_PR_TOKEN_DEVX_BOT }}
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        PR_NUMBER="$(gh pr list --label automerge --label embeddings-list-update --json number | jq -r '.[0].number')"
+        if [ "$PR_NUMBER" = "null" ]
+        then
+          echo "no oustanding PR...skipping"
+          exit 0
+        else
+          echo "approving PR"
+          gh pr review $PR_NUMBER --approve
+          echo "squashing PR: $PR_NUMBER"
+          gh pr merge $PR_NUMBER --auto --squash
+        fi

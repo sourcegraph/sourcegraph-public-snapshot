@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'

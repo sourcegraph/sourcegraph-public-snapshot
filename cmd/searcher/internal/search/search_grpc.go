@@ -1,6 +1,8 @@
 package search
 
 import (
+	"sync"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 )
@@ -14,7 +16,12 @@ func (s *Server) Search(req *proto.SearchRequest, stream proto.SearcherService_S
 	var unmarshaledReq protocol.Request
 	unmarshaledReq.FromProto(req)
 
+	// mu protects the stream from concurrent writes.
+	var mu sync.Mutex
 	onMatches := func(match protocol.FileMatch) {
+		mu.Lock()
+		defer mu.Unlock()
+
 		stream.Send(&proto.SearchResponse{
 			Message: &proto.SearchResponse_FileMatch{
 				FileMatch: match.ToProto(),

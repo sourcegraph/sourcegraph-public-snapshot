@@ -1,6 +1,6 @@
 import { getPositions } from './geometry'
-import { TetherState, getPositionState } from './tether-position'
-import { TetherLayout } from './types'
+import { type TetherState, getPositionState } from './tether-position'
+import type { TetherLayout } from './types'
 
 /**
  * Calculates and returns the most suitable position and tooltip element

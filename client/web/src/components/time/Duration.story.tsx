@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { H3, Code } from '@sourcegraph/wildcard'

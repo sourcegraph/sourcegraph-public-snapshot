@@ -8,7 +8,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     InsightQueryInput,
-    InsightQueryInputProps,
+    type InsightQueryInputProps,
 } from '../../../../../../components/form/query-input/InsightQueryInput'
 
 import styles from './CaptureGroupQueryInput.module.scss'

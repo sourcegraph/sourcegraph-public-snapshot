@@ -5,13 +5,13 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import type { RepoHeaderContext } from '../RepoHeader'
 
 interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
     /**

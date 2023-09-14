@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addDays } from 'date-fns'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../components/WebStory'
 
-import { queryBatchSpecs as _queryBatchSpecs } from './backend'
+import type { queryBatchSpecs as _queryBatchSpecs } from './backend'
 import { BatchSpecsPage } from './BatchSpecsPage'
 import { NODES, successNode } from './testData'
 

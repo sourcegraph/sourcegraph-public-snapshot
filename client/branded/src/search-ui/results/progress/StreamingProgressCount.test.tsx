@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressCount } from './StreamingProgressCount'
 

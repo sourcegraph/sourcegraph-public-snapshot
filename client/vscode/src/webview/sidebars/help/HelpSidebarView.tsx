@@ -15,7 +15,7 @@ import {
     VSCE_SG_LOGOMARK_LIGHT,
     VSCE_LINK_SIGNUP,
 } from '../../../common/links'
-import { WebviewPageProps } from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 import { AuthSidebarView } from '../auth/AuthSidebarView'
 
 import styles from './HelpSidebarView.module.scss'

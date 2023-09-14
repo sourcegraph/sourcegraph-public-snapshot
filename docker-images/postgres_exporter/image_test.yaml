@@ -1,0 +1,33 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "postgres_exporter is runnable"
+    command: "postgres_exporter"
+    args:
+      - --version
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "running as postgres_exporter"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    expectedOutput: ["^20001"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: '/config/queries.yaml'
+  path: '/config/queries.yaml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+
+metadataTest:
+  envVars:
+    - key: PG_EXPORTER_EXTEND_QUERY_PATH
+      value: /config/queries.yaml

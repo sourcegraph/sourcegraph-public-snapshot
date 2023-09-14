@@ -111,10 +111,11 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
 							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
 						},
-						Visibility: "",
-						Archived:   false,
-						StarCount:  168,
-						ForksCount: 76,
+						Visibility:    "",
+						Archived:      false,
+						StarCount:     168,
+						ForksCount:    76,
+						DefaultBranch: "master",
 					},
 				}
 
@@ -136,12 +137,12 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
 
-			cf, save := newClientFactory(t, tc.name)
+			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
 				})),
 			}
@@ -165,6 +166,10 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 }
 
 func TestGitLabSource_makeRepo(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -206,7 +211,6 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-
 			s, err := newGitLabSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -217,12 +221,16 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
 		})
 	}
 }
 
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
 		var src Source
@@ -268,4 +276,43 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGitlabSource_ListRepos(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+	conf := &schema.GitLabConnection{
+		Url:   "https://gitlab.sgdev.org",
+		Token: os.Getenv("GITLAB_TOKEN"),
+		ProjectQuery: []string{
+			"groups/small-test-group/projects",
+		},
+		Exclude: []*schema.ExcludedGitLabProject{
+			{
+				EmptyRepos: true,
+			},
+		},
+	}
+	cf, save := NewClientFactory(t, t.Name())
+	defer save(t)
+
+	svc := &types.ExternalService{
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
+	}
+
+	ctx := context.Background()
+	src, err := NewGitLabSource(ctx, nil, svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := ListAll(context.Background(), src)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/GITLAB/"+t.Name(), Update(t.Name()), repos)
 }

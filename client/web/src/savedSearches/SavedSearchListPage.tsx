@@ -9,7 +9,7 @@ import { catchError, mapTo, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
 
 import { logger } from '@sourcegraph/common'
-import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
@@ -25,8 +25,8 @@ import {
 
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../components/PageTitle'
-import { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
-import { NamespaceProps } from '../namespaces'
+import type { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, savedSearchesQuery } from '../search/backend'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -95,7 +95,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     <Tooltip content="Saved search settings">
                         <Button
                             className="test-edit-saved-search-button"
-                            to={`searches/${this.props.savedSearch.id}`}
+                            to={this.props.savedSearch.id}
                             variant="secondary"
                             size="sm"
                             as={Link}
@@ -152,7 +152,6 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
     return (
         <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
             <PageHeader
-                description="Manage notifications and alerts for specific search queries."
                 actions={
                     <Button to="add" className="test-add-saved-search-button" variant="primary" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search

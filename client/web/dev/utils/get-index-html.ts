@@ -1,17 +1,16 @@
 import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 
-import { WebpackPluginFunction } from 'webpack'
+import type { WebpackPluginFunction } from 'webpack'
 
-import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
+import type { SourcegraphContext } from '../../src/jscontext'
 
-import { SourcegraphContext } from '../../src/jscontext'
+import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL, STATIC_INDEX_PATH } from '.'
 
-import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from '.'
-
-const { NODE_ENV } = ENVIRONMENT_CONFIG
+const { NODE_ENV, STATIC_ASSETS_PATH } = ENVIRONMENT_CONFIG
 
 export const WEBPACK_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, 'webpack.manifest.json')
+export const HTML_INDEX_PATH = path.resolve(STATIC_ASSETS_PATH, 'index.html')
 
 export const getWebpackManifest = (): WebpackManifest =>
     JSON.parse(readFileSync(WEBPACK_MANIFEST_PATH, 'utf-8')) as WebpackManifest

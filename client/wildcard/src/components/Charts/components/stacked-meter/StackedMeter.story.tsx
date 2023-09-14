@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import ParentSize from '@visx/responsive/lib/components/ParentSizeModern'
 
 import { BrandedStory } from '../../../../stories'

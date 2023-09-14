@@ -1,11 +1,11 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
-import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
+import type { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
 import { InsightsDashboardOwnerType } from '../../../core/types'
 import { useCodeInsightsLicenseState } from '../../../stores'
 

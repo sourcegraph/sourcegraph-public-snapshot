@@ -1,5 +1,5 @@
 import { AGGREGATE_ERROR_NAME } from './constants'
-import { AggregateError, ErrorLike } from './types'
+import type { AggregateError, ErrorLike } from './types'
 import { isErrorLike } from './utils'
 
 /**

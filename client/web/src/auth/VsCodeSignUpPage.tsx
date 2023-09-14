@@ -4,14 +4,14 @@ import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { AuthProvider, SourcegraphContext } from '../jscontext'
 
-import { ExternalsAuth } from './ExternalsAuth'
-import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { ExternalsAuth } from './components/ExternalsAuth'
+import { type SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './VsCodeSignUpPage.module.scss'
 
@@ -21,7 +21,7 @@ interface Props extends TelemetryProps {
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'authMinPasswordLength'>
     isLightTheme: boolean
 }
 
@@ -74,7 +74,6 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                 authProviders: [],
                 sourcegraphDotComMode: true,
                 authMinPasswordLength: context.authMinPasswordLength,
-                experimentalFeatures: context.experimentalFeatures,
             }}
             buttonLabel="Sign up"
             experimental={true}

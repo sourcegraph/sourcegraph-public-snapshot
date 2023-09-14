@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 
 import { ResolverFactory, CachedInputFileSystem } from 'enhanced-resolve'
-import esbuild from 'esbuild'
+import type esbuild from 'esbuild'
 import postcss from 'postcss'
 import postcssModules from 'postcss-modules'
 import sass from 'sass'

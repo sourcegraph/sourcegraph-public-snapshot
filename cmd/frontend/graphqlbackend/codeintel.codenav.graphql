@@ -1,0 +1,458 @@
+extend interface TreeEntry {
+    """
+    LSIF data for this tree entry.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): TreeEntryLSIFData
+}
+
+extend type GitTree {
+    """
+    LSIF data for this tree entry.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): GitTreeLSIFData
+}
+
+extend type GitBlob {
+    """
+    A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
+    intelligence queries for this path-at-revision, this resolves to null.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): GitBlobLSIFData
+
+    """
+    Provides code intelligence within the file.
+
+    Experimental: This API is likely to change in the future.
+    """
+    localCodeIntel: JSONValue
+
+    """
+    A wrapper around syntactic hover and definition query methods.
+
+    Experimental: This API is likely to change in the future.
+    """
+    symbolInfo(line: Int!, character: Int!): SymbolInfo
+}
+
+"""
+LSIF data available for a tree entry (file OR directory, see GitBlobLSIFData for file-specific
+resolvers and GitTreeLSIFData for directory-specific resolvers.)
+"""
+interface TreeEntryLSIFData {
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+}
+
+"""
+A wrapper object around LSIF query methods for a particular git-tree-at-revision. When this node is
+null, no LSIF data is available for the git tree in question.
+"""
+type GitTreeLSIFData implements TreeEntryLSIFData {
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+}
+
+"""
+A wrapper object around LSIF query methods for a particular git-blob-at-revision. When this node is
+null, no LSIF data is available for the git blob in question.
+"""
+type GitBlobLSIFData implements TreeEntryLSIFData {
+    """
+    Return a flat list of all ranges in the document that have code intelligence.
+    """
+    stencil: [Range!]!
+
+    """
+    Get aggregated local code intelligence for all ranges that fall in the window
+    indicated by the given zero-based start (inclusive) and end (exclusive) lines.
+    The associated data for each range is "local", in that the locations and hover
+    must also be defined in the same index as the source range. To get cross-repository
+    and cross-bundle results, you must query the definitions, references, and hovers
+    of that range explicitly.
+    """
+    ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
+
+    """
+    A list of definitions of the symbol under the given document position.
+    """
+    definitions(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, it filters references by filename.
+        """
+        filter: String
+    ): LocationConnection!
+
+    """
+    A list of references of the symbol under the given document position.
+    """
+    references(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, it filters references by filename.
+        """
+        filter: String
+    ): LocationConnection!
+
+    """
+    A list of implementations of the symbol under the given document position.
+    """
+    implementations(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, it filters implementation by filename.
+        """
+        filter: String
+    ): LocationConnection!
+
+    """
+    A list of prototypes of the symbol under the given document position.
+    """
+    prototypes(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, it filters prototypes by filename.
+        """
+        filter: String
+    ): LocationConnection!
+
+    """
+    The hover result of the symbol under the given document position.
+    """
+    hover(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): Hover
+
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The indexes that could provide precise code intelligence for the current blob.
+    """
+    visibleIndexes: [PreciseIndex!]
+
+    """
+    SCIP snapshot data (similar to the additional information from the `scip snapshot` command) for each SCIP Occurrence.
+    """
+    snapshot(indexID: ID!): [SnapshotData!]
+}
+
+"""
+The SCIP snapshot decoration for a single SCIP Occurrence.
+"""
+type SnapshotData {
+    """
+    The byte offset in the document immediately after the line the occurrence is on.
+    """
+    offset: Int!
+    """
+    The formatted SCIP symbol string.
+    """
+    data: String!
+
+    """
+    Any additional lines of snapshot output such as relationships, documentation etc.
+    """
+    additional: [String!]
+}
+
+"""
+Aggregate local code intelligence for all ranges that fall between a window of lines in a document.
+"""
+type CodeIntelligenceRangeConnection {
+    """
+    Aggregate local code intelligence grouped by range.
+    """
+    nodes: [CodeIntelligenceRange!]!
+}
+
+"""
+Aggregate code intelligence for a particular range within a document.
+"""
+type CodeIntelligenceRange {
+    """
+    The range this code intelligence applies to.
+    """
+    range: Range!
+
+    """
+    A list of definitions of the symbol occurring within the range.
+    """
+    definitions: LocationConnection!
+
+    """
+    A list of references of the symbol occurring within the range.
+    """
+    references: LocationConnection!
+
+    """
+    A list of implementations of the symbol occurring within the range.
+    """
+    implementations: LocationConnection!
+
+    """
+    The hover result of the symbol occurring within the range.
+    """
+    hover: Hover
+}
+
+"""
+Hover range and markdown content.
+"""
+type Hover {
+    """
+    A markdown string containing the contents of the hover.
+    """
+    markdown: Markdown!
+
+    """
+    The range to highlight.
+    """
+    range: Range!
+}
+
+"""
+A list of diagnostics.
+"""
+type DiagnosticConnection {
+    """
+    A list of diagnostics.
+    """
+    nodes: [Diagnostic!]!
+
+    """
+    The total count of diagnostics (which may be larger than nodes.length if the connection is paginated).
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Represents a diagnostic, such as a compiler error or warning.
+"""
+type Diagnostic {
+    """
+    The location at which the message applies.
+    """
+    location: Location!
+
+    """
+    The diagnostic's severity.
+    """
+    severity: DiagnosticSeverity
+
+    """
+    The diagnostic's code as provided by the tool.
+    """
+    code: String
+
+    """
+    A human-readable string describing the source of this
+    diagnostic, e.g. "typescript" or "super lint".
+    """
+    source: String
+
+    """
+    The diagnostic's message.
+    """
+    message: String
+}
+
+"""
+Represents the severity level of a diagnostic.
+"""
+enum DiagnosticSeverity {
+    ERROR
+    WARNING
+    INFORMATION
+    HINT
+}
+
+"""
+SymbolInfo contains hover and definition methods. It's returned by GitBlob.symbolInfo(line, character).
+"""
+type SymbolInfo {
+    """
+    The definition of the symbol.
+    """
+    definition: SymbolLocation
+
+    """
+    The hover for the symbol.
+    """
+    hover: String
+}
+
+"""
+SymbolLocation is a single-line range within a repository. It's returned by SymbolInfo.definition.
+"""
+type SymbolLocation {
+    """
+    The repo.
+    """
+    repo: String!
+
+    """
+    The commit.
+    """
+    commit: String!
+
+    """
+    The path.
+    """
+    path: String!
+
+    """
+    The range.
+    """
+    range: LineRange
+
+    """
+    The line.
+    """
+    line: Int! @deprecated(reason: "use range.line instead")
+
+    """
+    The character.
+    """
+    character: Int! @deprecated(reason: "use range.character instead")
+
+    """
+    The length.
+    """
+    length: Int! @deprecated(reason: "use range.length instead")
+}
+
+"""
+LineRange is a span within a line.
+"""
+type LineRange {
+    """
+    The line.
+    """
+    line: Int!
+
+    """
+    The character.
+    """
+    character: Int!
+
+    """
+    The length.
+    """
+    length: Int!
+}

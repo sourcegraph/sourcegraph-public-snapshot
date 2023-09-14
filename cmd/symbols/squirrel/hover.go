@@ -78,5 +78,5 @@ func findHover(node Node) string {
 		hover = hover + "\n\n---\n\n" + strings.Join(comments, "\n") + "\n"
 	}
 
-	return hover
+	return strings.ToValidUTF8(hover, "�")
 }

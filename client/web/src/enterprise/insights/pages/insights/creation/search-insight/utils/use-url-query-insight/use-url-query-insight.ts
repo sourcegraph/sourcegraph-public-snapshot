@@ -7,7 +7,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 import { createDefaultEditSeries } from '../../../../../../components'
-import { CreateInsightFormFields } from '../../types'
+import type { CreateInsightFormFields } from '../../types'
 
 export type UseURLQueryInsightResult = Partial<CreateInsightFormFields> | null
 

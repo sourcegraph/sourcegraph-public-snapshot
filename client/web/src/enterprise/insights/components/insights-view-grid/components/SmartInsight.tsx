@@ -1,11 +1,11 @@
-import { HTMLAttributes, forwardRef, useEffect } from 'react'
+import { type HTMLAttributes, forwardRef, useEffect } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useSearchParameters } from '@sourcegraph/wildcard'
 
-import { Insight, isBackendInsight } from '../../../core'
+import { type Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { LangStatsInsightCard } from './lang-stats-insight-card/LangStatsInsightCard'

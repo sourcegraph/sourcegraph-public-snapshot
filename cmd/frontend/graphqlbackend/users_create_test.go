@@ -9,34 +9,34 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type mockFuncs struct {
-	dB             *database.MockDB
-	authzStore     *database.MockAuthzStore
-	usersStore     *database.MockUserStore
-	userEmailStore *database.MockUserEmailsStore
+	dB             *dbmocks.MockDB
+	authzStore     *dbmocks.MockAuthzStore
+	usersStore     *dbmocks.MockUserStore
+	userEmailStore *dbmocks.MockUserEmailsStore
 }
 
 func makeUsersCreateTestDB(t *testing.T) mockFuncs {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	// This is the created user that is returned via the GraphQL API.
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 	// This refers to the user executing this API request.
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
 
-	authz := database.NewMockAuthzStore()
+	authz := dbmocks.NewMockAuthzStore()
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)

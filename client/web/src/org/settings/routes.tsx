@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -6,8 +6,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
-import { DeleteOrg } from './DeleteOrg'
-import { OrgSettingsAreaRoute, OrgSettingsAreaRouteContext } from './OrgSettingsArea'
+import type { OrgSettingsAreaRoute, OrgSettingsAreaRouteContext } from './OrgSettingsArea'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
@@ -50,7 +49,6 @@ const SettingsAreaIndexPage: FC<SettingsAreaIndexPageProps> = props => {
                     </>
                 }
             />
-            {props.isSourcegraphDotCom && props.org.viewerIsMember && props.showOrgDeletion && <DeleteOrg {...props} />}
         </div>
     )
 }

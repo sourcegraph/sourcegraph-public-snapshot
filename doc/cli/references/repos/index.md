@@ -3,10 +3,10 @@
 ## Subcommands
 
 
-* [`add-kvp`](add-kvp.md)
+* [`add-metadata`](add-metadata.md)
 * [`delete`](delete.md)
-* [`delete-kvp`](delete-kvp.md)
+* [`delete-metadata`](delete-metadata.md)
 * [`get`](get.md)
 * [`list`](list.md)
-* [`update-kvp`](update-kvp.md)
+* [`update-metadata`](update-metadata.md)
 	

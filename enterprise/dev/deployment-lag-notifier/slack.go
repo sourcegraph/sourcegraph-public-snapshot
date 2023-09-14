@@ -70,7 +70,7 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 
 	if resp.StatusCode != http.StatusOK {
 		log.Println(string(body))
-		return errors.Newf("received non-200 status code %v", resp.StatusCode)
+		return errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
 	}
 
 	return nil

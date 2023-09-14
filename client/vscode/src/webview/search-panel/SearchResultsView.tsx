@@ -1,30 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
+import { type IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
+import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { getUserSearchContextNamespaces, type QueryState, type SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
     sanitizeQueryForTelemetry,
     updateFilters,
 } from '@sourcegraph/shared/src/search/query/transformer'
-import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
+import { LATEST_VERSION, type RepositoryMatch, type SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { SearchPatternType } from '../../graphql-operations'
-import { SearchResultsState } from '../../state'
-import { WebviewPageProps } from '../platform/context'
+import type { SearchPatternType } from '../../graphql-operations'
+import type { SearchResultsState } from '../../state'
+import type { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
-import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
 import { RepoView } from './RepoView'
@@ -99,8 +97,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         setAllExpanded(oldValue => !oldValue)
         platformContext.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, platformContext])
-
-    const [showSavedSearchForm, setShowSavedSearchForm] = useState(false)
 
     // Update local query state on sidebar query state updates.
     useDeepCompareEffectNoCheck(() => {
@@ -255,8 +251,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [extensionCoreAPI, instanceURL]
     )
 
-    const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
-
     const setSelectedSearchContextSpec = useCallback(
         (spec: string) => {
             extensionCoreAPI
@@ -346,7 +340,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
-                    globbing={globbing}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
@@ -360,14 +353,13 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                 <div className={styles.resultsViewScrollContainer}>
                     <SearchResultsInfoBar
                         onShareResultsClick={onShareResultsClick}
-                        showSavedSearchForm={showSavedSearchForm}
-                        setShowSavedSearchForm={setShowSavedSearchForm}
                         extensionCoreAPI={extensionCoreAPI}
                         patternType={context.submittedSearchQueryState.searchPatternType}
                         authenticatedUser={authenticatedUser}
                         platformContext={platformContext}
                         stats={
                             <StreamingProgress
+                                query={context.submittedSearchQueryState.queryState.query}
                                 progress={
                                     context.searchResults?.progress || { durationMs: 0, matchCount: 0, skipped: [] }
                                 }
@@ -381,17 +373,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                         instanceURL={instanceURL}
                         fullQuery={fullQuery}
                     />
-                    {authenticatedUser && showSavedSearchForm && (
-                        <SavedSearchCreateForm
-                            authenticatedUser={authenticatedUser}
-                            submitLabel="Add saved search"
-                            title="Add saved search"
-                            fullQuery={`${fullQuery} patternType:${context.submittedSearchQueryState.searchPatternType}`}
-                            onComplete={() => setShowSavedSearchForm(false)}
-                            platformContext={platformContext}
-                            instanceURL={instanceURL}
-                        />
-                    )}
                     <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
                         <StreamingSearchResultsList
                             settingsCascade={settingsCascade}
@@ -406,9 +387,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"
-                            // TODO "no results" video thumbnail assets
-                            // In build, copy ui/assets/img folder to dist/
-                            assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
                             showQueryExamplesOnNoResultsPage={true}
                             setQueryState={setUserQueryState}
                             selectedSearchContextSpec={context.selectedSearchContextSpec}

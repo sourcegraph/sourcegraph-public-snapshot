@@ -1,4 +1,4 @@
-import { Extension } from '@codemirror/state'
+import type { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { MOUSE_MAIN_BUTTON } from '../utils'
@@ -93,12 +93,6 @@ export function tokenSelectionExtension(): Extension {
                     events.didLongClick = true // Cancel the next mouseup event.
                     goToDefinitionOnMouseEvent(view, event, { isLongClick: true })
                 }, LONG_CLICK_DURATION)
-            },
-            click(event: MouseEvent) {
-                // Prevent click handlers because we handle events on mouseup.
-                // Without the line below, Cmd+Click gets unpredicable behavior
-                // where it sporadically opens goto-def links in a new tab.
-                event.preventDefault()
             },
         }),
     ]

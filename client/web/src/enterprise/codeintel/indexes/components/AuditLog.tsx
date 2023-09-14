@@ -1,11 +1,11 @@
-import { FunctionComponent, ReactNode } from 'react'
+import type { FunctionComponent, ReactNode } from 'react'
 
 import { mdiDatabaseEdit, mdiDatabasePlus } from '@mdi/js'
 
 import { Container, Icon } from '@sourcegraph/wildcard'
 
-import { Timeline, TimelineStage } from '../../../../components/Timeline'
-import { AuditLogOperation, LsifUploadsAuditLogsFields } from '../../../../graphql-operations'
+import { Timeline, type TimelineStage } from '../../../../components/Timeline'
+import { AuditLogOperation, type LsifUploadsAuditLogsFields } from '../../../../graphql-operations'
 
 import styles from './AuditLog.module.scss'
 

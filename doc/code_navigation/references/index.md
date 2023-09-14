@@ -7,3 +7,4 @@
 - [Precise code navigation examples](precise_examples.md)
 - [Environment variables](envvars.md)
 - [Auto-indexing configuration](auto_indexing_configuration.md)
+- [Auto-indexing inference configuration](inference_configuration.md)

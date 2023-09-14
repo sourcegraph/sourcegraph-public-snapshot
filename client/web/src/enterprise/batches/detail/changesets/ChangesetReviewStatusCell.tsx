@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
+import { type ExternalChangesetFields, ChangesetReviewState } from '../../../../graphql-operations'
 
 export interface ChangesetReviewStatusCellProps {
     className?: string

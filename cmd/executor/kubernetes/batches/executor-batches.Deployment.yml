@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sg-executor-batches
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: sg-executor-batches
+  template:
+    metadata:
+      namespace: default
+      labels:
+        app: sg-executor-batches
+    spec:
+      # For development purposes - lets the executor pod use the namespace of the host system instead of creating a new one.
+      hostNetwork: true
+      serviceAccountName: sg-executor-service-account
+      containers:
+        - name: sg-executor-batches
+          image: executor-kubernetes:candidate
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EXECUTOR_FRONTEND_URL
+              # For development purposes. We usually run Sourcegraph in Docker.
+              value: http://host.docker.internal:3082
+            - name: EXECUTOR_FRONTEND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: executor-frontend-password
+                  key: EXECUTOR_FRONTEND_PASSWORD
+            - name: EXECUTOR_QUEUE_NAME
+              value: batches
+            # Each job will consume 1Gi of memory. Need to make sure not to consume the whole node's memory.
+            - name: EXECUTOR_MAXIMUM_NUM_JOBS
+              value: "5"
+            - name: SRC_LOG_LEVEL
+              value: info
+            - name: SRC_LOG_FORMAT
+              value: condensed
+            - name: SRC_TRACE_LOG
+              value: "false"
+            - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
+              value: 1Gi
+            # Match the name of the volume in executor-batches.PersistentVolumeClaim.yml.
+            - name: EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME
+              value: sg-executor-batches-pvc
+              # Since the host is 'host.docker.internal', this needs to be true.
+            - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
+              value: "true"
+              # Ensure that the job pods are scheduled on the same node as the executor pod.
+#            - name: EXECUTOR_KUBERNETES_POD_AFFINITY
+#              value: '[{"labelSelector": {"matchExpressions": [{"key": "app", "operator": "In", "values": ["sg-executor-batches"]}]}, "topologyKey": "kubernetes.io/hostname"}]'
+            # Another option to ensure that the job pods are scheduled on the same node as the executor pod.
+            - name: EXECUTOR_KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            # Useful for debugging.
+#            - name: KUBERNETES_KEEP_JOBS
+#              value: "true"
+#            - name: EXECUTOR_KEEP_WORKSPACES
+#              value: "true"
+            # Check executor-batches.Role.yml to ensure the correct rules are enabled.
+#            - name: KUBERNETES_SINGLE_JOB_POD
+#              value: "true"
+#            - name: "KUBERNETES_SINGLE_JOB_STEP_IMAGE"
+#              value: "batcheshelper:candidate"
+            # Check executor-batches.Role.yml to ensure the correct rules are enabled.
+#            - name: KUBERNETES_JOB_VOLUME_TYPE
+#              value: "pvc"
+          volumeMounts:
+            - mountPath: /data
+              name: sg-executor-batches-volume
+      volumes:
+        - name: sg-executor-batches-volume
+          persistentVolumeClaim:
+            claimName: sg-executor-batches-pvc

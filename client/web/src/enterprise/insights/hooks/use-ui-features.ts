@@ -1,9 +1,9 @@
 import { useContext, useMemo } from 'react'
 
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeInsightsBackendContext, CustomInsightDashboard, Insight, isSearchBasedInsight } from '../core'
+import { CodeInsightsBackendContext, type CustomInsightDashboard, type Insight, isSearchBasedInsight } from '../core'
 import {
     getDashboardPermissions,
     getTooltipMessage,

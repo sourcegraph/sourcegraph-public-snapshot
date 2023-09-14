@@ -2,6 +2,7 @@ package gitdomain
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -27,14 +28,14 @@ var (
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
 		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
-		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--", "-z", "-r", "-t"},
+		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--object-only", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
 		"for-each-ref": {"--format", "--points-at"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
 		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
 		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
-		"cat-file":     {},
+		"cat-file":     {"-p"},
 		"lfs":          {},
 		"apply":        {"--cached", "-p0"},
 
@@ -102,7 +103,6 @@ func isAllowedDiffArg(arg string) bool {
 			return true
 		}
 	}
-
 	// make sure that arg is not a local file
 	_, err := os.Stat(arg)
 
@@ -128,8 +128,35 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	return false
 }
 
+// isAllowedDiffPathArg checks if the diff path arg is allowed.
+func isAllowedDiffPathArg(arg string, repoDir string) bool {
+	// allows diff command path that requires (dot) as path
+	// example: diff --find-renames ... --no-prefix commit -- .
+	if arg == "." {
+		return true
+	}
+
+	arg = filepath.Clean(arg)
+	if !filepath.IsAbs(arg) {
+		arg = filepath.Join(repoDir, arg)
+	}
+
+	filePath, err := filepath.Abs(arg)
+	if err != nil {
+		return false
+	}
+
+	// Check if absolute path is a sub path of the repo dir
+	repoRoot, err := filepath.Abs(repoDir)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasPrefix(filePath, repoRoot)
+}
+
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
-func IsAllowedGitCmd(logger log.Logger, args []string) bool {
+func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
@@ -141,7 +168,18 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 		logger.Warn("command not allowed", log.String("cmd", cmd))
 		return false
 	}
+
+	// I hate state machines, but I hate them less than complicated multi-argument checking
+	checkFileInput := false
 	for i, arg := range args[1:] {
+		if checkFileInput {
+			if arg == "-" {
+				checkFileInput = false
+				continue
+			}
+			logger.Warn("IsAllowedGitCmd: unallowed file input for `git commit`", log.String("cmd", cmd), log.String("arg", arg))
+			return false
+		}
 		if strings.HasPrefix(arg, "-") {
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
@@ -162,16 +200,40 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 				continue // this arg is OK
 			}
 
+			// For `git commit`, allow reading the commit message from stdin
+			// but don't just blindly accept the `--file` or `-F` args
+			// because they could be used to read arbitrary files.
+			// Instead, accept only the forms that read from stdin.
+			if cmd == "commit" {
+				if arg == "--file=-" {
+					continue
+				}
+				// checking `-F` requires a second check for `-` in the next argument
+				// Instead of an obtuse check of next and previous arguments, set state and check it the next time around
+				// Here's the alternative obtuse check of previous and next arguments:
+				// (arg == "-F" && len(args) > i+2 && args[i+2] == "-") || (arg == "-" && args[i] == "-F")
+				if arg == "-F" {
+					checkFileInput = true
+					continue
+				}
+			}
+
 			if !isAllowedGitArg(allowedArgs, arg) {
 				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
 		}
-		// Special-case for `git diff` to check if argument before `--` is not a file
+		// diff argument may contains file path and isAllowedDiffArg and isAllowedDiffPathArg
+		// helps verifying the file existence in disk
 		if cmd == "diff" {
 			dashIndex := slices.Index(args[1:], "--")
 			if (dashIndex < 0 || i < dashIndex) && !isAllowedDiffArg(arg) {
-				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
+				// verifies arguments before --
+				logger.Warn("IsAllowedGitCmd.isAllowedDiffArg", log.String("cmd", cmd), log.String("arg", arg))
+				return false
+			} else if (i > dashIndex && dashIndex >= 0) && !isAllowedDiffPathArg(arg, dir) {
+				// verifies arguments after --
+				logger.Warn("IsAllowedGitCmd.isAllowedDiffPathArg", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
 		}

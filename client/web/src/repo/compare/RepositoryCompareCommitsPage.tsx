@@ -1,7 +1,7 @@
 import * as React from 'react'
 
-import { NavigateFunction, Location } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
+import type { NavigateFunction, Location } from 'react-router-dom'
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
@@ -10,11 +10,11 @@ import { CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GitCommitFields, RepositoryComparisonCommitsResult, Scalars } from '../../graphql-operations'
-import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
+import type { GitCommitFields, RepositoryComparisonCommitsResult, Scalars } from '../../graphql-operations'
+import { GitCommitNode, type GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 type RepositoryComparisonRepository = Extract<RepositoryComparisonCommitsResult['node'], { __typename?: 'Repository' }>
 
@@ -48,11 +48,11 @@ function queryRepositoryComparisonCommits(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node) {
+            if (!data?.node) {
                 throw createAggregateError(errors)
             }
             const repo = data.node as RepositoryComparisonRepository
-            if (!repo.comparison || !repo.comparison.commits || errors) {
+            if (!repo.comparison?.commits || errors) {
                 throw createAggregateError(errors)
             }
             return repo.comparison.commits

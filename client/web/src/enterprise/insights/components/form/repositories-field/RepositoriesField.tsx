@@ -1,7 +1,7 @@
-import { ClipboardEvent, forwardRef, ReactElement, useCallback, useState } from 'react'
+import { type ClipboardEvent, forwardRef, type ReactElement, useCallback, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
-import { ErrorLike } from '@storybook/client-api'
+import type { ErrorLike } from '@storybook/client-api'
 import { identity } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -12,9 +12,9 @@ import {
     MultiComboboxList,
     MultiComboboxOption,
     MultiComboboxOptionText,
-    ForwardReferenceComponent,
+    type ForwardReferenceComponent,
     Icon,
-    InputStatus,
+    type InputStatus,
     ErrorMessage,
     useDebounce,
 } from '@sourcegraph/wildcard'

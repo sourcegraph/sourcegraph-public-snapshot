@@ -8,7 +8,7 @@ In this guide, you'll install the Sourcegraph CLI, `src`, connect it to your Sou
 
 ## Installation
 
-`src` is shipped as a single, standalone binary. You can get the latest release by following the instructions for your operating system below (check out the [GitHub page](https://github.com/sourcegraph/src-cli) for additional documentation):
+`src` is shipped as a single, standalone binary. You can get the latest release by following the instructions for your operating system below (check out the [repository](https://sourcegraph.com/github.com/sourcegraph/src-cli) for additional documentation):
 
 ### macOS
 
@@ -56,7 +56,7 @@ Once complete, you should have two new environment variables set: `SRC_ENDPOINT`
 Searching is performed using the [`src search`](references/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
 
 ```sh
-src search 'r:github.com/sourcegraph/src-cli ResolveRepositories'
+src search 'r:github.com/sourcegraph/src-cli NewArchiveRegistry'
 ```
 
 This should result in this output:

@@ -5,16 +5,29 @@ import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
 import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
-import { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
+import type { UsersManagementSummaryResult, UsersManagementSummaryVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
+import { checkRequestAccessAllowed } from '../../util/checkRequestAccessAllowed'
+import { ValueLegendList, type ValueLegendListProps } from '../analytics/components/ValueLegendList'
 
-import { UsersList } from './components/UsersList'
+import { type SiteUser, UsersList } from './components/UsersList'
 import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'
 
-export const UsersManagement: React.FunctionComponent = () => {
+export interface UsersManagementProps {
+    isEnterprise: boolean
+    renderAssignmentModal: (
+        onCancel: () => void,
+        onSuccess: (user: { username: string }) => void,
+        user: SiteUser
+    ) => React.ReactNode
+}
+
+export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
+    isEnterprise,
+    renderAssignmentModal,
+}) => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
     }, [])
@@ -54,6 +67,18 @@ export const UsersManagement: React.FunctionComponent = () => {
                 tooltip: 'The number of users with site admin permissions.',
             },
         ]
+
+        const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
+
+        if (isRequestAccessAllowed) {
+            legends.push({
+                value: data.pendingAccessRequests.totalCount,
+                description: 'Pending requests',
+                color: 'var(--cyan)',
+                position: 'left',
+                tooltip: 'The number of users who have requested access to your Sourcegraph instance.',
+            })
+        }
 
         return legends
     }, [data])
@@ -96,7 +121,11 @@ export const UsersManagement: React.FunctionComponent = () => {
                 ) : (
                     <ValueLegendList className="mb-3" items={legends} />
                 )}
-                <UsersList onActionEnd={refetch} />
+                <UsersList
+                    onActionEnd={refetch}
+                    isEnterprise={isEnterprise}
+                    renderAssignmentModal={renderAssignmentModal}
+                />
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.

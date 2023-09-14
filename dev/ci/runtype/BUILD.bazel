@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "runtype",
@@ -13,6 +14,7 @@ go_library(
 
 go_test(
     name = "runtype_test",
+    timeout = "short",
     srcs = ["runtype_test.go"],
     embed = [":runtype"],
     deps = ["@com_github_stretchr_testify//assert"],

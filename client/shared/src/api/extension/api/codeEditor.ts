@@ -1,13 +1,13 @@
-import { ProxyMarked, proxyMarker } from 'comlink'
+import { type ProxyMarked, proxyMarker } from 'comlink'
 import { isEqual } from 'lodash'
 import { BehaviorSubject } from 'rxjs'
-import { CodeEditor } from 'sourcegraph'
+import type { CodeEditor } from 'sourcegraph'
 
 import { Selection } from '@sourcegraph/extension-api-classes'
 
-import { CodeEditorData, ViewerId } from '../../viewerTypes'
+import type { CodeEditorData, ViewerId } from '../../viewerTypes'
 
-import { ExtensionDocument } from './textDocument'
+import type { ExtensionDocument } from './textDocument'
 
 /** @internal */
 export class ExtensionCodeEditor implements CodeEditor, ProxyMarked {

@@ -1,8 +1,8 @@
-import { createContext, MutableRefObject } from 'react'
+import { createContext, type MutableRefObject } from 'react'
 
 import { noop } from 'lodash'
 
-import { PopoverOpenEvent } from '../types'
+import type { PopoverOpenEvent } from '../types'
 
 export interface PopoverInternalContextData {
     isOpen: boolean

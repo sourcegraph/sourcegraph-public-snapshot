@@ -7,16 +7,16 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { OrgAreaRouteContext } from '../area/OrgArea'
+import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 interface DeleteOrgModalProps extends OrgAreaRouteContext {
     isOpen: boolean
     toggleDeleteModal: () => void
 }
 
-const HARD_DELETE_ORG_MUTATION = gql`
-    mutation DeleteOrganization($organization: ID!, $hard: Boolean) {
-        deleteOrganization(organization: $organization, hard: $hard) {
+const DELETE_ORG_MUTATION = gql`
+    mutation DeleteOrganization($organization: ID!) {
+        deleteOrganization(organization: $organization) {
             alwaysNil
         }
     }
@@ -35,7 +35,7 @@ export const DeleteOrgModal: React.FunctionComponent<React.PropsWithChildren<Del
         setOrgNameInput(orgNameInput)
     }, [setOrgNameInput, orgNameInput])
 
-    const [deleteOrganization, { loading }] = useMutation(HARD_DELETE_ORG_MUTATION)
+    const [deleteOrganization, { loading }] = useMutation(DELETE_ORG_MUTATION)
 
     const onOrgChangeName = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => {

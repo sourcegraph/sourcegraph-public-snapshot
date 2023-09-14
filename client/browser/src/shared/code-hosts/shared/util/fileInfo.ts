@@ -1,10 +1,10 @@
-import { from, Observable, of, zip } from 'rxjs'
+import { from, type Observable, of, zip } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
-import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
+import type { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
 
 /**
  * Use `rawRepoName` for the value of `repoName`, as a fallback if `repoName`

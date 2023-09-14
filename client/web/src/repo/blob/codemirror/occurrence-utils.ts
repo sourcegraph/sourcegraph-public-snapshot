@@ -1,9 +1,9 @@
-import { EditorSelection, EditorState, SelectionRange } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { EditorSelection, type EditorState, type SelectionRange } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
 
 import { Occurrence, Position, Range, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
-import { HighlightIndex, syntaxHighlight } from './highlight'
+import { type HighlightIndex, syntaxHighlight } from './highlight'
 import { fallbackOccurrences } from './token-selection/selections'
 import { preciseOffsetAtCoords } from './utils'
 

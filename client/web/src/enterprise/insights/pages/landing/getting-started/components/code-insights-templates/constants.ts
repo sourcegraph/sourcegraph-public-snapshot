@@ -1,9 +1,7 @@
-import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
-
 import { DATA_SERIES_COLORS } from '../../../../../constants'
 import { InsightType } from '../../../../../core'
-import { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
-import { SearchInsightURLValues } from '../../../../insights/creation/search-insight'
+import type { CaptureInsightUrlValues } from '../../../../insights/creation/capture-group'
+import type { SearchInsightURLValues } from '../../../../insights/creation/search-insight'
 
 export interface TemplateSection {
     title: string
@@ -1242,7 +1240,7 @@ const GO_STATIC_CHECK_S1039: Template = {
     },
 }
 
-export const getTemplateSections = (features: SettingsExperimentalFeatures): TemplateSection[] => {
+export const getTemplateSections = (goCodeCheckerTemplates: boolean | undefined): TemplateSection[] => {
     const allButGoChecker: TemplateSection[] = [
         {
             title: 'Popular',
@@ -1329,7 +1327,7 @@ export const getTemplateSections = (features: SettingsExperimentalFeatures): Tem
         },
     ]
 
-    if (!features?.goCodeCheckerTemplates) {
+    if (!goCodeCheckerTemplates) {
         return allButGoChecker
     }
 

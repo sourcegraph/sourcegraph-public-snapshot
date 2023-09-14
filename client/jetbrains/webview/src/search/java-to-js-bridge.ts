@@ -1,6 +1,3 @@
-import { indicateFinishedLoading } from './js-to-java-bridge'
-import { PluginConfig, Theme } from './types'
-
 import {
     applyConfig,
     applyTheme,
@@ -10,6 +7,8 @@ import {
     updateVersionAndAuthDataFromServer,
     wasServerAccessSuccessful,
 } from './index'
+import { indicateFinishedLoading } from './js-to-java-bridge'
+import type { PluginConfig, Theme } from './types'
 
 export type ActionName = 'themeChanged' | 'pluginSettingsChanged'
 

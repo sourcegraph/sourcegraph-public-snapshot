@@ -8,9 +8,12 @@ import (
 )
 
 func Symbols() *monitoring.Dashboard {
-	const containerName = "symbols"
+	const (
+		containerName   = "symbols"
+		grpcServiceName = "symbols.v1.SymbolsService"
+	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "symbols",
@@ -27,7 +30,7 @@ func Symbols() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			shared.GRPCMethodVariable(containerName),
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewSymbolsAPIGroup(containerName),
@@ -38,10 +41,20 @@ func Symbols() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					ServiceName:         containerName,
-					MetricNamespace:     containerName,
+					HumanServiceName:   containerName,
+					RawGRPCServiceName: grpcServiceName,
+
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${instance:regex}`,
+				}, monitoring.ObservableOwnerCodeIntel),
+
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   containerName,
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerCodeIntel),
 
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),

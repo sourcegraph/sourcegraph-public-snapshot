@@ -1,4 +1,4 @@
-import { SourcegraphContext } from '../../src/jscontext'
+import type { SourcegraphContext } from '../../src/jscontext'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { getSiteConfig } from './get-site-config'
@@ -23,6 +23,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
 
     const jsContext: SourcegraphContext = {
         currentUser: null,
+        temporarySettings: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
@@ -30,6 +31,9 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         batchChangesDisableWebhooksWarning: false,
         batchChangesWebhookLogsEnabled: true,
         executorsEnabled: false,
+        codyEnabled: true,
+        codyEnabledForCurrentUser: true,
+        codyRequiresVerifiedEmail: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
         codeInsightsEnabled: true,
@@ -40,11 +44,14 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         debug: true,
         emailEnabled: false,
         experimentalFeatures: {},
+        extsvcConfigAllowEdits: false,
+        extsvcConfigFileExists: false,
         isAuthenticatedUser: true,
-        likelyDockerOnMac: false,
         needServerRestart: false,
         needsSiteInit: false,
+        needsRepositoryConfiguration: false,
         resetPasswordEnabled: true,
+        runningOnMacOS: true,
         sentryDSN: null,
         site: {
             'update.channel': 'release',
@@ -53,6 +60,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
         sourcegraphAppMode: false,
+        srcServeGitUrl: 'http://127.0.0.1:3434',
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
@@ -67,6 +75,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         openTelemetry: {
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
+        embeddingsEnabled: false,
+        primaryLoginProvidersCount: 5,
         // Site-config overrides default JS context
         ...siteConfig,
     }

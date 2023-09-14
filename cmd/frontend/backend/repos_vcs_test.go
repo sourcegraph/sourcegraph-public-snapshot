@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -44,7 +44,7 @@ func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
 	})
 
 	// (no rev/branch specified)
-	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
+	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 		return api.CommitID(want), nil
 	})
 
-	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
+	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 		return api.CommitID(want), nil
 	})
 
-	commitID, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
 		return "", errors.New("x")
 	})
 
-	_, err := NewRepos(logger, database.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	_, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
 	if !errors.Is(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
 	}
@@ -200,7 +200,7 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 		return &gitdomain.Commit{ID: want}, nil
 	})
 
-	commit, err := NewRepos(logger, database.NewMockDB(), gsClient).GetCommit(ctx, &types.Repo{Name: "a"}, want)
+	commit, err := NewRepos(logger, dbmocks.NewMockDB(), gsClient).GetCommit(ctx, &types.Repo{Name: "a"}, want)
 	if err != nil {
 		t.Fatal(err)
 	}

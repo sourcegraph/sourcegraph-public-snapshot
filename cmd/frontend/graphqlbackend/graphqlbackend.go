@@ -12,10 +12,13 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/graph-gophers/graphql-go/trace"
+	"github.com/graph-gophers/graphql-go/trace/otel"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
+
+	oteltracer "go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -34,23 +37,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_graphql_field_seconds",
-		Help:    "GraphQL field resolver latencies in seconds.",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-	}, []string{"type", "field", "error", "source", "request_name"})
-)
+var graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_graphql_field_seconds",
+	Help:    "GraphQL field resolver latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+}, []string{"type", "field", "error", "source", "request_name"})
 
+// Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
 	DB     database.DB
-	tracer trace.OpenTracingTracer
+	tracer *otel.Tracer
 	logger log.Logger
 }
 
-func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, func([]*gqlerrors.QueryError)) {
 	start := time.Now()
-	var finish trace.TraceQueryFinishFunc
+	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
@@ -164,8 +166,8 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
-	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
+func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
+	// We don't call into t.tracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
@@ -179,8 +181,8 @@ func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName stri
 	}
 }
 
-func (t requestTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
-	var finish trace.TraceValidationFinishFunc
+func (t requestTracer) TraceValidation(ctx context.Context) func([]*gqlerrors.QueryError) {
+	var finish func([]*gqlerrors.QueryError)
 	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
 	}
@@ -380,192 +382,260 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{})
+}
+
+func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Client) (*graphql.Schema, error) {
+	return NewSchema(db, gitserverClient, []OptionalResolver{})
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{AuthzResolver: authz}})
 }
 
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{LicenseResolver: license}})
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver, nil)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{RBACResolver: rbacResolver}})
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, own)
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{OwnResolver: own}})
+}
+
+func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
-	batchChanges BatchChangesResolver,
-	codeIntel CodeIntelResolver,
-	insights InsightsResolver,
-	authz AuthzResolver,
-	codeMonitors CodeMonitorsResolver,
-	license LicenseResolver,
-	dotcom DotcomRootResolver,
-	searchContexts SearchContextsResolver,
-	notebooks NotebooksResolver,
-	compute ComputeResolver,
-	insightsAggregation InsightsAggregationResolver,
-	webhooksResolver WebhooksResolver,
-	rbacResolver RBACResolver,
-	ownResolver OwnResolver,
+	optionals []OptionalResolver,
+	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
-	if batchChanges != nil {
-		EnterpriseResolvers.batchChangesResolver = batchChanges
-		resolver.BatchChangesResolver = batchChanges
-		schemas = append(schemas, batchesSchema)
-		// Register NodeByID handlers.
-		for kind, res := range batchChanges.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+	for _, optional := range optionals {
+		if batchChanges := optional.BatchChangesResolver; batchChanges != nil {
+			EnterpriseResolvers.batchChangesResolver = batchChanges
+			resolver.BatchChangesResolver = batchChanges
+			schemas = append(schemas, batchesSchema)
+			// Register NodeByID handlers.
+			for kind, res := range batchChanges.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
-	}
 
-	if codeIntel != nil {
-		EnterpriseResolvers.codeIntelResolver = codeIntel
-		resolver.CodeIntelResolver = codeIntel
-		schemas = append(schemas, codeIntelSchema)
-		// Register NodeByID handlers.
-		for kind, res := range codeIntel.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if codeIntel := optional.CodeIntelResolver; codeIntel != nil {
+			EnterpriseResolvers.codeIntelResolver = codeIntel
+			resolver.CodeIntelResolver = codeIntel
+
+			entires, err := codeIntelSchema.ReadDir(".")
+			if err != nil {
+				return nil, err
+			}
+			for _, entry := range entires {
+				content, err := codeIntelSchema.ReadFile(entry.Name())
+				if err != nil {
+					return nil, err
+				}
+
+				schemas = append(schemas, string(content))
+			}
+
+			// Register NodeByID handlers.
+			for kind, res := range codeIntel.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
-	}
 
-	if insights != nil {
-		EnterpriseResolvers.insightsResolver = insights
-		resolver.InsightsResolver = insights
-		schemas = append(schemas, insightsSchema)
-	}
-
-	if authz != nil {
-		EnterpriseResolvers.authzResolver = authz
-		resolver.AuthzResolver = authz
-		schemas = append(schemas, authzSchema)
-	}
-
-	if codeMonitors != nil {
-		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
-		resolver.CodeMonitorsResolver = codeMonitors
-		schemas = append(schemas, codeMonitorsSchema)
-		// Register NodeByID handlers.
-		for kind, res := range codeMonitors.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if insights := optional.InsightsResolver; insights != nil {
+			EnterpriseResolvers.insightsResolver = insights
+			resolver.InsightsResolver = insights
+			schemas = append(schemas, insightsSchema)
 		}
-	}
 
-	if license != nil {
-		EnterpriseResolvers.licenseResolver = license
-		resolver.LicenseResolver = license
-		schemas = append(schemas, licenseSchema)
-		// No NodeByID handlers currently.
-	}
-
-	if dotcom != nil {
-		EnterpriseResolvers.dotcomResolver = dotcom
-		resolver.DotcomRootResolver = dotcom
-		schemas = append(schemas, dotcomSchema)
-		// Register NodeByID handlers.
-		for kind, res := range dotcom.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if authz := optional.AuthzResolver; authz != nil {
+			EnterpriseResolvers.authzResolver = authz
+			resolver.AuthzResolver = authz
+			schemas = append(schemas, authzSchema)
 		}
-	}
 
-	if searchContexts != nil {
-		EnterpriseResolvers.searchContextsResolver = searchContexts
-		resolver.SearchContextsResolver = searchContexts
-		schemas = append(schemas, searchContextsSchema)
-		// Register NodeByID handlers.
-		for kind, res := range searchContexts.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if codeMonitors := optional.CodeMonitorsResolver; codeMonitors != nil {
+			EnterpriseResolvers.codeMonitorsResolver = codeMonitors
+			resolver.CodeMonitorsResolver = codeMonitors
+			schemas = append(schemas, codeMonitorsSchema)
+			// Register NodeByID handlers.
+			for kind, res := range codeMonitors.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
-	}
 
-	if notebooks != nil {
-		EnterpriseResolvers.notebooksResolver = notebooks
-		resolver.NotebooksResolver = notebooks
-		schemas = append(schemas, notebooksSchema)
-		// Register NodeByID handlers.
-		for kind, res := range notebooks.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if gitHubApps := optional.GitHubAppsResolver; gitHubApps != nil {
+			EnterpriseResolvers.gitHubAppsResolver = gitHubApps
+			resolver.GitHubAppsResolver = gitHubApps
+			schemas = append(schemas, gitHubAppsSchema)
+			for kind, res := range gitHubApps.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
-	}
 
-	if compute != nil {
-		EnterpriseResolvers.computeResolver = compute
-		resolver.ComputeResolver = compute
-		schemas = append(schemas, computeSchema)
-	}
-
-	if insightsAggregation != nil {
-		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
-		resolver.InsightsAggregationResolver = insightsAggregation
-		schemas = append(schemas, insightsAggregationsSchema)
-	}
-
-	if webhooksResolver != nil {
-		EnterpriseResolvers.webhooksResolver = webhooksResolver
-		resolver.WebhooksResolver = webhooksResolver
-		// Register NodeByID handlers.
-		for kind, res := range webhooksResolver.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if license := optional.LicenseResolver; license != nil {
+			EnterpriseResolvers.licenseResolver = license
+			resolver.LicenseResolver = license
+			schemas = append(schemas, licenseSchema)
+			// No NodeByID handlers currently.
 		}
-	}
 
-	if rbacResolver != nil {
-		EnterpriseResolvers.rbacResolver = rbacResolver
-		resolver.RBACResolver = rbacResolver
-		schemas = append(schemas, rbacSchema)
-		// Register NodeByID handlers.
-		for kind, res := range rbacResolver.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if dotcom := optional.DotcomRootResolver; dotcom != nil {
+			EnterpriseResolvers.dotcomResolver = dotcom
+			resolver.DotcomRootResolver = dotcom
+			schemas = append(schemas, dotcomSchema)
+			// Register NodeByID handlers.
+			for kind, res := range dotcom.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
-	}
 
-	if ownResolver != nil {
-		EnterpriseResolvers.ownResolver = ownResolver
-		resolver.OwnResolver = ownResolver
-		// Register NodeByID handlers.
-		for kind, res := range ownResolver.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+		if searchContexts := optional.SearchContextsResolver; searchContexts != nil {
+			EnterpriseResolvers.searchContextsResolver = searchContexts
+			resolver.SearchContextsResolver = searchContexts
+			schemas = append(schemas, searchContextsSchema)
+			// Register NodeByID handlers.
+			for kind, res := range searchContexts.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
 		}
-		schemas = append(schemas, ownSchema)
+
+		if notebooks := optional.NotebooksResolver; notebooks != nil {
+			EnterpriseResolvers.notebooksResolver = notebooks
+			resolver.NotebooksResolver = notebooks
+			schemas = append(schemas, notebooksSchema)
+			// Register NodeByID handlers.
+			for kind, res := range notebooks.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
+
+		if compute := optional.ComputeResolver; compute != nil {
+			EnterpriseResolvers.computeResolver = compute
+			resolver.ComputeResolver = compute
+			schemas = append(schemas, computeSchema)
+		}
+
+		if insightsAggregation := optional.InsightsAggregationResolver; insightsAggregation != nil {
+			EnterpriseResolvers.insightsAggregationResolver = insightsAggregation
+			resolver.InsightsAggregationResolver = insightsAggregation
+			schemas = append(schemas, insightsAggregationsSchema)
+		}
+
+		if webhooksResolver := optional.WebhooksResolver; webhooksResolver != nil {
+			EnterpriseResolvers.webhooksResolver = webhooksResolver
+			resolver.WebhooksResolver = webhooksResolver
+			// Register NodeByID handlers.
+			for kind, res := range webhooksResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
+
+		if embeddingsResolver := optional.EmbeddingsResolver; embeddingsResolver != nil {
+			EnterpriseResolvers.embeddingsResolver = embeddingsResolver
+			resolver.EmbeddingsResolver = embeddingsResolver
+			schemas = append(schemas, embeddingsSchema)
+		}
+
+		if contextResolver := optional.CodyContextResolver; contextResolver != nil {
+			EnterpriseResolvers.contextResolver = contextResolver
+			resolver.CodyContextResolver = contextResolver
+			schemas = append(schemas, codyContextSchema)
+		}
+
+		if rbacResolver := optional.RBACResolver; rbacResolver != nil {
+			EnterpriseResolvers.rbacResolver = rbacResolver
+			resolver.RBACResolver = rbacResolver
+			schemas = append(schemas, rbacSchema)
+		}
+
+		if ownResolver := optional.OwnResolver; ownResolver != nil {
+			EnterpriseResolvers.ownResolver = ownResolver
+			resolver.OwnResolver = ownResolver
+			schemas = append(schemas, ownSchema)
+			// Register NodeByID handlers.
+			for kind, res := range ownResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
+
+		if completionsResolver := optional.CompletionsResolver; completionsResolver != nil {
+			EnterpriseResolvers.completionsResolver = completionsResolver
+			resolver.CompletionsResolver = completionsResolver
+			schemas = append(schemas, completionSchema)
+		}
+
+		if guardrailsResolver := optional.GuardrailsResolver; guardrailsResolver != nil {
+			EnterpriseResolvers.guardrailsResolver = guardrailsResolver
+			resolver.GuardrailsResolver = guardrailsResolver
+			schemas = append(schemas, guardrailsSchema)
+		}
+
+		if appResolver := optional.AppResolver; appResolver != nil {
+			// Not under enterpriseResolvers, as this is a OSS schema extension.
+			resolver.AppResolver = appResolver
+			schemas = append(schemas, appSchema)
+		}
+
+		if contentLibraryResolver := optional.ContentLibraryResolver; contentLibraryResolver != nil {
+			EnterpriseResolvers.contentLibraryResolver = contentLibraryResolver
+			resolver.ContentLibraryResolver = contentLibraryResolver
+			schemas = append(schemas, contentLibrary)
+		}
+
+		if searchJobsResolver := optional.SearchJobsResolver; searchJobsResolver != nil {
+			EnterpriseResolvers.searchJobsResolver = searchJobsResolver
+			resolver.SearchJobsResolver = searchJobsResolver
+			schemas = append(schemas, searchJobSchema)
+			// Register NodeByID handlers.
+			for kind, res := range searchJobsResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
-	return graphql.ParseSchema(
-		strings.Join(schemas, "\n"),
-		resolver,
+	opts := []graphql.SchemaOpt{
 		graphql.Tracer(&requestTracer{
-			DB:     db,
+			DB: db,
+			tracer: &otel.Tracer{
+				Tracer: oteltracer.Tracer("GraphQL"),
+			},
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
-	)
+	}
+	opts = append(opts, graphqlOpts...)
+	return graphql.ParseSchema(
+		strings.Join(schemas, "\n"),
+		resolver,
+		opts...)
 }
 
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
@@ -580,22 +650,34 @@ type schemaResolver struct {
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 
-	// SubResolvers are assigned using the Schema constructor.
+	OptionalResolver
+}
 
-	BatchChangesResolver
+// OptionalResolver are the resolvers that do not have to be set. If a field
+// is non-nil, NewSchema will register the corresponding graphql schema.
+type OptionalResolver struct {
+	AppResolver
 	AuthzResolver
+	BatchChangesResolver
 	CodeIntelResolver
-	ComputeResolver
-	InsightsResolver
 	CodeMonitorsResolver
-	LicenseResolver
+	CompletionsResolver
+	ComputeResolver
+	CodyContextResolver
 	DotcomRootResolver
-	SearchContextsResolver
-	NotebooksResolver
+	EmbeddingsResolver
+	SearchJobsResolver
+	GitHubAppsResolver
+	GuardrailsResolver
 	InsightsAggregationResolver
-	WebhooksResolver
-	RBACResolver
+	InsightsResolver
+	LicenseResolver
+	NotebooksResolver
 	OwnResolver
+	RBACResolver
+	SearchContextsResolver
+	WebhooksResolver
+	ContentLibraryResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -669,15 +751,23 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		"ExecutorSecretAccessLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorSecretAccessLogByID(ctx, db, id)
 		},
-		"Team": func(ctx context.Context, id graphql.ID) (Node, error) {
-			team, err := findTeam(ctx, db.Teams(), &id, nil)
-			if err != nil {
-				return nil, err
-			}
-			return &TeamResolver{team: team, db: db}, nil
+		teamIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return teamByID(ctx, db, id)
 		},
 		outboundWebhookIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return OutboundWebhookByID(ctx, db, id)
+		},
+		roleIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.roleByID(ctx, id)
+		},
+		permissionIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.permissionByID(ctx, id)
+		},
+		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return CodeHostByID(ctx, r.db, id)
+		},
+		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitserverByID(ctx, id)
 		},
 	}
 	return r
@@ -686,22 +776,31 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver           CodeIntelResolver
-	computeResolver             ComputeResolver
-	insightsResolver            InsightsResolver
 	authzResolver               AuthzResolver
 	batchChangesResolver        BatchChangesResolver
+	codeIntelResolver           CodeIntelResolver
 	codeMonitorsResolver        CodeMonitorsResolver
-	licenseResolver             LicenseResolver
+	completionsResolver         CompletionsResolver
+	computeResolver             ComputeResolver
+	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
-	searchContextsResolver      SearchContextsResolver
+	embeddingsResolver          EmbeddingsResolver
+	searchJobsResolver          SearchJobsResolver
+	gitHubAppsResolver          GitHubAppsResolver
+	guardrailsResolver          GuardrailsResolver
+	insightsAggregationResolver InsightsAggregationResolver
+	insightsResolver            InsightsResolver
+	licenseResolver             LicenseResolver
 	notebooksResolver           NotebooksResolver
-	InsightsAggregationResolver InsightsAggregationResolver
-	webhooksResolver            WebhooksResolver
-	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
+	rbacResolver                RBACResolver
+	searchContextsResolver      SearchContextsResolver
+	webhooksResolver            WebhooksResolver
+	contentLibraryResolver      ContentLibraryResolver
 }{}
 
+// Root returns a new schemaResolver.
+//
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
 	return newSchemaResolver(r.db, r.gitserverClient)
@@ -712,7 +811,8 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*RepositoryResolver, error) {
+},
+) (*RepositoryResolver, error) {
 	// Deprecated query by "URI"
 	if args.URI != nil && args.Name == nil {
 		args.Name = args.URI
@@ -731,9 +831,10 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 // in the database, and then starts a repo clone.
 func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
-}) (*EmptyResponse, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
+},
+) (*EmptyResponse, error) {
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
 		return nil, err
 	}
 
@@ -757,7 +858,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 // in the database.
 func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *struct {
 	Repo graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
 		return nil, err
@@ -868,7 +970,8 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 	Name *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*phabricatorRepoResolver, error) {
+},
+) (*phabricatorRepoResolver, error) {
 	if args.Name != nil {
 		args.URI = args.Name
 	}
@@ -889,7 +992,8 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 	IDs     []graphql.ID
 	Seconds int32
-}) (bool, error) {
+},
+) (bool, error) {
 	if len(args.IDs) == 0 {
 		return false, errors.New("no ids supplied")
 	}

@@ -10,7 +10,9 @@ import {
     NOOP_SETTINGS_CASCADE,
     HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileMatchChildren } from './FileMatchChildren'

@@ -1,14 +1,16 @@
-load("@rules_buf//buf:defs.bzl", "buf_lint_test")
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//dev:proto.bzl", "write_proto_stubs_to_source")
 
 exports_files(["buf.gen.yaml"])
 
 proto_library(
     name = "v1_proto",
     srcs = ["searcher.proto"],
-    visibility = ["//visibility:public"],
+    strip_import_prefix = "/internal",  # keep
+    visibility = ["//visibility:private"],
     deps = ["@com_google_protobuf//:duration_proto"],
 )
 
@@ -20,7 +22,7 @@ go_proto_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/searcher/v1",
     proto = ":v1_proto",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:private"],
 )
 
 go_library(
@@ -30,7 +32,16 @@ go_library(
     visibility = ["//:__subpackages__"],
 )
 
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["searcher.pb.go"],
+#     target = ":v1_go_proto",
+# )
+
 buf_lint_test(
     name = "v1_proto_lint",
+    timeout = "short",
+    config = "//internal:buf.yaml",
     targets = [":v1_proto"],
 )

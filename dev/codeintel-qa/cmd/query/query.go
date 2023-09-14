@@ -6,10 +6,11 @@ import (
 	"strings"
 )
 
-const uploadsQuery = `
-	query Uploads {
-		lsifUploads(state: COMPLETED) {
+const preciseIndexesQuery = `
+	query PreciseIndexes {
+		preciseIndexes(states: [COMPLETED], first: 1000) {
 			nodes {
+				inputRoot
 				projectRoot {
 					repository {
 						name
@@ -23,11 +24,17 @@ const uploadsQuery = `
 	}
 `
 
-func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
+type CommitAndRoot struct {
+	Commit string
+	Root   string
+}
+
+func queryPreciseIndexes(ctx context.Context) (_ map[string][]CommitAndRoot, err error) {
 	var payload struct {
 		Data struct {
-			LSIFUploads struct {
+			PreciseIndexes struct {
 				Nodes []struct {
+					InputRoot   string `json:"inputRoot"`
 					ProjectRoot struct {
 						Repository struct {
 							Name string `json:"name"`
@@ -37,22 +44,23 @@ func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
 						} `json:"commit"`
 					} `json:"projectRoot"`
 				} `json:"nodes"`
-			} `json:"lsifUploads"`
+			} `json:"preciseIndexes"`
 		} `json:"data"`
 	}
-	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Uploads", uploadsQuery, map[string]any{}, &payload); err != nil {
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_PreciseIndexes", preciseIndexesQuery, map[string]any{}, &payload); err != nil {
 		return nil, err
 	}
 
-	commitsByRepo := map[string][]string{}
-	for _, node := range payload.Data.LSIFUploads.Nodes {
+	rootsByCommitsByRepo := map[string][]CommitAndRoot{}
+	for _, node := range payload.Data.PreciseIndexes.Nodes {
+		root := node.InputRoot
 		projectRoot := node.ProjectRoot
 		name := projectRoot.Repository.Name
 		commit := projectRoot.Commit.OID
-		commitsByRepo[name] = append(commitsByRepo[name], commit)
+		rootsByCommitsByRepo[name] = append(rootsByCommitsByRepo[name], CommitAndRoot{commit, root})
 	}
 
-	return commitsByRepo, nil
+	return rootsByCommitsByRepo, nil
 }
 
 const definitionsQuery = `
@@ -99,7 +107,6 @@ pageInfo {
 }
 `
 
-// queryDefinitions returns all of the LSIF definitions for the given location.
 func queryDefinitions(ctx context.Context, location Location) (locations []Location, err error) {
 	variables := map[string]any{
 		"repository": location.Repo,
@@ -143,7 +150,6 @@ const referencesQuery = `
 	}
 `
 
-// queryReferences returns all of the LSIF references for the given location.
 func queryReferences(ctx context.Context, location Location) (locations []Location, err error) {
 	endCursor := ""
 	for {
@@ -174,6 +180,112 @@ func queryReferences(ctx context.Context, location Location) (locations []Locati
 		}
 
 		if endCursor = payload.Data.Repository.Commit.Blob.LSIF.References.PageInfo.EndCursor; endCursor == "" {
+			break
+		}
+	}
+
+	return locations, nil
+}
+
+const implementationsQuery = `
+	query Implementations($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!, $after: String) {
+		repository(name: $repository) {
+			commit(rev: $commit) {
+				blob(path: $path) {
+					lsif {
+						implementations(line: $line, character: $character, after: $after) {
+							` + locationsFragment + `
+						}
+					}
+				}
+			}
+		}
+	}
+`
+
+func queryImplementations(ctx context.Context, location Location) (locations []Location, err error) {
+	endCursor := ""
+	for {
+		variables := map[string]any{
+			"repository": location.Repo,
+			"commit":     location.Rev,
+			"path":       location.Path,
+			"line":       location.Line,
+			"character":  location.Character,
+		}
+		if endCursor != "" {
+			variables["after"] = endCursor
+		}
+
+		var payload QueryResponse
+		if err := queryGraphQL(ctx, "CodeIntelQA_Query_Implementations", implementationsQuery, variables, &payload); err != nil {
+			return nil, err
+		}
+
+		for _, node := range payload.Data.Repository.Commit.Blob.LSIF.Implementations.Nodes {
+			locations = append(locations, Location{
+				Repo:      node.Resource.Repository.Name,
+				Rev:       node.Resource.Commit.Oid,
+				Path:      node.Resource.Path,
+				Line:      node.Range.Start.Line,
+				Character: node.Range.Start.Character,
+			})
+		}
+
+		if endCursor = payload.Data.Repository.Commit.Blob.LSIF.Implementations.PageInfo.EndCursor; endCursor == "" {
+			break
+		}
+	}
+
+	return locations, nil
+}
+
+const prototypesQuery = `
+	query Prototypes($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!, $after: String) {
+		repository(name: $repository) {
+			commit(rev: $commit) {
+				blob(path: $path) {
+					lsif {
+						prototypes(line: $line, character: $character, after: $after) {
+							` + locationsFragment + `
+						}
+					}
+				}
+			}
+		}
+	}
+`
+
+func queryPrototypes(ctx context.Context, location Location) (locations []Location, err error) {
+	endCursor := ""
+	for {
+		variables := map[string]any{
+			"repository": location.Repo,
+			"commit":     location.Rev,
+			"path":       location.Path,
+			"line":       location.Line,
+			"character":  location.Character,
+		}
+		if endCursor != "" {
+			variables["after"] = endCursor
+		}
+
+		var payload QueryResponse
+		if err := queryGraphQL(ctx, "CodeIntelQA_Query_Prototypes", prototypesQuery, variables, &payload); err != nil {
+			return nil, err
+		}
+
+		for _, node := range payload.Data.Repository.Commit.Blob.LSIF.Prototypes.Nodes {
+			locations = append(locations, Location{
+				Repo:      node.Resource.Repository.Name,
+				Rev:       node.Resource.Commit.Oid,
+				Path:      node.Resource.Path,
+				Line:      node.Range.Start.Line,
+				Character: node.Range.Start.Character,
+			})
+		}
+
+		if endCursor = payload.Data.Repository.Commit.Blob.LSIF.Prototypes.PageInfo.EndCursor; endCursor == "" {
 			break
 		}
 	}

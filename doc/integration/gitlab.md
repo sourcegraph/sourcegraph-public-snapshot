@@ -1,6 +1,6 @@
 # GitLab integration with Sourcegraph
 
-You can use Sourcegraph with [GitLab.com](https://gitlab.com) and GitLab CE/EE.
+You can use Sourcegraph with [GitLab.com](https://gitlab.com) and GitLab CE/EE.  Read a high-level overview of how Sourcegraph and GitLab work together in our [GitLab solution brief](https://about.sourcegraph.com/guides/sourcegraph-gitlab-solution-brief.pdf).
 
 Feature | Supported?
 ------- | ----------
@@ -43,5 +43,3 @@ The [Sourcegraph browser extension](browser_extension.md) supports GitLab. When 
     - Click "Enable Sourcegraph on this domain".
     - Click "Allow" in the permissions request popup.
 1. Visit any file or merge request on GitLab. Hover over code or click the "View file" and "View repository" buttons.
-
-![Sourcegraph for GitLab](https://cl.ly/7916fe1453a4/download/sourcegraph-for-gitLab.gif)

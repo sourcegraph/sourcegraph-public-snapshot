@@ -1,13 +1,13 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GroupByField, TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { GetInsightPreviewResult } from '../../../../../../../graphql-operations'
-import { SearchBasedInsightSeries } from '../../../../../core'
+import type { GetInsightPreviewResult } from '../../../../../../../graphql-operations'
+import type { SearchBasedInsightSeries } from '../../../../../core'
 import { GET_INSIGHT_PREVIEW_GQL } from '../../../../../core/hooks/live-preview-insight'
 
 import { ComputeLivePreview as ComputeLivePreviewComponent } from './ComputeLivePreview'

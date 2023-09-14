@@ -14,6 +14,8 @@ https://sourcegraph.com
 
 If you're unsure what the URL for your Sourcegraph instance is, please contact your site administrator.
 
+If the environment variable is not set, it'll default to "https://sourcegraph.com"
+
 ## `SRC_ACCESS_TOKEN`
 
 `src` uses an access token to authenticate as you to your Sourcegraph instance. This token needs to be in the `SRC_ACCESS_TOKEN` environment variable.

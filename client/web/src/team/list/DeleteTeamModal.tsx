@@ -4,7 +4,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, H3, Modal, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import { ListTeamFields } from '../../graphql-operations'
+import type { ListTeamFields } from '../../graphql-operations'
 
 import { useDeleteTeam } from './backend'
 
@@ -44,7 +44,9 @@ export const DeleteTeamModal: React.FunctionComponent<React.PropsWithChildren<De
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>Delete team {team.name}?</H3>
 
-            <strong className="d-block text-danger my-3">Removing teams is irreversible.</strong>
+            <strong className="d-block text-danger my-3">
+                Removing teams is irreversible and will cascade to existing child teams.
+            </strong>
 
             {error && <ErrorAlert error={error} />}
 

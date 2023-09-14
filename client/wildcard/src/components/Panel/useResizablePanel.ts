@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react'
+import type React from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
-import { PANEL_POSITIONS } from './constants'
+import type { PANEL_POSITIONS } from './constants'
 
 const STORAGE_KEY_PREFIX = 'ResizePanel:'
 
@@ -90,6 +91,11 @@ export interface UseResizablePanelParameters {
     panelRef: React.MutableRefObject<HTMLDivElement | null>
 
     handleRef: React.MutableRefObject<HTMLDivElement | null>
+
+    /**
+     * Callback when the size has changed
+     */
+    onResize?: (size: number) => void
 }
 
 export const useResizablePanel = ({
@@ -100,6 +106,7 @@ export const useResizablePanel = ({
     storageKey,
     maxSize,
     minSize,
+    onResize,
 }: UseResizablePanelParameters): PanelResizerState => {
     const sizeUpdates = useRef(new Subject<number>())
     const subscriptions = useRef(new Subscription())
@@ -108,8 +115,10 @@ export const useResizablePanel = ({
     const [panelSize, setPanelSize] = useState(defaultSize)
 
     useEffect(() => {
-        setPanelSize(getCachedPanelSize(storageKey, defaultSize, maxSize, minSize))
-    }, [storageKey, defaultSize, maxSize, minSize])
+        const size = getCachedPanelSize(storageKey, defaultSize, maxSize, minSize)
+        onResize?.(size)
+        setPanelSize(size)
+    }, [storageKey, defaultSize, maxSize, minSize, onResize])
 
     useEffect(() => {
         const currentSubscriptions = subscriptions.current
@@ -144,6 +153,7 @@ export const useResizablePanel = ({
             }
 
             if (isLessThanOrEqualMax(size, maxSize) && isGreaterThanOrEqualMin(size, minSize)) {
+                onResize?.(size)
                 setPanelSize(size)
                 sizeUpdates.current.next(size)
             }
@@ -170,7 +180,7 @@ export const useResizablePanel = ({
         return () => {
             currentHandle?.removeEventListener('mousedown', onMouseDown)
         }
-    }, [panelRef, handleRef, position, storageKey, maxSize, minSize])
+    }, [panelRef, handleRef, position, storageKey, maxSize, minSize, onResize])
 
     return { panelSize, isResizing }
 }

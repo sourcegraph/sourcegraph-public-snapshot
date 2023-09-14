@@ -1,11 +1,11 @@
 import { renderHook, cleanup, act } from '@testing-library/react'
-import { WrapperComponent } from '@testing-library/react-hooks'
+import type { WrapperComponent } from '@testing-library/react-hooks'
 
 import { TourLanguage } from '@sourcegraph/shared/src/settings/temporary'
-import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 
-import { useTour, TourState } from './useTour'
+import { useTour, type TourState } from './useTour'
 
 /**
  * Extracts non-function properties from an object.

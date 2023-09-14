@@ -1,16 +1,17 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import { AuthProvider } from 'src/jscontext'
+import type { AuthProvider } from 'src/jscontext'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 
 import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
 import { ExternalAccount } from './ExternalAccount'
-import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
+import type { AccountsByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
+
 export interface NormalizedExternalAccount {
     name: string
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
@@ -21,7 +22,7 @@ export interface NormalizedExternalAccount {
 }
 
 interface Props {
-    accounts: AccountByServiceID
+    accounts: AccountsByServiceID
     authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
@@ -29,7 +30,7 @@ interface Props {
 }
 
 const getNormalizedAccount = (
-    accounts: Partial<Record<string, UserExternalAccount>>,
+    accounts: Partial<Record<string, UserExternalAccount[]>>,
     authProvider: AuthProvider
 ): NormalizedExternalAccount | null => {
     if (
@@ -40,7 +41,6 @@ const getNormalizedAccount = (
         return null
     }
 
-    const account = accounts[authProvider.serviceID]
     const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
     const normalizedAccount: NormalizedExternalAccount = {
@@ -48,10 +48,13 @@ const getNormalizedAccount = (
         name,
     }
 
-    if (account?.publicAccountData) {
+    const providerAccounts = accounts[authProvider.serviceID]
+
+    const providerAccount = providerAccounts?.find(acc => acc.clientID === authProvider.clientID)
+    if (providerAccount?.publicAccountData) {
         normalizedAccount.external = {
-            id: account.id,
-            ...account.publicAccountData,
+            id: providerAccount.id,
+            ...providerAccount.publicAccountData,
         }
     }
 
@@ -75,7 +78,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                     if (normAccount) {
                         return (
                             <li
-                                key={authProvider.serviceID}
+                                key={normAccount.external ? normAccount.external.id : authProvider.serviceID}
                                 className={classNames('list-group-item', styles.externalAccount)}
                             >
                                 <ExternalAccount

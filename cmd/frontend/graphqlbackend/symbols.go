@@ -121,8 +121,8 @@ func (r symbolResolver) Location() *locationResolver {
 	stat := CreateFileInfo(r.Symbol.Path, false)
 	sr := r.Symbol.Range()
 	opts := GitTreeEntryResolverOpts{
-		commit: r.commit,
-		stat:   stat,
+		Commit: r.commit,
+		Stat:   stat,
 	}
 	return &locationResolver{
 		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient(), opts),

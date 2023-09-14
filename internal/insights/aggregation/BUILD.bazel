@@ -1,0 +1,51 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "aggregation",
+    srcs = [
+        "aggregation.go",
+        "capture_group_helpers.go",
+        "limited_aggregator.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/aggregation",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/insights/query/querybuilder",
+        "//internal/insights/types",
+        "//internal/search/query",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/search/streaming/api",
+        "//internal/search/streaming/client",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "aggregation_test",
+    timeout = "short",
+    srcs = [
+        "aggregation_test.go",
+        "limited_aggregator_test.go",
+    ],
+    embed = [":aggregation"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/gitserver/gitdomain",
+        "//internal/insights/types",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/types",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

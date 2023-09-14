@@ -2,11 +2,11 @@ import { escapeRegExp, find, filter } from 'lodash'
 import {
     load,
     Kind as YAMLKind,
-    YamlMap as YAMLMap,
-    YAMLMapping,
-    YAMLNode,
-    YAMLSequence,
-    YAMLScalar,
+    type YamlMap as YAMLMap,
+    type YAMLMapping,
+    type YAMLNode,
+    type YAMLSequence,
+    type YAMLScalar,
     determineScalarType,
     ScalarType,
 } from 'yaml-ast-parser'

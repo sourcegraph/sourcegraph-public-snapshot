@@ -1,9 +1,9 @@
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 
-import { ResolveRepoAndRevisionResult, ResolveRepoAndRevisionVariables } from '../graphql-operations'
+import type { ResolveRepoAndRevisionResult, ResolveRepoAndRevisionVariables } from '../graphql-operations'
 
-import { RESOLVE_REPO_REVISION_BLOB_QUERY as RESOLVE_REPO_REVISION_BLOB_QUERY } from './ReferencesPanelQueries'
+import { RESOLVE_REPO_REVISION_BLOB_QUERY } from './ReferencesPanelQueries'
 
 interface RepoAndBlob {
     isFork: boolean

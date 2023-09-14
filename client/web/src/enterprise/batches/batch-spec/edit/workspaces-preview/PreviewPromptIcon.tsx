@@ -1,4 +1,4 @@
-import React, { memo, SVGProps } from 'react'
+import React, { memo, type SVGProps } from 'react'
 
 export const PreviewPromptIcon: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVGSVGElement>>> = memo(
     props => (

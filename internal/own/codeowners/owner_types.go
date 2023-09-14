@@ -23,7 +23,8 @@ const (
 )
 
 type Person struct {
-	User *types.User // If this is nil we've been unable to identify a user from the owner proto. Matches Own API.
+	User         *types.User // If this is nil we've been unable to identify a user from the owner proto. Matches Own API.
+	PrimaryEmail *string
 
 	// Original proto fields.
 	Handle string
@@ -36,6 +37,13 @@ func (p *Person) Type() OwnerType {
 
 func (p *Person) Identifier() string {
 	return p.Handle + p.Email
+}
+
+func (p *Person) GetEmail() string {
+	if p.PrimaryEmail != nil {
+		return *p.PrimaryEmail
+	}
+	return p.Email
 }
 
 func (p *Person) SetOwnerData(handle, email string) {

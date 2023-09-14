@@ -1,12 +1,12 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import {
-    BatchChangesCredentialFields,
-    CheckBatchChangesCredentialResult,
+    type BatchChangesCredentialFields,
+    type CheckBatchChangesCredentialResult,
     ExternalServiceKind,
 } from '../../../graphql-operations'
 
@@ -63,6 +63,8 @@ export const Overview: Story = () => (
                         externalServiceURL: 'https://github.com/',
                         requiresSSH: false,
                         requiresUsername: false,
+                        supportsCommitSigning: false,
+                        commitSigningConfiguration: null,
                     }}
                     refetchAll={() => {}}
                     userID="123"

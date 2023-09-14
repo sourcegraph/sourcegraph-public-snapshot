@@ -1,6 +1,6 @@
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
-import {
+import type {
     Alternative,
     Assertion,
     CapturingGroup,
@@ -14,9 +14,9 @@ import {
 
 import { SearchPatternType } from '../../graphql-operations'
 
-import { Predicate, scanPredicate } from './predicates'
+import { type Predicate, scanPredicate } from './predicates'
 import { scanSearchQuery } from './scanner'
-import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
+import { type Token, type Pattern, type Literal, PatternKind, type CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
 
@@ -944,10 +944,10 @@ const decorateContainsFileBody = (body: string, offset: number): DecoratedToken[
 }
 
 /**
- * Attempts to decorate `repo:has(key:value)` syntax. Fails if
+ * Attempts to decorate `repo:has.meta(key:value)` syntax. Fails if
  * the body contains unsupported syntax.
  */
-const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+const decorateRepoHasMetaBody = (body: string, offset: number): DecoratedToken[] | undefined => {
     const matches = body.match(/([^:]+):([^:]+)/)
     if (!matches) {
         return undefined
@@ -1000,7 +1000,14 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 kind: PatternKind.Regexp,
             })
         case 'has': {
-            const result = decorateRepoHasBody(body, offset)
+            const result = decorateRepoHasMetaBody(body, offset)
+            if (result !== undefined) {
+                return result
+            }
+            break
+        }
+        case 'has.meta': {
+            const result = decorateRepoHasMetaBody(body, offset)
             if (result !== undefined) {
                 return result
             }
@@ -1009,6 +1016,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
         case 'has.tag':
         case 'has.owner':
         case 'has.key':
+        case 'has.topic':
             return [
                 {
                     type: 'literal',

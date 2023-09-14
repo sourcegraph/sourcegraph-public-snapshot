@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "basestore",
@@ -26,12 +27,17 @@ go_library(
 
 go_test(
     name = "basestore_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "scan_collections_test.go",
         "store_test.go",
     ],
     embed = [":basestore"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/dbtest",
         "//internal/database/dbutil",

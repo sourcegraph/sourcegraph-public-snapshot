@@ -1,0 +1,17 @@
+.list {
+    display: inline;
+    list-style: none;
+    padding-left: 0.25rem;
+}
+
+.list li {
+    display: inline;
+}
+
+.list li::after {
+    content: ', ';
+}
+
+.list li:last-child::after {
+    content: '.';
+}

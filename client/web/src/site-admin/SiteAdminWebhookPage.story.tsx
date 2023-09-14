@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { Route, Routes } from 'react-router-dom'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -9,7 +9,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../components/WebStory'
-import { WebhookLogFields } from '../graphql-operations'
+import type { WebhookLogFields } from '../graphql-operations'
 
 import { WEBHOOK_BY_ID } from './backend'
 import { createWebhookMock, TIMESTAMP_MOCK } from './fixtures'
@@ -20,7 +20,7 @@ import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/s
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/SiteAdminWebhookPage',
+    title: 'web/site-admin/webhooks/incoming/SiteAdminWebhookPage',
     decorators: [decorator],
 }
 
@@ -108,12 +108,12 @@ export const SiteAdminWebhookPageStory: Story = args => {
     ])
 
     return (
-        <WebStory initialEntries={['/site-admin/webhooks/1']}>
+        <WebStory initialEntries={['/site-admin/webhooks/incoming/1']}>
             {() => (
                 <MockedTestProvider link={buildWebhookLogsMock}>
                     <Routes>
                         <Route
-                            path="/site-admin/webhooks/:id"
+                            path="/site-admin/webhooks/incoming/:id"
                             element={<SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />}
                         />
                     </Routes>

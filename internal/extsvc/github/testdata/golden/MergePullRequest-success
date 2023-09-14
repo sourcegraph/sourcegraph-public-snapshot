@@ -1,18 +1,19 @@
 {
-  "ID": "PR_kwDODS5xec5JaPkU",
-  "Title": "Test PR for GitHub client `MergePullRequest`",
-  "Body": "",
+  "ID": "PR_kwDODS5xec5TxsRF",
+  "Title": "This is a test PR, feel free to ignore",
+  "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "MERGED",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/488",
-  "HeadRefOid": "413b8a40386bd4fdc86871bb59963f79810e9ca3",
-  "BaseRefOid": "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-  "HeadRefName": "test-merge-branch",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/506",
+  "HeadRefOid": "7c232f7ec9b8e717ff297e33f2ab095a7e902085",
+  "BaseRefOid": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
+  "HeadRefName": "test-pr-02",
   "BaseRefName": "master",
-  "Number": 488,
+  "Number": 506,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
-   "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
-   "Login": "courier-new",
-   "URL": "https://github.com/courier-new"
+   "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+   "Login": "davejrt",
+   "URL": "https://github.com/davejrt"
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
@@ -30,14 +31,9 @@
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
-    "Login": "courier-new",
-    "URL": "https://github.com/courier-new"
-   },
-   {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
-    "Login": "sourcegraph-vcr",
-    "URL": "https://github.com/sourcegraph-vcr"
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
    }
   ],
   "Labels": {
@@ -48,17 +44,22 @@
     "Type": "PullRequestCommit",
     "Item": {
      "Commit": {
-      "OID": "413b8a40386bd4fdc86871bb59963f79810e9ca3",
-      "Message": "Update circle-ci.yml",
-      "MessageHeadline": "Update circle-ci.yml",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/413b8a40386bd4fdc86871bb59963f79810e9ca3",
+      "OID": "7c232f7ec9b8e717ff297e33f2ab095a7e902085",
+      "Message": "foobar",
+      "MessageHeadline": "foobar",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/7c232f7ec9b8e717ff297e33f2ab095a7e902085",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
-       "Email": "noreply@github.com",
-       "Name": "GitHub"
+       "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?v=4",
+       "Email": "davetry@gmail.com",
+       "Name": "davejrt",
+       "User": {
+        "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+        "Login": "davejrt",
+        "URL": "https://github.com/davejrt"
+       }
       },
-      "CommittedDate": "2023-02-07T08:43:12Z",
-      "PushedDate": "2023-02-07T08:43:13Z"
+      "CommittedDate": "2023-06-22T21:05:25Z",
+      "PushedDate": "2023-06-22T21:05:29Z"
      }
     }
    },
@@ -66,38 +67,38 @@
     "Type": "MergedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
-      "Login": "sourcegraph-vcr",
-      "URL": "https://github.com/sourcegraph-vcr"
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
      },
      "MergeRefName": "master",
-     "URL": "https://github.com/sourcegraph/automation-testing/pull/488#event-8455514986",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/506#event-9621587152",
      "Commit": {
-      "OID": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
-      "Message": "Update circle-ci.yml (#488)",
-      "MessageHeadline": "Update circle-ci.yml (#488)",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/58dd8da9d9099a823c814c528b29b72c9b2ac98b",
+      "OID": "19c79cbd5e3aa4d5961edfb2edf92a7cf155c15b",
+      "Message": "foobar (#506)",
+      "MessageHeadline": "foobar (#506)",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/19c79cbd5e3aa4d5961edfb2edf92a7cf155c15b",
       "Committer": {
        "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
        "Email": "noreply@github.com",
        "Name": "GitHub"
       },
-      "CommittedDate": "2023-02-07T08:48:41Z",
+      "CommittedDate": "2023-06-23T19:44:51Z",
       "PushedDate": "0001-01-01T00:00:00Z"
      },
-     "CreatedAt": "2023-02-07T08:48:41Z"
+     "CreatedAt": "2023-06-23T19:44:52Z"
     }
    },
    {
     "Type": "ClosedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
-      "Login": "sourcegraph-vcr",
-      "URL": "https://github.com/sourcegraph-vcr"
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
      },
-     "CreatedAt": "2023-02-07T08:48:42Z",
-     "URL": "https://github.com/sourcegraph/automation-testing/pull/488#event-8455515020"
+     "CreatedAt": "2023-06-23T19:44:52Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/506#event-9621587169"
     }
    }
   ],
@@ -105,11 +106,11 @@
    "Nodes": [
     {
      "Commit": {
-      "OID": "413b8a40386bd4fdc86871bb59963f79810e9ca3",
+      "OID": "7c232f7ec9b8e717ff297e33f2ab095a7e902085",
       "CheckSuites": {
        "Nodes": [
         {
-         "ID": "CS_kwDODS5xec8AAAAChRt_rg",
+         "ID": "CS_kwDODS5xec8AAAADNrcULQ",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -118,7 +119,7 @@
          }
         },
         {
-         "ID": "CS_kwDODS5xec8AAAAChRt_xQ",
+         "ID": "CS_kwDODS5xec8AAAADNrcURA",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -127,7 +128,7 @@
          }
         },
         {
-         "ID": "CS_kwDODS5xec8AAAAChRt_2g",
+         "ID": "CS_kwDODS5xec8AAAADNrcUXg",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -136,7 +137,7 @@
          }
         },
         {
-         "ID": "CS_kwDODS5xec8AAAAChRt_-Q",
+         "ID": "CS_kwDODS5xec8AAAADNrcUcw",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -145,7 +146,7 @@
          }
         },
         {
-         "ID": "CS_kwDODS5xec8AAAAChRuAHQ",
+         "ID": "CS_kwDODS5xec8AAAADNrcUkg",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -159,12 +160,12 @@
        "State": "",
        "Contexts": null
       },
-      "CommittedDate": "2023-02-07T08:43:12Z"
+      "CommittedDate": "2023-06-22T21:05:25Z"
      }
     }
    ]
   },
   "IsDraft": false,
-  "CreatedAt": "2023-02-07T08:43:51Z",
-  "UpdatedAt": "2023-02-07T08:48:42Z"
+  "CreatedAt": "2023-06-23T19:24:56Z",
+  "UpdatedAt": "2023-06-23T19:44:52Z"
  }

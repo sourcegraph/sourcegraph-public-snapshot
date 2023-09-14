@@ -1,8 +1,8 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, DecoratorFn, Story } from '@storybook/react'
 import classNames from 'classnames'
 
 import { WebStory } from '../../../../components/WebStory'
-import { HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import type { HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { hiddenChangesetApplyPreviewStories } from './storyData'

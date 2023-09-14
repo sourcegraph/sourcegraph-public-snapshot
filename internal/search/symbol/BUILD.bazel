@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "symbol",
@@ -25,15 +26,22 @@ go_library(
 
 go_test(
     name = "symbol_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "symbol_test.go",
     ],
     embed = [":symbol"],
     deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz/subrepoperms",
+        "//internal/conf",
         "//internal/search",
+        "//internal/search/result",
         "//internal/types",
         "//lib/errors",
+        "//schema",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
         "@com_github_stretchr_testify//assert",

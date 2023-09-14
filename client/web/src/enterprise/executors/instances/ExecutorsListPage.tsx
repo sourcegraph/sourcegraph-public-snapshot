@@ -7,11 +7,11 @@ import { Container, Link, PageHeader, Icon, H3, Text } from '@sourcegraph/wildca
 
 import {
     FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
+    type FilteredConnectionFilter,
+    type FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { ExecutorFields } from '../../../graphql-operations'
+import type { ExecutorFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { ExecutorNode } from './ExecutorNode'
@@ -78,7 +78,7 @@ export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({ queryExecu
                         running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
-                    <Link to="/help/admin/deploy_executors" rel="noopener">
+                    <Link to="/help/admin/executors/deploy_executors" rel="noopener">
                         set them up
                     </Link>
                     .

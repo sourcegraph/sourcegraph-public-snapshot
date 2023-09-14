@@ -1,0 +1,10 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"main","path":"go-diff.go","language":"go","line":1,"kind":"package","scope":null}
+{"_type":"tag","name":"main","path":"go-diff.go","language":"go","line":22,"kind":"function","scope":"main"}
+{"_type":"tag","name":"fileIdx","path":"go-diff.go","language":"go","line":19,"kind":"variable","scope":"main"}
+{"_type":"tag","name":"diffPath","path":"go-diff.go","language":"go","line":18,"kind":"variable","scope":"main"}
+{"_type":"tag","name":"stdin","path":"go-diff.go","language":"go","line":15,"kind":"constant","scope":"main"}
+

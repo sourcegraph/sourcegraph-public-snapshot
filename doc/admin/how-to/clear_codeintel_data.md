@@ -10,16 +10,18 @@ If you are clearing **all** code intelligence data, then you will need to clear 
 
 ```sql
 BEGIN;
-TRUNCATE lsif_uploads;
-TRUNCATE lsif_uploads_audit_logs;
-TRUNCATE lsif_uploads_reference_counts;
-TRUNCATE codeintel_commit_dates;
-TRUNCATE lsif_packages;
-TRUNCATE lsif_references;
-TRUNCATE lsif_nearest_uploads;
-TRUNCATE lsif_nearest_uploads_links;
-TRUNCATE lsif_uploads_visible_at_tip;
-TRUNCATE lsif_dirty_repositories;
+TRUNCATE 
+  lsif_uploads,
+  lsif_uploads_audit_logs,
+  lsif_uploads_reference_counts,
+  codeintel_commit_dates,
+  lsif_packages,
+  lsif_references,
+  lsif_nearest_uploads,
+  lsif_nearest_uploads_links,
+  lsif_uploads_visible_at_tip,
+  lsif_dirty_repositories
+  CASCADE;
 COMMIT;
 ```
 
@@ -35,17 +37,19 @@ This command can also be run after a completed [migration from LSIF to SCIP](lsi
 
 ```sql
 BEGIN;
-TRUNCATE lsif_data_metadata;
-TRUNCATE lsif_data_documents;
-TRUNCATE lsif_data_documents_schema_versions;
-TRUNCATE lsif_data_result_chunks;
-TRUNCATE lsif_data_definitions;
-TRUNCATE lsif_data_definitions_schema_versions;
-TRUNCATE lsif_data_references;
-TRUNCATE lsif_data_references_schema_versions;
-TRUNCATE lsif_data_implementations;
-TRUNCATE lsif_data_implementations_schema_versions;
-TRUNCATE codeintel_last_reconcile;
+TRUNCATE 
+  lsif_data_metadata,
+  lsif_data_documents,
+  lsif_data_documents_schema_versions,
+  lsif_data_result_chunks,
+  lsif_data_definitions,
+  lsif_data_definitions_schema_versions,
+  lsif_data_references,
+  lsif_data_references_schema_versions,
+  lsif_data_implementations,
+  lsif_data_implementations_schema_versions,
+  codeintel_last_reconcile
+  CASCADE;
 COMMIT;
 ```
 
@@ -55,15 +59,17 @@ Truncate the following tables to clear all SCIP-encoded information from the dat
 
 ```sql
 BEGIN;
-TRUNCATE codeintel_scip_metadata;
-TRUNCATE codeintel_scip_documents;
-TRUNCATE codeintel_scip_documents_schema_versions;
-TRUNCATE codeintel_scip_document_lookup;
-TRUNCATE codeintel_scip_document_lookup_schema_versions;
-TRUNCATE codeintel_scip_documents_dereference_logs;
-TRUNCATE codeintel_scip_symbols;
-TRUNCATE codeintel_scip_symbols_schema_versions;
-TRUNCATE codeintel_scip_symbol_names;
-TRUNCATE codeintel_last_reconcile;
+TRUNCATE 
+  codeintel_scip_metadata,
+  codeintel_scip_documents,
+  codeintel_scip_documents_schema_versions,
+  codeintel_scip_document_lookup,
+  codeintel_scip_document_lookup_schema_versions,
+  codeintel_scip_documents_dereference_logs,
+  codeintel_scip_symbols,
+  codeintel_scip_symbols_schema_versions,
+  codeintel_scip_symbol_names,
+  codeintel_last_reconcile
+  CASCADE;
 COMMIT;
 ```

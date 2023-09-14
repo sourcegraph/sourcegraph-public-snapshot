@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from '@storybook/addons'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
@@ -9,12 +9,12 @@ import {
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
-    BatchChangeFields,
+    type BatchChangeFields,
     BatchSpecState,
     BatchChangeState,
     BatchSpecSource,
 } from '../../../graphql-operations'
-import {
+import type {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     fetchBatchChangeByNamespace,
@@ -51,6 +51,12 @@ const batchChangeDefaults: BatchChangeFields = {
         total: 29,
         archived: 18,
         unpublished: 4,
+        isCompleted: false,
+        percentComplete: 30,
+        failed: 0,
+        retrying: 0,
+        scheduled: 0,
+        processing: 0,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {
@@ -202,6 +208,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                     },
                     forkTarget: null,
                 },
+                commitVerification: null,
             },
             {
                 __typename: 'ExternalChangeset',
@@ -240,6 +247,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                     },
                     forkTarget: null,
                 },
+                commitVerification: null,
             },
         ],
     })

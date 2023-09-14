@@ -29,7 +29,7 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 		return nil
 	}
 
-	firstSemverString, ok, err := upgradestore.New(db).GetFirstServiceVersion(ctx, "frontend")
+	firstSemverString, ok, err := upgradestore.New(db).GetFirstServiceVersion(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve first instance version")
 	}

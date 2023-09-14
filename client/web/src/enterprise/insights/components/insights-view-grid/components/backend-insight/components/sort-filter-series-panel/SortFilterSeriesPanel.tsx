@@ -1,13 +1,17 @@
-import { ButtonHTMLAttributes, ChangeEventHandler, FC, FocusEventHandler, PropsWithChildren } from 'react'
+import type { ButtonHTMLAttributes, ChangeEventHandler, FC, FocusEventHandler, PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
-import { SeriesSortOptionsInput, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
+import {
+    type SeriesSortOptionsInput,
+    SeriesSortDirection,
+    SeriesSortMode,
+} from '../../../../../../../../graphql-operations'
 import { MAX_NUMBER_OF_SAMPLES, MAX_NUMBER_OF_SERIES } from '../../../../../../constants'
-import { InsightSeriesDisplayOptions } from '../../../../../../core/types/insight/common'
-import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
+import type { InsightSeriesDisplayOptions } from '../../../../../../core/types/insight/common'
+import type { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
 
 import styles from './SortFilterSeriesPanel.module.scss'
 

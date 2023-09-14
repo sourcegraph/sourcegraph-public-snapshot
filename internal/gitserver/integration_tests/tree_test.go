@@ -11,10 +11,17 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/tj/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepository_FileSystem(t *testing.T) {
@@ -55,7 +62,8 @@ func TestRepository_FileSystem(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -81,7 +89,8 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
-		client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, GitserverAddresses)
+		client := gitserver.NewTestClient(http.DefaultClient, source)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
@@ -234,7 +243,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	gitCommands := []string{
 		`touch ⊗.txt '".txt' \\.txt`,
 		`git add ⊗.txt '".txt' \\.txt`,
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 	tests := map[string]struct {
 		repo api.RepoName
@@ -247,7 +256,8 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -296,7 +306,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	const submodCommit = "94aa9078934ce2776ccbb589569eca5ef575f12e"
 
 	gitCommands := []string{
-		"git submodule add " + filepath.ToSlash(submodDir) + " submod",
+		"git -c protocol.file.allow=always submodule add " + filepath.ToSlash(submodDir) + " submod",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m 'add submodule' --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
@@ -307,7 +317,8 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		},
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -363,4 +374,56 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func TestReadDir_SubRepoFiltering(t *testing.T) {
+	InitGitserver()
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{
+		UID: 1,
+	})
+	gitCommands := []string{
+		"touch file1",
+		"git add file1",
+		"git commit -m commit1",
+		"mkdir app",
+		"touch app/file2",
+		"git add app",
+		"git commit -m commit2",
+	}
+	repo := MakeGitRepository(t, gitCommands...)
+	commitID := api.CommitID("b1c725720de2bbd0518731b4a61959797ff345f3")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	defer conf.Mock(nil)
+	srpGetter := dbmocks.NewMockSubRepoPermsStore()
+	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
+		repo: {
+			Paths: []string{"/**", "-/app/**"},
+		},
+	}
+	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
+	checker, err := srp.NewSubRepoPermsClient(srpGetter)
+	if err != nil {
+		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
+	}
+
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
+	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Because we have a wildcard matcher we still allow directory visibility
+	assert.Len(t, files, 1)
+	assert.Equal(t, "file1", files[0].Name())
+	assert.False(t, files[0].IsDir())
 }

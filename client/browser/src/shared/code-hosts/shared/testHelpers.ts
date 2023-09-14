@@ -1,8 +1,8 @@
-import { Observable, of, throwError } from 'rxjs'
+import { type Observable, of, throwError } from 'rxjs'
 
-import { GraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
-import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { GraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+import type { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 export interface GraphQLResponseMap {
     [requestName: string]: (

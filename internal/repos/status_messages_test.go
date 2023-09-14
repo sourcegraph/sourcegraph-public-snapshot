@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -73,6 +74,11 @@ func TestStatusMessages(t *testing.T) {
 				{
 					GitUpdatesDisabled: &GitUpdatesDisabled{
 						Message: "Repositories will not be cloned or updated.",
+					},
+				},
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
 					},
 				},
 			},
@@ -156,6 +162,18 @@ func TestStatusMessages(t *testing.T) {
 				},
 				{
 					Indexing: &IndexingProgress{Indexed: 1, NotIndexed: 5},
+				},
+			},
+		},
+		{
+			name:       "site-admin: no repos detected",
+			repos:      []*types.Repo{},
+			sourcerErr: nil,
+			res: []StatusMessage{
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
+					},
 				},
 			},
 		},
@@ -267,7 +285,7 @@ func TestStatusMessages(t *testing.T) {
 				if id == 0 {
 					continue
 				}
-				err := db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+				err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 					id: {
 						Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
 					},
@@ -298,7 +316,7 @@ func TestStatusMessages(t *testing.T) {
 				Now:     clock.Now,
 			}
 
-			mockDB := database.NewMockDBFrom(db)
+			mockDB := dbmocks.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(extSvc, nil))
 				syncer.Sourcer = sourcer
@@ -311,15 +329,24 @@ func TestStatusMessages(t *testing.T) {
 				// returned will be stored in the external_service_sync_jobs table, so we fake
 				// that here.
 				if err != nil {
-					externalServices := database.NewMockExternalServiceStore()
+					externalServices := dbmocks.NewMockExternalServiceStore()
 					externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
-						map[int64]string{
-							extSvc.ID: err.Error(),
+						[]*database.SyncError{
+							{ServiceID: extSvc.ID, Message: err.Error()},
 						},
 						nil,
 					)
 					mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 				}
+			}
+
+			if len(tc.repos) < 1 && tc.sourcerErr == nil {
+				externalServices := dbmocks.NewMockExternalServiceStore()
+				externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
+					[]*database.SyncError{},
+					nil,
+				)
+				mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			}
 
 			if tc.err == "" {

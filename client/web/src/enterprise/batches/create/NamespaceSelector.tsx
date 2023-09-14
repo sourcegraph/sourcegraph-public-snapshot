@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Select } from '@sourcegraph/wildcard'
 
 type PartialNamespace =

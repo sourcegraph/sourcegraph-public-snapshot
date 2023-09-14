@@ -1,8 +1,8 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExecutorSecretFields, ExecutorSecretScope } from '../../../graphql-operations'
+import { type ExecutorSecretFields, ExecutorSecretScope } from '../../../graphql-operations'
 
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 

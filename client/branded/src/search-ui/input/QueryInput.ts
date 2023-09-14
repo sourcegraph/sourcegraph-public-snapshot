@@ -1,12 +1,12 @@
-import {
+import type {
     CaseSensitivityProps,
     QueryState,
     SearchContextProps,
     SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
-import { IEditor } from './LazyQueryInput'
+import type { IEditor } from './LazyQueryInput'
 
 /**
  * Props that the Monaco and CodeMirror implementation have in common.
@@ -25,8 +25,6 @@ export interface QueryInputProps
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
-    // Whether globbing is enabled for filters.
-    globbing: boolean
 
     // Whether comments are parsed and highlighted
     interpretComments?: boolean

@@ -114,6 +114,15 @@ func NoAlertsOption(interpretation string) ObservableOption {
 	}
 }
 
+// MultiInstanceOption creates an ObservableOption that opts-in this panel to
+// Sourcegraph Cloud's centralized observability multi-instance dashboard.
+func MultiInstanceOption() ObservableOption {
+	return func(observable Observable) Observable {
+		observable.MultiInstance = true
+		return observable
+	}
+}
+
 // CadvisorContainerNameMatcher generates Prometheus matchers that capture metrics that match the
 // given container name while excluding some irrelevant series.
 func CadvisorContainerNameMatcher(containerName string) string {

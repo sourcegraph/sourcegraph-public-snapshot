@@ -1,6 +1,6 @@
-import * as sourcegraph from 'sourcegraph'
+import type * as sourcegraph from 'sourcegraph'
 
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import type { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 
 export class ExtensionWorkspaceRoot implements sourcegraph.WorkspaceRoot {
     public readonly uri: URL

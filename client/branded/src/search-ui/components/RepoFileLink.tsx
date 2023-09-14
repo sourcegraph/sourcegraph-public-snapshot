@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { useEffect, useRef } from 'react'
 
-import { appendSubtreeQueryParameter, highlightNode } from '@sourcegraph/common'
+import { highlightNode } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
-import { Range } from '@sourcegraph/shared/src/search/stream'
+import type { Range } from '@sourcegraph/shared/src/search/stream'
 import { Link } from '@sourcegraph/wildcard'
 
 interface Props {
@@ -39,11 +39,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
             <span>
                 <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link>
                 <span aria-hidden={true}> ›</span>{' '}
-                <Link
-                    to={appendSubtreeQueryParameter(fileURL)}
-                    ref={containerElement}
-                    data-selectable-search-result={isKeyboardSelectable}
-                >
+                <Link to={fileURL} ref={containerElement} data-selectable-search-result={isKeyboardSelectable}>
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>
                 </Link>

@@ -6,9 +6,11 @@
 </script>
 
 <div class="root">
-    {#if svgIconPath}
+    {#if svgIconPath || $$slots.icon}
         <div class="icon-wrapper">
-            <Icon svgPath={svgIconPath} aria-hidden="true" inline --icon-inline-size="4rem" />
+            <slot name="icon">
+                <Icon svgPath={svgIconPath} aria-hidden="true" inline --icon-inline-size="4rem" />
+            </slot>
         </div>
     {/if}
     <h1>{title}</h1>
@@ -45,5 +47,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
+
+        :global(svg) {
+            width: 4rem;
+            height: 4rem;
+        }
     }
 </style>

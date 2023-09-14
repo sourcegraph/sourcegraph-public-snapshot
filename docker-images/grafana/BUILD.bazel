@@ -1,0 +1,55 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+filegroup(
+    name = "config_files",
+    srcs = glob(["config/*"]) + ["entry.sh"],
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        ":config_files",
+        "//docker-images/grafana/config",
+    ],
+    remap_paths = {
+        "docker-images/grafana/config": "/sg_config_grafana",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_grafana_base",
+    entrypoint = ["/entry.sh"],
+    tars = [
+        ":config_tar",
+        "//monitoring:generate_grafana_config_tar",
+    ],
+    user = "grafana",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["grafana:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("grafana"),
+)

@@ -11,8 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -49,11 +50,11 @@ func TestLogMiddleware(t *testing.T) {
 
 	t.Run("logging disabled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-			WebhookLogging: &schema.WebhookLogging{Enabled: boolPtr(false)},
+			WebhookLogging: &schema.WebhookLogging{Enabled: pointers.Ptr(false)},
 		}})
 		defer conf.Mock(nil)
 
-		store := database.NewMockWebhookLogStore()
+		store := dbmocks.NewMockWebhookLogStore()
 
 		handler := http.HandlerFunc(basicHandler)
 		mw := NewLogMiddleware(store)
@@ -73,7 +74,7 @@ func TestLogMiddleware(t *testing.T) {
 	})
 
 	t.Run("logging enabled", func(t *testing.T) {
-		store := database.NewMockWebhookLogStore()
+		store := dbmocks.NewMockWebhookLogStore()
 		store.CreateFunc.SetDefaultHook(func(c context.Context, log *types.WebhookLog) error {
 			logRequest, err := log.Request.Decrypt(c)
 			if err != nil {
@@ -141,7 +142,7 @@ func TestLoggingEnabled(t *testing.T) {
 					},
 				},
 				WebhookLogging: &schema.WebhookLogging{
-					Enabled: boolPtr(false),
+					Enabled: pointers.Ptr(false),
 				},
 			}},
 			want: false,
@@ -156,7 +157,7 @@ func TestLoggingEnabled(t *testing.T) {
 					},
 				},
 				WebhookLogging: &schema.WebhookLogging{
-					Enabled: boolPtr(true),
+					Enabled: pointers.Ptr(true),
 				},
 			}},
 			want: true,
@@ -164,7 +165,7 @@ func TestLoggingEnabled(t *testing.T) {
 		"no encryption; explicit webhook false": {
 			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				WebhookLogging: &schema.WebhookLogging{
-					Enabled: boolPtr(false),
+					Enabled: pointers.Ptr(false),
 				},
 			}},
 			want: false,
@@ -172,7 +173,7 @@ func TestLoggingEnabled(t *testing.T) {
 		"no encryption; explicit webhook true": {
 			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				WebhookLogging: &schema.WebhookLogging{
-					Enabled: boolPtr(true),
+					Enabled: pointers.Ptr(true),
 				},
 			}},
 			want: true,
@@ -183,5 +184,3 @@ func TestLoggingEnabled(t *testing.T) {
 		})
 	}
 }
-
-func boolPtr(v bool) *bool { return &v }

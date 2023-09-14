@@ -149,7 +149,7 @@ FROM (
 	SELECT
 		DISTINCT user_id
 	FROM event_logs
-	WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE)
+	WHERE name IN (%s) AND anonymous_user_id != 'backend' AND timestamp >= date_trunc('month', CURRENT_DATE)
 		UNION
 	SELECT
 		DISTINCT user_id
@@ -190,7 +190,7 @@ FROM (
 SELECT
 	COUNT(DISTINCT user_id)
 FROM event_logs
-WHERE name IN (%s) AND timestamp >= date_trunc('month', CURRENT_DATE)
+WHERE name IN (%s) AND anonymous_user_id != 'backend' AND timestamp >= date_trunc('month', CURRENT_DATE)
 `,
 			sqlf.Join(events, ","),
 		)

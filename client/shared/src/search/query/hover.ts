@@ -1,22 +1,22 @@
-import * as Monaco from 'monaco-editor'
+import type * as Monaco from 'monaco-editor'
 
 import {
     decorate,
-    DecoratedToken,
-    MetaRegexp,
+    type DecoratedToken,
+    type MetaRegexp,
     MetaRegexpKind,
-    MetaRevision,
+    type MetaRevision,
     MetaGitRevision,
     MetaSourcegraphRevision,
-    MetaStructural,
+    type MetaStructural,
     MetaStructuralKind,
-    MetaSelector,
+    type MetaSelector,
     MetaSelectorKind,
-    MetaPredicate,
+    type MetaPredicate,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
 import { toMonacoRange } from './monaco'
-import { Token } from './token'
+import type { Token } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {
@@ -169,17 +169,21 @@ const toPredicateHover = (token: MetaPredicate): string => {
         case 'contains.content':
         case 'has.content':
             return `**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`${parameters}\`.`
+        case 'has.topic':
+            return `**Built-in predicate**. Search only inside repositories that have the github topic \`${parameters}\`.`
         case 'contains.commit.after':
         case 'has.commit.after':
             return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
         case 'has.description':
             return '**Built-in predicate**. Search only inside repositories that have a **description** matching the given regular expression'
+        case 'has.meta':
+            return '**Built-in predicate**. Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata'
         case 'has.tag':
-            return '**Built-in predicate**. Search only inside repositories that are tagged with the given tag'
+            return '**Built-in predicate**. DEPRECATED: Use "has.meta({tag}:)" instead. Search only inside repositories that are tagged with the given tag'
         case 'has':
-            return '**Built-in predicate**. Search only inside repositories that are associated with the given key:value pair'
+            return '**Built-in predicate**. DEPRECATED: Use "has.meta({key}:{value})" instead. Search only inside repositories that are associated with the given key:value pair'
         case 'has.key':
-            return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
+            return '**Built-in predicate**. DEPRECATED: Use "has.meta({key})" instead. Search only inside repositories that are associated with the given key, regardless of its value'
         case 'has.owner':
             return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
     }

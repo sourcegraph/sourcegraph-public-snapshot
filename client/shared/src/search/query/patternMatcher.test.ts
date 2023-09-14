@@ -4,7 +4,7 @@
 
 /* eslint-disable id-length */
 
-import { every, matchesValue, some, oneOf, allOf, not, PatternOfNoInfer } from './patternMatcher'
+import { every, matchesValue, some, oneOf, allOf, not, type PatternOfNoInfer } from './patternMatcher'
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -110,8 +110,6 @@ describe('matchValue', () => {
 
             expect(TestEnum.A as TestEnum).toBeMatchedBy(TestEnum.A)
             expect(TestEnum.A as TestEnum).not.toBeMatchedBy(TestEnum.B)
-            // Shouldn't this throw a type error?
-            expect(TestEnum.A as TestEnum).not.toBeMatchedBy(10)
         })
 
         it('allows using a property in a pattern that does not exist in all union members', () => {

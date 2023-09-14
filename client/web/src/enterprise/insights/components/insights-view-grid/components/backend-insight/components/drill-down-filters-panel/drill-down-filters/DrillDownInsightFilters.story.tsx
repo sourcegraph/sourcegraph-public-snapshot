@@ -1,17 +1,17 @@
 import { useState } from 'react'
 
-import { MockedResponse } from '@apollo/client/testing/core/mocking/mockLink'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing/core/mocking/mockLink'
+import type { Meta, Story } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
 import {
-    GetSearchContextsResult,
+    type GetSearchContextsResult,
     SeriesSortDirection,
     SeriesSortMode,
 } from '../../../../../../../../../graphql-operations'
-import { InsightFilters } from '../../../../../../../core'
+import type { InsightFilters } from '../../../../../../../core'
 import { SEARCH_CONTEXT_GQL } from '../search-context/DrillDownSearchContextFilter'
 
 import { DrillDownInsightFilters, FilterSectionVisualMode } from './DrillDownInsightFilters'

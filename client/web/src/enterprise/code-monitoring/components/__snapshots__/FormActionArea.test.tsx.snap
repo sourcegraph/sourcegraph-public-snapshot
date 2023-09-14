@@ -158,6 +158,92 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       </button>
     </div>
   </div>
+  <button
+    aria-disabled="false"
+    class="btn card test-action-button-slack-webhook cardButton"
+    data-testid="form-action-toggle-slack-webhook"
+    type="button"
+  >
+    <div
+      class="d-flex flex-wrap justify-content-between align-items-center w-100"
+    >
+      <div>
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          Edit action: 
+        </span>
+        <div
+          class="font-weight-bold cardLink"
+        >
+          <div>
+            Send Slack message to channel 
+            <span
+              style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+            >
+              This feature is currently in beta
+            </span>
+            <span
+              aria-hidden="true"
+              class="badge info productStatusBadge ml-1 mb-1"
+              status="beta"
+            >
+              beta
+            </span>
+             
+          </div>
+        </div>
+        <span
+          class="text-muted font-weight-normal"
+        >
+          Post to a specified Slack channel. Requires webhook configuration.
+        </span>
+      </div>
+    </div>
+  </button>
+  <button
+    aria-disabled="false"
+    class="btn card test-action-button-webhook cardButton"
+    data-testid="form-action-toggle-webhook"
+    type="button"
+  >
+    <div
+      class="d-flex flex-wrap justify-content-between align-items-center w-100"
+    >
+      <div>
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          Edit action: 
+        </span>
+        <div
+          class="font-weight-bold cardLink"
+        >
+          <div>
+            Call a webhook 
+            <span
+              style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+            >
+              This feature is currently in beta
+            </span>
+            <span
+              aria-hidden="true"
+              class="badge info productStatusBadge ml-1 mb-1"
+              status="beta"
+            >
+              beta
+            </span>
+             
+          </div>
+        </div>
+        <span
+          class="text-muted font-weight-normal"
+        >
+          Calls the specified URL with a JSON payload.
+        </span>
+      </div>
+    </div>
+  </button>
   <small
     class="text-muted"
   >

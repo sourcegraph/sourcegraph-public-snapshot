@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Button, Container, H3, Text } from '@sourcegraph/wildcard'
 
-import { OrgAreaRouteContext } from '../area/OrgArea'
+import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { DeleteOrgModal } from './DeleteOrgModal'
 

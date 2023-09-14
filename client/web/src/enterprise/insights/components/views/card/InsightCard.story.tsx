@@ -1,5 +1,5 @@
 import { mdiFilterOutline, mdiDotsVertical } from '@mdi/js'
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import {
@@ -13,7 +13,7 @@ import {
     LegendItem,
     LegendList,
     ParentSize,
-    Series,
+    type Series,
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 

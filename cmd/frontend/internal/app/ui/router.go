@@ -14,8 +14,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -37,7 +36,7 @@ const (
 	routeSearchBadge             = "search-badge"
 	routeRepo                    = "repo"
 	routeRepoSettings            = "repo-settings"
-	routeRepoCodeIntelligence    = "repo-code-intelligence"
+	routeRepoCodeGraph           = "repo-code-intelligence"
 	routeRepoCommit              = "repo-commit"
 	routeRepoBranches            = "repo-branches"
 	routeRepoBatchChanges        = "repo-batch-changes"
@@ -45,6 +44,7 @@ const (
 	routeRepoTags                = "repo-tags"
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
+	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
@@ -78,7 +78,14 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
+	routeCodySearch              = "cody-search"
+	routeOwn                     = "own"
+	routeAppComingSoon           = "app-coming-soon"
+	routeAppAuthCallback         = "app-auth-callback"
 	routeCody                    = "cody"
+	routeCodyChat                = "cody-chat"
+	routeGetCody                 = "get-cody"
+	routePostSignUp              = "post-sign-up"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -143,6 +150,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
+	r.Path("/search/cody").Methods("GET").Name(routeCodySearch)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
@@ -173,8 +181,14 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
-	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
+	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
+	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
+	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
+	r.Path("/get-cody").Methods("GET").Name(routeGetCody)
+	r.Path("/post-sign-up").Methods("GET").Name(routePostSignUp)
+	r.Path("/cody").Methods("GET").Name(routeCody)
+	r.Path("/cody/{chatID}").Methods("GET").Name(routeCodyChat)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team
@@ -210,13 +224,14 @@ func newRouter() *mux.Router {
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
-	repo.PathPrefix("/code-intelligence").Methods("GET").Name(routeRepoCodeIntelligence)
+	repo.PathPrefix("/code-graph").Methods("GET").Name(routeRepoCodeGraph)
 	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
 	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
+	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -264,7 +279,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
 	router.Get(routeAPIConsole).Handler(brandedIndex("API console"))
 	router.Get(routeRepoSettings).Handler(brandedNoIndex("Repository settings"))
-	router.Get(routeRepoCodeIntelligence).Handler(brandedNoIndex("Code intelligence"))
+	router.Get(routeRepoCodeGraph).Handler(brandedNoIndex("Code graph"))
 	router.Get(routeRepoCommit).Handler(brandedNoIndex("Commit"))
 	router.Get(routeRepoBranches).Handler(brandedNoIndex("Branches"))
 	router.Get(routeRepoBatchChanges).Handler(brandedIndex("Batch Changes"))
@@ -272,6 +287,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
 	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
 	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
+	router.Get(routeRepoOwn).Handler(brandedNoIndex("Ownership"))
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
@@ -284,8 +300,15 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
-	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeCodySearch).Handler(brandedNoIndex("Search (Cody)"))
+	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
+	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
+	router.Get(routeAppAuthCallback).Handler(brandedNoIndex("Auth callback"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
+	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeCodyChat).Handler(brandedNoIndex("Cody"))
+	router.Get(routeGetCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routePostSignUp).Handler(brandedNoIndex("Cody"))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
 	// Any changes to the embedding route could have security implications. Please consult the security team
@@ -485,10 +508,9 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 
 	// Determine trace URL and log the error.
 	var traceURL string
-	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("err", err)
-		span.SetTag("error-id", errorID)
+	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
+		tr.SetError(err)
+		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
 	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)

@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { SignatureFields } from '../../graphql-operations'
+import type { SignatureFields } from '../../graphql-operations'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 

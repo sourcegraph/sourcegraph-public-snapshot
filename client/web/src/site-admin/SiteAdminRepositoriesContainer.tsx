@@ -1,35 +1,37 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher, useDebounce } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     buildFilterArgs,
     FilterControl,
-    FilteredConnectionFilterValue,
-    FilteredConnectionFilter,
+    type FilteredConnectionFilter,
+    type FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
-    RepositoriesResult,
-    RepositoriesVariables,
+    type ExternalServiceIDsAndNamesResult,
+    type ExternalServiceIDsAndNamesVariables,
+    type RepositoriesResult,
+    type RepositoriesVariables,
     RepositoryOrderBy,
-    RepositoryStatsResult,
-    ExternalServiceIDsAndNamesVariables,
-    ExternalServiceIDsAndNamesResult,
-    RepositoryStatsVariables,
-    SiteAdminRepositoryFields,
+    type SiteAdminRepositoryFields,
+    type StatusAndRepoStatsResult,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
-import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { ValueLegendList, type ValueLegendListProps } from './analytics/components/ValueLegendList'
+import { REPOSITORIES_QUERY, REPO_PAGE_POLL_INTERVAL, STATUS_AND_REPO_STATS } from './backend'
 import { RepositoryNode } from './RepositoryNode'
+
+import styles from './SiteAdminRepositoriesContainer.module.scss'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
@@ -79,6 +81,12 @@ const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
         value: 'corrupted',
         tooltip: 'Show only repositories which are corrupt',
         args: { corrupted: true },
+    },
+    Embedded: {
+        label: 'Embedded',
+        value: 'embedded',
+        tooltip: 'Show only repositories which are embedded',
+        args: { notEmbedded: false },
     },
 }
 
@@ -134,24 +142,27 @@ const FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
+export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPoll?: boolean }> = ({
+    alwaysPoll = false,
+}) => {
     const {
         data,
         loading: repoStatsLoading,
         error: repoStatsError,
         startPolling,
         stopPolling,
-    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+    } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
     const navigate = useNavigate()
+    const [displayCloneProgress] = useFeatureFlag('clone-progress-logging')
 
     useEffect(() => {
-        if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
+        if (alwaysPoll || data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
             startPolling(REPO_PAGE_POLL_INTERVAL)
         } else {
             stopPolling()
         }
-    }, [data, startPolling, stopPolling])
+    }, [alwaysPoll, data, startPolling, stopPolling])
 
     const {
         loading: extSvcLoading,
@@ -167,26 +178,25 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             return FILTERS
         }
 
-        const values = [
-            {
-                label: 'All',
-                value: 'all',
-                tooltip: 'Show all repositories',
-                args: {},
-            },
-        ]
-
-        for (const extSvc of extSvcs.externalServices.nodes) {
-            values.push({
-                label: extSvc.displayName,
-                value: extSvc.id,
-                tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
-                args: { externalService: extSvc.id },
-            })
-        }
-
         const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
         if (location.pathname !== PageRoutes.SetupWizard) {
+            const values = [
+                {
+                    label: 'All',
+                    value: 'all',
+                    tooltip: 'Show all repositories',
+                    args: {},
+                },
+            ]
+
+            for (const extSvc of extSvcs.externalServices.nodes) {
+                values.push({
+                    label: extSvc.displayName,
+                    value: extSvc.id,
+                    tooltip: `Show all repositories discovered on ${extSvc.displayName}`,
+                    args: { externalService: extSvc.id },
+                })
+            }
             filtersWithExternalServices.push({
                 id: 'codeHost',
                 label: 'Code Host',
@@ -200,6 +210,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
         getFilterFromURL(new URLSearchParams(location.search), filters)
     )
+
+    useEffect(() => {
+        setFilterValues(getFilterFromURL(new URLSearchParams(location.search), filters))
+    }, [filters, location])
 
     const [searchQuery, setSearchQuery] = useState<string>(
         () => new URLSearchParams(location.search).get('query') || ''
@@ -241,12 +255,17 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             query: searchQuery,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
+            embedded: args.embedded ?? true,
+            notEmbedded: args.notEmbedded ?? true,
             failedFetch: args.failedFetch ?? false,
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
             externalService: args.externalService ?? null,
+            displayCloneProgress,
         } as RepositoriesVariables
-    }, [searchQuery, filterValues])
+    }, [searchQuery, filterValues, displayCloneProgress])
+
+    const debouncedVariables = useDebounce(variables, 300)
 
     const {
         connection,
@@ -256,17 +275,18 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         ...paginationProps
     } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
         query: REPOSITORIES_QUERY,
-        variables,
+        variables: debouncedVariables,
         getConnection: ({ data }) => data?.repositories || undefined,
         options: { pollInterval: 5000 },
     })
 
     useEffect(() => {
-        refetch(variables)
-    }, [refetch, variables])
+        refetch(debouncedVariables)
+    }, [refetch, debouncedVariables])
 
     const error = repoStatsError || extSvcError || reposError
     const loading = repoStatsLoading || extSvcLoading || reposLoading
+    const debouncedLoading = useDebounce(loading, 300)
 
     const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
         if (!data) {
@@ -282,10 +302,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             },
             {
                 value: data.repositoryStats.notCloned,
-                description: 'Not cloned',
+                description: 'Queued',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'The number of repositories that have not been cloned yet.',
+                tooltip: 'The number of repositories that are queued to be cloned.',
                 onClick: () =>
                     setFilterValues(values => {
                         const newValues = new Map(values)
@@ -296,7 +316,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             {
                 value: data.repositoryStats.cloning,
                 description: 'Cloning',
-                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
+                color: data.repositoryStats.cloning > 0 ? 'var(--primary)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
                 onClick: () =>
@@ -345,6 +365,19 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         return newValues
                     }),
             },
+            {
+                value: data.repositoryStats.embedded,
+                description: 'Embedded',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been embedded for Cody.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Embedded)
+                        return newValues
+                    }),
+            },
         ]
         if (data.repositoryStats.corrupted > 0) {
             items.push({
@@ -362,24 +395,18 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                     }),
             })
         }
-        if (loading && !error) {
-            items.splice(0, 1, {
-                value: <LoadingSpinner />,
-                description: 'Repositories',
-            })
-        }
         return items
-    }, [data, setFilterValues, loading, error])
+    }, [data, setFilterValues])
 
     return (
         <>
-            <Container className="py-3 mb-3">
+            <Container className="py-3 mb-1">
                 {error && !loading && <ErrorAlert error={error} />}
-                {legends && <ValueLegendList items={legends} />}
+                {legends && <ValueLegendList items={legends} className={styles.legend} />}
             </Container>
             {extSvcs && (
                 <Container>
-                    <div className="d-flex justify-content-center">
+                    <div className="d-flex flex-sm-row flex-column-reverse justify-content-center">
                         <FilterControl
                             filters={filters}
                             values={filterValues}
@@ -393,7 +420,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         />
                         <Input
                             type="search"
-                            className="flex-1 ml-5"
+                            className="flex-1 md-ml-5 mb-1"
                             placeholder="Search repositories..."
                             name="query"
                             value={searchQuery}
@@ -406,9 +433,14 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                             variant="regular"
                         />
                     </div>
+                    {debouncedLoading && !error && (
+                        <div className="d-flex justify-content-center align-items-center ">
+                            <LoadingSpinner />
+                        </div>
+                    )}
                     <ul className="list-group list-group-flush mt-4">
                         {(connection?.nodes || []).map(node => (
-                            <RepositoryNode key={node.id} node={node} />
+                            <RepositoryNode key={node.id} node={node} refetchAllRepos={refetch} />
                         ))}
                     </ul>
                     <PageSwitcher

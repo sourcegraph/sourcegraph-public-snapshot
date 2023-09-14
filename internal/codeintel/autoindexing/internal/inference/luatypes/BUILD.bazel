@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "luatypes",
+    srcs = [
+        "index_job.go",
+        "path_patterns.go",
+        "recognizers.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/luasandbox/util",
+        "//lib/codeintel/autoindex/config",
+        "//lib/errors",
+        "@com_github_yuin_gopher_lua//:gopher-lua",
+    ],
+)

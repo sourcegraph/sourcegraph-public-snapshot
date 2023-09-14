@@ -3,14 +3,14 @@ import React from 'react'
 import classNames from 'classnames'
 import { snakeCase } from 'lodash'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 
-import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../components/SourcegraphIconButton'
+import { SourcegraphIconButton, type SourcegraphIconButtonProps } from '../../components/SourcegraphIconButton'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'
 
-import { CodeHostContext } from './codeHost'
+import type { CodeHostContext } from './codeHost'
 import { SignInButton } from './SignInButton'
 
 import styles from './ViewOnSourcegraphButton.module.scss'

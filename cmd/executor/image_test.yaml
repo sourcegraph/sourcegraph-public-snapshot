@@ -1,0 +1,36 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "binary is runnable"
+    command: "/executor"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "docker is runnable"
+    command: "docker"
+  - name: "git is runnable"
+    command: "git"
+    args:
+      - version
+
+  - name: "src-cli binary is runnable"
+    command: "/usr/local/bin/src"
+    args:
+      - -v
+  - name: "batcheshelper binary is runnable"
+    command: "/usr/local/bin/batcheshelper"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+
+metadataTest:
+  envVars:
+    - key: EXECUTOR_USE_FIRECRACKER
+      value: false

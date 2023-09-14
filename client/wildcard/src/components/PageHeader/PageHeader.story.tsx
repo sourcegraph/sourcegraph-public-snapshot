@@ -1,5 +1,5 @@
 import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
@@ -62,7 +62,7 @@ BasicHeader.parameters = {
 
 export const ComplexHeader: Story = () => (
     <PageHeader
-        annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+        annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
         byline={
             <>
                 Created by <Link to="/page">user</Link> 3 months ago

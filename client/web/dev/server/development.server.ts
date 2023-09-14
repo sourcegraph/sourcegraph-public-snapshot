@@ -2,7 +2,7 @@ import compression from 'compression'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import { once } from 'lodash'
 import signale from 'signale'
-import createWebpackCompiler, { Configuration } from 'webpack'
+import createWebpackCompiler, { type Configuration } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'

@@ -3,13 +3,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     useObservable,
@@ -21,6 +21,8 @@ import {
     Icon,
     Tooltip,
     useKeyboard,
+    type ProductStatusType,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
@@ -42,6 +44,9 @@ export interface Panel {
 
     /** The title of the panel view. */
     title: string
+
+    /** Optional product status to show as a badge next to the panel title. */
+    productStatus?: ProductStatusType
 
     /** The content element to display when the tab is active. */
     element: React.ReactNode
@@ -137,7 +142,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 actions={
                     <div className="align-items-center d-flex">
                         <ul className="d-flex justify-content-end list-unstyled m-0 align-items-center">
-                            {activeTab && (
+                            {activeTab && activeTab.id === 'references' && (
                                 <MixPreciseAndSearchBasedReferencesToggle
                                     settingsCascade={props.settingsCascade}
                                     platformContext={props.platformContext}
@@ -157,10 +162,16 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                     </div>
                 }
             >
-                {panels.map(({ title, id, trackTabClick }, index) => (
+                {panels.map(({ title, id, trackTabClick, productStatus }, index) => (
                     <Tab key={id} index={index}>
                         <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
                             {title}
+                            {productStatus && (
+                                <>
+                                    {' '}
+                                    <ProductStatusBadge status={productStatus} />
+                                </>
+                            )}
                         </span>
                     </Tab>
                 ))}

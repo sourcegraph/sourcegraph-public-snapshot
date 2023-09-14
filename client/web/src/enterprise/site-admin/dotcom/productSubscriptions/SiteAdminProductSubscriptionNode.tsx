@@ -1,43 +1,12 @@
 import * as React from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
+import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
-
-export const siteAdminProductSubscriptionFragment = gql`
-    fragment SiteAdminProductSubscriptionFields on ProductSubscription {
-        id
-        name
-        account {
-            id
-            username
-            displayName
-            emails {
-                email
-                isPrimary
-            }
-        }
-        activeLicense {
-            id
-            info {
-                productNameWithBrand
-                tags
-                userCount
-                expiresAt
-            }
-            licenseKey
-            createdAt
-        }
-        createdAt
-        isArchived
-        urlForSiteAdmin
-    }
-`
 
 export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <thead>

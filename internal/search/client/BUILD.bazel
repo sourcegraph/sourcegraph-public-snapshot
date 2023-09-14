@@ -1,26 +1,31 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "client",
     srcs = [
         "client.go",
         "mocks_temp.go",
+        "telemetry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/client",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
         "//internal/endpoint",
         "//internal/featureflag",
         "//internal/gitserver",
+        "//internal/grpc/defaults",
         "//internal/search",
         "//internal/search/job",
         "//internal/search/job/jobutil",
         "//internal/search/query",
         "//internal/search/searchcontexts",
         "//internal/search/streaming",
+        "//internal/settings",
         "//internal/trace",
         "//lib/errors",
         "//schema",
@@ -29,17 +34,19 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "client_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     embed = [":client"],
     deps = [
         "//internal/actor",
         "//internal/conf",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/search/query",
         "//internal/types",
         "//lib/errors",

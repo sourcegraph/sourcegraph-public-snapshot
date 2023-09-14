@@ -1,8 +1,8 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { Observable, of } from 'rxjs'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import { type Observable, of } from 'rxjs'
 
 import { WebStory } from '../components/WebStory'
-import { OutOfBandMigrationFields } from '../graphql-operations'
+import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import { SiteAdminMigrationsPage } from './SiteAdminMigrationsPage'
 

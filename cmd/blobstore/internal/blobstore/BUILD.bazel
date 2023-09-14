@@ -1,9 +1,12 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "blobstore",
     srcs = [
         "blobstore.go",
+        "blobstore_posix.go",
+        "blobstore_windows.go",
         "multipart.go",
         "s3_routes.go",
         "s3_types.go",
@@ -22,7 +25,9 @@ go_library(
 
 go_test(
     name = "blobstore_test",
+    timeout = "short",
     srcs = ["blobstore_test.go"],
+    data = glob(["testdata/**"]),
     deps = [
         ":blobstore",
         "//internal/observation",

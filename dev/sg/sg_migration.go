@@ -8,17 +8,20 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver"
-	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
@@ -31,10 +34,15 @@ import (
 var (
 	migrateTargetDatabase     string
 	migrateTargetDatabaseFlag = &cli.StringFlag{
-		Name:        "db",
-		Usage:       "The target database `schema` to modify",
+		Name:        "schema",
+		Usage:       "The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
+		Aliases:     []string{"db"},
+		Action: func(ctx *cli.Context, val string) error {
+			migrateTargetDatabase = cliutil.TranslateSchemaNames(val, std.Out.Output)
+			return nil
+		},
 	}
 
 	squashInContainer     bool
@@ -108,9 +116,9 @@ var (
 	// at compile-time in sg.
 	outputFactory = func() *output.Output { return std.Out.Output }
 
-	schemaFactories = []cliutil.ExpectedSchemaFactory{
+	schemaFactories = []schemas.ExpectedSchemaFactory{
 		localGitExpectedSchemaFactory,
-		cliutil.GCSExpectedSchemaFactory,
+		schemas.GCSExpectedSchemaFactory,
 	}
 
 	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
@@ -119,7 +127,7 @@ var (
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, schemaFactories...)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, true, schemaFactories...)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
@@ -182,7 +190,7 @@ sg migration add --db codeintel 'add missing index'
 # Squash migrations for default database
 sg migration squash
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Subcommands: []*cli.Command{
 			addCommand,
 			revertCommand,
@@ -203,7 +211,7 @@ sg migration squash
 	}
 )
 
-func makeRunner(schemaNames []string) (cliutil.Runner, error) {
+func makeRunner(schemaNames []string) (*runner.Runner, error) {
 	filesystemSchemas, err := getFilesystemSchemas()
 	if err != nil {
 		return nil, err
@@ -212,7 +220,7 @@ func makeRunner(schemaNames []string) (cliutil.Runner, error) {
 	return makeRunnerWithSchemas(schemaNames, filesystemSchemas)
 }
 
-func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
@@ -227,18 +235,18 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cli
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(std.Out.Output, logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
 
-	return cliutil.NewShim(r), nil
+	return r, nil
 }
 
 // localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
 // (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
-var localGitExpectedSchemaFactory = cliutil.NewExpectedSchemaFactory(
+var localGitExpectedSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"git",
 	nil,
 	func(filename, version string) string {
@@ -477,4 +485,5 @@ func findTargetSquashCommit(migrationName string) (string, error) {
 
 var majorVersionChanges = map[int64]int64{
 	4: 44, // 4.0 equivalent to 3.44
+	5: 6,  // 5.0 equivalent to 4.6
 }

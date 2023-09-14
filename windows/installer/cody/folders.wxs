@@ -1,0 +1,25 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <?define RegistryKeyPath = "SOFTWARE\Sourcegraph" ?>
+
+        <Property Id="INSTALLDIR" Secure="yes">
+            <RegistrySearch Id="InstallPathRegistry"
+                            Type="raw"
+                            Root="HKLM"
+                            Key="$(var.RegistryKeyPath)"
+                            Name="InstallPath"/>
+        </Property>
+
+        <StandardDirectory Id="ProgramFiles6432Folder">
+            <Directory Id="SG" Name="!(bind.Property.Manufacturer)">
+                <Directory Id="INSTALLDIR" Name="!(bind.Property.ProductName)" />
+            </Directory>
+        </StandardDirectory>
+
+        <StandardDirectory Id="ProgramMenuFolder">
+            <Directory Id="ApplicationProgramsFolder" Name="Sourcegraph"/>
+        </StandardDirectory>
+
+        <StandardDirectory Id="DesktopFolder" />
+    </Fragment>
+</Wix>

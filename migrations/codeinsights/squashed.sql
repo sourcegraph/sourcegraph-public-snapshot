@@ -47,20 +47,6 @@ CREATE TABLE archived_series_points (
     CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
 );
 
-CREATE TABLE commit_index (
-    committed_at timestamp with time zone NOT NULL,
-    repo_id integer NOT NULL,
-    commit_bytea bytea NOT NULL,
-    indexed_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    debug_field text
-);
-
-CREATE TABLE commit_index_metadata (
-    repo_id integer NOT NULL,
-    enabled boolean DEFAULT true NOT NULL,
-    last_indexed_at timestamp with time zone DEFAULT '1900-01-01 00:00:00+00'::timestamp with time zone NOT NULL
-);
-
 CREATE TABLE dashboard (
     id integer NOT NULL,
     title text,
@@ -578,12 +564,6 @@ ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_s
 ALTER TABLE ONLY archived_insight_series_recording_times
     ADD CONSTRAINT archived_insight_series_recor_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
 
-ALTER TABLE ONLY commit_index_metadata
-    ADD CONSTRAINT commit_index_metadata_pkey PRIMARY KEY (repo_id);
-
-ALTER TABLE ONLY commit_index
-    ADD CONSTRAINT commit_index_pkey PRIMARY KEY (committed_at, repo_id, commit_bytea);
-
 ALTER TABLE ONLY dashboard_grants
     ADD CONSTRAINT dashboard_grants_pk PRIMARY KEY (id);
 
@@ -634,8 +614,6 @@ ALTER TABLE ONLY repo_names
 
 ALTER TABLE ONLY dashboard_insight_view
     ADD CONSTRAINT unique_dashboard_id_insight_view_id UNIQUE (dashboard_id, insight_view_id);
-
-CREATE INDEX commit_index_repo_id_idx ON commit_index USING btree (repo_id, committed_at);
 
 CREATE INDEX dashboard_grants_dashboard_id_index ON dashboard_grants USING btree (dashboard_id);
 

@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useLayoutEffect, useEffect, useState, useMemo, useCallback } from 'react'
 
-import { Observable, Observer, Subject } from 'rxjs'
+import { type Observable, type Observer, Subject } from 'rxjs'
 
-import { ObservableStatus } from '../types'
+import type { ObservableStatus } from '../types'
 
 /**
  * React hook to get the latest value of an Observable.
@@ -17,7 +17,9 @@ export function useObservable<T>(observable: Observable<T>): T | undefined {
     const [error, setError] = useState<any>()
     const [currentValue, setCurrentValue] = useState<T>()
 
-    useEffect(() => {
+    // We use a layout effect to avoid UI tearing when the observable is updated because otherwise
+    // the page will be rendered with the old value after the first render pass.
+    useLayoutEffect(() => {
         setCurrentValue(undefined)
         const subscription = observable.subscribe({ next: setCurrentValue, error: setError })
         return () => subscription.unsubscribe()

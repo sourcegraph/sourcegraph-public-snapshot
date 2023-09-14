@@ -72,8 +72,8 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 			// not a generic http.RoundTripper.
 			httpcli.ExternalTransportOpt,
 			httpcli.NewErrorResilientTransportOpt(
-				httpcli.NewRetryPolicy(httpcli.MaxRetries(graphQLRetryMaxAttempts)),
-				httpcli.ExpJitterDelay(graphQLRetryDelayBase, graphQLRetryDelayMax),
+				httpcli.NewRetryPolicy(httpcli.MaxRetries(graphQLRetryMaxAttempts), 2*time.Second),
+				httpcli.ExpJitterDelayOrRetryAfterDelay(graphQLRetryDelayBase, graphQLRetryDelayMax),
 			),
 			httpcli.TracedTransportOpt,
 		)

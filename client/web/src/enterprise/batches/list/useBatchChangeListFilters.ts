@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { LegacyBatchChangesFilter } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { LegacyBatchChangesFilter } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 import { BatchChangeState } from '../../../graphql-operations'

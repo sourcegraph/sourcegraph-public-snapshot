@@ -38,7 +38,11 @@ func (ws *webhookService) CreateWebhook(ctx context.Context, name, codeHostKind,
 	if secretStr != nil {
 		secret = types.NewUnencryptedSecret(*secretStr)
 	}
-	return ws.db.Webhooks(ws.keyRing.WebhookKey).Create(ctx, name, codeHostKind, codeHostURN, actor.FromContext(ctx).UID, secret)
+	urn, err := extsvc.NewCodeHostBaseURL(codeHostURN)
+	if err != nil {
+		return nil, err
+	}
+	return ws.db.Webhooks(ws.keyRing.WebhookKey).Create(ctx, name, codeHostKind, urn.String(), actor.FromContext(ctx).UID, secret)
 }
 
 func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
@@ -94,7 +98,7 @@ func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
 	switch codeHostKind {
 	case extsvc.KindGitHub, extsvc.KindGitLab, extsvc.KindBitbucketServer:
 		return nil
-	case extsvc.KindBitbucketCloud:
+	case extsvc.KindBitbucketCloud, extsvc.KindAzureDevOps:
 		if secret != nil {
 			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
 		}

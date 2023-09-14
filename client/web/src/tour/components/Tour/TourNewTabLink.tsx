@@ -1,6 +1,6 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
-import { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
+import type { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
 import { ButtonLink, Link } from '@sourcegraph/wildcard'
 
 export interface NewTabLinkProps {

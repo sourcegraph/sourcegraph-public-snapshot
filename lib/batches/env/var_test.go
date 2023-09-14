@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestVariable_MarshalJSON(t *testing.T) {
@@ -18,7 +20,7 @@ func TestVariable_MarshalJSON(t *testing.T) {
 			want: `"foo"`,
 		},
 		"with value": {
-			in:   variable{name: "foo", value: stringPtr("bar")},
+			in:   variable{name: "foo", value: pointers.Ptr("bar")},
 			want: `{"foo":"bar"}`,
 		},
 	} {
@@ -47,7 +49,7 @@ func TestVariable_UnmarshalJSON(t *testing.T) {
 			},
 			"with value": {
 				in:   `{"foo":"bar"}`,
-				want: variable{name: "foo", value: stringPtr("bar")},
+				want: variable{name: "foo", value: pointers.Ptr("bar")},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -123,7 +125,7 @@ func TestVariable_UnmarshalYAML(t *testing.T) {
 			},
 			"with value": {
 				in:   `foo: bar`,
-				want: variable{name: "foo", value: stringPtr("bar")},
+				want: variable{name: "foo", value: pointers.Ptr("bar")},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -186,5 +188,3 @@ func TestVariable_UnmarshalYAML(t *testing.T) {
 		})
 	})
 }
-
-func stringPtr(s string) *string { return &s }

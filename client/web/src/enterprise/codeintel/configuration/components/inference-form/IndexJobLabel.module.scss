@@ -1,0 +1,14 @@
+.job-field {
+    display: grid;
+    grid-template-columns: [label] 15% [value] 85%;
+
+    &:not(:last-of-type) {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.job-label {
+    margin-top: 0.25rem;
+    grid-area: label;
+    margin-bottom: 0;
+}

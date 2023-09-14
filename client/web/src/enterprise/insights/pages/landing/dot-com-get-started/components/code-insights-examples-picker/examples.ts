@@ -8,7 +8,7 @@ import {
     OPENSSL_PYTHON,
     REPOS_WITH_CI_SYSTEM,
 } from '../../../getting-started/components/code-insights-examples/examples'
-import {
+import type {
     CaptureGroupExampleContent,
     SearchInsightExampleContent,
 } from '../../../getting-started/components/code-insights-examples/types'

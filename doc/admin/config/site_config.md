@@ -24,12 +24,11 @@ All site configuration options and their default values are shown below.
 The following site configuration options require the server to be restarted for the changes to take effect:
 
 ```
-auth.accessTokens
-auth.sessionExpiry
-git.cloneURLToRepositoryName
-searchScopes
-extensions
-disablePublicRepoRedirects
+auth.providers
+externalURL
+insights.query.worker.concurrency
+insights.commit.indexer.interval
+permissions.syncUsersMaxConcurrency
 ```
 
 ## Editing your site configuration if you cannot access the web UI
@@ -67,7 +66,7 @@ Or if you prefer using a Vim editor:
 kubectl exec -it $FRONTEND_POD -- sh -c 'vi ~/site-config.json'
 ```
 
-Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same was as if you had made them through the web UI.
+Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same way as if you had made them through the web UI.
 
 ## If you are still encountering issues
 

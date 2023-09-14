@@ -4,7 +4,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, Modal, Input, H3, Text, Alert, Link, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExecutorSecretFields } from '../../../graphql-operations'
+import type { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { useUpdateExecutorSecret } from './backend'
 
@@ -60,7 +60,11 @@ export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<
             {secret.key === 'DOCKER_AUTH_CONFIG' && (
                 <Alert variant="info" className="mt-2">
                     This secret value will be used to{' '}
-                    <Link to="/help/admin/deploy_executors#using-private-registries" rel="noopener" target="_blank">
+                    <Link
+                        to="/help/admin/executors/deploy_executors#using-private-registries"
+                        rel="noopener"
+                        target="_blank"
+                    >
                         configure docker client authentication with private registries
                     </Link>
                     .

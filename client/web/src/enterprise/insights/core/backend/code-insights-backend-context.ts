@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { throwError } from 'rxjs'
+import { type Observable, of, throwError } from 'rxjs'
 
-import { CodeInsightsBackend } from './code-insights-backend'
+import type { CodeInsightsBackend } from './code-insights-backend'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -13,7 +13,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
-    public getActiveInsightsCount = errorMockMethod('getNonFrozenInsightsCount')
+    public getActiveInsightsCount = (number: number): Observable<number> => of(number - 1)
     public createInsight = errorMockMethod('createInsight')
     public updateInsight = errorMockMethod('updateInsight')
     public deleteInsight = errorMockMethod('deleteInsight')

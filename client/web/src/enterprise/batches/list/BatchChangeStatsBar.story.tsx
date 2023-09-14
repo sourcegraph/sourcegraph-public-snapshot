@@ -1,11 +1,11 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, DecoratorFn, Story } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { GlobalChangesetsStatsResult } from '../../../graphql-operations'
+import type { GlobalChangesetsStatsResult } from '../../../graphql-operations'
 
 import { GLOBAL_CHANGESETS_STATS } from './backend'
 import { BatchChangeStatsBar } from './BatchChangeStatsBar'

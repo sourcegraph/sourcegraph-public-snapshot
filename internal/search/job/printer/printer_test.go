@@ -3,7 +3,7 @@ package printer
 import (
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 )
@@ -16,11 +16,11 @@ func newTestJob(name string) *testJob {
 
 type testJob struct {
 	name     string
-	tags     []otlog.Field
+	tags     []attribute.KeyValue
 	children []*testJob
 }
 
-func (tj *testJob) withTags(tags ...otlog.Field) *testJob {
+func (tj *testJob) withTags(tags ...attribute.KeyValue) *testJob {
 	tj.tags = tags
 	return tj
 }
@@ -31,7 +31,7 @@ func (tj *testJob) withChildren(children ...*testJob) *testJob {
 }
 
 func (tj *testJob) Name() string { return tj.name }
-func (tj *testJob) Fields(v job.Verbosity) []otlog.Field {
+func (tj *testJob) Attributes(v job.Verbosity) []attribute.KeyValue {
 	if v > job.VerbosityNone {
 		return tj.tags
 	}
@@ -48,8 +48,8 @@ func (tj *testJob) Children() []job.Describer {
 
 func newLeafJob() *testJob {
 	return newTestJob("LeafJob").withTags(
-		otlog.Int32("life_meaning", 42),
-		otlog.Int64("leaf_meaning", 420),
+		attribute.Int("life_meaning", 42),
+		attribute.Int64("leaf_meaning", 420),
 	)
 }
 
@@ -67,13 +67,13 @@ func newOrJob(children ...*testJob) *testJob {
 
 func newTimeoutJob(timeout time.Duration, child *testJob) *testJob {
 	return newTestJob("TimeoutJob").withTags(
-		otlog.String("duration", timeout.String()),
+		attribute.Stringer("duration", timeout),
 	).withChildren(child)
 }
 
 func newLimitJob(limit int, child *testJob) *testJob {
 	return newTestJob("LimitJob").withTags(
-		otlog.Int("limit", limit),
+		attribute.Int("limit", limit),
 	).withChildren(child)
 }
 

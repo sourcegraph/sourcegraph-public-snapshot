@@ -9,7 +9,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
@@ -35,8 +34,6 @@ type Store interface {
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
-	// SetTracer updates tracer for the store in place.
-	SetTracer(t trace.Tracer)
 
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) Store
@@ -99,8 +96,6 @@ type store struct {
 	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
-	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
-	Tracer trace.Tracer
 
 	txtrace *trace.Trace
 	txctx   context.Context
@@ -112,7 +107,6 @@ func NewStore(logger log.Logger, db database.DB) Store {
 	return &store{
 		Store:  s,
 		Logger: logger,
-		Tracer: trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 	}
 }
 
@@ -129,14 +123,12 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
-func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
 		Store:   s.Store.With(other),
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
 	}
 }
 
@@ -157,7 +149,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
-			tr.Finish()
+			tr.End()
 		}
 	}(time.Now())
 
@@ -169,7 +161,6 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 		Store:   txBase,
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
 		txtrace: tr,
 		txctx:   ctx,
 	}, nil
@@ -197,7 +188,7 @@ func (s *store) Done(err error) error {
 			s.Metrics.Done.Observe(secs, 1, nil)
 		}
 
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	return s.Store.Done(err)
@@ -208,9 +199,9 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, txctx := s.Tracer.New(txctx, family, "")
+	tr, txctx := trace.New(txctx, family)
 	ctx = trace.CopyContext(ctx, txctx)
-	return tr, ctx
+	return &tr, ctx
 }
 
 func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
@@ -231,7 +222,7 @@ func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	set := make(pq.Int64Array, 0, len(ids))
@@ -282,14 +273,20 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if !s.InTransaction() {
-		s, err = s.transact(ctx)
+		tx, err := s.transact(ctx)
 		if err != nil {
 			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
+
+		// We replace the current store with the transactional store for the rest of the method.
+		// We don't assign the store return value from `s.transact` so as to avoid nil panics when
+		// executing the deferred functions that utilize the store since `s.transact` returns a nil
+		// store when there's an error.
+		s = tx
 		defer func() { err = s.Done(err) }()
 	}
 
@@ -347,7 +344,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	metadata, err := json.Marshal(r.Metadata)
@@ -371,7 +368,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 	src := r.Sources[svc.URN()]
 	if src == nil {
-		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
+		return errors.Newf("CreateExternalServiceRepo: repo %q missing source info for external service", r.Name)
 	} else if src.CloneURL == "" {
 		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
 	}
@@ -448,7 +445,7 @@ func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Rep
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if r.ID == 0 {
@@ -507,7 +504,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if r.ID == 0 {
@@ -536,7 +533,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 	src := r.Sources[svc.URN()]
 	if src == nil || src.CloneURL == "" {
-		return errors.New("UpdateExternalServiceRepo: repo missing source info for external service")
+		return errors.Newf("UpdateExternalServiceRepo: repo %q missing source info for external service", r.Name)
 	}
 
 	if !s.InTransaction() {
@@ -603,20 +600,20 @@ WHERE NOT EXISTS (
 	return s.Exec(ctx, q)
 }
 
-func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
+func (s *store) EnqueueSyncJobs(ctx context.Context, isDotCom bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	filter := "TRUE"
-	// On Cloud we don't sync our default sources in the background, they are synced
+	// On Sourcegraph.com we don't sync our default sources in the background, they are synced
 	// on demand instead.
-	if isCloud {
+	if isDotCom {
 		filter = "cloud_default = false"
 	}
 	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))

@@ -139,7 +139,9 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	// GobCache exists so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	q = &query.GobCache{Q: q}
+	if !conf.IsGRPCEnabled(ctx) {
+		q = &query.GobCache{Q: q}
+	}
 
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
@@ -221,7 +223,9 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	// GobCache exists, so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	q = &query.GobCache{Q: q}
+	if !conf.IsGRPCEnabled(ctx) {
+		q = &query.GobCache{Q: q}
+	}
 
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
@@ -560,7 +564,8 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	// does deduplication.
 
 	aggregate := zoekt.RepoList{
-		Minimal: make(map[uint32]*zoekt.MinimalRepoListEntry),
+		Minimal:  make(map[uint32]*zoekt.MinimalRepoListEntry),
+		ReposMap: make(zoekt.ReposMap),
 	}
 	for range clients {
 		r := <-results
@@ -580,7 +585,17 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		for k, v := range r.rl.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 			aggregate.Minimal[k] = v //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		}
+
+		for k, v := range r.rl.ReposMap {
+			aggregate.ReposMap[k] = v
+		}
 	}
+
+	// Only one of these fields is populated and in all cases the size of that
+	// field is the number of Repos. We may overcount in the case of asking
+	// for Repos since we don't deduplicate, but this should be very rare
+	// (only happens in the case of rebalancing)
+	aggregate.Stats.Repos = len(aggregate.Repos) + len(aggregate.Minimal) + len(aggregate.ReposMap) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 
 	return &aggregate, nil
 }
@@ -749,11 +764,9 @@ func isZoektRolloutError(ctx context.Context, err error) bool {
 	}
 
 	metricIgnoredError.WithLabelValues(reason).Inc()
-	if span := trace.TraceFromContext(ctx); span != nil {
-		span.AddEvent("rollout",
-			attribute.String("rollout.reason", reason),
-			attribute.String("rollout.error", err.Error()))
-	}
+	trace.FromContext(ctx).AddEvent("rollout",
+		attribute.String("rollout.reason", reason),
+		attribute.String("rollout.error", err.Error()))
 
 	return true
 }

@@ -161,7 +161,7 @@ a.outline-secondary {
 .outline-secondary {
     --badge-base: transparent;
     --badge-light: var(--secondary-2);
-    --badge-dark: var(--secondary-3);
+    --badge-dark: var(--secondary-2);
     --badge-text: var(--text-muted);
     --badge-border: 1px solid var(--secondary);
 }
@@ -183,11 +183,25 @@ a.outline-secondary {
             color: var(--body-color);
         }
     }
+}
+
+// Outline links need slightly different treatment to be more visible on hover
+:global(.theme-light) {
     a.outline-secondary {
         &:hover,
         &:focus,
         &.focus {
-            background-color: var(--color-bg-1);
+            border-color: var(--secondary);
+        }
+    }
+}
+
+:global(.theme-dark) {
+    a.outline-secondary {
+        &:hover,
+        &:focus,
+        &.focus {
+            border-color: var(--secondary-4);
         }
     }
 }

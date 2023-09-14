@@ -182,3 +182,13 @@ func MakeNonRetryable(err error) error {
 type nonRetryableError struct{ error }
 
 func (nonRetryableError) NonRetryable() bool { return true }
+
+func MaybeMakeNonRetryable(statusCode int, err error) error {
+	if statusCode > 0 && statusCode < 200 ||
+		statusCode >= 300 && statusCode < 500 ||
+		statusCode == 501 ||
+		statusCode >= 600 {
+		return MakeNonRetryable(err)
+	}
+	return err
+}

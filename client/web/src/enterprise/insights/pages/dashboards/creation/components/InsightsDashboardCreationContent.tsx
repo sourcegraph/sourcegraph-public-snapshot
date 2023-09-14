@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React, { type ReactNode } from 'react'
 
 import classNames from 'classnames'
 
@@ -11,12 +11,12 @@ import {
     getDefaultInputProps,
     createRequiredValidator,
     FORM_ERROR,
-    FormAPI,
-    SubmissionErrors,
+    type FormAPI,
+    type SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import { FormRadioInput, LimitedAccessLabel } from '../../../../components'
-import { InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core'
+import { type InsightsDashboardOwner, isGlobalOwner, isOrganizationOwner, isPersonalOwner } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 
 import styles from './InsightsDashboardCreationContent.module.scss'

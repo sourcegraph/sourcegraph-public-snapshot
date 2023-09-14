@@ -4,7 +4,7 @@
 > The Stream API is still evolving. Although parts of it can be considered
 > stable, we don't guarantee backward compatibility just yet. This means it is
 > possible that fields are added, removed, or renamed. All backward incompatible changes to the
-> event stream format will be documented in the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md).
+> event stream format will be documented in the [CHANGELOG](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md).
 
 
 With the Stream API you can consume search results and related metadata as
@@ -110,7 +110,7 @@ To search a pattern over all indexed repositories, add `count:all` and remove al
 curl --header "Accept:text/event-stream" --get --url "https://sourcegraph.com/.api/search/stream" --data-urlencode "q=secret count:all"
 ```
 
-If you don't want to write your own client, you can also use Sourcegraph's [src-cli](https://github.com/sourcegraph/src-cli).
+If you don't want to write your own client, you can also use Sourcegraph's [src-cli](https://sourcegraph.com/github.com/sourcegraph/src-cli).
 
 ```bash
 src search -stream "secret count:all"

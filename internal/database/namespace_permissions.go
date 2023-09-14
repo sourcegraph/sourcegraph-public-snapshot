@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -60,7 +61,7 @@ INSERT INTO
 `
 
 type CreateNamespacePermissionOpts struct {
-	Namespace  types.PermissionNamespace
+	Namespace  rtypes.PermissionNamespace
 	ResourceID int64
 	UserID     int32
 }
@@ -140,7 +141,7 @@ SELECT %s FROM namespace_permissions WHERE %s
 // 2. The Namespace, ResourceID and UserID associated with the namespace permission.
 type GetNamespacePermissionOpts struct {
 	ID         int64
-	Namespace  types.PermissionNamespace
+	Namespace  rtypes.PermissionNamespace
 	ResourceID int64
 	UserID     int32
 }

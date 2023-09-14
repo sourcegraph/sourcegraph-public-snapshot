@@ -1,0 +1,33 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "search-plan_lib",
+    srcs = ["search-plan.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/search-plan",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/conf",
+        "//internal/search",
+        "//internal/search/client",
+        "//internal/search/job",
+        "//internal/search/job/jobutil",
+        "//internal/search/job/printer",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "search-plan",
+    embed = [":search-plan_lib"],
+    visibility = ["//dev:__subpackages__"],
+)
+
+go_test(
+    name = "search-plan_test",
+    srcs = ["search-plan_test.go"],
+    embed = [":search-plan_lib"],
+)

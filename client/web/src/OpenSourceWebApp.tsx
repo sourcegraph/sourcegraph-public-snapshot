@@ -1,6 +1,7 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import './SourcegraphWebApp.scss'
+
 import { LegacySourcegraphWebApp } from './LegacySourcegraphWebApp'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
@@ -15,9 +16,9 @@ import { routes } from './routes'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
 import {
-    StaticAppConfig,
-    StaticHardcodedAppConfig,
-    StaticInjectedAppConfig,
+    type StaticAppConfig,
+    type StaticHardcodedAppConfig,
+    type StaticInjectedAppConfig,
     windowContextConfig,
 } from './staticAppConfig'
 import { userAreaHeaderNavItems } from './user/area/navitems'
@@ -54,6 +55,7 @@ const hardcodedConfig = {
     notebooksEnabled: false,
     codeMonitoringEnabled: false,
     searchAggregationEnabled: false,
+    ownEnabled: false,
 } satisfies StaticHardcodedAppConfig
 
 const staticAppConfig = {

@@ -1,0 +1,7 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"exconst","path":"go-const.go","language":"go","line":1,"kind":"package","scope":null}
+{"_type":"tag","name":"myconst","path":"go-const.go","language":"go","line":3,"kind":"constant","scope":"exconst"}
+

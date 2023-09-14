@@ -3,10 +3,10 @@ import React, { useMemo, useState } from 'react'
 import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/shared/src/search'
+import { type EventLogResult, fetchRecentFileViews } from '@sourcegraph/shared/src/search'
 import { Icon, Link, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
-import { HistorySidebarProps } from '../HistorySidebarView'
+import type { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 

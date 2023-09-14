@@ -1,99 +1,139 @@
-import React, { memo, useCallback, useLayoutEffect, useState } from 'react'
+import { memo, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { isEqual } from 'lodash'
-import { Layout, Layouts } from 'react-grid-layout'
+import type { Layout, Layouts } from 'react-grid-layout'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { Insight } from '../../core'
+import type { Insight } from '../../core'
 import { getTrackingTypeByInsightType } from '../../pings'
 
 import { SmartInsight } from './components/SmartInsight'
 import { ViewGrid } from './components/view-grid/ViewGrid'
-import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
+import { insightLayoutGenerator } from './utils/grid-layout-generator'
+
+export interface GridApi {
+    resetGridLayout: () => void
+}
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
-    /**
-     * List of built-in insights such as backend insight, FE search and code-stats
-     * insights.
-     */
+    id: string
     insights: Insight[]
+    persistSizeAndOrder?: boolean
     className?: string
+    onGridCreate?: (dashboardApi: GridApi) => void
 }
 
 /**
  * Renders grid of smart (stateful) insight card. These cards can independently extract and update
  * the insights settings (settings cascade subjects).
  */
-export const SmartInsightsViewGrid: React.FunctionComponent<React.PropsWithChildren<SmartInsightsViewGridProps>> = memo(
-    props => {
-        const { telemetryService, insights, className } = props
+export const SmartInsightsViewGrid = memo<SmartInsightsViewGridProps>(function SmartInsightsViewGrid(props) {
+    const { id, insights, persistSizeAndOrder = true, telemetryService, className, onGridCreate } = props
 
-        const [layouts, setLayouts] = useState<Layouts>({})
-        const [resizingView, setResizeView] = useState<Layout | null>(null)
+    // eslint-disable-next-line no-restricted-syntax
+    const [localStorageLayouts, setLocalStorageLayouts] = useLocalStorage<Layouts | null>(
+        `insights.dashboard.${id}`,
+        null
+    )
 
-        useLayoutEffect(() => {
-            setLayouts(insightLayoutGenerator(insights))
-        }, [insights])
+    const [layouts, setLayouts] = useState<Layouts>({})
+    const layoutsRef = useMutableValue(layouts)
 
-        const trackUICustomization = useCallback(
-            (item: Layout) => {
-                try {
-                    const insight = insights.find(insight => item.i === insight.id)
+    const [resizingView, setResizeView] = useState<Layout | null>(null)
 
-                    if (insight) {
-                        const insightType = getTrackingTypeByInsightType(insight.type)
+    useLayoutEffect(() => {
+        setLayouts(insightLayoutGenerator(insights, localStorageLayouts))
 
-                        telemetryService.log('InsightUICustomization', { insightType }, { insightType })
-                    }
-                } catch {
-                    // noop
-                }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [insights])
+
+    useEffect(() => {
+        onGridCreate?.({
+            resetGridLayout: () => {
+                // Reset local storage layout cache
+                setLocalStorageLayouts(null)
+                // Reset runtime calculated layout
+                setLayouts(insightLayoutGenerator(insights, null))
             },
-            [telemetryService, insights]
-        )
+        })
+    }, [insights, setLocalStorageLayouts, onGridCreate])
 
-        const handleResizeStart = useCallback(
-            (item: Layout) => {
-                setResizeView(item)
-                trackUICustomization(item)
-            },
-            [trackUICustomization]
-        )
+    const handleDragStart = useCallback(
+        (item: Layout) => {
+            trackUICustomization(telemetryService, item, insights)
+        },
+        [telemetryService, insights]
+    )
 
-        const handleResizeStop = useCallback((item: Layout) => {
-            setResizeView(null)
-        }, [])
+    const handleDragStop = useCallback(() => {
+        if (persistSizeAndOrder) {
+            setLocalStorageLayouts(layoutsRef.current)
+        }
+    }, [layoutsRef, persistSizeAndOrder, setLocalStorageLayouts])
 
-        const handleLayoutChange = useCallback(
-            (currentLayout: Layout[], allLayouts: Layouts): void => {
-                setLayouts(recalculateGridLayout(allLayouts, insights))
-            },
-            [insights]
-        )
+    const handleResizeStart = useCallback(
+        (item: Layout) => {
+            setResizeView(item)
+            trackUICustomization(telemetryService, item, insights)
+        },
+        [telemetryService, insights]
+    )
 
-        return (
-            <ViewGrid
-                layouts={layouts}
-                className={className}
-                onResizeStart={handleResizeStart}
-                onResizeStop={handleResizeStop}
-                onDragStart={trackUICustomization}
-                onLayoutChange={handleLayoutChange}
-            >
-                {insights.map(insight => (
-                    <SmartInsight
-                        key={insight.id}
-                        insight={insight}
-                        telemetryService={telemetryService}
-                        resizing={resizingView?.i === insight.id}
-                    />
-                ))}
-            </ViewGrid>
-        )
-    },
-    equalSmartGridProps
-)
+    const handleResizeStop = useCallback((): void => {
+        setResizeView(null)
+
+        if (persistSizeAndOrder) {
+            setLocalStorageLayouts(layoutsRef.current)
+        }
+    }, [layoutsRef, persistSizeAndOrder, setLocalStorageLayouts])
+
+    const handleLayoutChange = useCallback((currentLayout: Layout[], allLayouts: Layouts): void => {
+        setLayouts(allLayouts)
+    }, [])
+
+    return (
+        <ViewGrid
+            layouts={layouts}
+            className={className}
+            onDragStart={handleDragStart}
+            onDragStop={handleDragStop}
+            onResizeStart={handleResizeStart}
+            onResizeStop={handleResizeStop}
+            onLayoutChange={handleLayoutChange}
+        >
+            {insights.map(insight => (
+                <SmartInsight
+                    key={insight.id}
+                    insight={insight}
+                    telemetryService={telemetryService}
+                    resizing={resizingView?.i === insight.id}
+                />
+            ))}
+        </ViewGrid>
+    )
+}, equalSmartGridProps)
+
+function trackUICustomization(telemetryService: TelemetryService, item: Layout, insights: Insight[]): void {
+    try {
+        const insight = insights.find(insight => item.i === insight.id)
+
+        if (insight) {
+            const insightType = getTrackingTypeByInsightType(insight.type)
+
+            telemetryService.log('InsightUICustomization', { insightType }, { insightType })
+        }
+    } catch {
+        // noop
+    }
+}
+
+function useMutableValue<T>(value: T): RefObject<T> {
+    const valueRef = useRef<T>(value)
+    valueRef.current = value
+    return valueRef
+}
 
 /**
  * Custom props checker for the smart grid component.

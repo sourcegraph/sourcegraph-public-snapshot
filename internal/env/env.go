@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/inconshreveable/log15"
 )
 
@@ -133,6 +134,16 @@ func Get(name, defaultValue, description string) string {
 	env[name] = e
 
 	return value
+}
+
+// MustGetBytes is similar to Get but ensures that the value is a valid byte size (as defined by go-humanize)
+func MustGetBytes(name string, defaultValue string, description string) uint64 {
+	s := Get(name, defaultValue, description)
+	n, err := humanize.ParseBytes(s)
+	if err != nil {
+		panic(fmt.Sprintf("parsing environment variable %q. Expected valid time.Duration, got %q", name, s))
+	}
+	return n
 }
 
 // MustGetDuration is similar to Get but ensures that the value is a valid time.Duration.

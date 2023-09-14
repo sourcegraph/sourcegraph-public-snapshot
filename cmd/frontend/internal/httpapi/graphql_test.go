@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -49,7 +50,8 @@ func Test_recordAuditLog(t *testing.T) {
 
 			logger, exportLogs := logtest.Captured(t)
 
-			recordAuditLog(context.Background(), logger, traceData{
+			ctx := actor.WithActor(context.Background(), actor.FromUser(1))
+			recordAuditLog(ctx, logger, traceData{
 				queryParams: graphQLQueryParams{
 					Query:     `repository(name: "github.com/gorilla/mux") { name }`,
 					Variables: map[string]any{"param1": "value1"},

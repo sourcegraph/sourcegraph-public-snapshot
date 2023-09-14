@@ -14,9 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -24,13 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestServeStream_empty(t *testing.T) {
-	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
-	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
@@ -61,8 +61,8 @@ func TestServeStream_empty(t *testing.T) {
 }
 
 func TestServeStream_chunkMatches(t *testing.T) {
-	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
-	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
@@ -82,7 +82,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 		return nil, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := dbmocks.NewMockRepoStore()
 	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
 		out := make([]*types.SearchedRepo, 0, len(ids))
 		for _, id := range ids {
@@ -91,7 +91,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 		return out, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 
 	ts := httptest.NewServer(&streamHandler{
@@ -170,7 +170,7 @@ func TestDisplayLimit(t *testing.T) {
 	}
 
 	// any returns item, true if skipped contains an item matching reason.
-	any := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
+	anySkipped := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
 		for _, s := range skipped {
 			if s.Reason == reason {
 				return s, true
@@ -181,12 +181,12 @@ func TestDisplayLimit(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("q=%s;displayLimit=%d", c.queryString, c.displayLimit), func(t *testing.T) {
-			graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
-			t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+			settings.MockCurrentUserFinal = &schema.Settings{}
+			t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol, _ *schema.Settings, _ bool) (*search.Inputs, error) {
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
 				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
 				return &search.Inputs{
@@ -199,7 +199,7 @@ func TestDisplayLimit(t *testing.T) {
 				return nil, nil
 			})
 
-			repos := database.NewStrictMockRepoStore()
+			repos := dbmocks.NewStrictMockRepoStore()
 			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
 				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
@@ -209,7 +209,7 @@ func TestDisplayLimit(t *testing.T) {
 				}
 				return res, nil
 			})
-			db := database.NewStrictMockDB()
+			db := dbmocks.NewStrictMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{
@@ -233,7 +233,7 @@ func TestDisplayLimit(t *testing.T) {
 			var matchCount int
 			decoder := streamhttp.FrontendStreamDecoder{
 				OnProgress: func(progress *api.Progress) {
-					if skipped, ok := any(api.DisplayLimit, progress.Skipped); ok {
+					if skipped, ok := anySkipped(api.DisplayLimit, progress.Skipped); ok {
 						displayLimitHit = true
 						message = skipped.Message
 					}

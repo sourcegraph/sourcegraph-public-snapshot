@@ -11,6 +11,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 )
 
 func TestGetBuild(t *testing.T) {
@@ -20,7 +23,7 @@ func TestGetBuild(t *testing.T) {
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
-		server := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(logger, config.Config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -33,7 +36,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("404 for build that does not exist", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server := NewServer(logger, config.Config{})
 		rec := httptest.NewRecorder()
 		server.handleGetBuild(rec, req)
 
@@ -41,7 +44,7 @@ func TestGetBuild(t *testing.T) {
 	})
 
 	t.Run("get marshalled json for build", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server := NewServer(logger, config.Config{})
 		rec := httptest.NewRecorder()
 
 		num := 1234
@@ -49,11 +52,10 @@ func TestGetBuild(t *testing.T) {
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
 		pipelineID := "sourcegraph"
 		msg := "this is a test"
-		job := newJob("job 1", 0)
-
+		job := newJob(t, "job 1 test", 0)
 		req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
 
-		event := Event{
+		event := build.Event{
 			Name: "build.finished",
 			Build: buildkite.Build{
 				Message: &msg,
@@ -79,25 +81,35 @@ func TestGetBuild(t *testing.T) {
 			Job: job.Job,
 		}
 
-		expected := event.build()
-		server.store.builds[event.buildNumber()] = expected
+		expected := event.WrappedBuild()
+		expected.AddJob(event.WrappedJob())
+
+		server.store.Add(&event)
 
 		server.handleGetBuild(rec, req)
 
 		require.Equal(t, 200, rec.Result().StatusCode)
 
-		var result Build
+		var result build.Build
 		err := json.NewDecoder(rec.Body).Decode(&result)
 		require.NoError(t, err)
 		require.Equal(t, *expected, result)
 	})
 
 	t.Run("200 with valid credentials in production mode", func(t *testing.T) {
-		server := NewServer(logger, config{Production: true, DebugPassword: "this is a test"})
+		server := NewServer(logger, config.Config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
 
 		req.SetBasicAuth("devx", server.config.DebugPassword)
-		server.store.builds[1234] = (&Event{}).build()
+		num := 1234
+		server.store.Add(&build.Event{
+			Name: "Fake",
+			Build: buildkite.Build{
+				Number: &num,
+			},
+			Pipeline: buildkite.Pipeline{},
+			Job:      buildkite.Job{},
+		})
 		server.handleGetBuild(rec, req)
 
 		require.Equal(t, http.StatusOK, rec.Result().StatusCode)
@@ -107,47 +119,46 @@ func TestGetBuild(t *testing.T) {
 func TestOldBuildsGetDeleted(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	finishedBuild := func(num int, state string, finishedAt time.Time) *Build {
+	finishedBuild := func(num int, state string, finishedAt time.Time) *build.Build {
 		b := buildkite.Build{}
 		b.State = &state
 		b.Number = &num
 		b.FinishedAt = &buildkite.Timestamp{Time: finishedAt}
 
-		return &Build{Build: b}
+		return &build.Build{Build: b}
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server := NewServer(logger, config.Config{})
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
-		server.store.builds[*b.Number] = b
+		server.store.Set(b)
 
 		b = finishedBuild(2, "canceled", time.Now().AddDate(0, -1, 0))
-		server.store.builds[*b.Number] = b
+		server.store.Set(b)
 
 		b = finishedBuild(3, "failed", time.Now().AddDate(0, 0, -1))
-		server.store.builds[*b.Number] = b
-		builds := server.store.FinishedBuilds()
+		server.store.Set(b)
 
 		stopFunc := server.startCleaner(10*time.Millisecond, 24*time.Hour)
 		time.Sleep(20 * time.Millisecond)
 		stopFunc()
 
-		builds = server.store.FinishedBuilds()
+		builds := server.store.FinishedBuilds()
 
 		if len(builds) != 0 {
 			t.Errorf("Not all old builds removed. Got %d, wanted %d", len(builds), 0)
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server := NewServer(logger, config{})
+		server := NewServer(logger, config.Config{})
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
-		server.store.builds[*b.Number] = b
+		server.store.Set(b)
 
 		b = finishedBuild(2, "passed", time.Now().AddDate(0, -1, 0))
-		server.store.builds[*b.Number] = b
+		server.store.Set(b)
 
 		b = finishedBuild(3, "failed", time.Now())
-		server.store.builds[*b.Number] = b
+		server.store.Set(b)
 
 		stopFunc := server.startCleaner(10*time.Millisecond, 24*time.Hour)
 		time.Sleep(20 * time.Millisecond)
@@ -160,55 +171,4 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 
-}
-
-func TestShouldNotify(t *testing.T) {
-	logger := logtest.Scoped(t)
-
-	num := 160000
-	build := Build{
-		Build: buildkite.Build{
-			Number: &num,
-		},
-		Jobs: map[string]Job{},
-	}
-	newEvent := func(name, job, state string) *Event {
-		return &Event{
-			Name:     name,
-			Build:    build.Build,
-			Pipeline: buildkite.Pipeline{},
-			Job: buildkite.Job{
-				Name:  &job,
-				State: &state,
-			},
-		}
-	}
-	server := NewServer(logger, config{})
-	server.store.builds[*build.Number] = &build
-	server.store.Add(newEvent("job.finished", "Job 1", "failed"))
-	server.store.Add(newEvent("job.finished", "Job 2", "failed"))
-
-	// build is still busy, so we shouldn't notify
-	if server.shouldNotify(&build, newEvent("job.finished", "", "failed")) {
-		t.Errorf("expected shouldNotify to be false, for 2 failed jobs and non-failed build")
-	}
-
-	// now fail the build
-	state := "failed"
-	build.State = &state
-	if !server.shouldNotify(&build, newEvent("build.finished", "", "failed")) {
-		t.Errorf("expected shouldNotify to be true, for 2 failed jobs and a failed build")
-	}
-
-	// Should still notify if we receive late jobs
-	if !server.shouldNotify(&build, newEvent("job.finished", ":jest:", "failed")) {
-		t.Errorf("expected shouldNotify to be true, for failed job after build is also finished")
-	}
-
-	// Huzzah! the build passed, but now we shouldn't send notification
-	state = "passed"
-	build.State = &state
-	if server.shouldNotify(&build, newEvent("job.finished", ":jest:", "success")) {
-		t.Errorf("expected shouldNotify to be false, for success job after build is also finished")
-	}
 }

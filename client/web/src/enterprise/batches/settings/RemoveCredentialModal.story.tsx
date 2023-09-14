@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -40,6 +40,8 @@ export const NoSsh: Story = () => (
                     requiresUsername: false,
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
+                    supportsCommitSigning: false,
+                    commitSigningConfiguration: null,
                 }}
                 credential={credential}
                 afterDelete={noop}
@@ -62,6 +64,8 @@ export const RequiresSsh: Story = () => (
                     requiresUsername: false,
                     externalServiceKind: ExternalServiceKind.GITHUB,
                     externalServiceURL: 'https://github.com/',
+                    supportsCommitSigning: false,
+                    commitSigningConfiguration: null,
                 }}
                 credential={credential}
                 afterDelete={noop}

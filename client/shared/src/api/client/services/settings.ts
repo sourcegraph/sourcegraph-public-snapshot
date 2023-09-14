@@ -1,9 +1,9 @@
 import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { KeyPath } from '@sourcegraph/client-api'
+import type { KeyPath } from '@sourcegraph/client-api'
 
-import { PlatformContext } from '../../../platform/context'
+import type { PlatformContext } from '../../../platform/context'
 import { isSettingsValid } from '../../../settings/settings'
 
 /**

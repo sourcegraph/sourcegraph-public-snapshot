@@ -7,7 +7,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RepoRevisionChevronDownIcon } from '../components/RepoRevision'
 import { RevisionsPopover } from '../RevisionsPopover'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
@@ -81,6 +81,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
                 <RevisionsPopover
                     repoId={repo.id}
                     repoName={repo.name}
+                    repoServiceType={repo?.externalRepository?.serviceType}
                     defaultBranch={defaultBranch}
                     currentRev={currentRevision}
                     currentCommitID={currentRevision}

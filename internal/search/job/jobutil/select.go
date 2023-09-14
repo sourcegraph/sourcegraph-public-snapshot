@@ -4,14 +4,13 @@ import (
 	"context"
 	"sync"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewSelectJob creates a job that transforms streamed results with
@@ -36,13 +35,13 @@ func (j *selectJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 func (j *selectJob) Name() string {
 	return "SelectJob"
 }
-func (j *selectJob) Fields(v job.Verbosity) (res []log.Field) {
+func (j *selectJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Printf("select", "%q", j.path),
+			attribute.StringSlice("select", j.path),
 		)
 	}
 	return res

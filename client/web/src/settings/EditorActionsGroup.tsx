@@ -1,7 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import * as jsonc from 'jsonc-parser'
+import type * as jsonc from 'jsonc-parser'
 
 import { Button, Text } from '@sourcegraph/wildcard'
 

@@ -1,11 +1,11 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { GraphQLError } from 'graphql'
 
-import { RevisionsProps } from '@sourcegraph/branded'
+import type { RevisionsProps } from '@sourcegraph/branded'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { GitRefType } from '../../../../../shared/src/graphql-operations'
-import {
+import type {
     SearchSidebarGitRefsResult,
     // SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,

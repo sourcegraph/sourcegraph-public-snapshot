@@ -1,7 +1,7 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
+import { render, type RenderResult, cleanup, fireEvent } from '@testing-library/react'
 import sinon from 'sinon'
 
-import { PageSelector, PageSelectorProps } from './PageSelector'
+import { PageSelector, type PageSelectorProps } from './PageSelector'
 
 describe('PageSelector', () => {
     let queries: RenderResult
@@ -18,19 +18,23 @@ describe('PageSelector', () => {
         it('will error when less than 1 max pages', () => {
             expect(() => {
                 renderWithProps({ currentPage: 0, totalPages: 0, onPageChange: onPageChangeMock })
-            }).toThrowErrorMatchingSnapshot()
+            }).toThrowError(
+                ['totalPages must have a value greater than 0', 'currentPage must have a value greater than 0'].join(
+                    '\n'
+                )
+            )
         })
 
         it('will error when currentPage is less than 1', () => {
             expect(() => {
                 renderWithProps({ currentPage: -1, totalPages: 10, onPageChange: onPageChangeMock })
-            }).toThrowErrorMatchingSnapshot()
+            }).toThrowError('currentPage must have a value greater than 0')
         })
 
         it('will error when currentPage is greater than totalPages', () => {
             expect(() => {
                 renderWithProps({ currentPage: 11, totalPages: 10, onPageChange: onPageChangeMock })
-            }).toThrowErrorMatchingSnapshot()
+            }).toThrowError('currentPage must be not be greater than totalPages')
         })
     })
 

@@ -1,4 +1,10 @@
-import { MatchGroup, MatchGroupMatch, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
+import type {
+    MatchGroup,
+    MatchGroupMatch,
+    MatchItem,
+    PerFileResultRanking,
+    RankingResult,
+} from './PerFileResultRanking'
 
 /**
  * ZoektRanking preserves the original relevance that's computed by Zoekt.

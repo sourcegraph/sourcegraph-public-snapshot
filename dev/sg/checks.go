@@ -33,8 +33,8 @@ var checks = map[string]check.CheckFunc{
 	"caddy-trusted":         checkCaddyTrusted,
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
-	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 7.24.2")),
-	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.19.3")),
+	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 8.3.0")),
+	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.20.8")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),
 	"docker-installed":      check.WrapErrMessage(check.InPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
@@ -42,6 +42,8 @@ var checks = map[string]check.CheckFunc{
 		check.Combine(check.InPath("docker"), check.CommandExitCode("docker info", 0)),
 		"Docker needs to be running",
 	),
+	"ibazel":   check.WrapErrMessage(check.InPath("ibazel"), "brew install ibazel"),
+	"bazelisk": check.WrapErrMessage(check.InPath("bazelisk"), "brew install bazelisk"),
 }
 
 func runChecksWithName(ctx context.Context, names []string) error {
@@ -209,7 +211,7 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
 	return conn.Ping(ctx)

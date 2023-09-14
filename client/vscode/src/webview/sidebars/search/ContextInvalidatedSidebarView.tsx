@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Button, H5, Text } from '@sourcegraph/wildcard'
 
-import { WebviewPageProps } from '../../platform/context'
+import type { WebviewPageProps } from '../../platform/context'
 
 export interface ContextInvalidatedSidebarViewProps extends WebviewPageProps {}
 

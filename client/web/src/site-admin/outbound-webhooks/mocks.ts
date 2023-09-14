@@ -1,10 +1,10 @@
-import { FetchResult } from '@apollo/client'
-import { MockedResponse } from '@apollo/client/testing'
-import { GraphQLRequestWithWildcard, MATCH_ANY_PARAMETERS, WildcardMockedResponse } from 'wildcard-mock-link'
+import type { FetchResult } from '@apollo/client'
+import type { MockedResponse } from '@apollo/client/testing'
+import { type GraphQLRequestWithWildcard, MATCH_ANY_PARAMETERS, type WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import {
+import type {
     OutboundWebhookByIDResult,
     OutboundWebhookEventTypesResult,
     OutboundWebhookFieldsWithStats,

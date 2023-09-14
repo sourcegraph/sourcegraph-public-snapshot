@@ -5,14 +5,15 @@ import { useLocation } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_NAMESPACE } from '../../../batches/utils'
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -24,7 +25,7 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import { Page } from '../../../components/Page'
-import {
+import type {
     ListBatchChange,
     Scalars,
     BatchChangesVariables,
@@ -48,7 +49,10 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 import styles from './BatchChangeListPage.module.scss'
 
 export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
-    canCreate: boolean
+    // canCreate indicates whether or not the currently-authenticated user has sufficient
+    // permissions to create a batch change in whatever context this list page is being
+    // presented. If not, canCreate will be a string reason why the user cannot create.
+    canCreate: true | string
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
     isSourcegraphDotCom: boolean
@@ -78,10 +82,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
+    const isBatchChangesLicensed = !!window.context.licenseInfo?.batchChanges?.unrestricted
+    const canUseBatchChanges = !!window.context.licenseInfo?.batchChanges
 
     const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
-        openTab ?? (isSourcegraphDotCom ? 'gettingStarted' : 'batchChanges')
+        openTab ?? (isSourcegraphDotCom || !canUseBatchChanges ? 'gettingStarted' : 'batchChanges')
     )
 
     // We keep state to track to the last total count of batch changes in the connection
@@ -151,9 +157,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader
                 className="test-batches-list-page mb-3"
                 actions={
-                    canCreate ? (
-                        <NewBatchChangeButton to={`${location.pathname}/create`} />
-                    ) : (
+                    isSourcegraphDotCom ? (
                         <Button
                             as={Link}
                             to="https://about.sourcegraph.com"
@@ -162,6 +166,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         >
                             Get Sourcegraph Enterprise
                         </Button>
+                    ) : (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
                     )
                 }
                 headingElement={headingElement}
@@ -171,18 +177,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            <BatchChangeListTabHeader
-                selectedTab={selectedTab}
-                setSelectedTab={setSelectedTab}
-                isSourcegraphDotCom={isSourcegraphDotCom}
-            />
+            <BatchChangesListIntro isLicensed={isBatchChangesLicensed} viewerIsAdmin={!!authenticatedUser?.siteAdmin} />
+            {!isSourcegraphDotCom && canUseBatchChanges && (
+                <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+            )}
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    authenticatedUser={authenticatedUser}
-                    className="mb-4"
-                />
+                <GettingStarted canCreate={canCreate} isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
             {selectedTab === 'batchChanges' && (
                 <>
@@ -256,14 +256,24 @@ export interface NamespaceBatchChangeListPageProps extends Omit<BatchChangeListP
 export const NamespaceBatchChangeListPage: React.FunctionComponent<
     React.PropsWithChildren<NamespaceBatchChangeListPageProps>
 > = ({ authenticatedUser, namespaceID, ...props }) => {
-    // A user should only see the button to create a batch change in a namespace if it is
-    // their namespace (user namespace), or they belong to it (organization namespace)
-    const canCreateInThisNamespace = useMemo(
-        () =>
+    // A user should only see the button to create a batch change in a namespace if they
+    // have permission to create batch changes and either they are looking at their user
+    // namespace or the namespace of one of the organizations they are a member of.
+    const canCreateInThisNamespace: true | string = useMemo(() => {
+        if (authenticatedUser.siteAdmin) {
+            return true
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        if (
             authenticatedUser.id === namespaceID ||
-            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID),
-        [authenticatedUser, namespaceID]
-    )
+            authenticatedUser.organizations.nodes.map(org => org.id).includes(namespaceID)
+        ) {
+            return true
+        }
+        return NO_ACCESS_NAMESPACE
+    }, [authenticatedUser, namespaceID])
 
     return (
         <BatchChangeListPage
@@ -286,7 +296,7 @@ const BatchChangeListEmptyElement: React.FunctionComponent<
             <Text>
                 <strong>No batch changes have been created.</strong>
             </Text>
-            {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+            <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
         </div>
     )
 }
@@ -295,9 +305,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{
         selectedTab: SelectedTab
         setSelectedTab: (selectedTab: SelectedTab) => void
-        isSourcegraphDotCom: boolean
     }>
-> = ({ selectedTab, setSelectedTab, isSourcegraphDotCom }) => {
+> = ({ selectedTab, setSelectedTab }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -315,21 +324,19 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     return (
         <nav className="overflow-auto mb-2" aria-label="Batch Changes">
             <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
-                {!isSourcegraphDotCom && (
-                    <div className="nav-item">
-                        <Link
-                            to=""
-                            onClick={onSelectBatchChanges}
-                            className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                            aria-selected={selectedTab === 'batchChanges'}
-                            role="tab"
-                        >
-                            <span className="text-content" data-tab-content="All batch changes">
-                                All batch changes
-                            </span>
-                        </Link>
-                    </div>
-                )}
+                <div className="nav-item">
+                    <Link
+                        to=""
+                        onClick={onSelectBatchChanges}
+                        className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
+                        aria-selected={selectedTab === 'batchChanges'}
+                        role="tab"
+                    >
+                        <span className="text-content" data-tab-content="All batch changes">
+                            All batch changes
+                        </span>
+                    </Link>
+                </div>
                 <div className="nav-item">
                     <Link
                         to=""

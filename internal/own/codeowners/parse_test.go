@@ -266,8 +266,7 @@ README.md  @docs
 			Pattern: "LICENSE",
 			Owner: []*codeownerspb.Owner{
 				{Handle: "legal"},
-				// Note: To match GitLab parsing, we should not consider this as email.
-				{Email: "this_does_not_match"},
+				{Handle: "this_does_not_match"},
 				{Email: "janedoe@gitlab.com"},
 			},
 			LineNumber: 29,
@@ -435,16 +434,54 @@ func TestParsePathWithSpaces(t *testing.T) {
 func TestParseSection(t *testing.T) {
 	got, err := codeowners.Parse(strings.NewReader(
 		`[PM]
-		own/codeowners/* @own-pms`))
+own/codeowners/* @own-pms
+
+# Optional approvers.
+^[Eng]
+own/codeowners/* @own-engs
+
+# Multiple approvers required.
+[Eng][2]
+own/codeowners/* @own-engs
+
+# Case-insensitivity.
+[pm]
+own/codeowners/* @own-pms
+`))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{{
-		Pattern:     "own/codeowners/*",
-		SectionName: "pm",
-		Owner: []*codeownerspb.Owner{
-			{Handle: "own-pms"},
+	want := []*codeownerspb.Rule{
+		{
+			Pattern:     "own/codeowners/*",
+			SectionName: "pm",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-pms"},
+			},
+			LineNumber: 2,
 		},
-		LineNumber: 2,
-	}}
+		{
+			Pattern:     "own/codeowners/*",
+			SectionName: "eng",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-engs"},
+			},
+			LineNumber: 6,
+		},
+		{
+			Pattern:     "own/codeowners/*",
+			SectionName: "eng",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-engs"},
+			},
+			LineNumber: 10,
+		},
+		{
+			Pattern:     "own/codeowners/*",
+			SectionName: "pm",
+			Owner: []*codeownerspb.Owner{
+				{Handle: "own-pms"},
+			},
+			LineNumber: 14,
+		}}
 	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
 }
 

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 
+import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Link, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitorFields } from '../../../graphql-operations'
-import { useExperimentalFeatures } from '../../../stores'
+import type { AuthenticatedUser } from '../../../auth'
+import type { CodeMonitorFields } from '../../../graphql-operations'
 
 import { EmailAction } from './actions/EmailAction'
 import { SlackWebhookAction } from './actions/SlackWebhookAction'

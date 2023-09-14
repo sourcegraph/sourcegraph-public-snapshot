@@ -1,0 +1,10 @@
+{
+  "ref": "refs/heads/ready-to-update",
+  "node_id": "MDM6UmVmMjIxMTQ3NTEzOnJlZnMvaGVhZHMvcmVhZHktdG8tdXBkYXRl",
+  "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/ready-to-update",
+  "object": {
+   "type": "commit",
+   "sha": "58377a8785c955d5f61293dda65657afddbc8dfc",
+   "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/commits/58377a8785c955d5f61293dda65657afddbc8dfc"
+  }
+ }

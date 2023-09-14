@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { DecoratorFn, Story, Meta } from '@storybook/react'
 import { upperFirst } from 'lodash'
 
 import { H3 } from '@sourcegraph/wildcard'
@@ -8,7 +8,7 @@ import { H3 } from '@sourcegraph/wildcard'
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeState, BatchSpecState } from '../../../graphql-operations'
 
-import { BatchChangeStatePill, BatchChangeStatePillProps } from './BatchChangeStatePill'
+import { BatchChangeStatePill, type BatchChangeStatePillProps } from './BatchChangeStatePill'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

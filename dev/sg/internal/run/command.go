@@ -137,10 +137,10 @@ func (sc *startedCmd) CapturedStderr() string {
 	return string(sc.stderrBuf.Bytes())
 }
 
-func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
+func getSecrets(ctx context.Context, name string, extSecrets map[string]secrets.ExternalSecret) (map[string]string, error) {
 	secretsEnv := map[string]string{}
 
-	if len(cmd.ExternalSecrets) == 0 {
+	if len(extSecrets) == 0 {
 		return secretsEnv, nil
 	}
 
@@ -150,11 +150,11 @@ func getSecrets(ctx context.Context, cmd Command) (map[string]string, error) {
 	}
 
 	var errs error
-	for envName, secret := range cmd.ExternalSecrets {
+	for envName, secret := range extSecrets {
 		secretsEnv[envName], err = secretsStore.GetExternal(ctx, secret)
 		if err != nil {
 			errs = errors.Append(errs,
-				errors.Wrapf(err, "failed to access secret %q for command %q", envName, cmd.Name))
+				errors.Wrapf(err, "failed to access secret %q for command %q", envName, name))
 		}
 	}
 	return secretsEnv, errs
@@ -172,7 +172,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
 	sc.Cmd.Dir = dir
 
-	secretsEnv, err := getSecrets(ctx, cmd)
+	secretsEnv, err := getSecrets(ctx, cmd.Name, cmd.ExternalSecrets)
 	if err != nil {
 		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
 			cmd.Name, output.EmojiFailure, err.Error()))

@@ -1,14 +1,14 @@
-import { ApolloClient, gql } from '@apollo/client'
-import { from, Observable } from 'rxjs'
+import { type ApolloClient, gql } from '@apollo/client'
+import { from, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import {
+import type {
     CreateDashboardResult,
     CreateDashboardVariables,
     InsightsPermissionGrantsInput,
 } from '../../../../../../../graphql-operations'
-import { InsightsDashboardOwner, InsightsDashboardOwnerType } from '../../../../types'
-import { DashboardCreateInput, DashboardCreateResult } from '../../../code-insights-backend-types'
+import { type InsightsDashboardOwner, InsightsDashboardOwnerType } from '../../../../types'
+import type { DashboardCreateInput, DashboardCreateResult } from '../../../code-insights-backend-types'
 
 const CREATE_DASHBOARD_MUTATION_GQL = gql`
     mutation CreateDashboard($input: CreateInsightsDashboardInput!) {

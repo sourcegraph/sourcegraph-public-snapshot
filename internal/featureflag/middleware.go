@@ -98,6 +98,13 @@ func FromContext(ctx context.Context) *FlagSet {
 	return nil
 }
 
+func CopyContext(dst, from context.Context) context.Context {
+	if flags := from.Value(flagContextKey{}); flags != nil {
+		return context.WithValue(dst, flagContextKey{}, flags)
+	}
+	return dst
+}
+
 func GetEvaluatedFlagSet(ctx context.Context) EvaluatedFlagSet {
 	if flagSet := FromContext(ctx); flagSet != nil {
 		return getEvaluatedFlagSetFromCache(flagSet)

@@ -1,18 +1,18 @@
 import {
-    DependencyList,
-    EffectCallback,
-    EventHandler,
-    FormEventHandler,
-    RefObject,
-    SetStateAction,
-    SyntheticEvent,
+    type DependencyList,
+    type EffectCallback,
+    type EventHandler,
+    type FormEventHandler,
+    type RefObject,
+    type SetStateAction,
+    type SyntheticEvent,
     useEffect,
     useMemo,
     useRef,
     useState,
 } from 'react'
 
-import { debounce, DebouncedFunc, isFunction } from 'lodash'
+import { debounce, type DebouncedFunc, isFunction } from 'lodash'
 import { noop } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'

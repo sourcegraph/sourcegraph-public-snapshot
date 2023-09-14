@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gsmsecret",
+    srcs = ["gsmsecret.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//datagooglesecretmanagersecretversion",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//secretmanagersecret",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//secretmanagersecretversion",
+    ],
+)

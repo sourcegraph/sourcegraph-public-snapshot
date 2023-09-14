@@ -1,11 +1,11 @@
 import path from 'path'
 
-import { Options, StorybookConfig } from '@storybook/core-common'
+import type { Options, StorybookConfig } from '@storybook/core-common'
 import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { type Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, type RuleSetRule } from 'webpack'
 
 import {
     getBabelLoader,
@@ -184,8 +184,8 @@ const config: Config = {
         })
 
         config.module?.rules.unshift({
-            test: /\.(sass|scss)$/,
-            include: /\.module\.(sass|scss)$/,
+            test: /\.(sass|scss|css)$/,
+            include: /\.module\.(sass|scss|css)$/,
             exclude: storybookPath,
             use: getCSSLoaders(
                 'style-loader',
@@ -206,7 +206,7 @@ const config: Config = {
             // CSS rule for external plain CSS (skip SASS and PostCSS for build perf)
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
-            exclude: [storybookPath, monacoEditorPath],
+            exclude: [storybookPath, monacoEditorPath, /\.module\.css$/],
             use: ['@terminus-term/to-string-loader', getBasicCSSLoader()],
         })
 

@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -19,7 +19,7 @@ import { BatchSpecContextProvider } from '../../BatchSpecContext'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
     FETCH_BATCH_SPEC_EXECUTION,
-    queryWorkspacesList as _queryWorkspacesList,
+    type queryWorkspacesList as _queryWorkspacesList,
 } from '../backend'
 
 import { ExecutionWorkspaces } from './ExecutionWorkspaces'

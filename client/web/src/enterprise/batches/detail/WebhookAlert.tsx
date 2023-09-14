@@ -7,7 +7,7 @@ import { Button, useObservable, Link, H4, Text } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import { BatchChangeFields } from '../../../graphql-operations'
+import type { BatchChangeFields } from '../../../graphql-operations'
 import { CodeHost } from '../CodeHost'
 
 import styles from './WebhookAlert.module.scss'

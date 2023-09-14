@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package api.internalapi.v1;
+
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1";
+
+service ConfigService {
+  rpc GetConfig(GetConfigRequest) returns (GetConfigResponse) {}
+}
+
+message GetConfigRequest {}
+
+message GetConfigResponse {
+  RawUnified raw_unified = 1;
+}
+
+message RawUnified {
+  int32 id = 1;
+  string site = 2;
+  ServiceConnections service_connections = 3;
+}
+
+// ServiceConnections represents configuration about how the deployment
+// internally connects to services. These are settings that need to be
+// propagated from the frontend to other services, so that the frontend
+// can be the source of truth for all configuration.
+message ServiceConnections {
+  // GitServers is the addresses of gitserver instances that should be
+  // talked to.
+  repeated string git_servers = 1;
+  // PostgresDSN is the PostgreSQL DB data source name.
+  // eg: "postgres://sg@pgsql/sourcegraph?sslmode=false"
+  string postgres_dsn = 2;
+  // CodeIntelPostgresDSN is the PostgreSQL DB data source name for the
+  // code intel database.
+  // eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
+  string code_intel_postgres_dsn = 3;
+  // CodeInsightsDSN is the PostgreSQL DB data source name for the
+  // code insights database.
+  // eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
+  string code_insights_dsn = 4;
+  // Searchers is the addresses of searcher instances that should be talked to.
+  repeated string searchers = 5;
+  // Symbols is the addresses of symbol instances that should be talked to.
+  repeated string symbols = 6;
+  // Embeddings is the addresses of embeddings instances that should be talked
+  // to.
+  repeated string embeddings = 7;
+  // Qdrant is the address of the Qdrant instance (or empty if disabled)
+  string qdrant = 8;
+  // Zoekts is the addresses of Zoekt instances to talk to.
+  repeated string zoekts = 9;
+  // ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
+  // cache the list of indexed repository. After TTL is over, new list will
+  // get requested from Zoekt shards.
+  google.protobuf.Duration zoekt_list_ttl = 10;
+}

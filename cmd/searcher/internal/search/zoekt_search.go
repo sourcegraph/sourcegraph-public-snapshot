@@ -74,15 +74,9 @@ func zoektSearch(ctx context.Context, client zoekt.Streamer, args *search.TextPa
 		return nil
 	}
 
-	numRepos := 0
-	for _, br := range branchRepos {
-		numRepos += int(br.Repos.GetCardinality())
-	}
-
-	searchOpts := (&zoektutil.Options{
-		NumRepos:       numRepos,
+	searchOpts := (&search.ZoektParameters{
 		FileMatchLimit: args.FileMatchLimit,
-	}).ToSearch(ctx)
+	}).ToSearchOptions(ctx)
 	searchOpts.Whole = true
 
 	filePathPatterns, err := handleFilePathPatterns(args)

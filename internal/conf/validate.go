@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -219,12 +218,15 @@ var siteConfigSecrets = []struct {
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
 	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
+	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
+	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
+	{readPath: `app.dotcomAuthToken`, editPaths: []string{"app", "dotcomAuthToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
 // the given configuration.
 //
-// Updates to this function should also being reflected in the RedactSecrets.
+// Updates to this function should also be reflected in the RedactSecrets.
 func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	oldCfg, err := ParseConfig(raw)
 	if err != nil {
@@ -244,6 +246,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		}
 		if ap.Bitbucketcloud != nil {
 			oldSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
+		}
+		if ap.AzureDevOps != nil {
+			oldSecrets[ap.AzureDevOps.ClientID] = ap.AzureDevOps.ClientSecret
 		}
 	}
 
@@ -266,6 +271,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		if ap.Bitbucketcloud != nil && ap.Bitbucketcloud.ClientSecret == redactedSecret {
 			ap.Bitbucketcloud.ClientSecret = oldSecrets[ap.Bitbucketcloud.ClientKey]
 		}
+		if ap.AzureDevOps != nil && ap.AzureDevOps.ClientSecret == redactedSecret {
+			ap.AzureDevOps.ClientSecret = oldSecrets[ap.AzureDevOps.ClientID]
+		}
 	}
 	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
 	if err != nil {
@@ -273,12 +281,25 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	}
 
 	for _, secret := range siteConfigSecrets {
-		v := gjson.Get(unredactedSite, secret.readPath).String()
-		if v != redactedSecret {
+		v, err := jsonc.ReadProperty(unredactedSite, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok := v.(string)
+		if ok && val != redactedSecret {
 			continue
 		}
 
-		unredactedSite, err = jsonc.Edit(unredactedSite, gjson.Get(raw.Site, secret.readPath).String(), secret.editPaths...)
+		v, err = jsonc.ReadProperty(raw.Site, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok = v.(string)
+		if !ok {
+			continue
+		}
+
+		unredactedSite, err = jsonc.Edit(unredactedSite, val, secret.editPaths...)
 		if err != nil {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
@@ -290,6 +311,29 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	}
 
 	return formattedSite, err
+}
+
+func ReturnSafeConfigs(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
+	cfg, err := ParseConfig(raw)
+	if err != nil {
+		return empty, errors.Wrap(err, "parse config")
+	}
+
+	// Another way to achieve this would be to use the `reflect` package to iterate through a slice
+	// of white listed fields in the `schema.SiteConfiguration` struct and populate the new instance of
+	// schema.SiteConfiguration with the fields contained in the slice, however I feel using `reflect` is
+	// an overkill
+	r, err := json.Marshal(schema.SiteConfiguration{
+		// 🚨 SECURITY: Only populate this struct with fields that are safe to display to non site-admins.
+		BatchChangesRolloutWindows: cfg.BatchChangesRolloutWindows,
+	})
+	if err != nil {
+		return empty, err
+	}
+
+	return conftypes.RawUnified{
+		Site: string(r),
+	}, err
 }
 
 func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
@@ -333,6 +377,9 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 		if ap.Bitbucketcloud != nil {
 			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret)
 		}
+		if ap.AzureDevOps != nil {
+			ap.AzureDevOps.ClientSecret = getRedactedSecret(ap.AzureDevOps.ClientSecret)
+		}
 	}
 	redactedSite := raw.Site
 	if len(cfg.AuthProviders) > 0 {
@@ -343,8 +390,21 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 	}
 
 	for _, secret := range siteConfigSecrets {
-		val := gjson.Get(redactedSite, secret.readPath).String()
-		if val == "" {
+		v, err := jsonc.ReadProperty(redactedSite, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok := v.(string)
+		if ok && val == "" {
+			continue
+		}
+
+		v, err = jsonc.ReadProperty(raw.Site, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok = v.(string)
+		if !ok {
 			continue
 		}
 

@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -130,25 +132,21 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	flags := make(map[string]bool)
 	flags["testflag"] = true
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	want := []*database.Event{
 		{
 			Name:             "event1",
 			UserID:           1,
 			Source:           "test",
 			EvaluatedFlagSet: flags,
-			DeviceID:         ptr("device-1"),
-			InsertID:         ptr("insert-1"),
+			DeviceID:         pointers.Ptr("device-1"),
+			InsertID:         pointers.Ptr("insert-1"),
 		},
 		{
 			Name:     "event2",
 			UserID:   2,
 			Source:   "test",
-			DeviceID: ptr("device-2"),
-			InsertID: ptr("insert-2"),
+			DeviceID: pointers.Ptr("device-2"),
+			InsertID: pointers.Ptr("insert-2"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, want)
@@ -176,6 +174,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 					123,
 					125,
 				},
+				PublicArgument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:           "test",
 				Version:          "0.0.0+dev",
 				EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
@@ -187,6 +189,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				Name:   "event2",
 				UserID: 2,
 				Argument: json.RawMessage{
+					123,
+					125,
+				},
+				PublicArgument: json.RawMessage{
 					123,
 					125,
 				},
@@ -221,6 +227,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				123,
 				125,
 			},
+			PublicArgument: json.RawMessage{
+				123,
+				125,
+			},
 			Source:           "test",
 			Version:          "0.0.0+dev",
 			EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
@@ -236,25 +246,21 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
 			Name:     "event1",
 			UserID:   1,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 		{
 			Name:     "event2",
 			UserID:   2,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -285,6 +291,10 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 					123,
 					125,
 				},
+				PublicArgument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
 				DeviceID: valast.Addr("device").(*string),
@@ -305,6 +315,10 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 				Name:   "event2",
 				UserID: 2,
 				Argument: json.RawMessage{
+					123,
+					125,
+				},
+				PublicArgument: json.RawMessage{
 					123,
 					125,
 				},
@@ -342,32 +356,28 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
 		{
 			Name:     "allowed",
 			UserID:   1,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 		{
 			Name:     "not-allowed",
 			UserID:   2,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 		{
 			Name:     "allowed",
 			UserID:   3,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -398,6 +408,10 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 						123,
 						125,
 					},
+					PublicArgument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
 					DeviceID: valast.Addr("device").(*string),
@@ -408,6 +422,10 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 					Name:   "allowed",
 					UserID: 3,
 					Argument: json.RawMessage{
+						123,
+						125,
+					},
+					PublicArgument: json.RawMessage{
 						123,
 						125,
 					},
@@ -464,27 +482,23 @@ func TestBuildBigQueryObject(t *testing.T) {
 	flags := make(featureflag.EvaluatedFlagSet)
 	flags["testflag"] = true
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	event := &database.Event{
 		ID:               1,
 		Name:             "GREAT_EVENT",
 		URL:              "https://sourcegraph.com/search",
 		UserID:           5,
 		AnonymousUserID:  "anonymous",
-		Argument:         json.RawMessage("argument"),
+		PublicArgument:   json.RawMessage("public_argument"),
 		Source:           "src",
 		Version:          "1.1.1",
 		Timestamp:        atTime,
 		EvaluatedFlagSet: flags,
-		CohortID:         ptr("cohort1"),
-		FirstSourceURL:   ptr("first_source_url"),
-		LastSourceURL:    ptr("last_source_url"),
-		Referrer:         ptr("reff"),
-		DeviceID:         ptr("devid"),
-		InsertID:         ptr("insertid"),
+		CohortID:         pointers.Ptr("cohort1"),
+		FirstSourceURL:   pointers.Ptr("first_source_url"),
+		LastSourceURL:    pointers.Ptr("last_source_url"),
+		Referrer:         pointers.Ptr("reff"),
+		DeviceID:         pointers.Ptr("devid"),
+		InsertID:         pointers.Ptr("insertid"),
 	}
 
 	metadata := &instanceMetadata{
@@ -511,7 +525,7 @@ func TestBuildBigQueryObject(t *testing.T) {
 		FeatureFlags:      `{"testflag":true}`,
 		CohortID:          valast.Addr("cohort1").(*string),
 		Referrer:          "reff",
-		PublicArgument:    "argument",
+		PublicArgument:    "public_argument",
 		DeviceID:          valast.Addr("devid").(*string),
 		InsertID:          valast.Addr("insertid").(*string),
 	}).Equal(t, got)
@@ -520,8 +534,8 @@ func TestBuildBigQueryObject(t *testing.T) {
 func TestGetInstanceMetadata(t *testing.T) {
 	ctx := context.Background()
 
-	stateStore := database.NewMockGlobalStateStore()
-	userEmailStore := database.NewMockUserEmailsStore()
+	stateStore := dbmocks.NewMockGlobalStateStore()
+	userEmailStore := dbmocks.NewMockUserEmailsStore()
 	version.Mock("fake-Version-1")
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
 	deploy.Mock("fake-deploy-type")
@@ -693,9 +707,9 @@ func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *te
 
 	return &telemetryHandler{
 		logger:             logger,
-		eventLogStore:      database.NewMockEventLogStore(),
-		globalStateStore:   database.NewMockGlobalStateStore(),
-		userEmailsStore:    database.NewMockUserEmailsStore(),
+		eventLogStore:      dbmocks.NewMockEventLogStore(),
+		globalStateStore:   dbmocks.NewMockGlobalStateStore(),
+		userEmailsStore:    dbmocks.NewMockUserEmailsStore(),
 		bookmarkStore:      bms,
 		sendEventsCallback: callbackFunc,
 		metrics:            newHandlerMetrics(obsContext),

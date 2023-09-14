@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "precise",
@@ -18,6 +19,7 @@ go_library(
 
 go_test(
     name = "precise_test",
+    timeout = "short",
     srcs = [
         "hash_test.go",
         "util_test.go",

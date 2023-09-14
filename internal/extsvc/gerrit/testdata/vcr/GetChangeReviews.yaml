@@ -1,0 +1,61 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - text/plain; charset=UTF-8
+    url: https://gerrit.sgdev.org/a/changes/Ic433e1f2e4edfebe4cf75b23ded032bb790d872a/revisions/current/reviewers
+    method: GET
+  response:
+    body: |
+      )]}'
+      [
+        {
+          "approvals": {
+            "Code-Review": "-2"
+          },
+          "_account_id": 1000018,
+          "name": "Idan Varsano",
+          "email": "idan.varsano@sourcegraph.com",
+          "username": "ivarsano"
+        },
+        {
+          "approvals": {
+            "Code-Review": "+1"
+          },
+          "_account_id": 1000034,
+          "name": "Kelli Rockwell",
+          "email": "kelli@sourcegraph.com"
+        }
+      ]
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7ccfcc00f8fea234-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Thu, 25 May 2023 18:21:13 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""

@@ -1,7 +1,7 @@
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { CloseBatchChangeResult, CloseBatchChangeVariables } from '../../../graphql-operations'
+import type { CloseBatchChangeResult, CloseBatchChangeVariables } from '../../../graphql-operations'
 
 export async function closeBatchChange({ batchChange, closeChangesets }: CloseBatchChangeVariables): Promise<void> {
     const result = await requestGraphQL<CloseBatchChangeResult, CloseBatchChangeVariables>(

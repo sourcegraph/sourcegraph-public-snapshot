@@ -32,6 +32,7 @@ func Default() Dashboards {
 		CodeIntelUploads(),
 		Telemetry(),
 		OtelCollector(),
+		Embeddings(),
 	}
 }
 

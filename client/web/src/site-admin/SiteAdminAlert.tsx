@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Alert, AlertProps, Icon, H2, H5 } from '@sourcegraph/wildcard'
+import { Alert, type AlertProps, Icon, H2, H5 } from '@sourcegraph/wildcard'
 
 import styles from './SiteAdminAlert.module.scss'
 

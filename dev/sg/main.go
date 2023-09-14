@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
+	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,6 +49,8 @@ func main() {
 
 var (
 	BuildCommit = "dev"
+
+	NoDevPrivateCheck = false
 
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
@@ -79,7 +83,8 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 
 // sg is the main sg CLI application.
 //
-//go:generate go run . -disable-overwrite help -full -output ./doc/dev/background-information/sg/reference.md
+// To generate the reference.md (previously done with go generate) do:
+// bazel run //doc/dev/background-information/sg:write_cli_reference_doc
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -136,6 +141,13 @@ var sg = &cli.App{
 			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
 			EnvVars:     []string{"SG_DISABLE_OUTPUT_DETECTION"},
 			Destination: &std.DisableOutputDetection,
+		},
+		&cli.BoolFlag{
+			Name:        "no-dev-private",
+			Usage:       "disable checking for dev-private - only useful for automation or ci",
+			EnvVars:     []string{"SG_NO_DEV_PRIVATE"},
+			Value:       false,
+			Destination: &NoDevPrivateCheck,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
@@ -261,7 +273,7 @@ var sg = &cli.App{
 		// Common dev tasks
 		startCommand,
 		runCommand,
-		ciCommand,
+		ci.Command,
 		testCommand,
 		lintCommand,
 		generateCommand,
@@ -270,12 +282,16 @@ var sg = &cli.App{
 		insightsCommand,
 		telemetryCommand,
 		monitoringCommand,
+		contextCommand,
+		deployCommand,
+		wolfiCommand,
 
 		// Dev environment
 		secretCommand,
 		setupCommand,
 		srcCommand,
 		srcInstanceCommand,
+		appCommand,
 
 		// Company
 		teammateCommand,
@@ -286,6 +302,7 @@ var sg = &cli.App{
 		auditCommand,
 		pageCommand,
 		cloudCommand,
+		msp.Command,
 
 		// Util
 		helpCommand,

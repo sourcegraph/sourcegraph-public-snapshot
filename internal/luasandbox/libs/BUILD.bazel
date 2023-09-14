@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "libs",
@@ -14,6 +15,7 @@ go_library(
 
 go_test(
     name = "libs_test",
+    timeout = "short",
     srcs = ["paths_test.go"],
     embed = [":libs"],
     deps = ["@com_github_google_go_cmp//cmp"],

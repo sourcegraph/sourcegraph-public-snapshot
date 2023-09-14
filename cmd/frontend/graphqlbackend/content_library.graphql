@@ -1,0 +1,38 @@
+extend type Query {
+    """
+    (experimental) Returns onboarding tour content.
+    """
+    onboardingTourContent: OnboardingTour!
+}
+
+extend type Mutation {
+    """
+    (experimental) Updates the current onboarding tour content.
+    """
+    updateOnboardingTourContent(input: String!): EmptyResponse!
+}
+
+"""
+(experimental) Onboarding tour content wrapper object.
+"""
+type OnboardingTour {
+    """
+    (experimental) The current version of the onboarding tour content.
+    """
+    current: OnboardingTourContent
+}
+
+"""
+(experimental) Content for a specific tour versioned by ID
+"""
+type OnboardingTourContent {
+    """
+    (experimental) GraphQL ID of the content tour object.
+    """
+    id: ID!
+
+    """
+    (experimental) JSON value of the onboarding content.
+    """
+    value: String!
+}

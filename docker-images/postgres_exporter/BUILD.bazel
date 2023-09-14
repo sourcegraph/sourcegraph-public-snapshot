@@ -1,0 +1,52 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+filegroup(
+    name = "config_files",
+    srcs = glob(["config/*"]),
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [":config_files"],
+    remap_paths = {
+        "/": "/config/",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_postgres_exporter_base",
+    entrypoint = ["/usr/bin/postgres_exporter"],
+    env = {
+        "PG_EXPORTER_EXTEND_QUERY_PATH": "/config/queries.yaml",
+    },
+    tars = [":config_tar"],
+    user = "postgres_exporter",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["postgres-exporter:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("postgres_exporter"),
+)

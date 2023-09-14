@@ -93,6 +93,31 @@ extend type Mutation {
         """
         unrestricted: Boolean
     ): EmptyResponse!
+
+    """
+    Cancel permissions sync job with given ID.
+    No error is returned when the job is not in `queued` state or there is no such job
+    with the given ID (latter means that most probably, the job has already been cleaned up).
+    """
+    cancelPermissionsSyncJob(
+        """
+        ID of the job to be canceled.
+        """
+        job: ID!
+        """
+        Optional cancellation reason.
+        """
+        reason: String
+    ): CancelPermissionsSyncJobResultMessage!
+}
+
+"""
+A status message of a permissions sync job cancellation.
+"""
+enum CancelPermissionsSyncJobResultMessage {
+    SUCCESS
+    NOT_FOUND
+    ERROR
 }
 
 extend type Query {
@@ -169,7 +194,32 @@ extend type Query {
         Optional filter for PermissionsSyncJobState.
         """
         state: PermissionsSyncJobState
+        """
+        Type of search for permissions sync jobs: user or repository.
+        """
+        searchType: PermissionsSyncJobsSearchType
+        """
+        Term used to search for permissions sync jobs.
+        """
+        query: String
+        """
+        Optional filter to find permissions sync jobs for a user. Please provide either this or repoID, but not both.
+        """
+        userID: ID
+        """
+        Optional filter to find permissions sync jobs for a repository. Please provide either this or userID, but not both.
+        """
+        repoID: ID
+        """
+        Optional filter to filter only partially successful sync jobs.
+        """
+        partial: Boolean
     ): PermissionsSyncJobsConnection!
+
+    """
+    Returns various permissions syncing statistics.
+    """
+    permissionsSyncingStats: PermissionsSyncingStats!
 
     """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
@@ -295,6 +345,19 @@ enum RepositoryPermission {
 }
 
 """
+PermissionSource indicates where a permission originated from.
+
+REPO_SYNC: The permission was synced from the code host, via repo-centric permission sync.
+USER_SYNC: The permission was synced from the code host using user-centric permission sync.
+API: The permission was set explicitly via the GraphQL API.
+"""
+enum PermissionSource {
+    REPO_SYNC
+    USER_SYNC
+    API
+}
+
+"""
 Permissions information of a repository or a user.
 """
 type PermissionsInfo {
@@ -311,12 +374,147 @@ type PermissionsInfo {
     The last updated time of permissions, the value is updated whenever there is a
     change to the database row (i.e. incremental update).
     """
-    updatedAt: DateTime!
+    updatedAt: DateTime
+    """
+    What was the source of the last permission update. The value is updated whenever different source last touched the database row (i.e. permission sync or explicit permissions update)
+    """
+    source: PermissionSource
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
     """
     unrestricted: Boolean!
+
+    """
+    The connection for repository permissions accessible to the user.
+    """
+    repositories(
+        """
+        Number of nodes returned during forward pagination. Maximum number of returned nodes is 100. Up to 20 nodes are returned by default.
+        """
+        first: Int
+        """
+        Number of nodes returned during backward pagination. Maximum number of returned nodes is 100. Up to 20 nodes are returned by default.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        Search query to filter repositories based on name.
+        """
+        query: String
+    ): PermissionsInfoRepositoriesConnection
+    """
+    The connection for users who have access to the repository.
+    """
+    users(
+        """
+        Number of nodes returned during forward pagination. Maximum number of returned nodes is 100.
+        """
+        first: Int
+        """
+        Number of nodes returned during backward pagination. Maximum number of returned nodes is 100.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        Search query to filter users based on username or display name.
+        """
+        query: String
+    ): PermissionsInfoUsersConnection
+}
+
+"""
+Connection for repository permissions accessible to the user
+"""
+type PermissionsInfoRepositoriesConnection implements Connection {
+    """
+    List of repository permission info nodes
+    """
+    nodes: [PermissionsInfoRepositoryNode!]!
+    """
+    The total number of repository permission info nodes in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Repository permission node defining why the repository is accessible to the user
+"""
+type PermissionsInfoRepositoryNode {
+    """
+    The ID of the repository.
+    """
+    id: ID!
+    """
+    The repository corresponding to the permission.
+    """
+    repository: Repository
+    """
+    The reason why the current user has permission to access the repository.
+    """
+    reason: String!
+    """
+    The timestamp when the permission was last updated at.
+    """
+    updatedAt: DateTime
+}
+
+"""
+Connection for user permission who has access to the repository.
+"""
+type PermissionsInfoUsersConnection implements Connection {
+    """
+    List of repository permission info nodes
+    """
+    nodes: [PermissionsInfoUserNode!]!
+    """
+    The total number of repository permission info nodes in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Repository permission node defining why the repository is accessible to the user.
+"""
+type PermissionsInfoUserNode {
+    """
+    The ID of the User.
+    """
+    id: ID!
+    """
+    The user corresponding to the permission.
+    """
+    user: User
+    """
+    The reason why the user has access to the repository.
+    """
+    reason: String!
+    """
+    The timestamp when the permission was last updated at.
+    """
+    updatedAt: DateTime
 }
 
 """
@@ -335,7 +533,7 @@ Permissions sync jobs.
 """
 type PermissionsSyncJobsConnection implements Connection {
     """
-    Permission sync jobs.
+    Permissions sync jobs.
     """
     nodes: [PermissionsSyncJob!]!
     """
@@ -349,7 +547,15 @@ type PermissionsSyncJobsConnection implements Connection {
 }
 
 """
-State types of permission sync jobs.
+Type of search for permissions sync jobs: user or repository.
+"""
+enum PermissionsSyncJobsSearchType {
+    USER
+    REPOSITORY
+}
+
+"""
+State types of permissions sync jobs.
 """
 enum PermissionsSyncJobState {
     QUEUED
@@ -361,19 +567,19 @@ enum PermissionsSyncJobState {
 }
 
 """
-Compound type for a permission sync job trigger reason.
-Consists of a reason group (PermissionSyncJobReasonGroup) and a reason itself, providing details
+Compound type for a permissions sync job trigger reason.
+Consists of a reason group (PermissionsSyncJobReasonGroup) and a reason itself, providing details
 about why/how the sync was triggered.
 """
 type PermissionsSyncJobReasonWithGroup {
     """
-    PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
+    PermissionsSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
     """
     group: PermissionsSyncJobReasonGroup!
     """
     Reason with details about why/how the sync was triggered.
     """
-    reason: PermissionsSyncJobReason!
+    reason: PermissionsSyncJobReason
 }
 
 """
@@ -387,6 +593,7 @@ enum PermissionsSyncJobReason {
     REASON_REPO_UPDATED_FROM_CODE_HOST
     REASON_USER_EMAIL_REMOVED
     REASON_USER_EMAIL_VERIFIED
+    REASON_USER_ADDED
     REASON_USER_ADDED_TO_ORG
     REASON_USER_REMOVED_FROM_ORG
     REASON_USER_ACCEPTED_ORG_INVITE
@@ -403,6 +610,8 @@ enum PermissionsSyncJobReason {
     REASON_GITHUB_REPO_MADE_PRIVATE_EVENT
     REASON_MANUAL_REPO_SYNC
     REASON_MANUAL_USER_SYNC
+    REASON_EXTERNAL_ACCOUNT_ADDED
+    REASON_EXTERNAL_ACCOUNT_DELETED
 }
 
 """
@@ -413,12 +622,13 @@ enum PermissionsSyncJobReasonGroup {
     WEBHOOK
     SCHEDULE
     SOURCEGRAPH
+    UNKNOWN
 }
 
 """
 Union type for a subject of a permission sync job (repository or user).
 """
-union PermissionSyncJobSubject = User | Repository
+union PermissionsSyncJobSubject = User | Repository
 
 """
 Permission sync job priority.
@@ -427,6 +637,14 @@ enum PermissionsSyncJobPriority {
     LOW
     MEDIUM
     HIGH
+}
+
+"""
+Describes the status of a permissions sync for a given provider (code host).
+"""
+enum CodeHostStatus {
+    SUCCESS
+    ERROR
 }
 
 """
@@ -444,7 +662,7 @@ type CodeHostState {
     """
     Status of permission sync of a given provider.
     """
-    status: String!
+    status: CodeHostStatus!
     """
     Status message.
     """
@@ -522,7 +740,7 @@ type PermissionsSyncJob implements Node {
     """
     Subject of a permission sync job (repository or user).
     """
-    subject: PermissionSyncJobSubject!
+    subject: PermissionsSyncJobSubject!
     """
     Priority of a permission sync job.
     """
@@ -551,37 +769,14 @@ type PermissionsSyncJob implements Node {
     State of providers (code hosts) during permission sync job.
     """
     codeHostStates: [CodeHostState!]!
-}
-
-"""
-Status types of permissions providers.
-"""
-enum PermissionsProviderStatus {
-    ERROR
-    SUCCESS
-}
-
-"""
-State of a permissions provider during a sync job.
-"""
-type PermissionsProviderState {
     """
-    Type of the provider.
+    Show if the job has finished with a partially successful result.
     """
-    type: String!
+    partialSuccess: Boolean!
     """
-    ID representing the provider.
+    Rank of the permissions syncing job in processing queue.
     """
-    id: String!
-    """
-    Type of the sync job.
-    """
-    status: PermissionsProviderStatus!
-    """
-    Message describing the status of the provider during a sync job - for example, the
-    contents of any errors and during which operation they occured.
-    """
-    message: String!
+    placeInQueue: Int
 }
 
 """
@@ -654,4 +849,38 @@ type BitbucketProjectPermissionJob {
     Shows that current project is accessible by any user of the project.
     """
     Unrestricted: Boolean!
+}
+
+"""
+Various permissions syncing statistics.
+"""
+type PermissionsSyncingStats {
+    """
+    The number of permissions sync jobs in the queue.
+    """
+    queueSize: Int!
+    """
+    The number of users with latest permissions sync job failing.
+    """
+    usersWithLatestJobFailing: Int!
+    """
+    The number of repositories with latest permissions sync job failing.
+    """
+    reposWithLatestJobFailing: Int!
+    """
+    The number of users with no permissions.
+    """
+    usersWithNoPermissions: Int!
+    """
+    The number of repositories with no permissions.
+    """
+    reposWithNoPermissions: Int!
+    """
+    The number of users with old permissions.
+    """
+    usersWithStalePermissions: Int!
+    """
+    The number of repository with old permissions.
+    """
+    reposWithStalePermissions: Int!
 }

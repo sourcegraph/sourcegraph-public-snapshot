@@ -1,0 +1,65 @@
+.own-explanation {
+    &-container {
+        background-color: var(--color-bg-1);
+    }
+
+    &-title {
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+
+    &-content {
+        font-size: 0.75rem;
+    }
+}
+
+.contents {
+    margin: 0.75rem 0;
+}
+
+.bordered {
+    border-bottom: 1px solid var(--border-color-2);
+}
+
+.own-inference-explanation {
+    font-weight: 400;
+}
+
+.table {
+    width: 100%;
+
+    td {
+        padding-bottom: 0.5rem;
+        padding-top: 0.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // Email icon, and the user are tightly fitting the width.
+    td.fitting {
+        width: min-content;
+    }
+
+    // While the badges column on the right-hand-side is expanding.
+    td.expanding {
+        width: 100%;
+    }
+
+    // Give a little bit more space to the owner display.
+    td.more-space {
+        padding-right: 3rem;
+    }
+}
+
+.edit-button-column {
+    display: flex;
+    justify-content: right;
+}
+.remove-add-button {
+    margin-right: 0.5rem;
+}
+.heading {
+    margin-bottom: 0.5rem;
+}

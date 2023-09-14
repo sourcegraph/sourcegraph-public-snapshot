@@ -1,17 +1,17 @@
 import React from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars } from '../../../graphql-operations'
+import type { Scalars } from '../../../graphql-operations'
 import { BatchChangeHeader } from '../batch-spec/header/BatchChangeHeader'
-import { TabBar, TabsConfig } from '../batch-spec/TabBar'
+import { TabBar, type TabsConfig } from '../batch-spec/TabBar'
 
 import { ConfigurationForm } from './ConfigurationForm'
 import { InsightTemplatesBanner } from './InsightTemplatesBanner'

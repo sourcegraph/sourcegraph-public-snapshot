@@ -29,8 +29,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -45,6 +47,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
+
+var enableHTMLInject = env.Get("ENABLE_INJECT_HTML", "false", "Enable HTML customization")
 
 type InjectedHTML struct {
 	HeadTop    template.HTML
@@ -142,7 +146,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := assets.LoadWebpackManifest()
+	manifest, err := assets.Provider.LoadWebpackManifest()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading webpack manifest")
 	}
@@ -179,6 +183,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		},
 
 		WebpackDevServer: webpackDevServer,
+	}
+
+	if enableHTMLInject != "true" {
+		common.Injected = InjectedHTML{}
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
@@ -346,7 +354,7 @@ func serveHome(db database.DB) handlerFunc {
 }
 
 func serveSignIn(db database.DB) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	handler := func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
@@ -358,6 +366,14 @@ func serveSignIn(db database.DB) handlerFunc {
 
 		return renderTemplate(w, "app.html", common)
 	}
+
+	// For app we use an extra middleware to handle passwordless signin via a
+	// in-memory secret.
+	if deploy.IsApp() {
+		return userpasswd.AppSignInMiddleware(db, handler)
+	}
+
+	return handler
 }
 
 func serveEmbed(db database.DB) handlerFunc {

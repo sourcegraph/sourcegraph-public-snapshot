@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -8,8 +8,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { CardBody, Card } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { BatchSpecWorkspaceByIDResult } from '../../../../../graphql-operations'
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
+import type { BatchSpecWorkspaceByIDResult } from '../../../../../graphql-operations'
+import type { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import {
     HIDDEN_WORKSPACE,
     QUEUED_WORKSPACE,
@@ -26,7 +26,7 @@ import {
 } from '../../batch-spec.mock'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
-    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    type queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
     BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 

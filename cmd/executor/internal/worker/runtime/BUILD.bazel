@@ -1,0 +1,58 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runtime",
+    srcs = [
+        "docker.go",
+        "firecracker.go",
+        "kubernetes.go",
+        "runtime.go",
+        "shell.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime",
+    visibility = ["//cmd/executor:__subpackages__"],
+    deps = [
+        "//cmd/executor/internal/util",
+        "//cmd/executor/internal/worker/cmdlogger",
+        "//cmd/executor/internal/worker/command",
+        "//cmd/executor/internal/worker/files",
+        "//cmd/executor/internal/worker/runner",
+        "//cmd/executor/internal/worker/workspace",
+        "//internal/executor/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//tools/clientcmd",
+    ],
+)
+
+go_test(
+    name = "runtime_test",
+    srcs = [
+        "docker_test.go",
+        "firecracker_test.go",
+        "kubernetes_test.go",
+        "mocks_test.go",
+        "runtime_test.go",
+        "shell_test.go",
+    ],
+    embed = [":runtime"],
+    deps = [
+        "//cmd/executor/internal/util",
+        "//cmd/executor/internal/worker/cmdlogger",
+        "//cmd/executor/internal/worker/command",
+        "//cmd/executor/internal/worker/files",
+        "//cmd/executor/internal/worker/runner",
+        "//cmd/executor/internal/worker/workspace",
+        "//internal/executor",
+        "//internal/executor/types",
+        "//internal/fileutil",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'

@@ -1,10 +1,10 @@
-import React, { FC, forwardRef } from 'react'
+import React, { type FC, forwardRef } from 'react'
 
 import { encodeURIPathComponent, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { Badge, Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { RepoChangesetsStatsResult, RepoChangesetsStatsVariables } from '../graphql-operations'
+import type { RepoChangesetsStatsResult, RepoChangesetsStatsVariables } from '../graphql-operations'
 
 import { REPO_CHANGESETS_STATS } from './backend'
 import { BatchChangesIcon } from './icons'
@@ -24,7 +24,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
         fetchPolicy: 'cache-first',
     })
 
-    if (!data || !data.repository) {
+    if (!data?.repository) {
         return null
     }
 

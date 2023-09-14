@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "streaming",
@@ -23,6 +24,7 @@ go_library(
 
 go_test(
     name = "streaming_test",
+    timeout = "short",
     srcs = [
         "filters_test.go",
         "search_filters_test.go",
@@ -32,8 +34,8 @@ go_test(
     deps = [
         "//internal/search/result",
         "//internal/types",
-        "//lib/group",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_stretchr_testify//require",
         "@org_uber_go_atomic//:atomic",
     ],

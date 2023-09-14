@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/log"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -16,7 +15,7 @@ import (
 // provider and debugMode references.
 func newConfWatcher(
 	logger log.Logger,
-	c conftypes.SiteConfigQuerier,
+	c ConfigurationSource,
 	// provider will be updated with the appropriate span processors.
 	provider *oteltracesdk.TracerProvider,
 	// spanProcessorBuilder is used to create span processors to configure on the provider
@@ -36,7 +35,7 @@ func newConfWatcher(
 	// return function to be called on every conf update
 	return func() {
 		var (
-			siteConfig     = c.SiteConfig()
+			siteConfig     = c.Config()
 			tracingConfig  = siteConfig.ObservabilityTracing
 			previousPolicy = policy.GetTracePolicy()
 			setTracerType  = None

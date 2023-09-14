@@ -1,9 +1,9 @@
-import { FetchResult, gql, useMutation } from '@apollo/client'
+import { type FetchResult, gql, useMutation } from '@apollo/client'
 
-import { SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables } from '../../../../graphql-operations'
+import type { SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables } from '../../../../graphql-operations'
 import { INSIGHT_VIEW_FRAGMENT } from '../backend/gql-backend/gql/GetInsights'
 import { searchInsightCreationOptimisticUpdate } from '../backend/gql-backend/methods/create-insight/create-insight'
-import { BackendInsight, InsightDashboard, InsightFilters, isVirtualDashboard } from '../types'
+import { type BackendInsight, type InsightDashboard, type InsightFilters, isVirtualDashboard } from '../types'
 
 export const SAVE_INSIGHT_AS_NEW_VIEW_GQL = gql`
     mutation SaveInsightAsNewView($input: SaveInsightAsNewViewInput!) {

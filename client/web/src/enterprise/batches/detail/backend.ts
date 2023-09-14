@@ -1,12 +1,12 @@
-import { QueryResult } from '@apollo/client'
-import { EMPTY, Observable } from 'rxjs'
+import type { QueryResult } from '@apollo/client'
+import { EMPTY, type Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
-import {
+import type {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
     BatchChangeFields,
@@ -61,6 +61,12 @@ const changesetsStatsFragment = gql`
         open
         unpublished
         archived
+        isCompleted
+        percentComplete
+        failed
+        retrying
+        scheduled
+        processing
     }
 `
 
@@ -313,6 +319,11 @@ export const externalChangesetFieldsFragment = gql`
         createdAt
         updatedAt
         nextSyncAt
+        commitVerification {
+            ... on GitHubCommitVerification {
+                verified
+            }
+        }
         currentSpec {
             id
             type

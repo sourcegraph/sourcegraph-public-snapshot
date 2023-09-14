@@ -1,6 +1,6 @@
 import { FilterType } from './filters'
 import { FilterKind, findFilter } from './query'
-import { Filter } from './token'
+import type { Filter } from './token'
 import {
     appendContextFilter,
     omitFilter,

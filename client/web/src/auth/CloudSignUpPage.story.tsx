@@ -1,10 +1,10 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 import { CloudSignUpPage } from './CloudSignUpPage'
 
@@ -17,6 +17,7 @@ export default config
 const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
+            clientID: '000',
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
@@ -24,6 +25,7 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
             serviceID: 'https://github.com',
         },
         {
+            clientID: '001',
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,

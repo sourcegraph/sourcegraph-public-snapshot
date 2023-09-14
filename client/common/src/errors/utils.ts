@@ -1,4 +1,5 @@
-import { ErrorLike } from './types'
+import type { ErrorLike } from './types'
+
 /**
  * Run the passed function and return `undefined` if it throws an error.
  */

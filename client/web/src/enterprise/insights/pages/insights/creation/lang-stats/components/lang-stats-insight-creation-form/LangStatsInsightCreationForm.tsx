@@ -1,9 +1,9 @@
-import { FC, FormEventHandler, FormHTMLAttributes, ReactNode } from 'react'
+import type { FC, FormEventHandler, FormHTMLAttributes, ReactNode } from 'react'
 
-import { Input, useFieldAPI, getDefaultInputProps, SubmissionErrors } from '@sourcegraph/wildcard'
+import { Input, type useFieldAPI, getDefaultInputProps, type SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { CodeInsightDashboardsVisibility, RepositoryField } from '../../../../../../components'
-import { LangStatsCreationFormFields } from '../../types'
+import type { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 

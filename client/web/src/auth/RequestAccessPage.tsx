@@ -7,7 +7,7 @@ import { Text, Link, ErrorAlert, Form, Input, Button, LoadingSpinner, TextArea, 
 
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
@@ -113,7 +113,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setAdditionalInfo(event.target.value)}
                     className="mb-4"
                     value={additionalInfo}
-                    placeholder="Use this field to provide extra info for your request access"
+                    placeholder="Use this field to provide extra info for your access request"
                 />
             </Label>
 
@@ -129,13 +129,13 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
 /**
  * The request access page component.
  */
-export const RequestAccessPage: React.FunctionComponent<{}> = () => {
+export const RequestAccessPage: React.FunctionComponent = () => {
     useEffect(() => eventLogger.logPageView('RequestAccessPage'), [])
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
-    const { sourcegraphDotComMode, allowSignup, experimentalFeatures, isAuthenticatedUser, xhrHeaders } = window.context
-    const isRequestAccessAllowed = checkRequestAccessAllowed(sourcegraphDotComMode, allowSignup, experimentalFeatures)
+    const { sourcegraphDotComMode, isAuthenticatedUser, xhrHeaders } = window.context
+    const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
 
     if (isAuthenticatedUser) {
         const returnTo = getReturnTo(location)

@@ -3,21 +3,17 @@ package backend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -27,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -73,7 +70,7 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 		return Mocks.Repos.Get(ctx, repo)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Get", repo, &err)
+	ctx, done := startTrace(ctx, "Get", repo, &err)
 	defer done()
 
 	return s.store.Get(ctx, repo)
@@ -86,7 +83,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return Mocks.Repos.GetByName(ctx, name)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
+	ctx, done := startTrace(ctx, "GetByName", name, &err)
 	defer done()
 
 	repo, err := s.store.GetByName(ctx, name)
@@ -105,25 +102,12 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	}
 
 	newName, err := s.add(ctx, name)
-	if err == nil {
-		return s.store.GetByName(ctx, newName)
+	if err != nil {
+		return nil, err
 	}
 
-	if errcode.IsNotFound(err) && shouldRedirect(name) {
-		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
-			Scheme:   "https",
-			Host:     "sourcegraph.com",
-			Path:     string(name),
-			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
-		}).String()}
-	}
+	return s.store.GetByName(ctx, newName)
 
-	return nil, err
-}
-
-func shouldRedirect(name api.RepoName) bool {
-	return !conf.Get().DisablePublicRepoRedirects &&
-		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
 }
 
 var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -135,7 +119,7 @@ var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
 // repo-updater when in sourcegraph.com mode. It's possible that the repo has
 // been renamed on the code host in which case a different name may be returned.
 func (s *repos) add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "Add", name, &err)
+	ctx, done := startTrace(ctx, "Add", name, &err)
 	defer done()
 
 	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
@@ -178,12 +162,12 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 		return Mocks.Repos.List(ctx, opt)
 	}
 
-	ctx, done := trace(ctx, "Repos", "List", opt, &err)
+	ctx, done := startTrace(ctx, "List", opt, &err)
 	defer func() {
 		if err == nil {
-			if span := opentracing.SpanFromContext(ctx); span != nil {
-				span.LogFields(otlog.Int("result.len", len(repos)))
-			}
+			trace.FromContext(ctx).SetAttributes(
+				attribute.Int("result.len", len(repos)),
+			)
 		}
 		done()
 	}()
@@ -197,12 +181,12 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 // The intended call site for this is the logic which assigns repositories to
 // zoekt shards.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
-	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
+	ctx, done := startTrace(ctx, "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			if span := opentracing.SpanFromContext(ctx); span != nil {
-				span.LogFields(otlog.Int("result.len", len(repos)))
-			}
+			trace.FromContext(ctx).SetAttributes(
+				attribute.Int("result.len", len(repos)),
+			)
 		}
 		done()
 	}()
@@ -221,7 +205,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := trace(ctx, "Repos", "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	// Cap GetInventory operation to some reasonable time.
@@ -259,7 +243,7 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := trace(ctx, "Repos", "DeleteRepositoryFromDisk", repoID, &err)
+	ctx, done := startTrace(ctx, "DeleteRepositoryFromDisk", repoID, &err)
 	defer done()
 
 	err = s.gitserverClient.Remove(ctx, repo.Name)
@@ -272,7 +256,7 @@ func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (
 		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := trace(ctx, "Repos", "RequestRepositoryClone", repoID, &err)
+	ctx, done := startTrace(ctx, "RequestRepositoryClone", repoID, &err)
 	defer done()
 
 	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
@@ -299,14 +283,14 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
+	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
 	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
-	ctx, done := trace(ctx, "Repos", "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := startTrace(ctx, "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
 	defer done()
 
 	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))

@@ -1,0 +1,29 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "otelcol-sourcegraph is runnable"
+    command: "otelcol-sourcegraph"
+    args:
+      - --version
+
+  # TODO(security): This container should not be running as root
+  # - name: "not running as root"
+  #   command: "/usr/bin/id"
+  #   args:
+  #     - -u
+  #   excludedOutput: ["^0"]
+  #   exitCode: 0
+
+fileExistenceTests:
+- name: '/otel-collector'
+  path: '/otel-collector'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: 'drwxr-xr-x'
+- name: 'Opentelemetry Configs'
+  path: '/etc/otel-collector/configs/jaeger.yaml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'

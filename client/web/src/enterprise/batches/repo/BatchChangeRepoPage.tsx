@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
@@ -6,12 +6,14 @@ import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
+import type { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
-import { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import type { RepositoryFields, RepoBatchChangeStats } from '../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { BatchChangeStatsTotalAction } from '../detail/BatchChangeStatsCard'
 import {
     ChangesetStatusUnpublished,
@@ -22,13 +24,15 @@ import {
 import { NewBatchChangeButton } from '../list/NewBatchChangeButton'
 
 import {
-    queryRepoBatchChanges as _queryRepoBatchChanges,
+    type queryRepoBatchChanges as _queryRepoBatchChanges,
     queryRepoBatchChangeStats as _queryRepoBatchChangeStats,
 } from './backend'
 import { RepoBatchChanges } from './RepoBatchChanges'
 
 interface BatchChangeRepoPageProps {
     repo: RepositoryFields
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats
     /** For testing only. */
@@ -39,8 +43,10 @@ interface BatchChangeRepoPageProps {
 
 export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     repo,
+    isSourcegraphDotCom,
+    authenticatedUser,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
-    ...context
+    ...props
 }) => {
     const repoDisplayName = displayRepoName(repo.name)
 
@@ -49,13 +55,23 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     )
     const hasChangesets = stats?.changesetsStats.total
 
+    const canCreate: true | string = useMemo(() => {
+        if (isSourcegraphDotCom) {
+            return NO_ACCESS_SOURCEGRAPH_COM
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        return true
+    }, [isSourcegraphDotCom, authenticatedUser])
+
     return (
         <Page>
             <PageTitle title="Batch Changes" />
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 headingElement="h1"
-                actions={hasChangesets ? undefined : <NewBatchChangeButton to="/batch-changes/create" />}
+                actions={<NewBatchChangeButton to="/batch-changes/create" canCreate={canCreate} />}
                 description={
                     hasChangesets
                         ? undefined
@@ -76,7 +92,13 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
             ) : (
                 <div className="mb-3" />
             )}
-            <RepoBatchChanges viewerCanAdminister={true} repo={repo} {...context} />
+            <RepoBatchChanges
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                viewerCanAdminister={true}
+                repo={repo}
+                canCreate={canCreate}
+                {...props}
+            />
         </Page>
     )
 }

@@ -1,9 +1,8 @@
-import { Remote } from 'comlink'
-import { Observable, Unsubscribable } from 'rxjs'
+import type { Remote } from 'comlink'
+import type { Unsubscribable } from 'rxjs'
 
 import type { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
 import type { FlatExtensionHostAPI } from '../api/contract'
-import type { PlainNotification } from '../api/extension/extensionHostApi'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -12,16 +11,10 @@ export interface Controller extends Unsubscribable {
      *
      * All callers should execute commands using this method instead of calling
      * {@link sourcegraph:CommandRegistry#executeCommand} directly (to ensure errors are emitted as notifications).
-     *
-     * @param suppressNotificationOnError By default, if command execution throws (or rejects with) an error, the
-     * error will be shown in the global notification UI component. Pass suppressNotificationOnError as true to
-     * skip this. The error is always returned to the caller.
      */
-    executeCommand(parameters: ExecuteCommandParameters, suppressNotificationOnError?: boolean): Promise<any>
+    executeCommand(parameters: ExecuteCommandParameters): Promise<any>
 
     registerCommand(entryToRegister: CommandEntry): Unsubscribable
-
-    commandErrors: Observable<PlainNotification>
 
     /**
      * Frees all resources associated with this client.

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "dbcache",
@@ -15,6 +16,7 @@ go_library(
 
 go_test(
     name = "dbcache_test",
+    timeout = "short",
     srcs = ["cached_indexable_repos_test.go"],
     embed = [":dbcache"],
     deps = [

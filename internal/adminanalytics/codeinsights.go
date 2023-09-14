@@ -18,9 +18,6 @@ type CodeInsights struct {
 
 func (c *CodeInsights) InsightHovers() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		c.Ctx,
-		c.DB,
-		c.Cache,
 		c.DateRange,
 		c.Grouping,
 		[]string{"InsightHover"},
@@ -44,9 +41,6 @@ func (c *CodeInsights) InsightHovers() (*AnalyticsFetcher, error) {
 
 func (c *CodeInsights) InsightDataPointClicks() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		c.Ctx,
-		c.DB,
-		c.Cache,
 		c.DateRange,
 		c.Grouping,
 		[]string{"InsightDataPointClick"},

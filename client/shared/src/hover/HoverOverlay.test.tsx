@@ -7,7 +7,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
-import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
+import { HoverOverlay, type HoverOverlayProps } from './HoverOverlay'
 
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
@@ -101,29 +101,6 @@ describe('HoverOverlay', () => {
                     {...commonProps}
                     actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
-                />
-            ).asFragment()
-        ).toMatchSnapshot()
-    })
-
-    test('actions, hover and alert present', () => {
-        expect(
-            render(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
-                    hoverOrError={{
-                        contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
-                        alerts: [
-                            {
-                                summary: {
-                                    kind: MarkupKind.Markdown,
-                                    value: 'Testing `markdown` rendering.',
-                                },
-                                type: 'test-alert-dismissalType',
-                            },
-                        ],
-                    }}
                 />
             ).asFragment()
         ).toMatchSnapshot()

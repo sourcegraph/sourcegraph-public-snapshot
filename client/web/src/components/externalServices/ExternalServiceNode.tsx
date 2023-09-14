@@ -1,5 +1,6 @@
-import { FC, useCallback, useState } from 'react'
+import { type FC, useCallback, useState } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -7,7 +8,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { ListExternalServiceFields } from '../../graphql-operations'
+import type { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 
 import { deleteExternalService } from './backend'
@@ -22,6 +23,7 @@ export interface ExternalServiceNodeProps {
 
 export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
             return
@@ -30,14 +32,19 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
         } catch (error) {
             setIsDeleting(asError(error))
         } finally {
-            window.location.reload()
+            const deletedCodeHostId = client.cache.identify({
+                __typename: 'ExternalService',
+                id: node.id,
+            })
+
+            // Remove deleted code host from the apollo cache.
+            client.cache.evict({ id: deletedCodeHostId })
         }
-    }, [node])
+    }, [node, client])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -51,7 +58,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs?.nodes[0]?.state) ? (
                         <Tooltip content="Sync is running">
                             <div aria-label="Sync is running">
-                                <LoadingSpinner className="mr-2" inline={true} />
+                                <LoadingSpinner className="m-0 mr-2" inline={true} />
                             </div>
                         </Tooltip>
                     ) : node.lastSyncError === null ? (
@@ -74,9 +81,11 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                 </div>
                 <div className="flex-grow-1">
                     <div>
-                        <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
+                        <Icon as={IconComponent} aria-label="Code host logo" className="code-host-logo mr-2" />
                         <strong>
-                            <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
+                            <Link to={`/site-admin/external-services/${encodeURIComponent(node.id)}`}>
+                                {node.displayName}
+                            </Link>{' '}
                             <small className="text-muted">
                                 ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
                             </small>
@@ -102,23 +111,36 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
+                    <Tooltip
+                        content={
+                            editingDisabled
+                                ? 'Editing code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                : 'Edit code host connection settings'
+                        }
+                    >
                         <Button
                             className="test-edit-external-service-button"
-                            to={`/site-admin/external-services/${node.id}/edit`}
+                            to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}
+                            disabled={editingDisabled}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> {editingDisabled ? 'View' : 'Edit'}
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
                         </Button>
                     </Tooltip>{' '}
-                    <Tooltip content="Delete code host connection">
+                    <Tooltip
+                        content={
+                            editingDisabled
+                                ? 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                : 'Delete code host connection'
+                        }
+                    >
                         <Button
                             aria-label="Delete"
                             className="test-delete-external-service-button"
                             onClick={onDelete}
-                            disabled={isDeleting === true}
+                            disabled={isDeleting === true || editingDisabled}
                             variant="danger"
                             size="sm"
                         >

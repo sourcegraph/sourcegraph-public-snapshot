@@ -123,5 +123,4 @@ func TestGetObjectService(t *testing.T) {
 			}
 		})
 	}
-
 }

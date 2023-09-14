@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Convenience script for https://buildkite.com/docs/agent/v3/cli-annotate
 # If you are writing a pipeline step DO NOT use this script directly - instead, use

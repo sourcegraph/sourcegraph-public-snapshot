@@ -2,7 +2,19 @@ package server
 
 import (
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 )
+
+// RepositoryLock is returned by RepositoryLocker.TryAcquire. It allows
+// updating the status of a directory lock, as well as releasing the lock.
+type RepositoryLock interface {
+	// SetStatus updates the status for the lock. If the lock has been released,
+	// this is a noop.
+	SetStatus(status string)
+	// Release releases the lock.
+	Release()
+}
 
 // RepositoryLocker provides locks for doing operations to a repository
 // directory. When a repository is locked, only the owner of the lock is
@@ -15,23 +27,36 @@ import (
 //
 // The main use of RepositoryLocker is to prevent concurrent clones. However,
 // it is also used during maintenance tasks such as recloning/migrating/etc.
-type RepositoryLocker struct {
+type RepositoryLocker interface {
+	// TryAcquire acquires the lock for dir. If it is already held, ok is false
+	// and lock is nil. Otherwise a non-nil lock is returned and true. When
+	// finished with the lock you must call lock.Release.
+	TryAcquire(dir common.GitDir, initialStatus string) (lock RepositoryLock, ok bool)
+	// Status returns the status of the locked directory dir. If dir is not
+	// locked, then locked is false.
+	Status(dir common.GitDir) (status string, locked bool)
+}
+
+func NewRepositoryLocker() RepositoryLocker {
+	return &repositoryLocker{
+		status: make(map[common.GitDir]string),
+	}
+}
+
+type repositoryLocker struct {
 	// mu protects status
 	mu sync.RWMutex
 	// status tracks directories that are locked. The value is the status. If
 	// a directory is in status, the directory is locked.
-	status map[GitDir]string
+	status map[common.GitDir]string
 }
 
-// TryAcquire acquires the lock for dir. If it is already held, ok is false
-// and lock is nil. Otherwise a non-nil lock is returned and true. When
-// finished with the lock you must call lock.Release.
-func (rl *RepositoryLocker) TryAcquire(dir GitDir, initialStatus string) (lock *RepositoryLock, ok bool) {
+func (rl *repositoryLocker) TryAcquire(dir common.GitDir, initialStatus string) (lock RepositoryLock, ok bool) {
 	rl.mu.Lock()
 	_, failed := rl.status[dir]
 	if !failed {
 		if rl.status == nil {
-			rl.status = make(map[GitDir]string)
+			rl.status = make(map[common.GitDir]string)
 		}
 		rl.status[dir] = initialStatus
 	}
@@ -41,51 +66,54 @@ func (rl *RepositoryLocker) TryAcquire(dir GitDir, initialStatus string) (lock *
 		return nil, false
 	}
 
-	return &RepositoryLock{
-		locker: rl,
-		dir:    dir,
+	return &repositoryLock{
+		unlock: func() {
+			rl.mu.Lock()
+			delete(rl.status, dir)
+			rl.mu.Unlock()
+		},
+		setStatus: func(status string) {
+			rl.mu.Lock()
+			rl.status[dir] = status
+			rl.mu.Unlock()
+		},
+		dir: dir,
 	}, true
 }
 
-// Status returns the status of the locked directory dir. If dir is not
-// locked, then locked is false.
-func (rl *RepositoryLocker) Status(dir GitDir) (status string, locked bool) {
+func (rl *repositoryLocker) Status(dir common.GitDir) (status string, locked bool) {
 	rl.mu.RLock()
 	defer rl.mu.RUnlock()
 	status, locked = rl.status[dir]
 	return
 }
 
-// RepositoryLock is returned by RepositoryLocker.TryAcquire. It allows
-// updating the status of a directory lock, as well as releasing the lock.
-type RepositoryLock struct {
-	locker *RepositoryLocker
-	dir    GitDir
+type repositoryLock struct {
+	unlock    func()
+	setStatus func(status string)
+	dir       common.GitDir
 
-	// done is protected by locker.mu
+	mu   sync.Mutex
 	done bool
 }
 
-// SetStatus updates the status for the lock. If the lock has been released,
-// this is a noop.
-func (l *RepositoryLock) SetStatus(status string) {
-	l.locker.mu.Lock()
-	defer l.locker.mu.Unlock()
+func (l *repositoryLock) SetStatus(status string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	// Ensure this is still locked before updating the status
 	if !l.done {
-		l.locker.status[l.dir] = status
+		l.setStatus(status)
 	}
 }
 
-// Release releases the lock.
-func (l *RepositoryLock) Release() {
-	l.locker.mu.Lock()
-	defer l.locker.mu.Unlock()
+func (l *repositoryLock) Release() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	// Prevent double release
 	if !l.done {
-		delete(l.locker.status, l.dir)
+		l.unlock()
 		l.done = true
 	}
 }

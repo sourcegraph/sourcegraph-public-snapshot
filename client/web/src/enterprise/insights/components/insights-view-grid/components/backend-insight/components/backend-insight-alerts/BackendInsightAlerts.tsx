@@ -1,11 +1,11 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import { mdiAlertCircle as mdiAlertCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
 import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import {
     Alert,
     Button,
@@ -21,9 +21,9 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { BackendInsightSeries } from '../../../../../../core'
+import type { BackendInsightSeries } from '../../../../../../core'
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'
-import { IncompleteDatapointAlert } from '../../../../../../core/types/insight/common'
+import type { IncompleteDatapointAlert } from '../../../../../../core/types/insight/common'
 
 import styles from './BackendInsightAlerts.module.scss'
 

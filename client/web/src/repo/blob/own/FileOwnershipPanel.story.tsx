@@ -1,19 +1,28 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
-import { FetchOwnershipResult } from '../../../graphql-operations'
+import type { FetchOwnershipResult } from '../../../graphql-operations'
 
-import { FETCH_OWNERS, FileOwnershipPanel } from './FileOwnershipPanel'
+import { FileOwnershipPanel } from './FileOwnershipPanel'
+import { FETCH_OWNERS } from './grapqlQueries'
 
 const response: FetchOwnershipResult = {
+    currentUser: {
+        permissions: { nodes: [] },
+    },
     node: {
         __typename: 'Repository',
         commit: {
+            __typename: 'GitCommit',
             blob: {
+                __typename: 'GitBlob',
                 ownership: {
+                    __typename: 'OwnershipConnection',
+                    totalOwners: 4,
                     nodes: [
                         {
                             __typename: 'Ownership',
@@ -21,7 +30,7 @@ const response: FetchOwnershipResult = {
                                 __typename: 'Person',
                                 email: 'alice@example.com',
                                 avatarURL: null,
-                                displayName: 'Alice',
+                                displayName: '',
                                 user: null,
                             },
                             reasons: [
@@ -29,6 +38,73 @@ const response: FetchOwnershipResult = {
                                     __typename: 'CodeownersFileEntry',
                                     title: 'CodeOwner',
                                     description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: 'bob@example.com',
+                                avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
+                                displayName: 'Bob the Builder',
+                                user: {
+                                    id: 'user1',
+                                    __typename: 'User',
+                                    displayName: 'Bob the Builder',
+                                    url: '/users/bob',
+                                    username: 'bob',
+                                    primaryEmail: {
+                                        __typename: 'UserEmail',
+                                        email: 'bob-primary@example.com',
+                                    },
+                                },
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This person is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
+                                },
+                                {
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Associated because they have contributed to this file in the last 90 days',
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Team',
+                                id: 'asdf',
+                                avatarURL: null,
+                                teamDisplayName: 'Delta Team',
+                                name: 'delta',
+                                external: false,
+                                url: '/teams/delta',
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This team is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
                                 },
                             ],
                         },
@@ -38,14 +114,37 @@ const response: FetchOwnershipResult = {
                                 __typename: 'Person',
                                 email: '',
                                 avatarURL: null,
-                                displayName: 'Bob',
+                                displayName: 'charlie',
                                 user: null,
                             },
                             reasons: [
                                 {
-                                    __typename: 'CodeownersFileEntry',
-                                    title: 'CodeOwner',
-                                    description: 'This person is listed in the CODEOWNERS file',
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Associated because they have contributed to this file in the last 90 days',
+                                },
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description: 'Associated because they have viewed this file in the last 90 days.',
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'alice',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description: 'Associated because they have viewed this file in the last 90 days.',
                                 },
                             ],
                         },
@@ -53,6 +152,7 @@ const response: FetchOwnershipResult = {
                 },
             },
         },
+        changelist: null,
     },
 }
 
@@ -71,7 +171,7 @@ const mockResponse: MockedResponse<FetchOwnershipResult> = {
 }
 
 const config: Meta = {
-    title: 'web/repo/blob/FileOwnership',
+    title: 'web/repo/blob/own/FileOwnership',
     parameters: {
         chromatic: { disableSnapshot: false },
     },
@@ -80,11 +180,13 @@ const config: Meta = {
 export default config
 
 export const Default: Story = () => (
-    <WebStory>
+    <WebStory mocks={[mockResponse]}>
         {() => (
-            <MockedProvider mocks={[mockResponse]}>
-                <FileOwnershipPanel repoID="github.com/sourcegraph/sourcegraph" filePath="README.md" />
-            </MockedProvider>
+            <FileOwnershipPanel
+                repoID="github.com/sourcegraph/sourcegraph"
+                filePath="README.md"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+            />
         )}
     </WebStory>
 )

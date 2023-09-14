@@ -7,18 +7,18 @@ import { Routes, Route } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../../auth'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage, NotFoundPage } from '../../components/HeroPage'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
-import { RouteV6Descriptor } from '../../util/contributions'
+import type { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import type { RouteV6Descriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
-import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
+import { RepoSettingsSidebar, type RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 
 import styles from './RepoSettingsArea.module.scss'
 
@@ -86,14 +86,19 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 
     return (
         <div className={classNames('container d-flex mt-3 px-3 flex-column flex-sm-row', styles.repoSettingsArea)}>
-            <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
+            <RepoSettingsSidebar
+                className="flex-0 mr-3"
+                {...props}
+                {...context}
+                repoSettingsSidebarGroups={props.repoSettingsSidebarGroups}
+            />
             <div className="flex-bounded">
                 <Routes>
                     {props.repoSettingsAreaRoutes.map(
                         ({ render, path, condition = () => true }) =>
                             condition(context) && <Route key="hardcoded-key" path={path} element={render(context)} />
                     )}
-                    <Route element={<NotFoundPage pageType="repository" />} />
+                    <Route path="*" element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

@@ -10,7 +10,7 @@ This how-to explains how to turn on [auto-indexing](../explanations/auto_indexin
 
 ## Deploy executors
 
-First, [deploy the executor service](../../../../admin/deploy_executors.md) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, securely analyze the code to produce a code graph data index, then upload that index to your Sourcegraph instance for processing.
+First, [deploy the executor service](../../../../admin/executors/deploy_executors.md) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, securely analyze the code to produce a code graph data index, then upload that index to your Sourcegraph instance for processing.
 
 ## Enable index job scheduling
 
@@ -43,3 +43,15 @@ The frequency of index job scheduling can be tuned via the following environment
 **`PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_BATCH_SIZE`**: The number of repositories to consider for auto-indexing scheduling at a time. Default is 2500.
 
 **`PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_REPOSITORIES_INSPECTED_PER_SECOND`**: The maximum number of repositories inspected for auto-indexing per second. Set to zero to disable limit. Default is 0.
+
+## Access to private repositories and packages
+
+Auto-indexing jobs run as Docker containers on the Executors 
+infrastructure, and by default don't have any knowledge about 
+the private repositories or package registries your builds might use.
+
+The type of information you will need to provide depends on the language and 
+ecosystem, but the mechanism is the same - [adding a secret to Executors "Code Graph" 
+namespace](../../../../admin/executors/executor_secrets.md).
+
+See the [language-specific instructions](./configure_auto_indexing.md#private-repositories-and-packages-configuration)

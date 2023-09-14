@@ -1,5 +1,5 @@
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../../settings/settings'
-import { CodeEditorWithPartialModel } from '../../../viewerTypes'
+import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeOrError } from '../../../../settings/settings'
+import type { CodeEditorWithPartialModel } from '../../../viewerTypes'
 
 import { computeContext } from './context'
 

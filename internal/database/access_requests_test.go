@@ -83,28 +83,31 @@ func TestAccessRequests_Update(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.AccessRequests()
+	accessRequestsStore := db.AccessRequests()
+	usersStore := db.Users()
+	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
 	t.Run("non-existent access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
-		updated, err := store.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved})
+		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
 		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
-		accessRequest, err := store.Create(ctx, &types.AccessRequest{
+		accessRequest, err := accessRequestsStore.Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
 			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
-		updated, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved})
+		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.NotNil(t, updated)
 		assert.NoError(t, err)
 		assert.Equal(t, updated.Status, types.AccessRequestStatusApproved)
+		assert.Equal(t, updated.DecisionByUserID, &user.ID)
 	})
 }
 
@@ -171,37 +174,40 @@ func TestAccessRequests_Count(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.AccessRequests()
+	accessRequestStore := db.AccessRequests()
 
-	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
+	usersStore := db.Users()
+	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
+
+	ar1, err := accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 	assert.NoError(t, err)
-	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "info2"})
+	ar2, err := accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "info2"})
 	assert.NoError(t, err)
-	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "info3"})
+	_, err = accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "info3"})
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		count, err := store.Count(ctx, &AccessRequestsFilterArgs{})
+		count, err := accessRequestStore.Count(ctx, &AccessRequestsFilterArgs{})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 3)
 	})
 
 	t.Run("by status", func(t *testing.T) {
-		store.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved})
-		store.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
+		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
 
 		pending := types.AccessRequestStatusPending
-		count, err := store.Count(ctx, &AccessRequestsFilterArgs{Status: &pending})
+		count, err := accessRequestStore.Count(ctx, &AccessRequestsFilterArgs{Status: &pending})
 		assert.NoError(t, err)
-		assert.Equal(t, count, 1)
+		assert.Equal(t, 1, count)
 
 		rejected := types.AccessRequestStatusRejected
-		count, err = store.Count(ctx, &AccessRequestsFilterArgs{Status: &rejected})
+		count, err = accessRequestStore.Count(ctx, &AccessRequestsFilterArgs{Status: &rejected})
 		assert.NoError(t, err)
-		assert.Equal(t, count, 1)
+		assert.Equal(t, 1, count)
 
 		approved := types.AccessRequestStatusApproved
-		count, err = store.Count(ctx, &AccessRequestsFilterArgs{Status: &approved})
+		count, err = accessRequestStore.Count(ctx, &AccessRequestsFilterArgs{Status: &approved})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 	})
@@ -216,17 +222,20 @@ func TestAccessRequests_List(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.AccessRequests()
+	accessRequestStore := db.AccessRequests()
 
-	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
+	usersStore := db.Users()
+	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
+
+	ar1, err := accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 	assert.NoError(t, err)
-	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "info2"})
+	ar2, err := accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "info2"})
 	assert.NoError(t, err)
-	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "info3"})
+	_, err = accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "info3"})
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		accessRequests, err := store.List(ctx, nil, nil)
+		accessRequests, err := accessRequestStore.List(ctx, nil, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -240,7 +249,7 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("order", func(t *testing.T) {
-		accessRequests, err := store.List(ctx, nil, &PaginationArgs{OrderBy: OrderBy{{Field: "name"}}, Ascending: true})
+		accessRequests, err := accessRequestStore.List(ctx, nil, &PaginationArgs{OrderBy: OrderBy{{Field: "name"}}, Ascending: true})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -255,7 +264,7 @@ func TestAccessRequests_List(t *testing.T) {
 
 	t.Run("limit & pagination", func(t *testing.T) {
 		one := 1
-		accessRequests, err := store.List(ctx, nil, &PaginationArgs{First: &one})
+		accessRequests, err := accessRequestStore.List(ctx, nil, &PaginationArgs{First: &one})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
@@ -269,7 +278,7 @@ func TestAccessRequests_List(t *testing.T) {
 
 		after := strconv.Itoa(int(accessRequests[0].ID))
 		two := int(2)
-		accessRequests, err = store.List(ctx, nil, &PaginationArgs{First: &two, After: &after, OrderBy: OrderBy{{Field: string(AccessRequestListID)}}})
+		accessRequests, err = accessRequestStore.List(ctx, nil, &PaginationArgs{First: &two, After: &after, OrderBy: OrderBy{{Field: string(AccessRequestListID)}}})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(accessRequests))
 
@@ -283,24 +292,24 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("by status", func(t *testing.T) {
-		store.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved})
-		store.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
+		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
 
 		// list all pending
 		pending := types.AccessRequestStatusPending
-		accessRequests, err := store.List(ctx, &AccessRequestsFilterArgs{Status: &pending}, nil)
+		accessRequests, err := accessRequestStore.List(ctx, &AccessRequestsFilterArgs{Status: &pending}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all rejected
 		rejected := types.AccessRequestStatusRejected
-		accessRequests, err = store.List(ctx, &AccessRequestsFilterArgs{Status: &rejected}, nil)
+		accessRequests, err = accessRequestStore.List(ctx, &AccessRequestsFilterArgs{Status: &rejected}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all approved
 		approved := types.AccessRequestStatusApproved
-		accessRequests, err = store.List(ctx, &AccessRequestsFilterArgs{Status: &approved}, nil)
+		accessRequests, err = accessRequestStore.List(ctx, &AccessRequestsFilterArgs{Status: &approved}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 	})

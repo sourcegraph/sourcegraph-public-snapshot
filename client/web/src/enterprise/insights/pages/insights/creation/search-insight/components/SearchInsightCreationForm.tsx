@@ -1,6 +1,6 @@
-import { FC, FormEventHandler, ReactNode, FormHTMLAttributes } from 'react'
+import type { FC, FormEventHandler, ReactNode, FormHTMLAttributes } from 'react'
 
-import { Input, FormGroup, getDefaultInputProps, useFieldAPI, SubmissionErrors } from '@sourcegraph/wildcard'
+import { Input, FormGroup, getDefaultInputProps, type useFieldAPI, type SubmissionErrors } from '@sourcegraph/wildcard'
 
 import {
     FormSeries,
@@ -9,7 +9,7 @@ import {
     RepoSettingSection,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { CreateInsightFormFields } from '../types'
+import type { CreateInsightFormFields } from '../types'
 
 interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
     handleSubmit: FormEventHandler
@@ -108,7 +108,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
-                    numberOfPoints={7}
+                    numberOfPoints={12}
                 />
             </FormGroup>
 

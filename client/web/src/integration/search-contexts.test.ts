@@ -3,17 +3,20 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
-import { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
-import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
+import type { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    highlightFileResult,
+    mixedSearchStreamEvents,
+} from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, getSearchQueryInputConfig, percySnapshotWithVariants } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -91,35 +94,35 @@ describe('Search contexts', () => {
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
     })
 
-    withSearchQueryInput(editorName => {
-        test(`Unavailable search context should remain in the query and disable the search context dropdown with default context (${editorName})`, async () => {
-            testContext.overrideGraphQL({
-                ...testContextForSearchContexts,
-                ...createViewerSettingsGraphQLOverride({
-                    user: {
-                        experimentalFeatures: {
-                            showSearchContext: true,
-                        },
-                    },
-                }),
-                DefaultSearchContextSpec: () => ({
-                    defaultSearchContext: {
-                        __typename: 'SearchContext',
-                        spec: 'ctx-1',
-                    },
-                }),
-            })
+    test('Unavailable search context should remain in the query and disable the search context dropdown with default context', async () => {
+        const { waitForInput, applySettings } = getSearchQueryInputConfig('codemirror6')
 
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
-                { waitUntil: 'networkidle0' }
-            )
-            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            const editor = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
-            expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
-            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:ctx-1')
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            ...createViewerSettingsGraphQLOverride({
+                user: applySettings({
+                    experimentalFeatures: {
+                        showSearchContext: true,
+                    },
+                }),
+            }),
+            DefaultSearchContextSpec: () => ({
+                defaultSearchContext: {
+                    __typename: 'SearchContext',
+                    spec: 'ctx-1',
+                },
+            }),
         })
+
+        await driver.page.goto(
+            driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
+            { waitUntil: 'networkidle0' }
+        )
+        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+        const editor = await waitForInput(driver, '[data-testid="searchbox"] .test-query-input')
+        expect(await editor.getValue()).toStrictEqual('context:@unavailableCtx test')
+        expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        expect(await getSelectedSearchContextSpec()).toStrictEqual('context:ctx-1')
     })
 
     test('Reset unavailable search context from default if query is not present', async () => {

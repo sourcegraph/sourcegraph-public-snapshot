@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, ChangeEvent, FC, forwardRef, useMemo, useState } from 'react'
+import { type ButtonHTMLAttributes, type ChangeEvent, type FC, forwardRef, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -20,14 +20,19 @@ import {
     usePopoverContext,
     Strategy,
     Badge,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     Link,
     Text,
     H3,
 } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../components'
-import { CustomInsightDashboard, isGlobalDashboard, isPersonalDashboard, isVirtualDashboard } from '../../../../../core'
+import {
+    type CustomInsightDashboard,
+    isGlobalDashboard,
+    isPersonalDashboard,
+    isVirtualDashboard,
+} from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
 import { getDashboardOwnerName, getDashboardOrganizationsGroups } from './helpers'

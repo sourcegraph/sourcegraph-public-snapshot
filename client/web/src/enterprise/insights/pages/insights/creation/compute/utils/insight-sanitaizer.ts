@@ -1,7 +1,7 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedSeries } from '../../../../../components'
-import { ComputeInsight, InsightType } from '../../../../../core'
-import { CreateComputeInsightFormFields } from '../types'
+import { type ComputeInsight, InsightType } from '../../../../../core'
+import type { CreateComputeInsightFormFields } from '../types'
 
 export const getSanitizedComputeInsight = (values: CreateComputeInsightFormFields): ComputeInsight => ({
     id: 'newly-created-insight',

@@ -1,12 +1,12 @@
 import { authentication } from 'vscode'
 
 import { asError } from '@sourcegraph/common'
-import { checkOk, GRAPHQL_URI, GraphQLResult, isHTTPAuthError } from '@sourcegraph/http-client'
+import { checkOk, GRAPHQL_URI, type GraphQLResult, isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 
-import { fetch, getProxyAgent, Headers, HeadersInit } from './fetch'
+import { fetch, getProxyAgent, Headers, type HeadersInit } from './fetch'
 
 let invalidated = false
 

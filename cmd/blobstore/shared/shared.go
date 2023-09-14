@@ -18,15 +18,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
-
-const port = "9000"
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
@@ -75,10 +73,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, config *Con
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
+	host, port := deploy.BlobstoreHostPort()
 	addr := net.JoinHostPort(host, port)
 	server := &http.Server{
 		ReadTimeout:  75 * time.Second,

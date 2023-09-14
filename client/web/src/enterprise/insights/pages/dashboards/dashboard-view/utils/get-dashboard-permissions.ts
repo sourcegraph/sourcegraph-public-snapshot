@@ -1,4 +1,4 @@
-import { CustomInsightDashboard } from '../../../../core/types'
+import type { CustomInsightDashboard } from '../../../../core/types'
 
 enum DashboardReasonDenied {
     PermissionDenied,

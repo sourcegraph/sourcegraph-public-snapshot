@@ -1,4 +1,4 @@
-import { createRequiredValidator, composeValidators, ValidationResult } from '@sourcegraph/wildcard'
+import { createRequiredValidator, composeValidators, type ValidationResult } from '@sourcegraph/wildcard'
 
 import { searchQueryValidator } from '../../../../../pages/insights/creation/capture-group/utils/search-query-validator'
 

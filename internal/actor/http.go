@@ -66,6 +66,7 @@ type HTTPTransport struct {
 
 var _ http.RoundTripper = &HTTPTransport{}
 
+// 🚨 SECURITY: Do not send any PII here.
 func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
 		t.RoundTripper = http.DefaultTransport

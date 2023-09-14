@@ -1,6 +1,7 @@
 /** Component exports */
 export { BeforeUnloadPrompt } from './BeforeUnloadPrompt'
 export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
+export { Breadcrumbs } from './Breadcrumbs'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
 export { ErrorAlert } from './ErrorAlert'
@@ -76,6 +77,7 @@ export {
     usePopoverContext,
     Flipping,
     Strategy,
+    Overlapping,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {
@@ -113,7 +115,7 @@ export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'
 export type { Point } from './Popover'
-export type { TreeNode } from './Tree'
+export type { TreeNode, TreeProps, TreeRef } from './Tree'
 export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'

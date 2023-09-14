@@ -7,7 +7,8 @@
 
 import * as vscode from 'vscode'
 
-import { DISMISS_WORKSPACERECS_CTA_KEY, LocalStorageService } from './LocalStorageService'
+import { DISMISS_WORKSPACERECS_CTA_KEY, type LocalStorageService } from './LocalStorageService'
+
 /**
  * Ask if user wants to add Sourcegraph to their Workspace Recommendations list by displaying built-in popup
  * It will not show popup if the user already has Sourcegraph added to their recommendations list
@@ -37,7 +38,7 @@ export async function recommendSourcegraph(localStorageService: LocalStorageServ
     await vscode.window
         .showInformationMessage('Add Sourcegraph to your workspace recommendations', '👍 Yes', "Don't show again")
         .then(async answer => {
-            if (answer === 'Yes') {
+            if (answer === '👍 Yes') {
                 await vscode.commands.executeCommand(
                     'workbench.extensions.action.addExtensionToWorkspaceRecommendations',
                     'sourcegraph.sourcegraph'

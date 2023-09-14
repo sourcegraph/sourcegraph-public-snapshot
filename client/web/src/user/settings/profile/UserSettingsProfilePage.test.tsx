@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { fireEvent, render, RenderResult, act } from '@testing-library/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import { fireEvent, render, type RenderResult, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -15,6 +15,7 @@ const mockUser = {
     avatarURL: 'https://example.com/image.jpg',
     viewerCanChangeUsername: true,
     createdAt: new Date().toISOString(),
+    scimControlled: false,
 }
 
 const newUserValues = {

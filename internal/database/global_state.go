@@ -94,11 +94,7 @@ func (g *globalStateStore) SiteInitialized(ctx context.Context) (bool, error) {
 	return alreadyInitialized, err
 }
 
-var globalStateSiteInitializedQuery = fmt.Sprintf(`
-%s
-`,
-	globalStateInitializedFragment,
-)
+var globalStateSiteInitializedQuery = globalStateInitializedFragment
 
 func (g *globalStateStore) EnsureInitialized(ctx context.Context) (_ bool, err error) {
 	if err := g.initializeDBState(ctx); err != nil {
@@ -133,7 +129,6 @@ func (g *globalStateStore) initializeDBState(ctx context.Context) (err error) {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
-
 	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStateUpdateQuery)); err != nil {
 		return err
 	}

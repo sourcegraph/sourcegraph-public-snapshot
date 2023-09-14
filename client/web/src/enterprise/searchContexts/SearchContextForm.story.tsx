@@ -1,14 +1,14 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { NEVER, Observable, of } from 'rxjs'
+import { NEVER, type Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { OrgAreaOrganizationFields, RepositoryFields } from '../../graphql-operations'
+import type { OrgAreaOrganizationFields, RepositoryFields } from '../../graphql-operations'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -81,13 +81,15 @@ const authUser: AuthenticatedUser = {
             { id: '1', settingsURL: '#', name: 'BETA', displayName: 'Beta Inc' },
         ] as OrgAreaOrganizationFields[],
     },
-    tags: [],
     viewerCanAdminister: true,
+    hasVerifiedEmail: true,
+    completedPostSignup: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)

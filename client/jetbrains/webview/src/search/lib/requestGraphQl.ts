@@ -1,5 +1,5 @@
 import { asError } from '@sourcegraph/common'
-import { GRAPHQL_URI, GraphQLResult } from '@sourcegraph/http-client'
+import { GRAPHQL_URI, type GraphQLResult } from '@sourcegraph/http-client'
 
 import { getAccessToken, getCustomRequestHeaders, getInstanceURL } from '..'
 
@@ -44,7 +44,7 @@ export const requestGraphQL = async <R, V = object>(
         throw asError(error)
     }
 
-    if (!response || !response.ok) {
+    if (!response?.ok) {
         throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`)
     }
 

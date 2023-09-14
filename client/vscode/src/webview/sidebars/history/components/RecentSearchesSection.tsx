@@ -4,12 +4,12 @@ import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
+import { type EventLogResult, fetchRecentSearches } from '@sourcegraph/shared/src/search'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../../graphql-operations'
-import { HistorySidebarProps } from '../HistorySidebarView'
+import type { HistorySidebarProps } from '../HistorySidebarView'
 
 import styles from '../../search/SearchSidebarView.module.scss'
 
@@ -37,11 +37,11 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
         return null
     }
 
-    const onSavedSearchClick = (query: string): void => {
+    const onSearchClick = (query: string): void => {
         platformContext.telemetryService.log('VSCERecentSearchClick')
         extensionCoreAPI
             .streamSearch(query, {
-                // Debt: using defaults here. The saved search should override these, though.
+                // Debt: using defaults here. The recent search should override these, though.
                 caseSensitive: false,
                 patternType: SearchPatternType.standard,
                 version: LATEST_VERSION,
@@ -76,7 +76,7 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                                     <Button
                                         variant="link"
                                         className="p-0 text-left text-decoration-none"
-                                        onClick={() => onSavedSearchClick(search.searchText)}
+                                        onClick={() => onSearchClick(search.searchText)}
                                     >
                                         <SyntaxHighlightedSearchQuery query={search.searchText} />
                                     </Button>

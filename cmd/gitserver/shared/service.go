@@ -16,14 +16,14 @@ func (svc) Name() string { return "gitserver" }
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := LoadConfig()
 	endpoints := []debugserver.Endpoint{
-		GRPCWebUIDebugEndpoint(),
+		GRPCWebUIDebugEndpoint(c.ListenAddress),
 	}
 
 	return c, endpoints
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return Main(ctx, observationCtx, ready, config.(*Config), nil)
+	return Main(ctx, observationCtx, ready, config.(*Config))
 }
 
 var Service service.Service = svc{}

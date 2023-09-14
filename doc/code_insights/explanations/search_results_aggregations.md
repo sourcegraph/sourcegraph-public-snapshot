@@ -39,7 +39,7 @@ If you attempt to run a query for which a given mode is not supported, the toolt
 
 ### Timeout limits
 
-At the moment all aggregations search queries are run with a 2-second timeout, even if your search specified a timeout. If the aggregation times out, you will be able to trigger a longer search with a 1-minute timeout by clicking `Run aggregation`. The extended timeout can be configured by changing the number of seconds in global settings `insights.aggregations.extendedTimeout`.  If configuring this to greater than 60 seconds please see [More information on timeouts](../../code_search/how-to/exhaustive#timeouts).
+At the moment all aggregations search queries are run with a 2-second timeout, even if your search specified a timeout. If the aggregation times out, you will be able to trigger a longer search with a 1-minute timeout by clicking `Run aggregation`. The extended timeout can be configured by changing the number of seconds in global settings `insights.aggregations.extendedTimeout`.  If configuring this to greater than 60 seconds please see [More information on timeouts](../../code_search/how-to/exhaustive.md#timeouts).
 
 After adding new repositories it can be common for aggregations to experience timeouts while those repositories await initial indexing. This is due to aggregations running exhaustive searches over all repositories and will resolve once that indexing is complete.  
 

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Route, Routes } from 'react-router-dom'
 
@@ -24,6 +24,6 @@ export const ExecutorsSiteAdminArea: FC = () => (
     <Routes>
         <Route index={true} element={<ExecutorsListPage />} />
         <Route path="secrets" element={<GlobalExecutorSecretsListPage />} />
-        <Route element={<NotFoundPage pageType="settings" />} />
+        <Route path="*" element={<NotFoundPage pageType="settings" />} />
     </Routes>
 )

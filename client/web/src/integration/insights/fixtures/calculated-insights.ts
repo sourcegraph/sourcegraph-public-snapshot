@@ -1,4 +1,4 @@
-import { InsightDataNode } from '../../../graphql-operations'
+import type { InsightDataNode } from '../../../graphql-operations'
 
 export const MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE: InsightDataNode = {
     __typename: 'InsightView',

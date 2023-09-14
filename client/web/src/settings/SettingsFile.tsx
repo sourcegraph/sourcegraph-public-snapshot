@@ -4,12 +4,12 @@ import classNames from 'classnames'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
-import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
+import type { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SettingsFile.module.scss'
@@ -139,7 +139,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
+            <div
+                className={classNames(
+                    'test-settings-file percy-hide d-flex flex-grow-1 flex-column',
+                    styles.settingsFile
+                )}
+            >
                 <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor

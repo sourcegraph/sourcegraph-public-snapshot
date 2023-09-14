@@ -1,4 +1,4 @@
-import { MonacoField, MonacoFocusContainer, MonacoFieldProps } from './MonacoField'
+import { MonacoField, MonacoFocusContainer, type MonacoFieldProps } from './MonacoField'
 import { MonacoPreviewLink } from './MonacoPreviewLink'
 
 const Root = MonacoFocusContainer

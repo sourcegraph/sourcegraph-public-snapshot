@@ -1,0 +1,41 @@
+{
+  "id": 224166702,
+  "iid": 12,
+  "project_id": 40370047,
+  "source_project_id": 40370047,
+  "SourceProjectNamespace": "",
+  "SourceProjectName": "",
+  "title": "This is a test PR",
+  "description": "This is the description of the test PR",
+  "state": "opened",
+  "created_at": "2023-05-17T02:37:18.003Z",
+  "updated_at": "2023-05-17T02:37:18.003Z",
+  "merged_at": null,
+  "closed_at": null,
+  "head_pipeline": null,
+  "labels": [],
+  "source_branch": "test-pr-3",
+  "target_branch": "main",
+  "web_url": "https://gitlab.com/batch-changes-testing/batch-changes-test-repo/-/merge_requests/12",
+  "work_in_progress": false,
+  "draft": false,
+  "force_remove_source_branch": false,
+  "author": {
+   "id": 11440943,
+   "name": "Kelli Rockwell",
+   "username": "courier-new",
+   "email": "",
+   "state": "active",
+   "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/11440943/avatar.png",
+   "web_url": "https://gitlab.com/courier-new",
+   "identities": null
+  },
+  "diff_refs": {
+   "base_sha": "",
+   "head_sha": "",
+   "start_sha": ""
+  },
+  "Notes": null,
+  "Pipelines": null,
+  "ResourceStateEvents": null
+ }

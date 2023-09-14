@@ -1,9 +1,9 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { mockWorkspaces } from '../../batch-spec.mock'
-import { queryWorkspacesList as _queryWorkspacesList } from '../backend'
+import type { queryWorkspacesList as _queryWorkspacesList } from '../backend'
 
 import { Workspaces } from './Workspaces'
 

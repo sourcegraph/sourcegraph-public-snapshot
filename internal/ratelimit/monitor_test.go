@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMonitor_RecommendedWaitForBackgroundOp(t *testing.T) {
@@ -54,6 +56,47 @@ func TestMonitor_RecommendedWaitForBackgroundOp(t *testing.T) {
 			t.Errorf("with reset: for %d, got %s, want %s", cost, got, want)
 		}
 	}
+}
+
+func TestMonitor_WaitForRateLimit(t *testing.T) {
+	t.Run("no wait time if cost is lower than remaining", func(t *testing.T) {
+		m := &Monitor{
+			known:     true,
+			limit:     5000,
+			remaining: 10,
+			reset:     time.Now().Add(30 * time.Minute),
+		}
+
+		sleepDuration := m.calcRateLimitWaitTime(5)
+
+		assert.Equal(t, time.Duration(0), sleepDuration)
+	})
+	t.Run("no wait time if cost is equal to remaining", func(t *testing.T) {
+		m := &Monitor{
+			known:     true,
+			limit:     5000,
+			remaining: 10,
+			reset:     time.Now().Add(30 * time.Minute),
+		}
+
+		sleepDuration := m.calcRateLimitWaitTime(10)
+
+		assert.Equal(t, time.Duration(0), sleepDuration)
+	})
+	t.Run("wait if cost is higher than remaining", func(t *testing.T) {
+		m := &Monitor{
+			known:     true,
+			limit:     5000,
+			remaining: 10,
+			reset:     time.Now().Add(30 * time.Minute),
+		}
+
+		sleepDuration := m.calcRateLimitWaitTime(11)
+
+		// Assert that the sleep duration is about 30 minutes (slightly inaccurate, so checking between 29 and 30 minutes)
+		assert.True(t, time.Duration(29)*time.Minute < sleepDuration)
+		assert.True(t, time.Duration(30)*time.Minute > sleepDuration)
+	})
 }
 
 func TestMonitor_RecommendedWaitForBackgroundOp_RetryAfter(t *testing.T) {

@@ -1,9 +1,35 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+import (
+	"context"
+
+	"github.com/graph-gophers/graphql-go"
+
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+)
 
 type CodeIntelResolver interface {
-	resolvers.RootResolver
+	resolverstubs.RootResolver
 
 	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type Resolver struct {
+	*resolverstubs.Resolver
+}
+
+func NewCodeIntelResolver(resolver *resolverstubs.Resolver) *Resolver {
+	return &Resolver{Resolver: resolver}
+}
+
+func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
+	m := map[string]NodeByIDFunc{}
+	for name, f := range r.Resolver.NodeResolvers() {
+		resolverFunc := f // do not capture loop variable
+		m[name] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return resolverFunc(ctx, id)
+		}
+	}
+
+	return m
 }

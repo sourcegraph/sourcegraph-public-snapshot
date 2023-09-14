@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,7 +12,7 @@ import { OutboundWebhooksPage } from './OutboundWebhooksPage'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/site-admin/outbound-webhooks/OutboundWebhooksPage',
+    title: 'web/site-admin/webhooks/outgoing/OutboundWebhooksPage',
     decorators: [decorator],
 }
 

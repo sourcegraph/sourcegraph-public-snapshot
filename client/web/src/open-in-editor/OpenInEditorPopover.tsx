@@ -7,8 +7,8 @@ import classNames from 'classnames'
 import { Button, H3, Icon, Input, Link, Select, Text, Form } from '@sourcegraph/wildcard'
 
 import { isProjectPathValid } from './build-url'
-import { EditorSettings } from './editor-settings'
-import { EditorId, supportedEditors } from './editors'
+import type { EditorSettings } from './editor-settings'
+import { type EditorId, supportedEditors } from './editors'
 
 import styles from './OpenInEditorPopover.module.scss'
 

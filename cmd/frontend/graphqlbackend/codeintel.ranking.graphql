@@ -1,0 +1,106 @@
+extend type Query {
+    """
+    Gets the progress of the current and historic precise ranking jobs.
+    """
+    rankingSummary: GlobalRankingSummary!
+}
+
+extend type Mutation {
+    """
+    Effectively begins a new ranking map/reduce job.
+    """
+    bumpDerivativeGraphKey: EmptyResponse!
+
+    """
+    Deletes the ranking progress object associated with a particular graph key.
+    """
+    deleteRankingProgress(graphKey: String!): EmptyResponse
+}
+
+"""
+THe progress of current and historic precise ranking jobs.
+"""
+type GlobalRankingSummary {
+    """
+    Precise ranking job summaries ordered reverse-chronologically.
+    """
+    rankingSummary: [RankingSummary!]!
+
+    """
+    The key of the current ranking summary.
+    """
+    derivativeGraphKey: String
+
+    """
+    The time that the next ranking job is configured to begin.
+    """
+    nextJobStartsAt: DateTime
+
+    """
+    The current number of SCIP indexes that are visible to the ranking calculation.
+    """
+    numExportedIndexes: Int!
+
+    """
+    The target number of SCIP indexes that are visible to the ranking calculation.
+    """
+    numTargetIndexes: Int!
+
+    """
+    The number of repositories which have ranks but haven't been indexed since the
+    ranking scores became available.
+    """
+    numRepositoriesWithoutCurrentRanks: Int!
+}
+
+"""
+Summary of one precise ranking job.
+"""
+type RankingSummary {
+    """
+    Identifier of the current ranking job. Corresponds to values in the site configuration.
+    """
+    graphKey: String!
+
+    """
+    True if the output of this ranking job is currently visible to the Zoekt indexserver.
+    """
+    visibleToZoekt: Boolean!
+
+    """
+    Progress of the path mapping stage.
+    """
+    pathMapperProgress: RankingSummaryProgress!
+
+    """
+    Progress of the reference mapping stage.
+    """
+    referenceMapperProgress: RankingSummaryProgress!
+
+    """
+    Progress of the reducer stage.
+    """
+    reducerProgress: RankingSummaryProgress
+}
+
+"""
+Progress of one stage of a precise ranking job.
+"""
+type RankingSummaryProgress {
+    """
+    When the job started.
+    """
+    startedAt: DateTime!
+    """
+    When the job completed (if finished).
+    """
+    completedAt: DateTime
+    """
+    How many records have been processed.
+    """
+    processed: Int!
+    """
+    How many total items will be processed.
+    """
+    total: Int!
+}

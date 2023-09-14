@@ -13,6 +13,7 @@ enum SearchAggregationMode {
     PATH
     AUTHOR
     CAPTURE_GROUP
+    REPO_METADATA
 }
 
 """

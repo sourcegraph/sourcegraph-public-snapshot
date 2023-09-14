@@ -185,3 +185,8 @@ func TestRepeatedCombine(t *testing.T) {
 		assert.False(t, As(errs, &multi))
 	})
 }
+
+func TestNotRedacted(t *testing.T) {
+	err := Newf("foo: %s", "bar")
+	assert.Equal(t, "foo: bar", err.Error())
+}

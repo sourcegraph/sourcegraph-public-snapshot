@@ -491,14 +491,14 @@ pollIndexStatusLoop:
 		// of the index.
 
 		var (
-			pgErr        pgconn.PgError
+			pgErr        *pgconn.PgError
 			raceDetected bool
 
 			errorFilter = func(err error) error {
 				if err == nil {
 					return err
 				}
-				if !errors.As(err, pgErr) || pgErr.Code != "42P07" {
+				if !errors.As(err, &pgErr) || pgErr.Code != "42P07" {
 					return err
 				}
 

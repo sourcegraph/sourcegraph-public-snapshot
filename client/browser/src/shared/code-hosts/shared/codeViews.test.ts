@@ -1,10 +1,10 @@
 import { of } from 'rxjs'
 import { toArray } from 'rxjs/operators'
 import * as sinon from 'sinon'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { DiffOrBlobInfo } from './codeHost'
-import { CodeView, toCodeViewResolver, trackCodeViews } from './codeViews'
+import type { DiffOrBlobInfo } from './codeHost'
+import { type CodeView, toCodeViewResolver, trackCodeViews } from './codeViews'
 
 describe('codeViews', () => {
     beforeEach(() => {

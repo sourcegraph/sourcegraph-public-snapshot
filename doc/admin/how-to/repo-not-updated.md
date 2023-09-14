@@ -14,6 +14,7 @@ This document assumes that you are a [site admin](https://docs.sourcegraph.com/a
    2. Next scheduled update: Estimated time of when the repo will be updated next (this could change as it is determined by a [smart heuristic](https://docs.sourcegraph.com/admin/repo/update_frequency#repository-update-frequency))
    3. Queued for update: Its position in queue to be updated next
    4. Connection: Connection status to the repository
+   5. Last sync log: Output from the most recent sync event
 3. If clicking on the `Refresh Now` button has triggered the repository to be updated instantly for you then congratulations! You can now move on from this troubleshooting guide!
 4. If clicking on the `Refresh Now` button does not work for you, try using webhooks following the instructions detailed in our [Repository Webhooks Docs](https://docs.sourcegraph.com/admin/repo/webhooks#webhook-for-manually-telling-sourcegraph-to-update-a-repository)
 5. Look for errors related to this repository in gitserver logs, which should help you to determine the next best course of action.
@@ -33,7 +34,3 @@ A bad repository is simiply a repository that Sourcegraph cannot handle. For exa
    - For example, if you've created a repo repository GitHub and did not click the "initialize the repository for me" button, the repository would then become an empty repository as it has no commits at all.
 3. A corrupted repository
    - The repository could be corrupted on the code host, or corrupted on disk.
-
-### Looks like Sourcegraph is trying to clone the same bad repository over and over again, what should I do?
-
-Please upgrade your instance to [3.27.0](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#3-27-0) where the bug has been addressed.

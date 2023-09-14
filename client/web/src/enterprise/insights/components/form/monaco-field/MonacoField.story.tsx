@@ -1,5 +1,5 @@
 import { mdiRegex } from '@mdi/js'
-import { Meta } from '@storybook/react'
+import type { Meta } from '@storybook/react'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 

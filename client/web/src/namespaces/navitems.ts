@@ -1,4 +1,4 @@
-import { NavItemWithIconDescriptor } from '../util/contributions'
+import type { NavItemWithIconDescriptor } from '../util/contributions'
 
 export const namespaceAreaHeaderNavItems: readonly Pick<
     NavItemWithIconDescriptor,

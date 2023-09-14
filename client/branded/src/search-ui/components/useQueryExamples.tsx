@@ -4,6 +4,7 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import type { ProductStatusType } from '@sourcegraph/wildcard'
 
 import { basicSyntaxColumns } from './QueryExamples.constants'
 
@@ -15,6 +16,7 @@ export interface QueryExamplesContent {
 
 export interface QueryExamplesSection {
     title: string
+    productStatus?: ProductStatusType
     queryExamples: {
         id: string
         query: string
@@ -192,6 +194,14 @@ export function useQueryExamples(
                         { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
                         { id: 'and-operator', query: 'hello AND world' },
                         { id: 'not-operator', query: 'lang:go NOT file:main.go' },
+                    ],
+                },
+                {
+                    title: 'Explore code ownership',
+                    productStatus: 'experimental' as const,
+                    queryExamples: [
+                        { id: 'type-has-owner', query: 'file:^some_path file:has.owner(johndoe)' },
+                        { id: 'type-select-file-owners', query: 'file:^some_path select:file.owners' },
                     ],
                 },
                 {

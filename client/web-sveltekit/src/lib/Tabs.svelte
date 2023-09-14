@@ -6,30 +6,38 @@
 
     export interface TabsContext {
         id: string
-        selectedTab: Readable<string>
-        register(tab: Tab): void
+        selectedTabID: Readable<string | null>
+        register(tab: Tab): Unsubscriber
     }
 
     export const KEY = {}
 </script>
 
 <script lang="ts">
+    import { createEventDispatcher, setContext } from 'svelte'
+    import { derived, writable, type Readable, type Writable, type Unsubscriber } from 'svelte/store'
     import * as uuid from 'uuid'
-    import { setContext } from 'svelte'
-    import { derived, writable, type Readable, type Writable } from 'svelte/store'
 
     /**
      * The index of the tab that should be selected by default.
      */
-    export let initial: number = 0
+    export let selected: number | null = 0
+    export let toggable = false
 
+    const dispatch = createEventDispatcher<{ select: number | null }>()
     const id = uuid.v4()
     const tabs: Writable<Tab[]> = writable([])
-    const selectedTab = writable(initial)
+    const selectedTab = writable(selected)
+    $: $selectedTab = selected
 
     setContext<TabsContext>(KEY, {
         id,
-        selectedTab: derived([tabs, selectedTab], ([$tabs, $selectedTab]) => $tabs[$selectedTab]?.id ?? null),
+        selectedTabID: derived([tabs, selectedTab], ([$tabs, $selectedTab]) => {
+            if ($selectedTab === null) {
+                return null
+            }
+            return $tabs[$selectedTab]?.id ?? null
+        }),
         register(tab: Tab) {
             tabs.update(tabs => {
                 if (tabs.some(existingTab => existingTab.id === tab.id)) {
@@ -37,8 +45,19 @@
                 }
                 return [...tabs, tab]
             })
+            return () => {
+                tabs.update(tabs => tabs.filter(existingTab => existingTab.id !== tab.id))
+            }
         },
     })
+
+    function selectTab(event: MouseEvent) {
+        const index = (event.target as HTMLElement).id.match(/\d+$/)?.[0]
+        if (index) {
+            $selectedTab = $selectedTab === +index && toggable ? null : +index
+            dispatch('select', $selectedTab)
+        }
+    }
 </script>
 
 <div class="tabs">
@@ -50,7 +69,7 @@
                 aria-selected={$selectedTab === index}
                 tabindex={$selectedTab === index ? 0 : -1}
                 role="tab"
-                on:click={() => ($selectedTab = index)}>{tab.title}</button
+                on:click={selectTab}>{tab.title}</button
             >
         {/each}
     </div>
@@ -61,12 +80,12 @@
     .tabs {
         display: flex;
         flex-direction: column;
-        align-items: center;
     }
 
     .tabs-header {
         display: flex;
         gap: 1rem;
+        justify-content: var(--align-tabs, center);
     }
 
     button {
@@ -77,7 +96,7 @@
         letter-spacing: normal;
         margin: 0;
         min-height: 2rem;
-        padding: 0 0.125rem;
+        padding: 0 0.25rem;
         color: var(--body-color);
         text-transform: none;
         display: inline-flex;
@@ -85,10 +104,14 @@
         justify-content: center;
         border-bottom: 2px solid transparent;
 
-        &[aria-selected='true'] {
+        &[aria-selected='true'],
+        &:hover {
             color: var(--body-color);
+            background-color: var(--color-bg-2);
+        }
+
+        &[aria-selected='true'] {
             font-weight: 700;
-            border-bottom: 2px solid var(--brand-secondary);
         }
     }
 </style>

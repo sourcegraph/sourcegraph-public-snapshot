@@ -17,6 +17,6 @@ If a customer downgrades their instance to a previous version, they need to down
 
 A database schema downgrade will not always be enough. If a newer version was running even for a small time, it could have migrated data in the background into a format that's no longer readable by the previous version of Sourcegraph.
 
-The `migrator` can be used to run both schema and data migrations (in the appropriate order) so that the old version of Sourcegraph can start and run without broken features. See the [command documentation](./manual_database_migrations.md#downgrade) for additional details.
+The `migrator` can be used to run both schema and data migrations (in the appropriate order) so that the old version of Sourcegraph can start and run without broken features. See the [command documentation](../updates/migrator/migrator-operations.md#downgrade) for additional details.
 
 The log output of the `migrator` should include `INFO`-level logs and successfully terminate with `migrator exited with code 0`. If you see an error message or any of the databases have been flagged as "dirty", please follow ["How to troubleshoot a dirty database"](dirty_database.md). A dirty database at this stage requires manual intervention. Please contact support at <mailto:support@sourcegraph.com> or via your enterprise support channel for further assistance.

@@ -13,13 +13,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -29,12 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
-
-var extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
-
 func externalServicesWritable() error {
-	if extsvcConfigFile != "" && !extsvcConfigAllowEdits {
+	if envvar.ExtsvcConfigFile() != "" && !envvar.ExtsvcConfigAllowEdits() {
 		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 	return nil
@@ -242,6 +238,7 @@ type ExternalServicesArgs struct {
 	graphqlutil.ConnectionArgs
 	After     *string
 	Namespace *graphql.ID
+	Repo      *graphql.ID
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
@@ -263,6 +260,14 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
+
+	if args.Repo != nil {
+		repoID, err := UnmarshalRepositoryID(*args.Repo)
+		if err != nil {
+			return nil, err
+		}
+		opt.RepoID = repoID
+	}
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
@@ -334,13 +339,21 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	return graphqlutil.HasNextPage(false), nil
 }
 
-type computedExternalServiceConnectionResolver struct {
+type ComputedExternalServiceConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
 	db               database.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
+func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args graphqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
+	return &ComputedExternalServiceConnectionResolver{
+		db:               db,
+		externalServices: externalServices,
+		args:             args,
+	}
+}
+
+func (r *ComputedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
@@ -352,11 +365,11 @@ func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
+func (r *ComputedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
 	return int32(len(r.externalServices))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
+func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
@@ -449,6 +462,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 }
 
 type externalServiceNamespacesArgs struct {
+	ID    *graphql.ID
 	Kind  string
 	Token string
 	Url   string
@@ -476,6 +490,7 @@ type externalServiceNamespaceConnectionResolver struct {
 }
 
 type externalServiceRepositoriesArgs struct {
+	ID           *graphql.ID
 	Kind         string
 	Token        string
 	Url          string

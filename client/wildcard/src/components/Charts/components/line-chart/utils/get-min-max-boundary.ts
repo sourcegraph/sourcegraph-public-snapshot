@@ -1,4 +1,4 @@
-import { getDatumValue, isDatumWithValidNumber, SeriesWithData } from './data-series-processing'
+import { getDatumValue, isDatumWithValidNumber, type SeriesWithData } from './data-series-processing'
 
 interface MinMaxBoundariesInput<D> {
     dataSeries: SeriesWithData<D>[]

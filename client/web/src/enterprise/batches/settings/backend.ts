@@ -1,12 +1,12 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     BatchChangesCodeHostFields,
     CreateBatchChangesCredentialResult,
     CreateBatchChangesCredentialVariables,
@@ -84,8 +84,19 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         externalServiceURL
         requiresSSH
         requiresUsername
+        supportsCommitSigning
         credential {
             ...BatchChangesCredentialFields
+        }
+        commitSigningConfiguration {
+            ... on GitHubApp {
+                id
+                appID
+                name
+                appURL
+                baseURL
+                logo
+            }
         }
     }
 
@@ -122,7 +133,7 @@ export const useUserBatchChangesCodeHostConnection = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -160,11 +171,11 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
         query: GLOBAL_CODE_HOSTS,
         variables: {
             after: null,
-            first: 15,
+            first: 30,
         },
         options: {
             useURL: true,
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { batchChangesCodeHosts } = dataOrThrowErrors(result)

@@ -32,11 +32,45 @@ type DotcomMutation {
         license: ProductLicenseInput!
     ): ProductLicense!
     """
+    Revokes an existing product license, rendering it invalid.
+    """
+    revokeLicense(
+        """
+        The UUID of the license to revoke
+        """
+        id: ID!
+        """
+        Reason for revoking of the license
+        """
+        reason: String!
+    ): EmptyResponse!
+    """
+    Applies a partial update to a product subscription.
+
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    updateProductSubscription(
+        """
+        The product subscription ID to update.
+        """
+        id: ID!
+        """
+        Partial update to apply.
+        """
+        update: UpdateProductSubscriptionInput!
+    ): EmptyResponse!
+    """
     Archives an existing product subscription.
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
     """
-    archiveProductSubscription(id: ID!): EmptyResponse!
+    archiveProductSubscription(
+        """
+        The product subscription to archive.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """
@@ -52,6 +86,15 @@ type DotcomQuery {
     FOR INTERNAL USE ONLY.
     """
     productSubscription(uuid: String!): ProductSubscription!
+    """
+    The access available to the product subscription with the given access token.
+    The returned ProductSubscription may be archived or not associated with an active license.
+
+    Only Sourcegraph.com site admins, the account owners of the product subscription, and
+    specific service accounts may perform this query.
+    FOR INTERNAL USE ONLY.
+    """
+    productSubscriptionByAccessToken(accessToken: String!): ProductSubscription!
     """
     A list of product subscriptions.
     FOR INTERNAL USE ONLY.
@@ -71,6 +114,7 @@ type DotcomQuery {
         """
         query: String
     ): ProductSubscriptionConnection!
+
     """
     A list of product licenses.
     Only Sourcegraph.com site admins may perform this query.
@@ -90,6 +134,14 @@ type DotcomQuery {
         """
         productSubscriptionID: ID
     ): ProductLicenseConnection!
+
+    """
+    A dotcom user for purposes of connecting to the Cody Gateway.
+    Only Sourcegraph.com site admins or service accounts may perform this query.
+    Token is a Cody Gateway token, not a Sourcegraph instance access token.
+    FOR INTERNAL USE ONLY.
+    """
+    codyGatewayDotcomUserByToken(token: String!): CodyGatewayDotcomUser
 }
 
 extend type Mutation {
@@ -147,6 +199,14 @@ input ProductLicenseInput {
     The expiration date of this product license, expressed as the number of seconds since the epoch.
     """
     expiresAt: Int!
+    """
+    The Salesforce subscription ID associated with this product license.
+    """
+    salesforceSubscriptionID: String
+    """
+    The Salesforce opportunity ID associated with this product license.
+    """
+    salesforceOpportunityID: String
 }
 
 """
@@ -171,9 +231,25 @@ type ProductLicense implements Node {
     """
     licenseKey: String!
     """
+    Site ID of the instance that uses the license.
+    """
+    siteID: String
+    """
     The date when this product license was created.
     """
     createdAt: DateTime!
+    """
+    The date when this product license was revoked.
+    """
+    revokedAt: DateTime
+    """
+    The reason for revoking product license.
+    """
+    revokeReason: String
+    """
+    The version of the license.
+    """
+    version: Int!
 }
 
 """
@@ -234,6 +310,21 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     """
+    The most preferable Sourcegraph access token to use for authenticating as the
+    subscription holder with managed Sourcegraph services.
+    Null only if creating a token failed, for example when no active license exists.
+    """
+    currentSourcegraphAccessToken: String
+    """
+    Available access tokens for authenticating as the subscription holder with managed
+    Sourcegraph services.
+    """
+    sourcegraphAccessTokens: [String!]!
+    """
+    Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+    """
+    codyGatewayAccess: CodyGatewayAccess!
+    """
     The date when this product subscription was created.
     """
     createdAt: DateTime!
@@ -250,4 +341,189 @@ type ProductSubscription implements Node {
     Only Sourcegraph.com site admins may query this field.
     """
     urlForSiteAdmin: String
+}
+
+"""
+A usage data point of Cody Gateway usage of a subscription.
+"""
+type CodyGatewayUsageDatapoint {
+    """
+    The day the usage occurred.
+    """
+    date: DateTime!
+    """
+    The number of requests made.
+    """
+    count: BigInt!
+    """
+    The model that was used.
+    """
+    model: String!
+}
+
+"""
+Cody Gateway access granted to a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayAccess {
+    """
+    Whether or not a subscription has Cody Gateway access.
+    """
+    enabled: Boolean!
+    """
+    Rate limit for chat completions access, or null if not enabled.
+    """
+    chatCompletionsRateLimit: CodyGatewayRateLimit
+    """
+    Rate limit for code completions access, or null if not enabled.
+    """
+    codeCompletionsRateLimit: CodyGatewayRateLimit
+    """
+    Rate limit for embedding text chunks, or null if not enabled.
+    """
+    embeddingsRateLimit: CodyGatewayRateLimit
+}
+
+"""
+The source of the rate limit returned.
+FOR INTERNAL USE ONLY.
+"""
+enum CodyGatewayRateLimitSource {
+    """
+    Indicates that a custom override for the rate limit has been stored.
+    """
+    OVERRIDE
+
+    """
+    Indicates that the rate limit is inferred by the subscriptions active plan.
+    """
+    PLAN
+}
+
+"""
+Cody Gateway access rate limits for a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayRateLimit {
+    """
+    The source of the rate limit configuration.
+    """
+    source: CodyGatewayRateLimitSource!
+    """
+    The models that are allowed for this rate limit bucket.
+    Usually, customers will have two separate rate limits, one
+    for chat completions and one for code completions. A usual
+    config could include:
+
+        chatCompletionsRateLimit: {
+            allowedModels: [anthropic/claude-v1, anthropic/claude-v1.3]
+        },
+        codeCompletionsRateLimit: {
+            allowedModels: [anthropic/claude-instant-v1]
+        }
+
+    In general, the model names are of the format "$PROVIDER/$MODEL_NAME".
+    """
+    allowedModels: [String!]!
+    """
+    Requests per time interval.
+    """
+    limit: BigInt!
+    """
+    Interval for rate limiting.
+    """
+    intervalSeconds: Int!
+    """
+    Recent usage data of Cody Gateway for the subscription.
+    """
+    usage: [CodyGatewayUsageDatapoint!]!
+}
+
+"""
+Partial update to apply to a subscription. Omitted fields are not applied.
+"""
+input UpdateProductSubscriptionInput {
+    """
+    Partial update to Cody Gateway access granted to this subscription.
+    """
+    codyGatewayAccess: UpdateCodyGatewayAccessInput
+}
+
+"""
+Partial update to apply to a subscription's Cody Gateway access. Omitted fields are not applied.
+"""
+input UpdateCodyGatewayAccessInput {
+    """
+    Enable or disable Cody Gateway access.
+    """
+    enabled: Boolean
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    chatCompletionsRateLimit: BigInt
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    chatCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    chatCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimit: BigInt
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    codeCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimit: BigInt
+    """
+    Override default interval for rate limiting for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for embeddings generation for this subscription.
+    """
+    embeddingsAllowedModels: [String!]
+}
+
+"""
+A dotcom user allowed to access the Cody Gateway
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayDotcomUser {
+    """
+    The id of the user
+    """
+    id: ID!
+    """
+    The user name of the user
+    """
+    username: String!
+    """
+    Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
+    """
+    codyGatewayAccess: CodyGatewayAccess!
 }

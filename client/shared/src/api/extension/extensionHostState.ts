@@ -1,27 +1,21 @@
-import * as comlink from 'comlink'
-import { BehaviorSubject, Observable, of, ReplaySubject, Subject } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import type * as comlink from 'comlink'
+import { BehaviorSubject, type Observable, of, Subject } from 'rxjs'
+import type * as sourcegraph from 'sourcegraph'
 
-import { Contributions } from '@sourcegraph/client-api'
-import { Context } from '@sourcegraph/template-parser'
+import type { Contributions } from '@sourcegraph/client-api'
+import type { Context } from '@sourcegraph/template-parser'
 
-import { ConfiguredExtension } from '../../extensions/extension'
-import { SettingsCascade } from '../../settings/settings'
-import { MainThreadAPI } from '../contract'
-import { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
+import type { ConfiguredExtension } from '../../extensions/extension'
+import type { SettingsCascade } from '../../settings/settings'
+import type { MainThreadAPI } from '../contract'
+import type { ExtensionViewer, ViewerUpdate } from '../viewerTypes'
 
-import { ExecutableExtension, observeActiveExtensions } from './activation'
-import { ExtensionCodeEditor } from './api/codeEditor'
-import { ExtensionDocument } from './api/textDocument'
-import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
-import { InitData } from './extensionHost'
-import {
-    RegisteredProvider,
-    RegisteredViewProvider,
-    PanelViewData,
-    PlainNotification,
-    ProgressNotification,
-} from './extensionHostApi'
+import { type ExecutableExtension, observeActiveExtensions } from './activation'
+import type { ExtensionCodeEditor } from './api/codeEditor'
+import type { ExtensionDocument } from './api/textDocument'
+import type { ExtensionWorkspaceRoot } from './api/workspaceRoot'
+import type { InitData } from './extensionHost'
+import type { RegisteredProvider } from './extensionHostApi'
 import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
@@ -49,8 +43,6 @@ export function createExtensionHostState(
         // the initial settings data, and instead only subscribe to configuration changes.
         // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
         settings: new BehaviorSubject<Readonly<SettingsCascade>>(initData.initialSettings),
-
-        queryTransformers: new BehaviorSubject<readonly sourcegraph.QueryTransformer[]>([]),
 
         hoverProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>([]),
         documentHighlightProviders: new BehaviorSubject<
@@ -86,19 +78,6 @@ export function createExtensionHostState(
         activeViewComponentChanges: new BehaviorSubject<ExtensionViewer | undefined>(undefined),
         viewerUpdates: new Subject<ViewerUpdate>(),
 
-        // Use ReplaySubject so we don't lose notifications in case the client application subscribes
-        // to notification streams after extensions have already sent notifications.
-        // There should be no issue re: stale notifications, since client applications should only
-        // create one "notification manager" instance.
-        plainNotifications: new ReplaySubject<PlainNotification>(3),
-        progressNotifications: new ReplaySubject<ProgressNotification & comlink.ProxyMarked>(3),
-
-        panelViews: new BehaviorSubject<readonly Observable<PanelViewData>[]>([]),
-        insightsPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'insightsPage'>[]>([]),
-        homepageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>([]),
-        globalPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>([]),
-        directoryViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>([]),
-
         activeExtensions,
         activeLoggers: new Set<string>(),
     }
@@ -113,9 +92,6 @@ export interface ExtensionHostState {
     rootChanges: Subject<void>
     searchContextChanges: Subject<string | undefined>
     searchContext: string | undefined
-
-    // Search
-    queryTransformers: BehaviorSubject<readonly sourcegraph.QueryTransformer[]>
 
     // Language features
     hoverProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.HoverProvider>[]>
@@ -144,16 +120,6 @@ export interface ExtensionHostState {
     viewComponents: Map<string, ExtensionViewer>
     activeViewComponentChanges: BehaviorSubject<ExtensionViewer | undefined>
     viewerUpdates: Subject<ViewerUpdate>
-
-    plainNotifications: ReplaySubject<PlainNotification>
-    progressNotifications: ReplaySubject<ProgressNotification & comlink.ProxyMarked>
-
-    // Views
-    panelViews: BehaviorSubject<readonly Observable<PanelViewData>[]>
-    insightsPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'insightsPage'>[]>
-    homepageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>
-    globalPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>
-    directoryViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>
 
     // Extensions
     activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]>

@@ -7,22 +7,26 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -36,8 +40,6 @@ type SearchClient interface {
 		searchQuery string,
 		searchMode search.Mode,
 		protocol search.Protocol,
-		settings *schema.Settings,
-		sourcegraphDotComMode bool,
 	) (*search.Inputs, error)
 
 	Execute(
@@ -49,20 +51,39 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+// New will create a search client with a zoekt and searcher backed by conf.
+func New(logger log.Logger, db database.DB) SearchClient {
 	return &searchClient{
-		logger:       logger,
-		db:           db,
-		zoekt:        zoektStreamer,
-		searcherURLs: searcherURLs,
+		logger:                      logger,
+		db:                          db,
+		zoekt:                       search.Indexed(),
+		searcherURLs:                search.SearcherURLs(),
+		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
+		settingsService:             settings.NewService(db),
+		sourcegraphDotComMode:       envvar.SourcegraphDotComMode(),
+	}
+}
+
+// MockedZoekt will return a search client for tests which uses the mocked
+// zoektStreamer.
+func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
+	return &searchClient{
+		logger:                logger,
+		db:                    db,
+		zoekt:                 zoektStreamer,
+		settingsService:       settings.Mock(&schema.Settings{}),
+		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 }
 
 type searchClient struct {
-	logger       log.Logger
-	db           database.DB
-	zoekt        zoekt.Streamer
-	searcherURLs *endpoint.Map
+	logger                      log.Logger
+	db                          database.DB
+	zoekt                       zoekt.Streamer
+	searcherURLs                *endpoint.Map
+	searcherGRPCConnectionCache *defaults.ConnectionCache
+	settingsService             settings.Service
+	sourcegraphDotComMode       bool
 }
 
 func (s *searchClient) Plan(
@@ -72,14 +93,9 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	searchMode search.Mode,
 	protocol search.Protocol,
-	settings *schema.Settings,
-	sourcegraphDotComMode bool,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
 	if err != nil {
@@ -91,6 +107,11 @@ func (s *searchClient) Plan(
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
+	settings, err := s.settingsService.UserFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to resolve user settings")
+	}
+
 	// Beta: create a step to replace each context in the query with its repository query if any.
 	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
@@ -98,7 +119,7 @@ func (s *searchClient) Plan(
 		if err != nil {
 			return "", err
 		}
-		tr.LazyPrintf("substitute query %s for context %s", sc.Query, context)
+		tr.AddEvent("substituted context filter with query", attribute.String("query", sc.Query), attribute.String("context", context))
 		return sc.Query, nil
 	})
 
@@ -110,7 +131,7 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
-	tr.LazyPrintf("parsing done")
+	tr.AddEvent("parsing done")
 
 	inputs := &search.Inputs{
 		Plan:                   plan,
@@ -118,14 +139,14 @@ func (s *searchClient) Plan(
 		OriginalQuery:          searchQuery,
 		SearchMode:             searchMode,
 		UserSettings:           settings,
-		OnSourcegraphDotCom:    sourcegraphDotComMode,
+		OnSourcegraphDotCom:    s.sourcegraphDotComMode,
 		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
-	tr.LazyPrintf("Parsed query: %s", inputs.Query)
+	tr.AddEvent("parsed query", attribute.Stringer("query", inputs.Query))
 
 	return inputs, nil
 }
@@ -135,11 +156,8 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Execute", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "Execute")
+	defer tr.EndWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
@@ -151,11 +169,12 @@ func (s *searchClient) Execute(
 
 func (s *searchClient) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
-		Logger:       s.logger,
-		DB:           s.db,
-		Zoekt:        s.zoekt,
-		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(),
+		Logger:                      s.logger,
+		DB:                          s.db,
+		Zoekt:                       s.zoekt,
+		SearcherURLs:                s.searcherURLs,
+		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
+		Gitserver:                   gitserver.NewClient(),
 	}
 }
 
@@ -290,9 +309,8 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		Ranking:                 flagSet.GetBoolOr("search-ranking", true),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

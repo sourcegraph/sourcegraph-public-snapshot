@@ -7,34 +7,34 @@ import {
     ChangesetSpecOperation,
     ChangesetState,
     ExternalServiceKind,
-    SharedGraphQlOperations,
+    type SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
-    BatchChangeBatchSpecsResult,
-    BatchChangeBatchSpecsVariables,
-    BatchChangeByNamespaceResult,
-    BatchChangeChangesetsResult,
-    BatchChangeChangesetsVariables,
+    type BatchChangeBatchSpecsResult,
+    type BatchChangeBatchSpecsVariables,
+    type BatchChangeByNamespaceResult,
+    type BatchChangeChangesetsResult,
+    type BatchChangeChangesetsVariables,
     BatchChangeState,
     BatchSpecState,
     ChangesetCheckState,
-    ChangesetCountsOverTimeResult,
-    ChangesetCountsOverTimeVariables,
+    type ChangesetCountsOverTimeResult,
+    type ChangesetCountsOverTimeVariables,
     ChangesetReviewState,
     ChangesetSpecType,
     DiffHunkLineType,
-    ExternalChangesetFileDiffsFields,
-    ExternalChangesetFileDiffsResult,
-    ExternalChangesetFileDiffsVariables,
-    ListBatchChange,
-    WebGraphQlOperations,
+    type ExternalChangesetFileDiffsFields,
+    type ExternalChangesetFileDiffsResult,
+    type ExternalChangesetFileDiffsVariables,
+    type ListBatchChange,
+    type WebGraphQlOperations,
 } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
@@ -95,6 +95,7 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                 mostRelevantFile: {
                     __typename: 'GitBlob',
                     url: 'http://test.test/fileurl',
+                    changelistURL: '',
                 },
                 hunks: [
                     {
@@ -233,6 +234,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         },
                     ],
                     nextSyncAt: null,
+                    commitVerification: null,
                     repository: {
                         id: 'repo123',
                         name: 'github.com/sourcegraph/repo',
@@ -324,8 +326,11 @@ function mockCommonGraphQLResponses(
                 avatarURL: '',
                 viewerCanAdminister: true,
                 builtinAuth: true,
-                tags: [],
                 createdAt: '2020-04-10T21:11:42Z',
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         UserSettingsAreaUserProfile: () => ({
@@ -345,7 +350,11 @@ function mockCommonGraphQLResponses(
                 emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
-                tags: [],
+                scimControlled: false,
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         BatchChangeByNamespace: () => ({
@@ -362,6 +371,12 @@ function mockCommonGraphQLResponses(
                     archived: 18,
                     unpublished: 3,
                     draft: 2,
+                    isCompleted: false,
+                    percentComplete: 27,
+                    failed: 0,
+                    scheduled: 0,
+                    retrying: 0,
+                    processing: 0,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,
@@ -978,13 +993,16 @@ describe('Batches', () => {
                     node: {
                         __typename: 'User',
                         batchChangesCodeHosts: {
+                            __typename: 'BatchChangesCodeHostConnection',
                             totalCount: 1,
                             pageInfo: {
                                 endCursor: null,
                                 hasNextPage: false,
+                                __typename: 'PageInfo',
                             },
                             nodes: [
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
                                     credential: isCreated
@@ -996,6 +1014,8 @@ describe('Batches', () => {
                                         : null,
                                     requiresSSH: false,
                                     requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 },
                             ],
                         },

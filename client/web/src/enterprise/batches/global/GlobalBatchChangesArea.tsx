@@ -1,14 +1,15 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { Routes, Route } from 'react-router-dom'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
 import { NotFoundPage } from '../../../components/HeroPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
@@ -54,37 +55,49 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
     authenticatedUser,
     isSourcegraphDotCom,
     ...props
-}) => (
-    <div className="w-100">
-        <Routes>
-            <Route
-                path=""
-                element={
-                    <BatchChangeListPage
-                        headingElement="h1"
-                        canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
-                        authenticatedUser={authenticatedUser}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                        {...props}
-                    />
-                }
-            />
-            {!isSourcegraphDotCom && (
+}) => {
+    const canCreate: true | string = useMemo(() => {
+        if (isSourcegraphDotCom) {
+            return NO_ACCESS_SOURCEGRAPH_COM
+        }
+        if (!canWriteBatchChanges(authenticatedUser)) {
+            return NO_ACCESS_BATCH_CHANGES_WRITE
+        }
+        return true
+    }, [isSourcegraphDotCom, authenticatedUser])
+
+    return (
+        <div className="w-100">
+            <Routes>
                 <Route
-                    path="create"
+                    path=""
                     element={
-                        <AuthenticatedCreateBatchChangePage
-                            {...props}
+                        <BatchChangeListPage
                             headingElement="h1"
+                            canCreate={canCreate}
                             authenticatedUser={authenticatedUser}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            {...props}
                         />
                     }
                 />
-            )}
-            <Route element={<NotFoundPage pageType="batch changes" />} key="hardcoded-key" />
-        </Routes>
-    </div>
-)
+                {!isSourcegraphDotCom && canCreate === true && (
+                    <Route
+                        path="create"
+                        element={
+                            <AuthenticatedCreateBatchChangePage
+                                {...props}
+                                headingElement="h1"
+                                authenticatedUser={authenticatedUser}
+                            />
+                        }
+                    />
+                )}
+                <Route path="*" element={<NotFoundPage pageType="batch changes" />} key="hardcoded-key" />
+            </Routes>
+        </div>
+    )
+}
 
 const AuthenticatedCreateBatchChangePage = withAuthenticatedUser<
     CreateBatchChangePageProps & { authenticatedUser: AuthenticatedUser }

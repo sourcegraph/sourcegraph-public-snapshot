@@ -1,15 +1,15 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 
 import { WebStory } from '../components/WebStory'
-import { ExternalServiceKind, WebhookFields } from '../graphql-operations'
+import { ExternalServiceKind, type WebhookFields } from '../graphql-operations'
 
 import { WebhookInformation } from './WebhookInformation'
 
 const decorator: DecoratorFn = Story => <Story />
 
 const config: Meta = {
-    title: 'web/src/site-admin/WebhookInformation',
+    title: 'web/site-admin/webhooks/incoming/WebhookInformation',
     decorators: [decorator],
 }
 

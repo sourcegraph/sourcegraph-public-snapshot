@@ -1,11 +1,11 @@
-import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyOrClone } from 'comlink'
+import { type Remote, proxyMarker, releaseProxy, type ProxyMethods, type ProxyOrClone } from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable as symbolObservable, Subscription, Subscribable } from 'rxjs'
+import { from, type Observable, observable as symbolObservable, Subscription, type Subscribable } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
 
-import { ProxySubscribable } from '../../extension/api/common'
+import type { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'
 
 // We subclass because rxjs checks instanceof Subscription.

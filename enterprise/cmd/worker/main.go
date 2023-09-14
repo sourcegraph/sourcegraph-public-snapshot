@@ -1,10 +1,14 @@
 package main
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
+var config = svcmain.Config{}
+
 func main() {
-	enterprisecmd.DeprecatedSingleServiceMainEnterprise(shared.Service)
+	sanitycheck.Pass()
+	svcmain.SingleServiceMain(shared.Service, config)
 }

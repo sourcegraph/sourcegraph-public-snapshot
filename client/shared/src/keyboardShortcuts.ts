@@ -1,6 +1,6 @@
 import { isMacPlatform } from '@sourcegraph/common'
 
-import { ModifierKey, Key } from './react-shortcuts/keys'
+import type { ModifierKey, Key } from './react-shortcuts/keys'
 import { getModKey } from './react-shortcuts/ShortcutManager'
 
 /**
@@ -33,6 +33,7 @@ const KEY_TO_NAME: { [P in Key | ModifierKey | string]?: string } = {
     '†': 't',
     ArrowUp: '↑',
     ArrowDown: '↓',
+    Enter: isMacPlatform() ? 'Return' : 'Enter',
 }
 KEY_TO_NAME.Mod = KEY_TO_NAME[getModKey()]
 

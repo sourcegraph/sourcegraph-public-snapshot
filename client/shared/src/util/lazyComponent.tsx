@@ -1,4 +1,4 @@
-import React, { Attributes, PropsWithChildren, PropsWithRef } from 'react'
+import React, { type Attributes, type PropsWithChildren, type PropsWithRef } from 'react'
 
 /**
  * Returns a lazy-loaded reference to a React component in another module.

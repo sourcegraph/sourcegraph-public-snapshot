@@ -3,10 +3,10 @@ import * as React from 'react'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Alert, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'

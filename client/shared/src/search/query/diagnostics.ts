@@ -2,7 +2,7 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import { validateFilter } from './filters'
 import {
-    PatternOf,
+    type PatternOf,
     each,
     matchesValue,
     eachOf,
@@ -10,10 +10,10 @@ import {
     some,
     oneOf,
     not,
-    DataMapper,
-    MatchContext,
+    type DataMapper,
+    type MatchContext,
 } from './patternMatcher'
-import { CharacterRange, Filter, Token } from './token'
+import type { CharacterRange, Filter, Token } from './token'
 
 export interface ChangeSpec {
     from: number

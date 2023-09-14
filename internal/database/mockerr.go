@@ -5,4 +5,5 @@ var (
 	MockCannotCreateUserEmailExistsErr    = ErrCannotCreateUser{ErrorCodeEmailExists}
 	MockUserNotFoundErr                   = userNotFoundErr{}
 	MockUserEmailNotFoundErr              = userEmailNotFoundError{}
+	MockPermissionsSyncJobNotFoundErr     = notFoundError{}
 )

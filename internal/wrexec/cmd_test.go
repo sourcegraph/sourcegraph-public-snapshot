@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -18,8 +19,8 @@ import (
 func TestCommand(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	name := "md5sum"
-	args := []string{"-b"}
+	name := "echo"
+	args := []string{"foo"}
 
 	got := wrexec.CommandContext(context.Background(), logger, name, args...).Cmd
 	want := osexec.Command(name, args...)
@@ -41,8 +42,8 @@ func TestCommand(t *testing.T) {
 func TestWrap(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	name := "md5sum"
-	args := []string{"-b"}
+	name := "echo"
+	args := []string{"foo"}
 
 	want := osexec.Command(name, args...)
 	got := wrexec.Wrap(context.Background(), logger, want).Cmd
@@ -64,7 +65,7 @@ func TestWrap(t *testing.T) {
 func TestCombinedOutput(t *testing.T) {
 	logger := logtest.Scoped(t)
 	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", f.Name())
+	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
 
 	want, wantErr := tc.oscmd.CombinedOutput()
 	got, gotErr := tc.cmd.CombinedOutput()
@@ -74,6 +75,12 @@ func TestCombinedOutput(t *testing.T) {
 			t.Error(diff)
 		}
 		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("output is correctly saved", func(t *testing.T) {
+		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -92,7 +99,7 @@ func TestCombinedOutput(t *testing.T) {
 
 func TestEnviron(t *testing.T) {
 	logger := logtest.Scoped(t)
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", "something")
+	tc := createTestCommand(context.Background(), logger, "echo", "foobar")
 
 	want := tc.oscmd.Environ()
 	got := tc.cmd.Environ()
@@ -118,7 +125,7 @@ func TestEnviron(t *testing.T) {
 func TestOutput(t *testing.T) {
 	logger := logtest.Scoped(t)
 	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", f.Name())
+	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
 
 	want, wantErr := tc.oscmd.Output()
 	got, gotErr := tc.cmd.Output()
@@ -128,6 +135,12 @@ func TestOutput(t *testing.T) {
 			t.Error(diff)
 		}
 		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("output is correctly saved", func(t *testing.T) {
+		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -147,7 +160,7 @@ func TestOutput(t *testing.T) {
 func TestRun(t *testing.T) {
 	logger := logtest.Scoped(t)
 	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", f.Name())
+	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
 
 	want := tc.oscmd.Run()
 	got := tc.cmd.Run()
@@ -173,7 +186,7 @@ func TestRun(t *testing.T) {
 func TestStart(t *testing.T) {
 	logger := logtest.Scoped(t)
 	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", f.Name())
+	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
 
 	want := tc.oscmd.Start()
 	got := tc.cmd.Start()
@@ -199,7 +212,7 @@ func TestStart(t *testing.T) {
 func TestStdoutPipe(t *testing.T) {
 	logger := logtest.Scoped(t)
 	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", f.Name())
+	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
 
 	wStdout, err := tc.oscmd.StdoutPipe()
 	if err != nil {
@@ -264,7 +277,7 @@ func TestStdoutPipe(t *testing.T) {
 
 func TestStderrPipe(t *testing.T) {
 	logger := logtest.Scoped(t)
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b", "not-existing")
+	tc := createTestCommand(context.Background(), logger, "cat", "non-existing")
 
 	wStderr, err := tc.oscmd.StderrPipe()
 	if err != nil {
@@ -329,7 +342,7 @@ func TestStderrPipe(t *testing.T) {
 func TestStdinPipe(t *testing.T) {
 	logger := logtest.Scoped(t)
 	data := "foobar"
-	tc := createTestCommand(context.Background(), logger, "md5sum", "-b")
+	tc := createTestCommand(context.Background(), logger, "cat")
 
 	wStdin, err := tc.oscmd.StdinPipe()
 	if err != nil {
@@ -411,8 +424,8 @@ func TestStdinPipe(t *testing.T) {
 func TestString(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	oscmd := osexec.CommandContext(ctx, "md5sum", "-h")
-	cmd := wrexec.CommandContext(ctx, logger, "md5sum", "-h")
+	oscmd := osexec.CommandContext(ctx, "echo", "foobar")
+	cmd := wrexec.CommandContext(ctx, logger, "echo", "foobar")
 	cmd1 := wrexec.Wrap(ctx, logger, oscmd)
 
 	want := oscmd.String()
@@ -428,13 +441,13 @@ func TestString(t *testing.T) {
 }
 
 func TestHooks(t *testing.T) {
-	name := "md5sum"
+	name := "cat"
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
 	t.Run("all hooks are called", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		args := []string{"-b", f.Name()}
+		args := []string{f.Name()}
 		cmd := wrexec.CommandContext(ctx, logger, name, args...)
 		var a1, a2 int
 		var b1, b2 int
@@ -472,7 +485,7 @@ func TestHooks(t *testing.T) {
 
 	t.Run("before hooks can interrupt the command", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		args := []string{"-b", f.Name()}
+		args := []string{f.Name()}
 		cmd := wrexec.CommandContext(ctx, logger, name, args...)
 		var a, b1, b2 int
 		wantErr := errors.New("foobar")
@@ -514,13 +527,13 @@ func TestHooks(t *testing.T) {
 
 	t.Run("before hooks can update the os.exec.Cmd", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
-		oscmd := osexec.Command("md5sum", "-b", f.Name())
-		cmd := wrexec.CommandContext(ctx, logger, "md5sum", "--help")
+		oscmd := osexec.Command("cat", f.Name())
+		cmd := wrexec.CommandContext(ctx, logger, "cat", "wrong")
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, c *osexec.Cmd) error {
 			// .Args[0] is going to be ignored if and only if .Path is present.
 			// And the osexec.Command always set it obviously ...
 			// It's really easy to miss it and to end up wondering why an argument is missing.
-			c.Args = []string{c.Path, "-b", f.Name()}
+			c.Args = []string{c.Path, f.Name()}
 			return nil
 		})
 
@@ -545,7 +558,7 @@ func TestHooks(t *testing.T) {
 		//nolint:staticcheck
 		ctx := context.WithValue(context.Background(), "my-key", 1)
 		f := createTmpFile(t, "foobar")
-		cmd := wrexec.CommandContext(ctx, logger, "md5sum", "-b", f.Name())
+		cmd := wrexec.CommandContext(ctx, logger, "cat", f.Name())
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, _ *osexec.Cmd) error {
 			want, got := 1, ctx.Value("my-key")
 			if want != got {

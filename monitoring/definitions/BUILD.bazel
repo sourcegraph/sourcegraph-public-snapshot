@@ -10,6 +10,7 @@ go_library(
         "codeintel_uploads.go",
         "containers.go",
         "dashboards.go",
+        "embeddings.go",
         "executor.go",
         "frontend.go",
         "git_server.go",

@@ -1,4 +1,4 @@
-import { FC, useContext, useMemo } from 'react'
+import { type FC, useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useParams } from 'react-router-dom'
@@ -24,9 +24,7 @@ import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
-export interface EditInsightPageProps {}
-
-export const EditInsightPage: FC<EditInsightPageProps> = () => {
+export const EditInsightPage: FC = () => {
     /** Normalized insight id <type insight>.insight.<name of insight> */
     const { insightId } = useParams()
 

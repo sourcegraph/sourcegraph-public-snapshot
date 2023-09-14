@@ -4,8 +4,8 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { type CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { Link, Code } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/Timestamp'
@@ -36,13 +36,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 }) => {
     const title = (
         <div className={styles.title}>
-            <span
-                className={classNames(
-                    'test-search-result-label flex-grow-1',
-                    styles.titleInner,
-                    styles.mutedRepoFileLink
-                )}
-            >
+            <span className={classNames('test-search-result-label flex-grow-1', styles.titleInner)}>
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
@@ -60,7 +54,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     {result.oid.slice(0, 7)}
                     <VisuallyHidden>,</VisuallyHidden>
                 </Code>{' '}
-                <VisuallyHidden>Commited</VisuallyHidden>
+                <VisuallyHidden>Committed</VisuallyHidden>
                 {/* Display commit date in UTC to match behavior of before/after filters */}
                 <Timestamp date={result.committerDate} noAbout={true} strict={true} utc={true} />
             </Link>
@@ -78,6 +72,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoStars={result.repoStars}
             className={containerClassName}
             as={as}
+            repoLastFetched={result.repoLastFetched}
         >
             <CommitSearchResultMatch
                 key={result.url}

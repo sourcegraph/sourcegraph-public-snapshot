@@ -7,9 +7,11 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
@@ -60,11 +62,12 @@ type packagesDownloadSource interface {
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,
 // used to make testing easier.
 type dependenciesService interface {
-	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error)
+	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, bool, error)
 	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
+	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
-func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
+func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName, _ *vcs.URL) error {
 	return nil
 }
 
@@ -88,7 +91,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory), ""); err != nil {
+	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(bareGitDirectory), ""); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
 	}
 
@@ -96,31 +99,31 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) (err error) {
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {
 	var pkg reposource.Package
-	pkg, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	name := pkg.PackageSyntax()
 
 	versions, err := s.versions(ctx, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if revspec != "" {
-		return s.fetchRevspec(ctx, name, dir, versions, revspec)
+		return nil, s.fetchRevspec(ctx, name, dir, versions, revspec)
 	}
 
-	return s.fetchVersions(ctx, name, dir, versions)
+	return nil, s.fetchVersions(ctx, name, dir, versions)
 }
 
 // fetchRevspec fetches the given revspec if it's not contained in
 // existingVersions. If download and upserting the new version into database
 // succeeds, it calls s.fetchVersions with the newly-added version and the old
 // ones, to possibly update the "latest" tag.
-func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir GitDir, existingVersions []string, revspec string) error {
+func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir common.GitDir, existingVersions []string, revspec string) error {
 	// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
 	// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
 	// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
@@ -146,20 +149,29 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		// Invalid version. Silently ignore error, see comment above why.
 		return nil
 	}
+
+	// if the next check passes, we know that any filters added/updated before this timestamp did not block it
+	instant := time.Now()
+
+	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
+		// if err == nil && !allowed, this will return nil
+		return errors.Wrap(err, "error checking if package repo version is allowed")
+	}
+
 	err = s.gitPushDependencyTag(ctx, string(dir), dep)
 	if err != nil {
 		// Package could not be downloaded. Silently ignore error, see comment above why.
 		return nil
 	}
 
-	_, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
+	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
-			Scheme:   dep.Scheme(),
-			Name:     dep.PackageSyntax(),
-			Versions: []string{dep.PackageVersion()},
+			Scheme:        dep.Scheme(),
+			Name:          dep.PackageSyntax(),
+			Versions:      []dependencies.MinimalPackageRepoRefVersion{{Version: dep.PackageVersion(), LastCheckedAt: &instant}},
+			LastCheckedAt: &instant,
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		// We don't want to ignore when writing to the database failed, since
 		// we've already downloaded the package successfully.
 		return err
@@ -173,7 +185,7 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 // fetchVersions checks whether the given versions are all valid version
 // specifiers, then checks whether they've already been downloaded and, if not,
 // downloads them.
-func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versions []string) error {
+func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir common.GitDir, versions []string) error {
 	var errs errors.MultiError
 	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
 	for _, version := range versions {
@@ -323,7 +335,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
+func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) (versions []string, _ error) {
 	var combinedVersions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)
@@ -337,10 +349,11 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 		}
 	}
 
-	listedPackages, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
-		Scheme:        s.scheme,
-		Name:          packageName,
-		ExactNameOnly: true,
+	listedPackages, _, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+		Scheme:         s.scheme,
+		Name:           packageName,
+		ExactNameOnly:  true,
+		IncludeBlocked: false,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list dependencies from db")
@@ -372,7 +385,7 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := runWith(ctx, wrexec.Wrap(ctx, nil, cmd), false, nil)
+	output, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, nil, cmd))
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}

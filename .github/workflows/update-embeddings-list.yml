@@ -1,0 +1,47 @@
+name: Update list of Embedded Repos
+
+on:
+  schedule:
+    # everyday at 0:00 UTC
+    - cron:  0 0 * * *
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SOURCEGRAPH_DOCS_ACCESS_TOKEN: ${{ secrets.SOURCEGRAPH_DOCS_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18.17.1
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H:%M:%S')"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Compile Javascript
+        run: cd dev/update-embeddings-list && pnpm start
+      - name: check output
+        run: ls
+      - name: check output
+        run: ls dev/update-embeddings-list
+      - name: move into doc folder
+        run: mv dev/update-embeddings-list/embedded-repos.md doc/cody/embedded-repos.md
+      - name: check list in doc folder
+        run: head -n 10 doc/cody/embedded-repos.md
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          title: "Cody: Update list of embedded repos"
+          commit-message: update list - ${{ steps.date.outputs.date }}
+          author: github-actions <github-actions[bot]@users.noreply.github.com>
+          body: |
+            - This is an automated PR to update the list of [embedded repos](https://docs.sourcegraph.com/cody/embedded-repos).
+          labels: |
+            embeddings-list-update
+            automerge

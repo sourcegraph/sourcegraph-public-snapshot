@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     LoadingSpinner,
     Button,
@@ -21,11 +21,11 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import {
+import type {
     InviteUserToOrganizationResult,
     InviteUserToOrganizationVariables,
     AddUserToOrganizationResult,
@@ -225,7 +225,7 @@ function inviteUserToOrganization(
     )
         .pipe(
             map(({ data, errors }) => {
-                if (!data || !data.inviteUserToOrganization || (errors && errors.length > 0)) {
+                if (!data?.inviteUserToOrganization || (errors && errors.length > 0)) {
                     eventLogger.log('InviteOrgMemberFailed')
                     throw createAggregateError(errors)
                 }
@@ -252,7 +252,7 @@ function addUserToOrganization(username: string, organization: Scalars['ID']): P
     )
         .pipe(
             map(({ data, errors }) => {
-                if (!data || !data.addUserToOrganization || (errors && errors.length > 0)) {
+                if (!data?.addUserToOrganization || (errors && errors.length > 0)) {
                     eventLogger.log('AddOrgMemberFailed')
                     throw createAggregateError(errors)
                 }

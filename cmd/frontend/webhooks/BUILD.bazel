@@ -1,8 +1,10 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "webhooks",
     srcs = [
+        "azuredevops_webhooks.go",
         "bitbucketcloud_webhooks.go",
         "bitbucketserver_webhooks.go",
         "github_webhooks.go",
@@ -19,6 +21,7 @@ go_library(
         "//internal/encryption/keyring",
         "//internal/errcode",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/gitlab/webhooks",
@@ -37,23 +40,31 @@ go_library(
 
 go_test(
     name = "webhooks_test",
+    timeout = "moderate",
     srcs = [
         "github_webhooks_test.go",
         "middleware_test.go",
         "webhooks_test.go",
     ],
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/encryption/keyring",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/gitlab/webhooks",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_google_go_github_v43//github",

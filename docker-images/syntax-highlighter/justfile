@@ -1,0 +1,7 @@
+download-bench:
+  mkdir -p bench_data/
+  test -f bench_data/event.rs || curl -o bench_data/event.rs https://raw.githubusercontent.com/alacritty/alacritty/ead65221ebe06ff5689e65b866d735d4365d0e9e/alacritty/src/event.rs
+  test -f bench_data/big.cpp || curl -o bench_data/big.cpp https://raw.githubusercontent.com/llvm/llvm-project/ff2e6199b23525b06947785368cc3e2e93eab381/llvm/lib/Target/X86/X86ISelLowering.cpp
+
+bench: download-bench
+  cargo bench

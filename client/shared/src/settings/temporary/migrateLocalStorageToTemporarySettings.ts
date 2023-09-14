@@ -2,8 +2,8 @@ import { take } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 
-import { TemporarySettings, TemporarySettingsSchema } from './TemporarySettings'
-import { TemporarySettingsStorage } from './TemporarySettingsStorage'
+import type { TemporarySettings, TemporarySettingsSchema } from './TemporarySettings'
+import type { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 interface Migration {
     localStorageKey: string

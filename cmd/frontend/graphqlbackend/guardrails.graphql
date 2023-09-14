@@ -1,0 +1,52 @@
+extend type Query {
+    """
+    EXPERIMENTAL: Searches the instances indexed code for code matching snippet.
+    """
+    snippetAttribution(snippet: String!, first: Int): SnippetAttributionConnection!
+}
+
+"""
+EXPERIMENTAL: A list of snippet attributions.
+"""
+type SnippetAttributionConnection {
+    """
+    totalCount is the total number of repository attributions we found before
+    stopping the search.
+
+    Note: if we didn't finish searching the full corpus then limitHit will be
+    true. For filtering use case this means if limitHit is true you need to be
+    conservative with TotalCount and assume it could be higher.
+    """
+    totalCount: Int!
+
+    """
+    limitHit is true if we stopped searching before looking into the full
+    corpus. If limitHit is true then it is possible there are more than
+    totalCount attributions.
+    """
+    limitHit: Boolean!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The page set of SnippetAttribution entries in this connection.
+    """
+    nodes: [SnippetAttribution!]!
+}
+
+"""
+EXPERIMENTAL: Attribution result from snippetAttribution.
+"""
+type SnippetAttribution {
+    """
+    The name of the repository containing the snippet.
+
+    Note: we do not return a type Repository since repositoryName may
+    represent a repository not on this instance. eg a match from the
+    sourcegraph.com open source corpus.
+    """
+    repositoryName: String!
+}

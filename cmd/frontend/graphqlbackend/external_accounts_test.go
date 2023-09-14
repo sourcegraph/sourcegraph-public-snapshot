@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -57,6 +58,11 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		}{
 			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
 		}
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			if req.Reason != database.ReasonExternalAccountDeleted {
+				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
+			}
+		}
 		_, err = sr.DeleteExternalAccount(ctx, &graphqlArgs)
 		require.NoError(t, err)
 
@@ -67,13 +73,13 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 }
 
 func TestExternalAccounts_AddExternalAccount(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(users)
-	extservices := database.NewMockExternalServiceStore()
+	extservices := dbmocks.NewMockExternalServiceStore()
 	db.ExternalServicesFunc.SetDefaultReturn(extservices)
-	userextaccts := database.NewMockUserExternalAccountsStore()
+	userextaccts := dbmocks.NewMockUserExternalAccountsStore()
 	db.UserExternalAccountsFunc.SetDefaultReturn(userextaccts)
 
 	gerritURL := "https://gerrit.mycorp.com/"
@@ -110,7 +116,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 		// OSS packages cannot import enterprise packages, but when we build the entire
 		// application this will be implemented.
 		//
-		// See enterprise/cmd/frontend/internal/auth/sourcegraphoperator for more details
+		// See cmd/frontend/internal/auth/sourcegraphoperator for more details
 		// and additional test coverage on the functionality.
 		"Sourcegraph operator unimplemented in OSS": {
 			user:            &types.User{ID: 1, SiteAdmin: true},
@@ -181,6 +187,9 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
 				if req.UserIDs[0] != tc.user.ID {
 					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
+				}
+				if req.Reason != database.ReasonExternalAccountAdded {
+					t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountAdded)
 				}
 			}
 

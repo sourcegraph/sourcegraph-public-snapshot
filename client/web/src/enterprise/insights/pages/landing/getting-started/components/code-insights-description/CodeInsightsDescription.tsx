@@ -8,6 +8,8 @@ interface Props {
     className?: string
 }
 
+const productPageUrl = 'https://about.sourcegraph.com/code-insights'
+
 /**
  * The product description for Code Insights.
  */
@@ -44,7 +46,7 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
                 </Link>
             </li>
             <li>
-                <Link to="https://about.sourcegraph.com/code-insights" target="_blank" rel="noopener">
+                <Link to={productPageUrl} target="_blank" rel="noopener">
                     Product page <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                 </Link>
             </li>

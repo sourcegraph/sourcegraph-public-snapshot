@@ -1,4 +1,4 @@
-import { Location, createPath } from 'react-router-dom'
+import { type Location, createPath } from 'react-router-dom'
 import { Subscription, Subject } from 'rxjs'
 import { tap, last } from 'rxjs/operators'
 
@@ -163,7 +163,7 @@ describe('search/index', () => {
 
 describe('repoFilterForRepoRevision escapes values with spaces', () => {
     test('escapes spaces in value', () => {
-        expect(repoFilterForRepoRevision('7 is my final answer', false)).toMatchInlineSnapshot(
+        expect(repoFilterForRepoRevision('7 is my final answer')).toMatchInlineSnapshot(
             '"^7\\\\ is\\\\ my\\\\ final\\\\ answer$"'
         )
     })

@@ -1,6 +1,6 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { NamespaceAreaRoute } from './NamespaceArea'
+import type { NamespaceAreaRoute } from './NamespaceArea'
 
 const SavedSearchListPage = lazyComponent(() => import('../savedSearches/SavedSearchListPage'), 'SavedSearchListPage')
 

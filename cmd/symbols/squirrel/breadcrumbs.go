@@ -105,11 +105,11 @@ func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile readFileFunc) {
 	fmt.Fprintln(w)
 
 	for _, b := range *bs {
-		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repeat("| ", b.depth), itermSource(b.file, b.line, "src"), color.RedString("%d", b.number), b.message())
+		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repeat("| ", b.depth), itermSource(b.file, b.line), color.RedString("%d", b.number), b.message())
 	}
 }
 
-func itermSource(absPath string, line int, msg string) string {
+func itermSource(absPath string, line int) string {
 	if os.Getenv("SRC_LOG_SOURCE_LINK") == "true" {
 		// Link to open the file:line in VS Code.
 		url := fmt.Sprintf("vscode://file%s:%d", absPath, line)
@@ -134,18 +134,4 @@ func (bs *Breadcrumbs) prettyString(readFile readFileFunc) string {
 	sb := &strings.Builder{}
 	bs.pretty(sb, readFile)
 	return sb.String()
-}
-
-// Returns breadcrumbs that have one of the given messages.
-func pickBreadcrumbs(breadcrumbs []Breadcrumb, messages []string) []Breadcrumb {
-	var picked []Breadcrumb
-	for _, b := range breadcrumbs {
-		for _, message := range messages {
-			if strings.Contains(b.message(), message) {
-				picked = append(picked, b)
-				break
-			}
-		}
-	}
-	return picked
 }

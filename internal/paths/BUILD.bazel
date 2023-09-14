@@ -1,0 +1,20 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "paths",
+    srcs = ["match.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/paths",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_becheran_wildmatch_go//:wildmatch-go",
+    ],
+)
+
+go_test(
+    name = "paths_test",
+    timeout = "short",
+    srcs = ["match_test.go"],
+    embed = [":paths"],
+)

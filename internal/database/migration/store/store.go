@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -105,8 +105,6 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 // DO NOT call this method from inside a transaction, otherwise the absence of optional relations
 // will cause a transaction rollback while this function returns a nil-valued error (hard to debug).
 func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
-	stitchedDefinitions := shared.StitchedMigationsBySchemaName[humanizeSchemaName(s.schemaName)].Definitions
-
 	applied, pending, failed, err := s.Versions(ctx)
 	if err != nil {
 		return err
@@ -117,90 +115,78 @@ func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
 		// upgrades painful and operation of the instance unstable.
 		return nil
 	}
-
-	// We have a small fork in behavior coming up. If we read from the migration_logs table, then
-	// we already had a migration log entry for the last version we applied. However, if we read
-	// from the old golang-migrate tables, we have an empty migration_log table and want to populate
-	// the log for the latest version as well. If we read from golang-migrate tables we'll set this
-	// flag and no-op
-	writeAppliedVersions := false
-
 	if len(applied) == 0 {
-		// Fallback to golang migrate, but only if there's no authoritative data. This reads
-		// the old .*schema_migrations table (if it exists) and sets the version number as the
-		// sole applied (faux) migration log record. This number still corresponds correctly to
-		// a node in the stitched migration graph.
-
-		version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, quote(s.schemaName))))
-		if err != nil && !isMissingRelation(err) {
-			return err
-		}
-		if !ok {
-			return nil
-		}
-
-		writeAppliedVersions = true
-		applied = append(applied, version)
+		// Haven't applied anything yet to be able to backfill from.
+		return nil
 	}
 
-	// Make lookup map of applied migration identifiers
+	var (
+		schemaName         = humanizeSchemaName(s.schemaName)
+		stitchedMigrations = shared.StitchedMigationsBySchemaName[schemaName]
+		definitions        = stitchedMigrations.Definitions
+		boundsByRev        = stitchedMigrations.BoundsByRev
+		rootMap            = make(map[int]struct{}, len(boundsByRev))
+	)
+
+	// Convert applied slice into a map for fast existence check
 	appliedMap := make(map[int]struct{}, len(applied))
-	filtered := applied[:0]
 	for _, id := range applied {
-		// Presence of an identifier in appliedMap will prevent a migration log for
-		// that definition to be omitted from the writes. In order to ensure that we
-		// write the applied versions (in the case of golang-migrate), we'll leave
-		// this map empty.
-		if !writeAppliedVersions {
-			appliedMap[id] = struct{}{}
+		appliedMap[id] = struct{}{}
+	}
+
+	for _, bounds := range boundsByRev {
+		var missingIDs []int
+		for _, id := range bounds.LeafIDs {
+			// Ensure each leaf migration of this version has been applied.
+			// If not, we'll jump out of this revision and move onto the next
+			// candidate.
+			if _, ok := appliedMap[id]; !ok {
+				missingIDs = append(missingIDs, id)
+			}
+		}
+		if len(missingIDs) > 0 {
+			continue
 		}
 
-		// While we're iterating the applied versions, we also want to filter out any of the
-		// applied migrations which are not present in the stitched migration graph. The point
-		// here is to backfill _previous_ release migration definitions. If they don't exist in
-		// the stitched graph then they are on the newest (development) version.
-		if _, ok := stitchedDefinitions.GetByID(id); ok {
-			filtered = append(filtered, id)
+		// We haven't broken out of the loop, we've applied the entirety of this
+		// version's migrations. We can backfill from its root.
+		root := bounds.RootID
+		if root < 0 {
+			root = -root
+		}
+		if _, ok := definitions.GetByID(root); ok {
+			rootMap[root] = struct{}{}
 		}
 	}
-	applied = filtered
 
-	// Determine the set of migrations that needed to be applied to get to the current state.
-	// From the set of ancestor definitions, filter out the ones that have already been applied.
-	// The remaining values are definitions that have been applied, but in their squashed form,
-	// defined in a version prior to the instance's first boot.
-	ancestors, err := stitchedDefinitions.Up(nil, applied)
+	roots := make([]int, 0, len(rootMap))
+	for id := range rootMap {
+		roots = append(roots, id)
+	}
+
+	// For any bounds that we have *completely* applied, we can safely backfill the
+	// ancestors of those roots. Note that if there is more than one candidate root
+	// then one should completely dominate the other.
+	ancestorIDs, err := ancestors(definitions, roots...)
 	if err != nil {
 		return err
 	}
-	idToBackfillMap := make(map[int]struct{}, len(ancestors))
-	for _, ancestor := range ancestors {
-		if _, ok := appliedMap[ancestor.ID]; !ok {
-			idToBackfillMap[ancestor.ID] = struct{}{}
-		}
-	}
-	idsToBackfill := make([]int64, 0, len(idToBackfillMap))
-	for id := range idToBackfillMap {
+	idsToBackfill := []int64{}
+	for _, id := range ancestorIDs {
 		idsToBackfill = append(idsToBackfill, int64(id))
 	}
-	sort.Slice(idsToBackfill, func(i, j int) bool { return idsToBackfill[i] < idsToBackfill[j] })
 
-	// Write backfilled versions into migration_logs table
-	if err := s.Exec(ctx, sqlf.Sprintf(
+	if len(ancestorIDs) == 0 {
+		return nil
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(
 		backfillSchemaVersionsQuery,
 		currentMigrationLogSchemaVersion,
 		s.schemaName,
 		pq.Int64Array(idsToBackfill),
-	)); err != nil {
-		return err
-	}
-
-	return nil
+	))
 }
-
-const inferBackfillTargetViaGolangMigrateQuery = `
-SELECT version::integer FROM %s WHERE NOT dirty
-`
 
 const backfillSchemaVersionsQuery = `
 WITH candidates AS (
@@ -231,6 +217,21 @@ WHERE NOT EXISTS (
 	WHERE ml.schema = c.schema AND ml.version = c.version
 )
 `
+
+func ancestors(definitions *definition.Definitions, versions ...int) ([]int, error) {
+	ancestors, err := definitions.Up(nil, versions)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(ancestors))
+	for _, definition := range ancestors {
+		ids = append(ids, definition.ID)
+	}
+	sort.Ints(ids)
+
+	return ids, nil
+}
 
 // Versions returns three sets of migration versions that, together, describe the current schema
 // state. These states describe, respectively, the identifieers of all applied, pending, and failed
@@ -270,7 +271,16 @@ WITH ranked_migration_logs AS (
 		migration_logs.*,
 		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
 	FROM migration_logs
-	WHERE schema = %s
+	WHERE
+		schema = %s AND
+		-- Filter out failed reverts, which should have no visible effect but are
+		-- a common occurrence in development. We don't allow CIC in downgrades
+		-- therefore all reverts are applied in a txn.
+		NOT (
+			NOT up AND
+			NOT success AND
+			finished_at IS NOT NULL
+		)
 )
 SELECT
 	schema,
@@ -281,6 +291,25 @@ FROM ranked_migration_logs
 WHERE row_number = 1
 ORDER BY version
 `
+
+func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err error) {
+	ctx, _, endObservation := s.operations.runDDLStatements.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, statement := range statements {
+		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(statement, "%", "%%"))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output
@@ -293,8 +322,8 @@ ORDER BY version
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
-	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
+	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("key", int(key)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -549,13 +578,3 @@ func humanizeSchemaName(schemaName string) string {
 }
 
 var quote = sqlf.Sprintf
-
-// isMissingRelation returns true if the given error occurs due to a missing relation in Postgres.
-func isMissingRelation(err error) bool {
-	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) {
-		return false
-	}
-
-	return pgErr.Code == "42P01"
-}

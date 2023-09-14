@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react'
 
-import { fuzzyMatches, HighlightedMatches, Span } from './HighlightedMatches'
+import { fuzzyMatches, HighlightedMatches, type Span } from './HighlightedMatches'
 
 describe('Markdown', () => {
     test('render', () => {

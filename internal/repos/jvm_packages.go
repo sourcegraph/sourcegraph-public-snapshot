@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,14 +24,9 @@ func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*Pac
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	var configDeps []string
-	if c.Maven != nil {
-		configDeps = c.Maven.Dependencies
-	}
-
 	return &PackagesSource{
 		svc:        svc,
-		configDeps: configDeps,
+		configDeps: c.Maven.Dependencies,
 		scheme:     dependencies.JVMPackagesScheme,
 		src:        &jvmPackagesSource{config: &c},
 	}, nil
@@ -46,7 +40,9 @@ type jvmPackagesSource struct {
 
 var _ packagesSource = &jvmPackagesSource{}
 
-func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
+// Commented out as importing 'internal/extsvc/jvmpackages/coursier' here includes it in the frontend and repo-updater binaries.
+// We don't want that due to the side-effects of importing that package.
+/* func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
 	mavenDependency, err := reposource.ParseMavenVersionedPackage(name + ":" + version)
 	if err != nil {
 		return nil, err
@@ -57,7 +53,7 @@ func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (repo
 		return nil, err
 	}
 	return mavenDependency, nil
-}
+} */
 
 func (jvmPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseMavenVersionedPackage(dep)

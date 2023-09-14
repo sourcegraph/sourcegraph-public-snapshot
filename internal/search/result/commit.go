@@ -39,7 +39,10 @@ type CommitMatch struct {
 	Diff []DiffFile
 
 	// ModifiedFiles will include the list of files modified in the commit when
-	// sub-repo permissions filtering has been enabled.
+	// explicitly requested via IncludeModifiedFiles. This is disabled by default for performance.
+	// Search requests to include modified files in the following cases:
+	// * when sub-repo permissions filtering has been enabled,
+	// * when ownership filtering clause is used, and search result is commits.
 	ModifiedFiles []string
 }
 

@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { TOGGLE_DISPLAY } from './constants'
+import type { TOGGLE_DISPLAY } from './constants'
 
 import styles from './Toggle.module.scss'
 

@@ -1,5 +1,8 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
+
+import type { TemporarySettingsResult } from './graphql-operations'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 
@@ -20,9 +23,11 @@ export interface AuthProvider {
         | 'gerrit'
         | 'azuredevops'
     displayName: string
+    displayPrefix?: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
+    clientID: string
 }
 
 /**
@@ -33,27 +38,41 @@ export interface AuthProvider {
  * It ensures that we don't forget to add new fields the server logic
  * if client side query changes.
  */
-export interface SourcegraphContextCurrentUser
-    extends Pick<
-        AuthenticatedUser,
-        | '__typename'
-        | 'id'
-        | 'databaseID'
-        | 'username'
-        | 'avatarURL'
-        | 'displayName'
-        | 'siteAdmin'
-        | 'tags'
-        | 'url'
-        | 'settingsURL'
-        | 'viewerCanAdminister'
-        | 'tosAccepted'
-        | 'searchable'
-        | 'organizations'
-        | 'session'
-        | 'emails'
-        | 'latestSettings'
-    > {}
+export type SourcegraphContextCurrentUser = Pick<
+    AuthenticatedUser,
+    | '__typename'
+    | 'id'
+    | 'databaseID'
+    | 'username'
+    | 'avatarURL'
+    | 'displayName'
+    | 'siteAdmin'
+    | 'url'
+    | 'settingsURL'
+    | 'viewerCanAdminister'
+    | 'tosAccepted'
+    | 'searchable'
+    | 'organizations'
+    | 'session'
+    | 'emails'
+    | 'latestSettings'
+    | 'permissions'
+    | 'hasVerifiedEmail'
+    | 'completedPostSignup'
+>
+
+/**
+ * This Typescript type should be in sync with client-side
+ * GraphQL `GetTemporarySettings` query.
+ *
+ * This type is derived from the generated `TemporarySettingsResult` type.
+ * It ensures that we don't forget to add new fields the server logic
+ * if client side query changes.
+ */
+export type SourcegraphContextTemporarySettings = Pick<
+    TemporarySettingsResult['temporarySettings'],
+    '__typename' | 'contents'
+>
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
@@ -63,7 +82,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
+
+    /**
+     * Data preloaded on the server.
+     */
     readonly currentUser: SourcegraphContextCurrentUser | null
+    readonly temporarySettings: SourcegraphContextTemporarySettings | null
 
     readonly sentryDSN: string | null
 
@@ -73,6 +97,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
+
+    /** Whether instance allows to change its settings manually in UI */
+    extsvcConfigAllowEdits: boolean
+
+    /** Whether instance allows is configured by external service configuration file */
+    extsvcConfigFileExists: boolean
 
     /** URL path to image/font/etc. assets on server */
     assetsRoot: string
@@ -101,6 +131,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     needsSiteInit: boolean
 
     /**
+     * Whether at least one code host connections needs to be connected.
+     */
+    needsRepositoryConfiguration: boolean
+
+    /**
      * Emails support enabled
      */
     emailEnabled: boolean
@@ -108,10 +143,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /**
      * A subset of the site configuration. Not all fields are set.
      */
-    site: Pick<
-        SiteConfiguration,
-        'auth.public' | 'update.channel' | 'disableNonCriticalTelemetry' | 'authz.enforceForSiteAdmins'
-    >
+    site: Pick<SiteConfiguration, 'auth.public' | 'update.channel' | 'authz.enforceForSiteAdmins'>
 
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
@@ -119,10 +151,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
 
-    /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
+    /** Whether the instance is running on macOS. */
+    runningOnMacOS: boolean
 
     /**
      * Whether or not the server needs to restart in order to apply a pending
@@ -147,6 +177,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesWebhookLogsEnabled: boolean
 
+    /** Whether cody is enabled site-wide. */
+    codyEnabled: boolean
+
+    /** Whether cody is enabled for the user. */
+    codyEnabledForCurrentUser: boolean
+
+    /** Whether the site requires a verified email for cody. */
+    codyRequiresVerifiedEmail: boolean
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 
@@ -159,11 +198,23 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether code insights API is enabled on the site. */
     codeInsightsEnabled: boolean
 
+    /** Whether embeddings are enabled on this site. */
+    embeddingsEnabled: boolean
+
+    /**
+     * Local git URL, it's used only to create a local external service
+     * in Sourcegraph App.
+     */
+    srcServeGitUrl: string
+
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
+
+    /** primaryLoginProvidersCount sets the max number of primary login providers on signin page */
+    primaryLoginProvidersCount: number
 
     /** What the minimum length for a password should be. */
     authMinPasswordLength: number
@@ -181,6 +232,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         /** Require at least an upper and a lowercase character password */
         requireUpperandLowerCase?: boolean
     }
+
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
 
     /** Custom branding for the homepage and search icon. */
     branding?: {
@@ -203,13 +256,24 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Contains information about the product license. */
     licenseInfo?: {
-        currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
+        currentPlan:
+            | 'old-starter-0'
+            | 'old-enterprise-0'
+            | 'team-0'
+            | 'enterprise-0'
+            | 'business-0'
+            | 'enterprise-1'
+            | 'enterprise-air-gap-0'
 
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
+
+    /** sha256 hashed license key */
+    hashedLicenseKey?: string
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

@@ -1,19 +1,23 @@
-import { Remote } from 'comlink'
-import { BehaviorSubject, combineLatest, from, Observable, of, Subscription } from 'rxjs'
+import type { Remote } from 'comlink'
+import { BehaviorSubject, combineLatest, from, type Observable, of, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, first, map, switchMap, tap } from 'rxjs/operators'
-import sourcegraph from 'sourcegraph'
+import type sourcegraph from 'sourcegraph'
 
-import { Contributions } from '@sourcegraph/client-api'
+import type { Contributions } from '@sourcegraph/client-api'
 import { asError, isErrorLike, hashCode, logger } from '@sourcegraph/common'
 
-import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
+import {
+    type ConfiguredExtension,
+    getScriptURLFromExtensionManifest,
+    splitExtensionID,
+} from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
 import { wrapRemoteObservable } from '../client/api/common'
-import { MainThreadAPI } from '../contract'
+import type { MainThreadAPI } from '../contract'
 import { tryCatchPromise } from '../util'
 
 import { parseContributionExpressions } from './api/contribution'
-import { ExtensionHostState } from './extensionHostState'
+import type { ExtensionHostState } from './extensionHostState'
 
 export function observeActiveExtensions(
     mainAPI: Remote<MainThreadAPI>,

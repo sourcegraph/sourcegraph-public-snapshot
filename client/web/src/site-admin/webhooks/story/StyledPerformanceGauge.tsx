@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { PerformanceGauge, Props } from '../PerformanceGauge'
+import { PerformanceGauge, type Props } from '../PerformanceGauge'
 
 import styles from './StyledPerformanceGauge.module.scss'
 

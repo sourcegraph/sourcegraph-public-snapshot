@@ -2,11 +2,10 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { getFileMatchUrl, getRepositoryUrl, getRevision, PathMatch } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { getFileMatchUrl, getRepositoryUrl, getRevision, type PathMatch } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CopyPathAction } from './CopyPathAction'
-import { LastSyncedIcon } from './LastSyncedIcon'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
@@ -44,7 +43,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+                className={styles.titleInner}
                 isKeyboardSelectable={true}
             />
             <CopyPathAction filePath={result.path} className={styles.copyButton} telemetryService={telemetryService} />
@@ -61,9 +60,9 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
             repoStars={result.repoStars}
             rankingDebug={result.debug}
             className={classNames(styles.copyButtonContainer, containerClassName)}
+            repoLastFetched={result.repoLastFetched}
         >
             <div className={classNames(styles.searchResultMatch, 'p-2')}>
-                {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                 <small>{result.pathMatches ? 'Path match' : 'File contains matching content'}</small>
             </div>
         </ResultContainer>

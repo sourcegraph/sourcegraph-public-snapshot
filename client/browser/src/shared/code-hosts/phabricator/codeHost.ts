@@ -1,22 +1,19 @@
 import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { Position } from '@sourcegraph/extension-api-types'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { AdjustmentDirection, type PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { Position } from '@sourcegraph/extension-api-types'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fetchBlobContentLines } from '../../repo/backend'
-import { CodeHost } from '../shared/codeHost'
-import { CodeView, toCodeViewResolver } from '../shared/codeViews'
-import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
-import { ViewResolver } from '../shared/views'
-
-import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
-import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
+import type { CodeHost } from '../shared/codeHost'
+import { type CodeView, toCodeViewResolver } from '../shared/codeViews'
+import type { ViewResolver } from '../shared/views'
 
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
+import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
+import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
 
 import styles from './codeHost.module.scss'
 
@@ -175,14 +172,6 @@ const phabSourceCodeViewResolver = toCodeViewResolver('.phabricator-source-code-
     resolveFileInfo: resolveDiffusionFileInfo,
 })
 
-const notificationClassNames = {
-    [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',
-    [NotificationType.Success]: 'phui-info-view phui-info-severity-success',
-    [NotificationType.Info]: 'phui-info-view phui-info-severity-notice',
-    [NotificationType.Warning]: 'phui-info-view phui-info-severity-warning',
-    [NotificationType.Error]: 'phui-info-view phui-info-severity-error',
-}
-
 export const checkIsPhabricator = (): boolean => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
@@ -201,13 +190,11 @@ export const phabricatorCodeHost: CodeHost = {
         actionItemClass: classNames('button grey', styles.actionItem),
         actionItemIconClass: styles.icon,
     },
-    notificationClassNames,
     hoverOverlayClassProps: {
         className: classNames('aphront-dialog-view', styles.hoverOverlay),
         actionItemClassName: classNames('button grey', styles.hoverOverlayActionItem),
         closeButtonClassName: 'button grey btn-icon--phabricator',
         iconClassName: styles.hoverOverlayActionItemIcon,
-        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
     codeViewsRequireTokenization: true,
 }

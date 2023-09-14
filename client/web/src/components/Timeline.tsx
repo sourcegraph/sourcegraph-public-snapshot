@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactNode, useState } from 'react'
+import React, { type FunctionComponent, type ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
@@ -35,7 +35,7 @@ export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>>
 }) => (
     <div className={classNames('w-100', className)}>
         {stages.map((stage, stageIndex) => (
-            <>
+            <span key={stageIndex}>
                 {stageIndex !== 0 && (
                     <div className="d-flex align-items-center">
                         <div className={styles.separator} />
@@ -48,7 +48,7 @@ export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>>
                     </div>
                 )}
                 <TimelineStage key={`${stage.text}+${stage.date}`} stage={stage} now={now} />
-            </>
+            </span>
         ))}
     </div>
 )

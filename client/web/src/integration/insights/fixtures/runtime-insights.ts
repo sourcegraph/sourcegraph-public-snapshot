@@ -1,4 +1,4 @@
-import { GetInsightPreviewResult, LangStatsInsightContentResult } from '../../../graphql-operations'
+import type { GetInsightPreviewResult, LangStatsInsightContentResult } from '../../../graphql-operations'
 
 /**
  * For code-stats insight we have 1 step just in time processing. This fixture provides mock

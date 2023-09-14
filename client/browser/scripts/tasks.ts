@@ -6,7 +6,7 @@ import { omit, cloneDeep, curry } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
-import { Configuration } from 'webpack'
+import type { Configuration } from 'webpack'
 
 import manifestSpec from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
@@ -125,6 +125,7 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
     shelljs.cp('build/dist/css/inject.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
+    copyInlineExtensions('build/integration')
     // Copy to the ui/assets directory so that these files can be served by
     // the webapp.
     shelljs.mkdir('-p', '../../ui/assets/extension')
@@ -209,6 +210,8 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     // Allow only building for specific browser targets.
     // Useful in local dev for faster builds.
     if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
+        signale.info(`Skipping build ${browser} because TARGETS=${process.env.TARGETS}`)
+
         return
     }
 

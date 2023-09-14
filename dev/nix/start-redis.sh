@@ -10,11 +10,14 @@ fi
 
 if ! redis-cli -e ping &>/dev/null; then
   echo "Starting redis..."
-  redis-server - >/dev/null <<-EOF
+  redis-server - 3>&- >/dev/null <<-EOF
 # use local data dir
 dir $data
 logfile $data/redis.log
 loglevel warning
+
+# listen on localhost to avoid firewall popups
+bind 127.0.0.1 ::1
 
 # run in background
 daemonize yes

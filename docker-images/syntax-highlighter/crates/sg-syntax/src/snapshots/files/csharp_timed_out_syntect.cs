@@ -12,13 +12,31 @@ using System.Text.RegularExpressions;
 using Xunit;
 namespace Radzen.Blazor.
 {
+
     public class DataGridTests
     {
+
+        public event EventHandler<int> Event1
+        {
+            add { }
+            remove { }
+        }
+        public event EventHandler Event2
+        {
+            add => addSomething();
+            remove => removeSomething();
+        }
+
+        [Required(ErrorMessage = "Message")]
+        public string RequiredProperty { get; set; }
+        public int Hello = 42;
+
         // Css classes tests
         [Fact]
         public void DataGrid_Renders_CssClass()
         {
             using var ctx = new TestContext();
+            using var ctx2 = new TestContext<Int>();
             ctx.JSInterop.Mode = JSRuntimeMode.Loose;
             ctx.JSInterop.SetupModule("_content/Radzen.Blazor/Radzen.Blazor.js");
             var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
@@ -54,6 +72,11 @@ namespace Radzen.Blazor.
             Assert.Contains(@"
 Lorem Ipsum
 ", component.Markup);
+            var productTempateProductAttribute = new ProductTemplateProductAttribute
+            {
+                ProductTemplate = this,
+                ProductAttributeId = attributeId
+            };
         }
     }
 }

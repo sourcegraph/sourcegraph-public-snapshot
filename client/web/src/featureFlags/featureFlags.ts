@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
+import type { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
@@ -15,12 +15,21 @@ export type FeatureFlagName =
     | 'search-results-keyboard-navigation'
     | 'enable-streaming-git-blame'
     | 'plg-enable-add-codehost-widget'
-    | 'enable-rbac'
     | 'accessible-file-tree'
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
-    | 'search-ownership'
-    | 'cody'
+    | 'enable-ownership-panels'
+    | 'search-ranking'
+    | 'blob-page-switch-areas-shortcuts'
+    | 'sentinel'
+    | 'clone-progress-logging'
+    | 'sourcegraph-operator-site-admin-hide-maintenance'
+    | 'repository-metadata'
+    | 'cody-web-search'
+    | 'own-promote'
+    | 'own-analytics'
+    | 'enable-simple-search'
+    | 'end-user-onboarding'
 
 interface OrgFlagOverride {
     orgID: string

@@ -1,13 +1,13 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { of } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
-import { WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
+import type { WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
 
-import { queryWebhookLogs, SelectedExternalService } from './backend'
+import type { queryWebhookLogs, SelectedExternalService } from './backend'
 import { BODY_JSON, BODY_PLAIN, buildHeaderMock, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'
 import { WebhookLogPage } from './WebhookLogPage'
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
@@ -71,7 +71,6 @@ export const JetBrainsSearchBoxStory: Story = () => {
                                     getUserSearchContextNamespaces={() => []}
                                     fetchStreamSuggestions={() => NEVER}
                                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                    globbing={false}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
                                     platformContext={{ requestGraphQL: () => EMPTY }}
                                     className=""

@@ -1,21 +1,20 @@
-import { from, Observable, of, throwError } from 'rxjs'
+import { from, type Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, checkOk } from '@sourcegraph/http-client'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { RepoSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { storage } from '../../../browser-extension/web-extension-api/storage'
-import { addPhabricatorRepoResult, ResolveStagingRevResult } from '../../../graphql-operations'
+import type { addPhabricatorRepoResult, ResolveStagingRevResult } from '../../../graphql-operations'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../repo/backend'
 
+import type { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { normalizeRepoName } from './util'
-
-import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -250,7 +249,7 @@ export function getRepoDetailsFromCallsign(
             if (!repo) {
                 throw new Error(`could not locate repo with callsign ${callsign}`)
             }
-            if (!repo.attachments || !repo.attachments.uris) {
+            if (!repo.attachments?.uris) {
                 throw new Error(`could not locate git uri for repo with callsign ${callsign}`)
             }
             return convertConduitRepoToRepoDetails(repo)
@@ -304,7 +303,7 @@ const getRepoDetailsFromRepoPHID = memoizeObservable(
                 if (!repo) {
                     throw new Error(`could not locate repo with phid ${phid}`)
                 }
-                if (!repo.attachments || !repo.attachments.uris) {
+                if (!repo.attachments?.uris) {
                     throw new Error(`could not locate git uri for repo with phid ${phid}`)
                 }
                 return from(convertConduitRepoToRepoDetails(repo)).pipe(
@@ -312,7 +311,7 @@ const getRepoDetailsFromRepoPHID = memoizeObservable(
                         if (!details) {
                             return throwError(new Error('could not parse repo details'))
                         }
-                        if (!repo.fields || !repo.fields.callsign) {
+                        if (!repo.fields?.callsign) {
                             return throwError(new Error('callsign not found'))
                         }
                         return createPhabricatorRepo({

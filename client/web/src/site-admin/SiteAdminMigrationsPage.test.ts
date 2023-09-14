@@ -1,6 +1,6 @@
 import { parse } from 'semver'
 
-import { OutOfBandMigrationFields } from '../graphql-operations'
+import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import { isComplete, isInvalidForVersion } from './SiteAdminMigrationsPage'
 

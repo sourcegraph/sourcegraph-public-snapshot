@@ -1,12 +1,12 @@
 import { mdiFileDocumentOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Icon } from '../Icon'
 import { Link } from '../Link'
 
-import { Tree, TreeNode } from '.'
+import { Tree, type TreeNode } from '.'
 
 import styles from './Tree.story.module.scss'
 

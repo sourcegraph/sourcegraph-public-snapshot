@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { H2 } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'

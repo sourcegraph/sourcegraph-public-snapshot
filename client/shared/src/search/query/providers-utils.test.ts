@@ -1,6 +1,6 @@
 import { getSuggestionQuery } from './providers-utils'
-import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
-import { Token } from './token'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
+import type { Token } from './token'
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 

@@ -61,6 +61,7 @@ func (l *FIFOList) Insert(b []byte) error {
 	return nil
 }
 
+// Size returns the number of elements in the list.
 func (l *FIFOList) Size() (int, error) {
 	key := l.globalPrefixKey()
 	n, err := kv().LLen(key)
@@ -70,6 +71,16 @@ func (l *FIFOList) Size() (int, error) {
 	return n, nil
 }
 
+// IsEmpty returns true if the number of elements in the list is 0.
+func (l *FIFOList) IsEmpty() (bool, error) {
+	size, err := l.Size()
+	if err != nil {
+		return false, err
+	}
+	return size == 0, nil
+}
+
+// MaxSize returns the capacity of the list.
 func (l *FIFOList) MaxSize() int {
 	maxSize := l.maxSize()
 	if maxSize < 0 {

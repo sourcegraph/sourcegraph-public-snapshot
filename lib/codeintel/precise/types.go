@@ -223,6 +223,21 @@ type Package struct {
 	Version string
 }
 
+func (pi *Package) LessThan(pj *Package) bool {
+	if pi.Scheme == pj.Scheme {
+		if pi.Manager == pj.Manager {
+			if pi.Name == pj.Name {
+				return pi.Version < pj.Version
+			}
+
+			return pi.Name < pj.Name
+		}
+
+		return pi.Manager < pj.Manager
+	}
+	return pi.Scheme < pj.Scheme
+}
+
 // PackageReferences pairs a package name/version with a dump that depends on it.
 type PackageReference struct {
 	Package

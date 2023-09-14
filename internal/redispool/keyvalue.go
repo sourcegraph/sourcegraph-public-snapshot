@@ -25,7 +25,9 @@ type KeyValue interface {
 	GetSet(key string, value any) Value
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
-	Incr(key string) error
+	SetNx(key string, value any) (bool, error)
+	Incr(key string) (int, error)
+	Incrby(key string, value int) (int, error)
 	Del(key string) error
 
 	TTL(key string) (int, error)
@@ -34,6 +36,7 @@ type KeyValue interface {
 	HGet(key, field string) Value
 	HGetAll(key string) Values
 	HSet(key, field string, value any) error
+	HDel(key, field string) Value
 
 	LPush(key string, value any) error
 	LTrim(key string, start, stop int) error
@@ -57,8 +60,13 @@ type KeyValue interface {
 // Note: the available methods are based on current need. If you need to add
 // another helper go for it.
 type Value struct {
-	reply interface{}
+	reply any
 	err   error
+}
+
+// NewValue returns a new Value for the given reply and err. Useful in tests using NewMockKeyValue.
+func NewValue(reply any, err error) Value {
+	return Value{reply: reply, err: err}
 }
 
 func (v Value) Bool() (bool, error) {
@@ -75,6 +83,10 @@ func (v Value) Int() (int, error) {
 
 func (v Value) String() (string, error) {
 	return redis.String(v.reply, v.err)
+}
+
+func (v Value) IsNil() bool {
+	return v.reply == nil
 }
 
 // Values is a response from an operation on KeyValue which returns multiple
@@ -176,8 +188,20 @@ func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
 }
 
-func (r *redisKeyValue) Incr(key string) error {
-	return r.do("INCR", r.prefix+key).err
+func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
+	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+	if err == redis.ErrNil {
+		return false, nil
+	}
+	return true, err
+}
+
+func (r *redisKeyValue) Incr(key string) (int, error) {
+	return r.do("INCR", r.prefix+key).Int()
+}
+
+func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
+	return r.do("INCRBY", r.prefix+key, value).Int()
 }
 
 func (r *redisKeyValue) Del(key string) error {
@@ -202,6 +226,10 @@ func (r *redisKeyValue) HGetAll(key string) Values {
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
 	return r.do("HSET", r.prefix+key, field, val).err
+}
+
+func (r *redisKeyValue) HDel(key, field string) Value {
+	return r.do("HDEL", r.prefix+key, field)
 }
 
 func (r *redisKeyValue) LPush(key string, value any) error {

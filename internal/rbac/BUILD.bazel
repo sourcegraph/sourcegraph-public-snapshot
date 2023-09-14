@@ -1,8 +1,13 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "rbac",
     srcs = [
+        "constants.go",
+        "parser.go",
+        "permission.go",
         "permissions.go",
         "types.go",
     ],
@@ -10,21 +15,76 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/actor",
+        "//internal/auth",
         "//internal/database",
+        "//internal/rbac/types",
         "//internal/types",
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )
 
 go_test(
     name = "rbac_test",
-    srcs = ["permissions_test.go"],
+    timeout = "short",
+    srcs = [
+        "parser_test.go",
+        "permission_test.go",
+        "permissions_test.go",
+    ],
     embed = [":rbac"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
     deps = [
+        "//internal/actor",
+        "//internal/auth",
         "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/rbac/types",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
-        "@com_github_stretchr_testify//assert",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
+)
+
+genrule(
+    name = "generate_constants",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = [
+        "constants.go",
+        "constants.ts",
+    ],
+    cmd = """
+    outs=($(OUTS))
+
+    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[0]} -lang go -kind constants
+    $(location @go_sdk//:bin/gofmt) -s -w $${outs[0]}
+
+    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[1]} -lang ts -kind constants
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated",
+    src = ":generate_constants",
+    files = ["constants.go"],
+    tags = ["go_generate"],
+)
+
+exports_files(
+    ["schema.yaml"],
+    visibility = ["//internal/rbac:__subpackages__"],
 )

@@ -1,11 +1,10 @@
 import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import {
-    LastSyncedIcon,
     SymbolSearchResultStyles as styles,
     SearchResultStyles as searchResultStyles,
     CodeExcerpt,
@@ -13,14 +12,14 @@ import {
     ResultContainer,
     CopyPathAction,
 } from '@sourcegraph/branded'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { getFileMatchUrl, getRepositoryUrl, getRevision, type SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
-import { HighlightLineRange, HighlightResponseFormat } from '../../../graphql-operations'
+import { type HighlightLineRange, HighlightResponseFormat } from '../../../graphql-operations'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 import { RepoFileLink } from './RepoFileLink'
@@ -66,7 +65,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
+                className={classNames(searchResultStyles.titleInner)}
             />
             <CopyPathAction
                 filePath={result.path}
@@ -134,9 +133,9 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoStars={result.repoStars}
             className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
             resultClassName={styles.symbolsOverride}
+            repoLastFetched={result.repoLastFetched}
         >
             <div className={styles.symbols}>
-                {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                 {result.symbols.map(symbol => (
                     <div
                         key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}

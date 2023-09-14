@@ -1,11 +1,13 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { DecoratorFn, Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { WebStory } from '../../../components/WebStory'
-import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
-import {
+import { WebStory } from '../../../components/WebStory'
+import { type RepoBatchChange, type RepositoryFields, RepositoryType } from '../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+
+import type {
     queryRepoBatchChanges as _queryRepoBatchChanges,
     queryRepoBatchChangeStats as _queryRepoBatchChangeStats,
 } from './backend'
@@ -21,6 +23,9 @@ const repoDefaults: RepositoryFields = {
     id: 'repoid',
     name: 'github.com/sourcegraph/awesome',
     url: 'http://test.test/awesome',
+    isFork: false,
+    metadata: [],
+    sourceType: RepositoryType.GIT_REPOSITORY,
 }
 
 const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
@@ -105,6 +110,8 @@ export const ListOfBatchChanges: Story = () => (
             <BatchChangeRepoPage
                 {...props}
                 repo={repoDefaults}
+                authenticatedUser={mockAuthenticatedUser}
+                isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryRepoBatchChangeStats}
                 queryRepoBatchChanges={queryList}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
@@ -121,6 +128,8 @@ export const NoBatchChanges: Story = () => (
             <BatchChangeRepoPage
                 {...props}
                 repo={repoDefaults}
+                authenticatedUser={mockAuthenticatedUser}
+                isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryEmptyRepoBatchChangeStats}
                 queryRepoBatchChanges={queryNone}
             />

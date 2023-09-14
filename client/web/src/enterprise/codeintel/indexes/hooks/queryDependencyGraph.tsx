@@ -1,10 +1,10 @@
-import { ApolloClient } from '@apollo/client'
-import { from, Observable } from 'rxjs'
+import type { ApolloClient } from '@apollo/client'
+import { from, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import {
+import type {
     PreciseIndexConnectionFields,
     PreciseIndexDependencyGraphResult,
     PreciseIndexDependencyGraphVariables,

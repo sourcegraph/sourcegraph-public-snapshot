@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -25,7 +25,7 @@ import {
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     reindexResult,
     reindexVariables,
     RepositoryTextSearchIndexRepository,
@@ -93,7 +93,7 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
         { id }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node || errors) {
+            if (!data?.node || errors) {
                 throw createAggregateError(errors)
             }
             return (data.node as RepositoryTextSearchIndexRepository).textSearchIndex
