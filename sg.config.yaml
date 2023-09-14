@@ -303,7 +303,7 @@ commands:
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
-      CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
+      DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
       SRC_PROF_HTTP: "127.0.0.1:6098"
