@@ -105,8 +105,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 				ProjectID: googlesecretsmanager.ProjectID,
 			}).Value,
 
-			Count: pointers.Float64(1),
-
 			Lifecycle: &cdktf.TerraformResourceLifecycle{
 				CreateBeforeDestroy: pointers.Ptr(true),
 			},
