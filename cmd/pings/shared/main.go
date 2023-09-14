@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -60,6 +61,12 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
 	}
 	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		secret := strings.TrimPrefix(strings.ToLower(r.Header.Get("Authorization")), "bearer ")
+		if secret != config.DiagnosticsSecret {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
 		if r.URL.Query().Get("full-suite") == "" {
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte("OK"))
