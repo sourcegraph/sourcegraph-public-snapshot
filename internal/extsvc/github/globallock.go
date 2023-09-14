@@ -41,7 +41,7 @@ var metricFailedUnlockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
 
 var metricLockRequestDurationGauge = promauto.NewHistogram(prometheus.HistogramOpts{
 	Name:    "src_github_concurrency_lock_acquire_duration_seconds",
-	Help:    "Current number of requests running for a method.",
+	Help:    "Current number of requests to GitHub.com running for a method.",
 	Buckets: prometheus.ExponentialBuckets(1, 2, 10),
 })
 
