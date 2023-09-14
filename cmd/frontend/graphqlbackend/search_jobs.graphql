@@ -60,6 +60,11 @@ extend type Query {
         """
         descending: Boolean = false
     ): SearchJobConnection!
+
+    """
+    EXPERIMENTAL: Get a search job by its id.
+    """
+    searchJob(id: ID!): SearchJob!
 }
 
 """
@@ -146,6 +151,31 @@ type SearchJob implements Node {
     The repository stats for the search job.
     """
     repoStats: SearchJobStats!
+    """
+    Combined logs from repositories where we run the search job
+    """
+    logs(query: String, first: Int = 50, after: String, last: Int, before: String): SearchJobLogsConnection!
+}
+
+type SearchJobLogsConnection {
+    """
+    The list of search job logs.
+    """
+    nodes: [SearchJobLog!]!
+    """
+    The total count of logs.
+    """
+    totalCount: Int!
+    """
+    Information to aid in pagination.
+    """
+    pageInfo: PageInfo!
+}
+
+type SearchJobLog implements Node {
+    id: ID!
+    time: DateTime!
+    text: String!
 }
 
 """
