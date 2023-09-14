@@ -5,13 +5,13 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.project.Project
 
 /**
- * Stores default account for project
+ * Stores active account for project
  * To register - [@State(name = SERVICE_NAME_HERE, storages = [Storage(StoragePathMacros.WORKSPACE_FILE)], reportStatistic = false)]
  *
  * @param A - account type
  */
-abstract class PersistentDefaultAccountHolder<A : Account>(protected val project: Project)
-  : PersistentStateComponent<PersistentDefaultAccountHolder.AccountState>, Disposable {
+abstract class PersistentActiveAccountHolder<A : Account>(protected val project: Project)
+  : PersistentStateComponent<PersistentActiveAccountHolder.AccountState>, Disposable {
 
   var account: A? = null
 
@@ -27,24 +27,24 @@ abstract class PersistentDefaultAccountHolder<A : Account>(protected val project
   }
 
   override fun getState(): AccountState {
-    return AccountState().apply { defaultAccountId = account?.id }
+    return AccountState().apply { activeAccountId = account?.id }
   }
 
   override fun loadState(state: AccountState) {
-    account = state.defaultAccountId?.let { id ->
+    account = state.activeAccountId?.let { id ->
       accountManager.accounts.find { it.id == id }.also {
-        if (it == null) notifyDefaultAccountMissing()
+        if (it == null) notifyActiveAccountMissing()
       }
     }
   }
 
   protected abstract fun accountManager(): AccountManager<A, *>
 
-  protected abstract fun notifyDefaultAccountMissing()
+  protected abstract fun notifyActiveAccountMissing()
 
   override fun dispose() {}
 
   class AccountState {
-    var defaultAccountId: String? = null
+    var activeAccountId: String? = null
   }
 }

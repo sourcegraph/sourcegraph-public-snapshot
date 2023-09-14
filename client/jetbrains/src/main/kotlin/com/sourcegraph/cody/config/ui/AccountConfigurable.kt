@@ -23,7 +23,7 @@ class AccountConfigurable(val project: Project) :
     BoundConfigurable(ConfigUtil.SOURCEGRAPH_DISPLAY_NAME) {
     private val accountManager = service<CodyAccountManager>()
     private val accountsModel = CodyAccountListModel(project)
-    private val defaultAccountHolder = project.service<CodyProjectDefaultAccountHolder>()
+    private val activeAccountHolder = project.service<CodyProjectActiveAccountHolder>()
     private lateinit var dialogPanel: DialogPanel
     override fun createPanel(): DialogPanel {
         dialogPanel = panel {
@@ -31,7 +31,7 @@ class AccountConfigurable(val project: Project) :
                 row {
                     customAccountsPanel(
                         accountManager,
-                        defaultAccountHolder,
+                        activeAccountHolder,
                         accountsModel,
                         CodyAccountDetailsProvider(
                             ProgressIndicatorsProvider().also { Disposer.register(disposable!!, it) },
@@ -75,28 +75,28 @@ class AccountConfigurable(val project: Project) :
         val bus = project.messageBus
         val publisher = bus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
 
-        val oldDefaultAccount = defaultAccountHolder.account
+        val oldDefaultAccount = activeAccountHolder.account
         val oldUrl = oldDefaultAccount?.server?.url ?: ""
 
-        var defaultAccount = accountsModel.defaultAccount
-        val newAccessToken = defaultAccount?.let { accountsModel.newCredentials[it] }
-        val defaultAccountRemoved = !accountsModel.accounts.contains(defaultAccount)
-        if (defaultAccountRemoved) {
-            defaultAccount = accountsModel.accounts.getFirstAccountOrNull()
+        var activeAccount = accountsModel.activeAccount
+        val newAccessToken = activeAccount?.let { accountsModel.newCredentials[it] }
+        val activeAccountRemoved = !accountsModel.accounts.contains(activeAccount)
+        if (activeAccountRemoved) {
+            activeAccount = accountsModel.accounts.getFirstAccountOrNull()
         }
-        val defaultAccountChanged = oldDefaultAccount != defaultAccount
+        val activeAccountChanged = oldDefaultAccount != activeAccount
         val accessTokenChanged =
-            newAccessToken != null || defaultAccountRemoved || defaultAccountChanged
+            newAccessToken != null || activeAccountRemoved || activeAccountChanged
 
-        val newUrl = defaultAccount?.server?.url ?: ""
+        val newUrl = activeAccount?.server?.url ?: ""
 
         val serverUrlChanged = oldUrl != newUrl
 
         publisher.beforeAction(serverUrlChanged)
         super.apply()
         val context = AccountSettingChangeContext(serverUrlChanged, accessTokenChanged)
-        CodyAuthenticationManager.getInstance().setDefaultAccount(project, defaultAccount)
-        accountsModel.defaultAccount = defaultAccount
+        CodyAuthenticationManager.getInstance().setActiveAccount(project, activeAccount)
+        accountsModel.activeAccount = activeAccount
         publisher.afterAction(context)
     }
 }

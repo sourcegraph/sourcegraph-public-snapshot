@@ -51,16 +51,16 @@
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersisentAccounts"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectDefaultAccountHolder"/>
-        <notificationGroup id="Sourcegraph: server access" displayType="BALLOON"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectActiveAccountHolder"/>
+        <notificationGroup id="cody.auth" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph Cody + Code Search plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
+        <postStartupActivity implementation="com.sourcegraph.config.CodyAuthNotificationActivity"/>
         <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoDefaultAccount"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoActiveAccount"/>
 
         <!-- Cody -->
         <toolWindow

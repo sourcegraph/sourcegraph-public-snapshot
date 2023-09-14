@@ -131,7 +131,7 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
   }
 
   private fun isDefault(account: A): Boolean =
-      (listModel is AccountsListModel.WithDefault) && account == listModel.defaultAccount
+      (listModel is AccountsListModel.WithActive) && account == listModel.activeAccount
   private fun editAccount(parentComponent: JComponent, account: A) =
       listModel.editAccount(parentComponent, account)
 

@@ -136,8 +136,8 @@ class SettingsMigration : StartupActivity, DumbAware {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
       val codyAccount = CodyAccount.create(it.name, server, id)
       addAccount(codyAccount, accessToken)
-      if (CodyAuthenticationManager.getInstance().getDefaultAccount(project) == null) {
-        CodyAuthenticationManager.getInstance().setDefaultAccount(project, codyAccount)
+      if (CodyAuthenticationManager.getInstance().getActiveAccount(project) == null) {
+        CodyAuthenticationManager.getInstance().setActiveAccount(project, codyAccount)
       }
     }
   }
@@ -317,8 +317,6 @@ class SettingsMigration : StartupActivity, DumbAware {
     codyApplicationSettings.isCodyDebugEnabled = codyApplicationService.isCodyDebugEnabled ?: false
     codyApplicationSettings.isCodyVerboseDebugEnabled =
         codyApplicationService.isCodyVerboseDebugEnabled ?: false
-    codyApplicationSettings.isDefaultDotcomAccountNotificationDismissed =
-        codyApplicationService.isUrlNotificationDismissed
     codyApplicationSettings.anonymousUserId = codyApplicationService.anonymousUserId
     codyApplicationSettings.isInstallEventLogged = codyApplicationService.isInstallEventLogged
   }
