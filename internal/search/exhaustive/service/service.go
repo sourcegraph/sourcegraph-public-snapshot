@@ -187,11 +187,12 @@ func discardUntil(br *bufio.Reader, delim byte) error {
 	// get the error ErrBufferFull we didn't find delim since we need to read
 	// more, so we just try again. For every other error (or nil) we can
 	// return it.
-	_, err := br.ReadSlice(delim)
-	if err != bufio.ErrBufferFull {
-		return err
+	for {
+		_, err := br.ReadSlice(delim)
+		if err != bufio.ErrBufferFull {
+			return err
+		}
 	}
-	return nil
 }
 
 func copyBlobs(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
