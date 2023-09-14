@@ -295,7 +295,7 @@ public class CodyToolWindowContent implements UpdatableChat {
       return;
     }
     if (LocalAppManager.isPlatformSupported()
-        && codyAuthenticationManager.getDefaultAccountType(project) == AccountType.LOCAL_APP) {
+        && codyAuthenticationManager.getActiveAccountType(project) == AccountType.LOCAL_APP) {
       if (!LocalAppManager.isLocalAppRunning()) {
         allContentLayout.show(allContentPanel, "appNotRunningPanel");
         isChatVisible = false;

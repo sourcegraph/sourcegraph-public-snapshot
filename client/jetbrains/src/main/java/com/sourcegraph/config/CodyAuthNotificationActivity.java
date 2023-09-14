@@ -15,9 +15,10 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
+import com.sourcegraph.cody.initialization.Activity;
 import org.jetbrains.annotations.NotNull;
 
-public class CodyAuthNotificationActivity implements StartupActivity.DumbAware {
+public class CodyAuthNotificationActivity implements Activity {
 
   @Override
   public void runActivity(@NotNull Project project) {

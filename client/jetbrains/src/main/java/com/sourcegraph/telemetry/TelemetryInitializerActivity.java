@@ -10,9 +10,11 @@ import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.notification.AccountSettingChangeListener;
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener;
 import java.util.UUID;
+
+import com.sourcegraph.cody.initialization.Activity;
 import org.jetbrains.annotations.NotNull;
 
-public class PostStartupActivity implements StartupActivity.DumbAware {
+public class TelemetryInitializerActivity implements Activity {
   private static String generateAnonymousUserId() {
     return UUID.randomUUID().toString();
   }

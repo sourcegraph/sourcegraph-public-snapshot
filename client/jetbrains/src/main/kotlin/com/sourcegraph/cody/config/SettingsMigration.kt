@@ -17,6 +17,7 @@ import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphSecurityUtil
 import com.sourcegraph.cody.auth.Account
+import com.sourcegraph.cody.initialization.Activity
 import com.sourcegraph.config.AccessTokenStorage
 import com.sourcegraph.config.CodyApplicationService
 import com.sourcegraph.config.CodyProjectService
@@ -25,7 +26,7 @@ import com.sourcegraph.config.UserLevelConfig
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 
-class SettingsMigration : StartupActivity, DumbAware {
+class SettingsMigration : Activity {
 
   private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
 
