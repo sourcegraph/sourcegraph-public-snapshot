@@ -359,8 +359,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
 							Path: pointers.Ptr(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Bearer"),
-								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+								Name:  pointers.Ptr("Authorization"),
+								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
 						InitialDelaySeconds: pointers.Float64(0),
@@ -378,8 +378,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGet{
 							Path: pointers.Ptr(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Bearer"),
-								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+								Name:  pointers.Ptr("Authorization"),
+								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
 						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),
