@@ -25,13 +25,13 @@
     &__log-output {
         margin: 0.5rem 0 !important;
 
-        &__fail-state {
-            background-color: var(--danger);
-        }
-
         code {
             white-space: break-spaces;
         }
+    }
+
+    &__log-output-fail-state {
+        background-color: var(--danger);
     }
 
     &__footer {
