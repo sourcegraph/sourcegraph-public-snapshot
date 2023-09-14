@@ -150,9 +150,9 @@ Once connected, click the Cody icon from the sidebar again, and a panel will ope
 - Open a file in a supported programming language like JavaScript, Python, Go, etc.
 - As you start typing, Cody should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
 
-## Recipes
+## Commands
 
-The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts called "Recipes" that help you quickly get started with common programming tasks like:
+The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts called "Commands" that help you quickly get started with common programming tasks like:
 
 - Explain code
 - Generate unit test
