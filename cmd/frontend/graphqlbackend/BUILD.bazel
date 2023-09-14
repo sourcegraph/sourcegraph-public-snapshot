@@ -303,6 +303,7 @@ go_library(
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/perforce",
+        "//internal/ratelimit",
         "//internal/rbac",
         "//internal/rcache",
         "//internal/redispool",
