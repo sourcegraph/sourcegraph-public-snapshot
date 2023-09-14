@@ -311,7 +311,7 @@ export const UPDATE_MIRROR_REPOSITORY = gql`
 `
 
 export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
-    mutation CheckMirrorRepositoryConnection($repository: ID) {
+    mutation CheckMirrorRepositoryConnection($repository: ID!) {
         checkMirrorRepositoryConnection(repository: $repository) {
             error
         }
