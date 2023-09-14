@@ -188,7 +188,6 @@ func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
 		}
 
 		alerts := gitserverDiskInfoThresholdAlert(args)
-
 		require.Len(t, alerts, 0)
 	})
 
@@ -214,7 +213,6 @@ func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
 		}
 
 		alerts := gitserverDiskInfoThresholdAlert(args)
-
 		require.Equal(t, wantAlerts, alerts)
 	})
 
@@ -252,7 +250,6 @@ func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
 		}
 
 		alerts := gitserverDiskInfoThresholdAlert(args)
-
 		require.Equal(t, wantAlerts, alerts)
 	})
 }
