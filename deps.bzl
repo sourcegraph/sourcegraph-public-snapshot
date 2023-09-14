@@ -1875,8 +1875,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_sourcegraph_lib",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/sourcegraph/lib",
-        sum = "h1:NJyyvyYU/DNZmNFui8ktnHke3hS/PYLmDUbWNHSHKuQ=",
-        version = "v0.0.0-20230316093010-26299ec302d0",
+        sum = "h1:0hAo7bbfcF3uujbq2eNl2DpN6zUrjacWAK3iSan5Q0k=",
+        version = "v0.0.0-20230914103605-e3a8bc516ddc",
     )
     go_repository(
         name = "com_github_spf13_afero",

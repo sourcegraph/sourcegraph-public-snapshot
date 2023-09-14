@@ -425,8 +425,8 @@ github.com/sourcegraph/log v0.0.0-20230711093019-40c57b632cca h1:VwYrG1+YNyOD3nS
 github.com/sourcegraph/log v0.0.0-20230711093019-40c57b632cca/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
 github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc h1:o+eq0cjVV3B5ngIBF04Lv3GwttKOuYFF5NTcfXWXzfA=
 github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc/go.mod h1:7ZKAtLIUmiMvOIgG5LMcBxdtBXVa0v2GWC4Hm1ASYQ0=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20230822113036-acc34d9b2e95 h1:xkoH/Vn4HMAga75N1YgTdv8nhjCXtbkw0BLY7+M3oyk=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20230822113036-acc34d9b2e95/go.mod h1:hhrNfT3eDxsAsjaWEn8vWjmrEFDa9v238tDf9TyEAHc=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20230914103605-e3a8bc516ddc h1:0hAo7bbfcF3uujbq2eNl2DpN6zUrjacWAK3iSan5Q0k=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20230914103605-e3a8bc516ddc/go.mod h1:r5UrJ7GztZRFu/LlF5lNS5XzAsnYdGphS4CJEm4Lnts=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/spf13/cobra v1.7.0 h1:hyqWnYt1ZQShIddO5kBpj3vu05/++x6tJ6dg8EC572I=

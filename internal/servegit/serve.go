@@ -106,6 +106,9 @@ func (s *Serve) handler() http.Handler {
 		Dir: func(name string) string {
 			return filepath.Join(s.Root, filepath.FromSlash(name))
 		},
+		ErrorHook: func(err error, stderr string) {
+			s.Info.Printf("git-service error: %s\nstderr:\n%s", err.Error(), stderr)
+		},
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {
