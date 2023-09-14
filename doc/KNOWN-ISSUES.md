@@ -4,9 +4,19 @@ Our Known Issues page is designed to keep you informed about any current issues 
 
 ---
 
+## v5.1.8 - September 4, 2023
+
+---
+
+- ### Sourcegraph does not recognize GitHub Enterprise Repository Visibility as described [here](https://docs.github.com/en/enterprise-server@3.10/repositories/creating-and-managing-repositories/about-repositories#about-repository-visibility).
+    **Status:** [Bug Reported](https://github.com/sourcegraph/sourcegraph/pull/54419)
+
 ## v5.1.0 - June 28, 2023
 
 ---
+
+- ### Sourcegraph does not recognize GitHub Enterprise Repository Visibility as described [here](https://docs.github.com/en/enterprise-server@3.10/repositories/creating-and-managing-repositories/about-repositories#about-repository-visibility).
+    **Status:** [Bug Reported](https://github.com/sourcegraph/sourcegraph/pull/54419)
 
 - ### There is an issue with Sourcegraph instances configured to use explicit permissions using permissions.userMapping in Site configuration, where repository permissions are not enforced. Customers using the explicit permissions API are advised to upgrade to v5.1.1 directly.
     **Status:** [Fixed in v5.1.2](https://github.com/sourcegraph/sourcegraph/pull/54419)
@@ -26,8 +36,6 @@ Our Known Issues page is designed to keep you informed about any current issues 
 
 - ### Editing a context that starts with a / causes a 404
     **Status:** [Fixed in v5.0.3](https://github.com/sourcegraph/sourcegraph/pull/51196)
-
---- 
 
 ## v5.0.0 - March 22, 2023
 
