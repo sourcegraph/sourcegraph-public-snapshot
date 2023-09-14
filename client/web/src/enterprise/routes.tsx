@@ -1,12 +1,12 @@
 import { Navigate, type RouteObject } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 
+import { isSearchJobsEnabled } from './search-jobs/utils'
 import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
 
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
@@ -78,18 +78,7 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.SearchJobs,
-        element: (
-            <LegacyRoute
-                render={props => <SearchJob />}
-                condition={({ settingsCascade }) => {
-                    if (isErrorLike(settingsCascade.final)) {
-                        return false
-                    }
-
-                    return settingsCascade.final?.experimentalFeatures?.searchJobs ?? false
-                }}
-            />
-        ),
+        element: <LegacyRoute render={props => <SearchJob />} condition={isSearchJobsEnabled} />,
     },
     {
         path: EnterprisePageRoutes.Sentinel,

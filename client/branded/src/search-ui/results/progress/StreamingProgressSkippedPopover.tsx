@@ -6,7 +6,6 @@ import classNames from 'classnames'
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import type { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
     Collapse,
@@ -99,13 +98,13 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
 interface StreamingProgressSkippedPopoverProps {
     query: string
     progress: Progress
+    isSearchJobsEnabled?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
 }
 
 export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
-    const { query, progress, onSearchAgain } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain } = props
 
-    const exhaustiveSearch = useExperimentalFeatures(settings => settings.searchJobs)
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
 
     const submitHandler = useCallback(
@@ -133,7 +132,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
     return (
         <>
-            <Text className={classNames('mx-3 mt-3', exhaustiveSearch && 'mb-0')}>
+            <Text className={classNames('mx-3 mt-3', isSearchJobsEnabled && 'mb-0')}>
                 Found {limitHit(progress) ? 'more than ' : ''}
                 {progress.matchCount} {pluralize('result', progress.matchCount)}
                 {progress.repositoriesCount !== undefined
@@ -146,7 +145,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
                 .
             </Text>
 
-            {exhaustiveSearch ? (
+            {isSearchJobsEnabled ? (
                 <SlimSkippedReasons items={sortedSkippedItems} />
             ) : (
                 <SkippedReasons items={sortedSkippedItems} />
@@ -154,7 +153,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <SkippedItemsSearch
-                    slim={exhaustiveSearch ?? false}
+                    slim={isSearchJobsEnabled ?? false}
                     items={sortedSkippedItems}
                     disabled={selectedSuggestedSearches.size === 0}
                     onSearchSettingsChange={checkboxHandler}
@@ -162,7 +161,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
                 />
             )}
 
-            {exhaustiveSearch && (
+            {isSearchJobsEnabled && (
                 <>
                     <hr className="mx-3 mt-3" />
                     <ExhaustiveSearchMessage query={query} />

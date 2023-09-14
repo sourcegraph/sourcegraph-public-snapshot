@@ -14,7 +14,6 @@ import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/cont
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import type { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, ButtonLink, Link, ProductStatusBadge, useWindowSize } from '@sourcegraph/wildcard'
@@ -154,7 +153,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
-    const isSearchJobsEnabled = useExperimentalFeatures(features => features.searchJobs)
+    const isSearchJobsEnabled = window.context.experimentalFeatures.searchJobs ?? false
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin

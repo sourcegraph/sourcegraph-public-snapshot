@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useMemo, useState } from 'react'
 
 import { mdiRefresh, mdiDelete, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
@@ -32,11 +32,6 @@ import {
     Text,
     H2,
     Tooltip,
-    Popover,
-    PopoverTrigger,
-    PopoverTail,
-    PopoverContent,
-    TetherInstanceAPI,
 } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -44,7 +39,6 @@ import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
-import { SearchJobLogs } from './SearchJobLogs'
 import { User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
@@ -88,17 +82,9 @@ export const SEARCH_JOBS_QUERY = gql`
         $after: String
         $query: String!
         $states: [SearchJobState!]
-        $usersIds: [ID!]
         $orderBy: SearchJobsOrderBy
     ) {
-        searchJobs(
-            first: $first
-            after: $after
-            query: $query
-            states: $states
-            usersIds: $usersIds
-            orderBy: $orderBy
-        ) {
+        searchJobs(first: $first, after: $after, query: $query, states: $states, orderBy: $orderBy) {
             nodes {
                 ...SearchJobNode
             }
@@ -129,7 +115,6 @@ export const SearchJobsPage: FC = props => {
             after: null,
             query: searchStateTerm,
             states: selectedStates,
-            usersIds: selectedUsers.map(user => user.id),
             orderBy: sortBy,
         },
         options: {
@@ -274,14 +259,8 @@ const SearchJob: FC<SearchJobProps> = props => {
     const { job } = props
     const { repoStats } = job
 
-    const [tether, setTether] = useState<TetherInstanceAPI | null>(null)
-
     const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
     const fullStartDate = useMemo(() => (job.startedAt ? formatDate(new Date(job.startedAt)) : ''), [job.startedAt])
-
-    const handleContentChange = useCallback(() => {
-        tether?.forceUpdate()
-    }, [tether])
 
     return (
         <li className={styles.job}>
@@ -308,16 +287,9 @@ const SearchJob: FC<SearchJobProps> = props => {
             </span>
 
             <span className={styles.jobActions}>
-                <Popover>
-                    <PopoverTrigger as={Button} variant="link" className={styles.jobViewLogs}>
-                        View logs
-                    </PopoverTrigger>
-
-                    <PopoverContent onTetherCreate={setTether} position="left">
-                        <SearchJobLogs jobId={job.id} onContentChange={handleContentChange} />
-                    </PopoverContent>
-                    <PopoverTail />
-                </Popover>
+                <Button variant="link" className={styles.jobViewLogs}>
+                    View logs
+                </Button>
 
                 <Tooltip content="Rerun search job">
                     <Button variant="secondary" outline={true} className={styles.jobSlimAction}>

@@ -443,6 +443,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 state={results?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
+                                isSearchJobsEnabled={window.context.experimentalFeatures.searchJobs}
                             />
                         }
                     />
