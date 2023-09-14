@@ -9,7 +9,7 @@ Our Known Issues page is designed to keep you informed about any current issues 
 ---
 
 - ### Sourcegraph does not recognize GitHub Enterprise Repository Visibility as described [here](https://docs.github.com/en/enterprise-server@3.10/repositories/creating-and-managing-repositories/about-repositories#about-repository-visibility).
-    **Status:** [Bug Reported](https://github.com/sourcegraph/sourcegraph/pull/54419)
+    **Status:** [Open](https://github.com/sourcegraph/sourcegraph/pull/54419)
 
 ## v5.1.0 - June 28, 2023
 
