@@ -292,8 +292,11 @@ func init() {
 									return errors.New("aborting")
 								}
 
-								if err := tfcClient.DeleteWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks()); err != nil {
-									return err
+								if errs := tfcClient.DeleteWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks()); len(errs) > 0 {
+									for _, err := range errs {
+										std.Out.WriteWarningf(err.Error())
+									}
+									return errors.New("some errors occurred when deleting workspaces")
 								}
 							}
 
