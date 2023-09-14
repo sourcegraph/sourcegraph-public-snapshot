@@ -26,20 +26,36 @@ const stalledIndexMaxAge = time.Second * 25
 const indexMaxNumResets = 3
 
 var (
-	indexLookbackWindow = env.Get("CODEINTEL_AUTOINDEXING_CANDIDATE_JOB_WINDOW", "1d", "The window from the latest enqueued job to consider when finding candidate jobs to run")
-	repoDequeueCooldown = env.Get("CODEINTEL_AUTOINDEXING_COOLDOWN_DEBUFF", "6h", "How soon a repository should be on cooldown after a successful index before it can be a candidate when the most recently queued job is outside the lookback window.")
+	useFifoAlgorithm    = env.MustGetBool("CODEINTEL_AUTOINDEXING_DEQUEUE_FIFO_ALGORITHM", false, "Use the original FIFO dequeueing algorithm instead of the newer moving-windo algorithm.")
+	indexLookbackWindow = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_CANDIDATE_JOB_WINDOW", "1d", "The window from the latest enqueued job to consider when finding candidate jobs to run.")
+	repoDequeueCooldown = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_COOLDOWN_DEBUFF", "6h", "How soon a repository should be on cooldown after a successful index before it can be a candidate when the most recently queued job is outside the lookback window.")
 )
 
-var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
-	Name:              "codeintel_index",
-	TableName:         "lsif_indexes",
-	ViewName:          fmt.Sprintf("lsif_indexes_enqueue_candidates('%s'::interval, '%s'::interval) u", indexLookbackWindow, repoDequeueCooldown),
-	ColumnExpressions: indexColumnsWithNullRank,
-	Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
-	OrderByExpression: sqlf.Sprintf("u.enqueuer_user_id = 0, u.queued_at, u.id"),
-	StalledMaxAge:     stalledIndexMaxAge,
-	MaxNumResets:      indexMaxNumResets,
-}
+var IndexWorkerStoreOptions = func() dbworkerstore.Options[uploadsshared.Index] {
+	if useFifoAlgorithm {
+		return dbworkerstore.Options[uploadsshared.Index]{
+			Name:              "codeintel_index",
+			TableName:         "lsif_indexes",
+			ViewName:          "lsif_indexes_with_repository_name u",
+			ColumnExpressions: indexColumnsWithNullRank,
+			Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
+			OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at DESC, u.id"),
+			StalledMaxAge:     stalledIndexMaxAge,
+			MaxNumResets:      indexMaxNumResets,
+		}
+	} else {
+		return dbworkerstore.Options[uploadsshared.Index]{
+			Name:              "codeintel_index",
+			TableName:         "lsif_indexes",
+			ViewName:          fmt.Sprintf("lsif_indexes_enqueue_candidates('%s'::interval, '%s'::interval) u", indexLookbackWindow, repoDequeueCooldown),
+			ColumnExpressions: indexColumnsWithNullRank,
+			Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
+			OrderByExpression: sqlf.Sprintf("TRUE"),
+			StalledMaxAge:     stalledIndexMaxAge,
+			MaxNumResets:      indexMaxNumResets,
+		}
+	}
+}()
 
 var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),

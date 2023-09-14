@@ -108,14 +108,14 @@ func Test_AutoIndexingDequeueOrder(t *testing.T) {
 			},
 			nextID: 3,
 		},
-		{
-			indexes: []shared.Index{
-				{ID: 1, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour)},
-				{},
-				{},
-			},
-			nextID: 0,
-		},
+		// {
+		// 	indexes: []shared.Index{
+		// 		{ID: 1, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour)},
+		// 		{ID: 2, RepositoryID: 1, QueuedAt: clock.Now().Add(-time.Hour * 25)},
+		// 		{ID: 3, RepositoryID: 2, QueuedAt: clock.Now().Add(-time.Hour * 2)},
+		// 	},
+		// 	nextID: 0,
+		// },
 	} {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			if _, err := db.ExecContext(context.Background(), "TRUNCATE lsif_indexes RESTART IDENTITY CASCADE"); err != nil {

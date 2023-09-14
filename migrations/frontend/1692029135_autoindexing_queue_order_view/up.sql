@@ -25,29 +25,33 @@ RETURNS TABLE(
     enqueuer_user_id integer
 )
 AS $$
-    WITH newest_queued AS MATERIALIZED ( -- used to calculate top of window
+    WITH newest_queued AS MATERIALIZED (
+        -- used to calculate top of window
         SELECT MAX(queued_at) AS newest
         FROM lsif_indexes
         WHERE state IN ('queued', 'errored')
         LIMIT 1
     ),
     newest_in_window AS NOT MATERIALIZED (
+        -- select the newest index per repo within the window
         SELECT DISTINCT ON (repository_id) *
-        -- SELECT DISTINCT ON (repository_id) id, queued_at, repository_id
         FROM lsif_indexes
         WHERE
             state IN ('queued', 'errored')
+            AND enqueuer_user_id = 0
             AND queued_at BETWEEN
                 (SELECT newest - lookback_window FROM newest_queued) AND
                 (SELECT newest FROM newest_queued)
         ORDER BY repository_id, queued_at DESC, id
     ),
     potentially_starving AS NOT MATERIALIZED (
+        -- select the newest index per repo outside the window without a completed index
+        -- wwithin a grace period
         SELECT DISTINCT ON (repository_id) *
-        -- SELECT DISTINCT ON (repository_id) id, queued_at, repository_id
         FROM lsif_indexes l1
         WHERE
             state IN ('queued', 'errored')
+            AND enqueuer_user_id = 0
             AND queued_at < (SELECT newest - lookback_window FROM newest_queued)
             AND NOT EXISTS (
                 SELECT 1
@@ -59,12 +63,37 @@ AS $$
             )
         ORDER BY repository_id, queued_at DESC, id
     ),
+    manually_enqueued AS MATERIALIZED (
+        -- select indexes that were manually enqueued that should be at the
+        -- top of the queue
+        SELECT *
+        FROM lsif_indexes
+        WHERE
+            enqueuer_user_id > 0
+            AND state IN ('queued', 'errored')
+    ),
     final_candidates AS NOT MATERIALIZED (
-        SELECT *
-        FROM newest_in_window
+        -- merge them all together, with a priority marker for ordering
+        SELECT *, 0 AS priority
+        FROM manually_enqueued
         UNION ALL
-        SELECT *
-        FROM potentially_starving
+        (
+            SELECT *, 1 AS priority
+            FROM potentially_starving
+            WHERE id NOT IN (
+                SELECT id
+                FROM manually_enqueued
+            )
+            UNION ALL
+            (
+                SELECT *, 2 AS priority
+                FROM newest_in_window
+                WHERE id NOT IN (
+                    SELECT id
+                    FROM manually_enqueued
+                )
+            )
+        )
     )
     SELECT u.id,
         u.commit,
@@ -93,5 +122,5 @@ AS $$
     JOIN repo r
     ON r.id = u.repository_id
     WHERE (r.deleted_at IS NULL)
-    ORDER BY u.queued_at ASC
+    ORDER BY u.priority ASC
 $$ LANGUAGE SQL STABLE STRICT;
