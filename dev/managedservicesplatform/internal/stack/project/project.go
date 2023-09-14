@@ -100,8 +100,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// The project ID must leave room for a randomized suffix and a separator.
 	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + projectIDRandomizedSuffixLength; afterSuffixLength > projectIDMaxLength {
-		return nil, errors.Newf("project ID prefix %q (%d characters) is too long (max %d characters) after adding random suffix (%d characters)",
-			vars.ProjectIDPrefix, afterSuffixLength, projectIDMaxLength, projectIDRandomizedSuffixLength)
+		return nil, errors.Newf("project ID prefix %q is too long after adding random suffix (%d characters) - got %d characters, but maximum is %d characters",
+			vars.ProjectIDPrefix, projectIDRandomizedSuffixLength, afterSuffixLength, projectIDMaxLength)
 	}
 	projectID := random.New(stack, id, random.Config{
 		ByteLength: projectIDRandomizedSuffixLength,
