@@ -25,17 +25,18 @@ class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project,
     return state
   }
 
-    override fun createPopup(context: DataContext?): ListPopup {
-        val actionGroup = ActionManager.getInstance().getAction("CodyStatusBarActions") as? ActionGroup
+  override fun createPopup(context: DataContext?): ListPopup {
+    val actionGroup =
+        ActionManager.getInstance().getAction("CodyStatusBarActions") as? ActionGroup
             ?: CodyStatusBarActionGroup()
-        return JBPopupFactory.getInstance()
-            .createActionGroupPopup(
-                "Cody",
-                actionGroup,
-                DataManager.getInstance().getDataContext(this.component),
-                JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
-                true)
-    }
+    return JBPopupFactory.getInstance()
+        .createActionGroupPopup(
+            "Cody",
+            actionGroup,
+            DataManager.getInstance().getDataContext(this.component),
+            JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+            true)
+  }
 
   override fun createInstance(project: Project): StatusBarWidget {
     return CodyStatusBarWidget(project)

@@ -4,7 +4,7 @@ package googlesecretsmanager
 // this package available in Google Secrets Manager for MSP.
 const ProjectID = "sourcegraph-secrets"
 
-var (
+const (
 	SecretTFCAccessToken   = "TFC_ORGANIZATION_TOKEN"
 	SecretTFCOAuthClientID = "TFC_OAUTH_CLIENT_ID"
 

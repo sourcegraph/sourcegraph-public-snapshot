@@ -15,7 +15,7 @@ plugins {
   id("org.jetbrains.kotlin.jvm") version "1.7.0"
   id("org.jetbrains.intellij") version "1.13.3"
   id("org.jetbrains.changelog") version "1.3.1"
-  id("com.diffplug.spotless") version "6.19.0"
+  id("com.diffplug.spotless") version "6.21.0"
 }
 
 group = properties("pluginGroup")
@@ -53,11 +53,14 @@ spotless {
     removeUnusedImports()
     googleJavaFormat()
   }
-  kotlin {
-    target("src/*/kotlin/**/*.kt")
-    target("build.gradle.kts")
-    trimTrailingWhitespace()
+  kotlinGradle {
     ktfmt()
+    trimTrailingWhitespace()
+  }
+  kotlin {
+    ktfmt()
+    trimTrailingWhitespace()
+    target("src/**/*.kt")
   }
 }
 

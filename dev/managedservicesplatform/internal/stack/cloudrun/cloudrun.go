@@ -74,7 +74,6 @@ var (
 // - ${local.env_var_prefix}_BIGQUERY_PROJECT_ID
 // - ${local.env_var_prefix}_BIGQUERY_DATASET
 // - ${local.env_var_prefix}_BIGQUERY_TABLE
-// - ${local.env_var_prefix}_DIAGNOSTICS_SECRET
 //
 // The prefix is an all-uppercase underscore-delimited version of the service ID,
 // for example:
@@ -85,9 +84,9 @@ var (
 //
 //	CODY_GATEWAY_
 //
-// Note that some variables like GOOGLE_PROJECT_ID and REDIS_ENDPOINT do not
-// get prefixed, and custom env vars configured on an environment are not prefixed
-// either.
+// Note that some variables conforming to conventions like DIAGNOSTICS_SECRET,
+// GOOGLE_PROJECT_ID, and REDIS_ENDPOINT do not get prefixed, and custom env
+// vars configured on an environment are not automatically prefixed either.
 func makeServiceEnvVarPrefix(serviceID string) string {
 	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
 }
@@ -136,8 +135,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			},
 			{
 				// Set up secret that service should accept for diagnostics
-				// endpoints
-				Name:  pointers.Ptr(serviceEnvVarPrefix + "DIAGNOSTICS_SECRET"),
+				// endpoints.
+				//
+				// We don't use serviceEnvVarPrefix here because this is a
+				// convention across MSP services.
+				Name:  pointers.Ptr("DIAGNOSTICS_SECRET"),
 				Value: &diagnosticsSecret.HexValue,
 			},
 		},
@@ -341,22 +343,35 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 					c.AdditionalEnv...),
 
 				// Do healthchecks with authorization based on MSP convention.
-				StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
-					HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
-						Path: pointers.Ptr(healthCheckEndpoint),
-						HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-							Name:  pointers.Ptr("Bearer"),
-							Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
-						}},
-					},
-					InitialDelaySeconds: pointers.Float64(0),
-					TimeoutSeconds:      pointers.Float64(1),
-					PeriodSeconds:       pointers.Float64(2),
-					FailureThreshold:    pointers.Float64(3),
-				},
+				StartupProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe {
+					// Default: enabled
+					if vars.Environment.StatupProbe != nil &&
+						pointers.Deref(vars.Environment.StatupProbe.Disabled, false) {
+						return nil
+					}
 
+					// Set zero value for ease of reference
+					if vars.Environment.StatupProbe == nil {
+						vars.Environment.StatupProbe = &spec.EnvironmentStartupProbeSpec{}
+					}
+
+					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
+						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
+							Path: pointers.Ptr(healthCheckEndpoint),
+							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
+								Name:  pointers.Ptr("Bearer"),
+								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+							}},
+						},
+						InitialDelaySeconds: pointers.Float64(0),
+						TimeoutSeconds:      pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Timeout, 1)),
+						PeriodSeconds:       pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Interval, 1)),
+						FailureThreshold:    pointers.Float64(3),
+					}
+				}(),
 				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
-					if vars.Environment.Healthcheck == nil || vars.Environment.Healthcheck.LivenessProbeInterval == nil {
+					// Default: disabled
+					if vars.Environment.LivenessProbe == nil {
 						return nil
 					}
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
@@ -367,8 +382,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
-						TimeoutSeconds:   pointers.Float64(3),
-						PeriodSeconds:    pointers.Float64(*vars.Environment.Healthcheck.LivenessProbeInterval),
+						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),
+						PeriodSeconds:    pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Interval, 1)),
 						FailureThreshold: pointers.Float64(2),
 					}
 				}(),

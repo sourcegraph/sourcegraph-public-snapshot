@@ -69,8 +69,14 @@ func init() {
 					Environments: []spec.EnvironmentSpec{
 						{
 							ID: "dev",
+							// For dev deployment, specify category 'test'.
+							Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+
 							Deploy: spec.EnvironmentDeploySpec{
 								Type: "manual",
+								Manual: &spec.EnvironmentDeployManualSpec{
+									Tag: "insiders",
+								},
 							},
 							Domain: spec.EnvironmentDomainSpec{
 								Type: "cloudflare",
@@ -89,14 +95,14 @@ func init() {
 									MaxCount: pointers.Ptr(1),
 								},
 							},
-							Resources: &spec.EnvironmentResourcesSpec{
-								Redis: &spec.EnvironmentResourceRedisSpec{},
+							StatupProbe: &spec.EnvironmentStartupProbeSpec{
+								// Disable startup probes by default, as it is
+								// prone to causing the entire initial Terraform
+								// apply to fail.
+								Disabled: pointers.Ptr(true),
 							},
 							Env: map[string]string{
 								"SRC_LOG_LEVEL": "info",
-							},
-							SecretEnv: map[string]string{
-								"SUPER_SEKRET_VAR": "SUPER_SEKRET_VAR",
 							},
 						},
 					},
@@ -104,13 +110,16 @@ func init() {
 				if err != nil {
 					return err
 				}
-				output := filepath.Join(
+
+				outputPath := filepath.Join(
 					c.String("output"), c.Args().First(), "service.yaml")
-				if err := os.WriteFile(output, exampleSpec, 0644); err != nil {
+
+				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
+				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
 					return err
 				}
 
-				std.Out.WriteSuccessf("Rendered template spec in %s", output)
+				std.Out.WriteSuccessf("Rendered template spec in %s", outputPath)
 				return nil
 			},
 		},
@@ -193,13 +202,26 @@ func init() {
 			},
 		},
 		{
-			Name:        "tfc",
+			Name:        "terraform-cloud",
+			Aliases:     []string{"tfc"},
 			Description: "Manage Terraform Cloud workspaces for a service",
 			Subcommands: []*cli.Command{
 				{
 					Name:        "sync",
 					Description: "Create or update all required Terraform Cloud workspaces for a service",
 					ArgsUsage:   "<service spec file>",
+					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:  "workspace-run-mode",
+							Usage: "One of 'vcs', 'cli'",
+							Value: "vcs",
+						},
+						&cli.BoolFlag{
+							Name:  "delete",
+							Usage: "Delete workspaces and projects - does NOT apply a teardown run",
+							Value: false,
+						},
+					},
 					Action: func(c *cli.Context) error {
 						serviceSpecPath, err := getYAMLPathArg(c, 0)
 						if err != nil {
@@ -226,14 +248,17 @@ func init() {
 							return errors.Wrap(err, "get AccessToken")
 						}
 						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Project: googlesecretsmanager.ProjectID,
 							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
+							Project: googlesecretsmanager.ProjectID,
 						})
 						if err != nil {
-							return err
+							return errors.Wrap(err, "get TFC OAuth client ID")
 						}
 
-						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient)
+						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
+							terraformcloud.WorkspaceConfig{
+								RunMode: terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode")),
+							})
 						if err != nil {
 							return errors.Wrap(err, "init Terraform Cloud client")
 						}
@@ -257,9 +282,37 @@ func init() {
 								return err
 							}
 
-							if err := tfcClient.SyncWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks()); err != nil {
+							if c.Bool("delete") {
+								std.Out.Promptf("Deleting workspaces for environment %q - are you sure? (y/N) ", deployEnv.ID)
+								var input string
+								if _, err := fmt.Scan(&input); err != nil {
+									return err
+								}
+								if input != "y" {
+									return errors.New("aborting")
+								}
+
+								if err := tfcClient.DeleteWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks()); err != nil {
+									return err
+								}
+							}
+
+							workspaces, err := tfcClient.SyncWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks())
+							if err != nil {
 								return errors.Wrapf(err, "env %q: sync Terraform Cloud workspace", deployEnv.ID)
 							}
+							std.Out.WriteSuccessf("Prepared Terraform Cloud workspaces for environment %q", deployEnv.ID)
+							var summary strings.Builder
+							for _, ws := range workspaces {
+								summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name, ws.URL()))
+								if ws.Created {
+									summary.WriteString(" (created)")
+								} else {
+									summary.WriteString(" (updated)")
+								}
+								summary.WriteString("\n")
+							}
+							std.Out.WriteMarkdown(summary.String())
 						}
 
 						return nil

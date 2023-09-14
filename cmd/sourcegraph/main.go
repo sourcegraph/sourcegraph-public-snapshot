@@ -12,7 +12,6 @@ import (
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
 	executor_singlebinary "github.com/sourcegraph/sourcegraph/cmd/executor/singlebinary"
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
 	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared"
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
@@ -34,7 +33,6 @@ var services = []service.Service{
 	blobstore_shared.Service,
 	symbols_shared.Service,
 	worker_shared.Service,
-	githubproxy_shared.Service,
 	precise_code_intel_worker_shared.Service,
 	executor_singlebinary.Service,
 	servegit.Service,
