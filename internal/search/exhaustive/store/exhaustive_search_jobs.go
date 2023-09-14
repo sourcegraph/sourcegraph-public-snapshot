@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -9,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -193,7 +196,13 @@ WHERE (%s)
 LIMIT 1
 `
 
-func (s *Store) ListExhaustiveSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveSearchJob, err error) {
+type ListArgs struct {
+	*database.PaginationArgs
+	Query  *string
+	States []string
+}
+
+func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jobs []*types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.listExhaustiveSearchJobs.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, opAttrs(attribute.Int("length", len(jobs))))
@@ -204,18 +213,55 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context) (jobs []*types.Exh
 		return nil, errors.New("can only list jobs for an authenticated user")
 	}
 
+	var conds []*sqlf.Query
+
+	if args.Query != nil && *args.Query != "" {
+		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+*args.Query+"%"))
+	}
+
+	if len(args.States) > 0 {
+		states := make([]*sqlf.Query, len(args.States))
+		for i, state := range args.States {
+			states[i] = sqlf.Sprintf("%s", strings.ToLower(state))
+		}
+		conds = append(conds, sqlf.Sprintf("state in (%s)", sqlf.Join(states, ",")))
+	}
+
+	// For now, we always limit the list to the jobs of the current user.
+	conds = append(conds, sqlf.Sprintf("initiator_id = %d", actor.UID))
+
+	var pagination *database.QueryArgs
+	if args.PaginationArgs != nil {
+		pagination = args.PaginationArgs.SQL()
+		if pagination.Where != nil {
+			conds = append(conds, pagination.Where)
+		}
+	}
+
+	var whereClause *sqlf.Query
+	if len(conds) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	} else {
+		whereClause = sqlf.Sprintf("")
+	}
+
 	q := sqlf.Sprintf(
 		listExhaustiveSearchJobsQueryFmtStr,
 		sqlf.Join(exhaustiveSearchJobColumns, ", "),
-		actor.UID,
+		whereClause,
 	)
+
+	q = pagination.AppendOrderToQuery(q)
+	q = pagination.AppendLimitToQuery(q)
+
+	fmt.Println(q.Query(sqlf.PostgresBindVar), q.Args())
 
 	return scanExhaustiveSearchJobs(s.Store.Query(ctx, q))
 }
 
 const listExhaustiveSearchJobsQueryFmtStr = `
 SELECT %s FROM exhaustive_search_jobs
-WHERE initiator_id = %d
+%s -- whereClause
 `
 
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {

@@ -176,7 +176,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	}
 
 	// Now list them all
-	haveJobs, err := s.ListExhaustiveSearchJobs(ctx)
+	haveJobs, err := s.ListExhaustiveSearchJobs(ctx, store.ListArgs{})
 	require.NoError(t, err)
 	require.Equal(t, len(haveJobs), len(jobs))
 

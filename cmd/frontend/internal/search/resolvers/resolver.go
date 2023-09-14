@@ -2,13 +2,17 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -47,13 +51,82 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 	return nil, errors.New("not implemented")
 }
 
-func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (graphqlbackend.SearchJobsConnectionResolver, error) {
-	// TODO respect args. For now we always return everything a user created
-	jobs, err := r.svc.ListSearchJobs(ctx)
+func newSearchJobConnectionResolver(db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+	var states []string
+	if args.States != nil {
+		states = *args.States
+	}
+
+	s := &searchJobsConnectionStore{
+		db:      db,
+		service: service,
+		states:  states,
+		query:   args.Query,
+	}
+	return graphqlutil.NewConnectionResolver[graphqlbackend.SearchJobResolver](
+		s,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			Ascending: !args.Descending,
+			OrderBy:   database.OrderBy{{Field: strings.ToLower(args.OrderBy)}}},
+	)
+}
+
+type searchJobsConnectionStore struct {
+	ctx     context.Context
+	db      database.DB
+	service *service.Service
+	states  []string
+	query   *string
+}
+
+func (s *searchJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	// TODO (stefan) add "Count" method to service
+	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{States: s.states, Query: s.query})
 	if err != nil {
 		return nil, err
 	}
-	return &searchJobsConnectionResolver{Jobs: jobs, db: r.db}, nil
+
+	total := int32(len(jobs))
+	return &total, nil
+}
+
+func (s *searchJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.SearchJobResolver, error) {
+	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{PaginationArgs: args, States: s.states, Query: s.query})
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.SearchJobResolver, 0, len(jobs))
+	for _, job := range jobs {
+		resolvers = append(resolvers, &searchJobResolver{
+			db:  s.db,
+			Job: job,
+		})
+	}
+
+	return resolvers, nil
+}
+
+func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobResolver, _ database.OrderBy) (*string, error) {
+	if node == nil {
+		return nil, errors.New("node is nil")
+	}
+	cursor := string(node.ID())
+	return &cursor, nil
+}
+
+func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	nodeID, err := UnmarshalSearchJobID(graphql.ID(cursor))
+	if err != nil {
+		return nil, err
+	}
+	id := strconv.Itoa(int(nodeID))
+	return &id, nil
+}
+
+func (r *Resolver) SearchJobs(_ context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+	return newSearchJobConnectionResolver(r.db, r.svc, args)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {

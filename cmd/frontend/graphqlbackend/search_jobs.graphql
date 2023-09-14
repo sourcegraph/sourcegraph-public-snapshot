@@ -38,11 +38,20 @@ extend type Query {
         """
         The number of results to return. Defaults to 50.
         """
-        first: Int = 50
+        first: Int
+        """
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
         """
         The cursor to start at.
         """
         after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
         """
         The query to filter the results by.
         """
@@ -86,7 +95,9 @@ enum SearchJobState {
     The search job has completed.
     """
     COMPLETED
-
+    """
+    The search job was canceled.
+    """
     CANCELED
 }
 

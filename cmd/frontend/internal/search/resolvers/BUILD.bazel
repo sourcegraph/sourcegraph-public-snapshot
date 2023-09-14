@@ -17,6 +17,7 @@ go_library(
         "//internal/database",
         "//internal/gqlutil",
         "//internal/search/exhaustive/service",
+        "//internal/search/exhaustive/store",
         "//internal/search/exhaustive/types",
         "//lib/errors",
         "//lib/pointers",

@@ -16,7 +16,7 @@ type SearchJobsResolver interface {
 	DeleteSearchJob(ctx context.Context, args *DeleteSearchJobArgs) (*EmptyResponse, error)
 
 	// Queries
-	SearchJobs(ctx context.Context, args *SearchJobsArgs) (SearchJobsConnectionResolver, error)
+	SearchJobs(ctx context.Context, args *SearchJobsArgs) (*graphqlutil.ConnectionResolver[SearchJobResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -81,8 +81,7 @@ type SearchJobArgs struct {
 }
 
 type SearchJobsArgs struct {
-	First      int32
-	After      *string
+	graphqlutil.ConnectionResolverArgs
 	Query      *string
 	States     *[]string
 	OrderBy    string
