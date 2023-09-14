@@ -5,13 +5,14 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.project.Project
 
 /**
- * Stores active account for project
- * To register - [@State(name = SERVICE_NAME_HERE, storages = [Storage(StoragePathMacros.WORKSPACE_FILE)], reportStatistic = false)]
+ * Stores active account for project To
+ * register - [@State(name = SERVICE_NAME_HERE, storages = [Storage(StoragePathMacros.WORKSPACE_FILE)],
+ * reportStatistic = false)]
  *
  * @param A - account type
  */
-abstract class PersistentActiveAccountHolder<A : Account>(protected val project: Project)
-  : PersistentStateComponent<PersistentActiveAccountHolder.AccountState>, Disposable {
+abstract class PersistentActiveAccountHolder<A : Account>(protected val project: Project) :
+    PersistentStateComponent<PersistentActiveAccountHolder.AccountState>, Disposable {
 
   var account: A? = null
 
@@ -19,11 +20,13 @@ abstract class PersistentActiveAccountHolder<A : Account>(protected val project:
     get() = accountManager()
 
   init {
-    accountManager.addListener(this, object : AccountsListener<A> {
-      override fun onAccountListChanged(old: Collection<A>, new: Collection<A>) {
-        if (!new.contains(account)) account = null
-      }
-    })
+    accountManager.addListener(
+        this,
+        object : AccountsListener<A> {
+          override fun onAccountListChanged(old: Collection<A>, new: Collection<A>) {
+            if (!new.contains(account)) account = null
+          }
+        })
   }
 
   override fun getState(): AccountState {
@@ -31,11 +34,12 @@ abstract class PersistentActiveAccountHolder<A : Account>(protected val project:
   }
 
   override fun loadState(state: AccountState) {
-    account = state.activeAccountId?.let { id ->
-      accountManager.accounts.find { it.id == id }.also {
-        if (it == null) notifyActiveAccountMissing()
-      }
-    }
+    account =
+        state.activeAccountId?.let { id ->
+          accountManager.accounts
+              .find { it.id == id }
+              .also { if (it == null) notifyActiveAccountMissing() }
+        }
   }
 
   protected abstract fun accountManager(): AccountManager<A, *>

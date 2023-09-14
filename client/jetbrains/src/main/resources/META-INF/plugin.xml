@@ -10,8 +10,10 @@
             -> https://plugins.jetbrains.com/docs/intellij/jcef.html
         - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
              -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
+        - Version 2022.1 is the version introducing the Kotlin UI DSL API we are using at the moment
+          - if the need arises, we may try to implement backwards compatibility to 2021.3
     -->
-    <idea-version since-build="212.0"/>
+    <idea-version since-build="221.5080.210"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>

@@ -28,6 +28,7 @@ abstract class BaseLoginDialog(
 
   val login: String
     get() = _login
+
   val token: String
     get() = _token
 
@@ -35,10 +36,14 @@ abstract class BaseLoginDialog(
     get() = loginPanel.getServer()
 
   fun setToken(token: String?) = loginPanel.setToken(token)
+
   fun setLogin(login: String?) = loginPanel.setLogin(login, false)
+
   fun setServer(path: String) = loginPanel.setServer(path)
+
   fun setCustomRequestHeaders(customRequestHeaders: String) =
       loginPanel.setCustomRequestHeaders(customRequestHeaders)
+
   fun setLoginButtonText(text: String) = setOKButtonText(text)
 
   fun setError(exception: Throwable) {
@@ -72,5 +77,6 @@ abstract class BaseLoginDialog(
   }
 
   protected open fun startGettingToken() = Unit
+
   protected open fun finishGettingToken() = Unit
 }

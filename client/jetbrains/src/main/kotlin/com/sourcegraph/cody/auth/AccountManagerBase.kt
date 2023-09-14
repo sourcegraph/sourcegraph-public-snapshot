@@ -10,18 +10,17 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.util.Disposer
-import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.CopyOnWriteArrayList
+import org.jetbrains.annotations.VisibleForTesting
 
 /**
- * Base class for account management application service
- * Accounts are stored in [accountsRepository]
+ * Base class for account management application service Accounts are stored in [accountsRepository]
  * Credentials are serialized and stored in [passwordSafe]
  *
  * @see [AccountsListener]
  */
-abstract class AccountManagerBase<A : Account, Cred>(private val serviceName: String)
-  : AccountManager<A, Cred>, Disposable {
+abstract class AccountManagerBase<A : Account, Cred>(private val serviceName: String) :
+    AccountManager<A, Cred>, Disposable {
 
   protected open val passwordSafe
     get() = PasswordSafe.instance
@@ -36,17 +35,21 @@ abstract class AccountManagerBase<A : Account, Cred>(private val serviceName: St
   private val messageBusConnection by lazy { messageBusConnection() }
 
   @VisibleForTesting
-  protected open fun messageBusConnection() = ApplicationManager.getApplication().messageBus.connect(this)
+  protected open fun messageBusConnection() =
+      ApplicationManager.getApplication().messageBus.connect(this)
 
   override val accounts: Set<A>
     get() = persistentAccounts.accounts
 
   init {
-    messageBusConnection.subscribe(PasswordSafeSettings.TOPIC, object : PasswordSafeSettingsListener {
-      override fun credentialStoreCleared() = persistentAccounts.accounts.forEach { account ->
-        listeners.forEach { it.onAccountCredentialsChanged(account) }
-      }
-    })
+    messageBusConnection.subscribe(
+        PasswordSafeSettings.TOPIC,
+        object : PasswordSafeSettingsListener {
+          override fun credentialStoreCleared() =
+              persistentAccounts.accounts.forEach { account ->
+                listeners.forEach { it.onAccountCredentialsChanged(account) }
+              }
+        })
   }
 
   override fun updateAccounts(accountsWithCredentials: Map<A, Cred?>) {
@@ -58,7 +61,8 @@ abstract class AccountManagerBase<A : Account, Cred>(private val serviceName: St
     for ((account, credentials) in accountsWithCredentials) {
       if (credentials != null) {
         passwordSafe.set(account.credentialAttributes(), account.credentials(credentials))
-        if (currentSet.contains(account)) listeners.forEach { it.onAccountCredentialsChanged(account) }
+        if (currentSet.contains(account))
+            listeners.forEach { it.onAccountCredentialsChanged(account) }
       }
     }
     val added = accountsWithCredentials.keys - currentSet
@@ -75,17 +79,16 @@ abstract class AccountManagerBase<A : Account, Cred>(private val serviceName: St
     if (!newAccount) {
       // remove and add an account to update auxiliary fields
       persistentAccounts.accounts = (currentSet - account) + account
-    }
-    else {
+    } else {
       persistentAccounts.accounts = currentSet + account
       LOG.debug("Added new account: $account")
     }
     passwordSafe.set(account.credentialAttributes(), account.credentials(credentials))
-    LOG.debug((if (credentials == null) "Cleared" else "Updated") + " credentials for account: $account")
+    LOG.debug(
+        (if (credentials == null) "Cleared" else "Updated") + " credentials for account: $account")
     if (!newAccount) {
       listeners.forEach { it.onAccountCredentialsChanged(account) }
-    }
-    else {
+    } else {
       listeners.forEach { it.onAccountListChanged(currentSet, persistentAccounts.accounts) }
     }
   }
@@ -102,20 +105,23 @@ abstract class AccountManagerBase<A : Account, Cred>(private val serviceName: St
   }
 
   override fun findCredentials(account: A): Cred? =
-    passwordSafe.get(account.credentialAttributes())?.getPasswordAsString()?.let(::deserializeCredentials)
+      passwordSafe
+          .get(account.credentialAttributes())
+          ?.getPasswordAsString()
+          ?.let(::deserializeCredentials)
 
   private fun A.credentialAttributes() = CredentialAttributes(generateServiceName(serviceName, id))
 
-  private fun A.credentials(credentials: Cred?): Credentials? = credentials?.let { Credentials(id, serializeCredentials(it)) }
+  private fun A.credentials(credentials: Cred?): Credentials? =
+      credentials?.let { Credentials(id, serializeCredentials(it)) }
 
   protected abstract fun serializeCredentials(credentials: Cred): String
+
   protected abstract fun deserializeCredentials(credentials: String): Cred
 
   override fun addListener(disposable: Disposable, listener: AccountsListener<A>) {
     listeners.add(listener)
-    Disposer.register(disposable) {
-      listeners.remove(listener)
-    }
+    Disposer.register(disposable) { listeners.remove(listener) }
   }
 
   @VisibleForTesting

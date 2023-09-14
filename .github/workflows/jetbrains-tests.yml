@@ -16,7 +16,7 @@ on:
 
 jobs:
   test:
-    name: Test
+    name: JetBrains tests
     runs-on: ubuntu-latest
     defaults:
       run:

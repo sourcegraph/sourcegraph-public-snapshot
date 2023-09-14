@@ -10,14 +10,14 @@ import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountDetails
 import com.sourcegraph.cody.auth.SingleValueModel
-import org.jetbrains.annotations.Nls
 import java.awt.Image
 import java.util.concurrent.CompletableFuture
 import java.util.function.BiConsumer
 import javax.swing.Icon
+import org.jetbrains.annotations.Nls
 
 abstract class LoadingAccountsDetailsProvider<in A : Account, D : AccountDetails>(
-  private val progressIndicatorsProvider: ProgressIndicatorsProvider
+    private val progressIndicatorsProvider: ProgressIndicatorsProvider
 ) : AccountsDetailsProvider<A, D> {
 
   open val defaultIcon: Icon = IconUtil.resizeSquared(EmptyIcon.ICON_16, 40)
@@ -33,26 +33,33 @@ abstract class LoadingAccountsDetailsProvider<in A : Account, D : AccountDetails
       val indicator = progressIndicatorsProvider.acquireIndicator()
       runningProcesses++
       loadingStateModel.value = true
-      scheduleLoad(account, indicator).whenComplete(BiConsumer { _, _ ->
-        invokeAndWaitIfNeeded(ModalityState.any()) {
-          progressIndicatorsProvider.releaseIndicator(indicator)
-          runningProcesses--
-          if (runningProcesses == 0) loadingStateModel.value = false
-        }
-      }).exceptionally {
-        val error = CompletableFutureUtil.extractError(it)
-        DetailsLoadingResult(null, null, error.localizedMessage, false)
-      }
+      scheduleLoad(account, indicator)
+          .whenComplete(
+              BiConsumer { _, _ ->
+                invokeAndWaitIfNeeded(ModalityState.any()) {
+                  progressIndicatorsProvider.releaseIndicator(indicator)
+                  runningProcesses--
+                  if (runningProcesses == 0) loadingStateModel.value = false
+                }
+              })
+          .exceptionally {
+            val error = CompletableFutureUtil.extractError(it)
+            DetailsLoadingResult(null, null, error.localizedMessage, false)
+          }
     }
   }
 
-  abstract fun scheduleLoad(account: A, indicator: ProgressIndicator): CompletableFuture<DetailsLoadingResult<D>>
+  abstract fun scheduleLoad(
+      account: A,
+      indicator: ProgressIndicator
+  ): CompletableFuture<DetailsLoadingResult<D>>
 
   override fun getAvatarImage(account: A): Image? = getOrLoad(account).getNow(null)?.avatarImage
 
   override fun getErrorText(account: A): String? = getOrLoad(account).getNow(null)?.error
 
-  override fun checkErrorRequiresReLogin(account: A) = getOrLoad(account).getNow(null)?.needReLogin ?: false
+  override fun checkErrorRequiresReLogin(account: A) =
+      getOrLoad(account).getNow(null)?.needReLogin ?: false
 
   override fun reset(account: A) {
     detailsMap.remove(account)
@@ -60,8 +67,10 @@ abstract class LoadingAccountsDetailsProvider<in A : Account, D : AccountDetails
 
   override fun resetAll() = detailsMap.clear()
 
-  data class DetailsLoadingResult<D : AccountDetails>(val details: D?,
-                                                      val avatarImage: Image?,
-                                                      @Nls val error: String?,
-                                                      val needReLogin: Boolean)
+  data class DetailsLoadingResult<D : AccountDetails>(
+      val details: D?,
+      val avatarImage: Image?,
+      @Nls val error: String?,
+      val needReLogin: Boolean
+  )
 }
