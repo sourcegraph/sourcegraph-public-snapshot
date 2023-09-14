@@ -134,7 +134,9 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	}
 
 	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
-	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth, func(r *http.Request) (*http.Response, error) {
+		return c.httpClient.Do(r)
+	})
 	if err != nil {
 		return "", err
 	}
@@ -149,7 +151,9 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 
 		req.Body = io.NopCloser(bytes.NewReader(reqBody))
-		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth, func(r *http.Request) (*http.Response, error) {
+			return c.httpClient.Do(r)
+		})
 		numRetries++
 	}
 

@@ -7,10 +7,10 @@ import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton
 import java.awt.BorderLayout
 import javax.swing.JPanel
 
-class NotifyAboutNoDefaultAccount : StartupActivity {
+class NotifyAboutNoActiveAccount : StartupActivity {
   override fun runActivity(project: Project) {
-    val defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project)
-    if (defaultAccount == null) {
+    val activeAccount = CodyAuthenticationManager.getInstance().getActiveAccount(project)
+    if (activeAccount == null) {
       val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
       val noAccessTokenText =
           """

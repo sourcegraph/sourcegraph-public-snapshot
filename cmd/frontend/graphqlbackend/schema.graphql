@@ -7411,6 +7411,10 @@ type CodyLLMConfiguration {
     Maximum number of tokens client should use when talking to the completionModel.
     """
     completionModelMaxTokens: Int
+    """
+    Name of the provider being used for LLM interactions.
+    """
+    provider: String!
 }
 
 """

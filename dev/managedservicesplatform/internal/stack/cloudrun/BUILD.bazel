@@ -29,6 +29,7 @@ go_library(
         "@com_github_aws_constructs_go_constructs_v10//:constructs",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2service",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2serviceiammember",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesubnetwork",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//vpcaccessconnector",

@@ -13,12 +13,12 @@ import javax.swing.JComponent
 
 class CodyAccountListModel(private val project: Project) :
     AccountsListModelBase<CodyAccount, String>(),
-    AccountsListModel.WithDefault<CodyAccount, String>,
+    AccountsListModel.WithActive<CodyAccount, String>,
     CodyAccountsHost {
 
   private val actionManager = ActionManager.getInstance()
 
-  override var defaultAccount: CodyAccount? = null
+  override var activeAccount: CodyAccount? = null
 
   override fun addAccount(parentComponent: JComponent, point: RelativePoint?) {
     val group = actionManager.getAction("Cody.Accounts.AddAccount") as ActionGroup
@@ -44,7 +44,6 @@ class CodyAccountListModel(private val project: Project) :
                       customRequestHeaders = account.server.customRequestHeaders,
                       title = "Edit Sourcegraph Account",
                       loginButtonText = "Save account",
-                      isServerEditable = true,
                   ))
         } else {
           val localAppAccessToken = LocalAppManager.getLocalAppAccessToken().orNull()
@@ -69,10 +68,6 @@ class CodyAccountListModel(private val project: Project) :
 
   override fun addAccount(server: SourcegraphServerPath, login: String, token: String) {
     val account = CodyAccount.create(login, server)
-    addAccount(account, token)
-  }
-
-  override fun addAccount(account: CodyAccount, token: String) {
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)

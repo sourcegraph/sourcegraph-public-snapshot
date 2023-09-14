@@ -11,42 +11,24 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
  */
 interface AccountManager<A : Account, Cred> {
 
-  /**
-   * Set of accounts registered within application
-   */
-  @get:RequiresEdt
-  val accounts: Set<A>
+  /** Set of accounts registered within application */
+  @get:RequiresEdt val accounts: Set<A>
+
+  /** Add/update account and it's credentials */
+  @RequiresEdt fun updateAccount(account: A, credentials: Cred)
 
   /**
-   * Add/update account and it's credentials
+   * Add/update/remove multiple accounts and their credentials Credentials are not updated if null
+   * value is passed Should only be used by a bulk update from settings
    */
-  @RequiresEdt
-  fun updateAccount(account: A, credentials: Cred)
+  @RequiresEdt fun updateAccounts(accountsWithCredentials: Map<A, Cred?>)
 
-  /**
-   * Add/update/remove multiple accounts and their credentials
-   * Credentials are not updated if null value is passed
-   * Should only be used by a bulk update from settings
-   */
-  @RequiresEdt
-  fun updateAccounts(accountsWithCredentials: Map<A, Cred?>)
+  /** Remove an account and clear stored credentials Does nothing if account is not present */
+  @RequiresEdt fun removeAccount(account: A)
 
-  /**
-   * Remove an account and clear stored credentials
-   * Does nothing if account is not present
-   */
-  @RequiresEdt
-  fun removeAccount(account: A)
+  /** Retrieve credentials for account */
+  @RequiresEdt fun findCredentials(account: A): Cred?
 
-  /**
-   * Retrieve credentials for account
-   */
-  @RequiresEdt
-  fun findCredentials(account: A): Cred?
-
-  /**
-   * Add accounts data listener
-   */
-  @RequiresEdt
-  fun addListener(disposable: Disposable, listener: AccountsListener<A>)
+  /** Add accounts data listener */
+  @RequiresEdt fun addListener(disposable: Disposable, listener: AccountsListener<A>)
 }

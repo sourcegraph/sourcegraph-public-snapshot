@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -1531,34 +1530,12 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 	}
 }
 
-func githubBaseURLDefault() string {
-	if deploy.IsSingleBinary() {
-		return ""
-	}
-	return "http://github-proxy"
-}
-
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
 
 	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
-
-	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
-	githubProxyRawURL = env.Get("GITHUB_BASE_URL", githubBaseURLDefault(), "base URL for GitHub.com API (used for github-proxy)")
 )
-
-func getGithubProxyURL() (*url.URL, bool) {
-	if githubProxyRawURL == "" {
-		return nil, false
-	}
-	parsedUrl, err := url.Parse(githubProxyRawURL)
-	if err != nil {
-		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
-		return nil, false
-	}
-	return parsedUrl, true
-}
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
 func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
@@ -1605,7 +1582,15 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	}()
 	req = req.WithContext(ctx)
 
-	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther)
+	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther, func(r *http.Request) (*http.Response, error) {
+		// For GitHub.com, to avoid running into rate limits we're limiting concurrency
+		// per auth token to 1 globally.
+		if urlIsGitHubDotCom(r.URL) {
+			return restrictGitHubDotComConcurrency(logger, httpClient, r)
+		}
+
+		return httpClient.Do(r)
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "request failed")
 	}
@@ -1650,11 +1635,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		u, ok := getGithubProxyURL()
-		if ok {
-			return u
+		return &url.URL{
+			Scheme: "https",
+			Host:   "api.github.com",
 		}
 	}
 	return apiURL
@@ -1662,15 +1645,7 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	if hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" {
-		return true
-	}
-
-	if u, ok := getGithubProxyURL(); ok {
-		return apiURL.String() == u.String()
-	}
-
-	return false
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}

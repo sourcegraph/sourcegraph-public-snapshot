@@ -33,7 +33,7 @@ abstract class BaseAddAccountWithTokenAction : DumbAwareAction() {
             e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT),
             accountsHost::isAccountUnique)
 
-    dialog.setServer(defaultServer, defaultServer != SourcegraphServerPath.DEFAULT_HOST)
+    dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
       accountsHost.addAccount(dialog.server, dialog.login, dialog.token)
     }
@@ -48,6 +48,16 @@ private fun newAddAccountDialog(
     SourcegraphTokenLoginDialog(project, parent, isAccountUnique).apply {
       title = "Add Sourcegraph Account"
       setLoginButtonText("Add Account")
+    }
+
+fun signInWithSourcegrapDialog(
+    project: Project?,
+    parent: Component?,
+    isAccountUnique: UniqueLoginPredicate
+): BaseLoginDialog =
+    SourcegraphTokenLoginDialog(project, parent, isAccountUnique).apply {
+      title = "Sign in with Sourcegraph"
+      setLoginButtonText("Sign in")
     }
 
 internal class SourcegraphTokenLoginDialog(
