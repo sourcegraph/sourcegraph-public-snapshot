@@ -66,9 +66,9 @@ Learn more from documentation of [gcloud compute service-attachments delete](htt
 
 ### How secure is the connection?
 
-All traffic between the producer and consumer is encrypted in transit. You may learn more from Google's whitepaper about [encryption in transit]. Additionally, you may learn more about Sourcegraph's security pratices from [security at sourcegraph]. Should you have any question, please reach out to your account team.
+All traffic between the producer and consumer is encrypted in transit. You may learn more from Google's whitepaper about [encryption in transit] and [Sourcegraph's security practices].
 
 [private service connect]: https://cloud.google.com/vpc/docs/private-service-connect
 [service attachment]: https://cloud.google.com/vpc/docs/private-service-connect#service-attachments
 [encryption in transit]: https://cloud.google.com/docs/security/encryption-in-transit
-[security at sourcegraph]: https://about.sourcegraph.com/security
+[Sourcegraph's security practices]: https://about.sourcegraph.com/security
