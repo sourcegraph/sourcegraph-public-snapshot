@@ -3,16 +3,17 @@
 }
 
 .command-node {
-    margin: 0.8rem 0;
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--border-color-2);
+    padding: 0.75rem 0;
+
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color-2);
+    }
 
     &__header {
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: 1fr auto;
         align-items: center;
         gap: 1rem;
-        margin: 0.5rem 0;
     }
 
     &__duration-group {
@@ -22,15 +23,20 @@
     }
 
     &__log-output {
+        margin: 0.5rem 0 !important;
+
+        &__fail-state {
+            background-color: var(--danger);
+        }
+
         code {
             white-space: break-spaces;
         }
     }
 
     &__footer {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 0.5rem;
+        display: grid;
+        grid-template-columns: auto 1fr;
     }
 
     &__expand-btn {
@@ -42,15 +48,27 @@
     &__status {
         width: 1.5rem;
         height: 1.5rem;
-        margin-left: 0.5rem;
-        border-radius: var(--border-radius);
+        margin-right: 0.25rem;
     }
 
     &__success-status {
-        background-color: var(--success);
+        fill: var(--success) !important;
     }
 
     &__error-status {
-        background-color: var(--danger);
+        fill: var(--danger) !important;
+    }
+
+    &__path {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        text-align: right;
+    }
+
+    &__output {
+        margin-top: 0.5rem;
+        grid-column: span 4;
     }
 }
