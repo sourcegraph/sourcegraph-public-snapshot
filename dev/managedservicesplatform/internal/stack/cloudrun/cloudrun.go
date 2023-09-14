@@ -74,7 +74,6 @@ var (
 // - ${local.env_var_prefix}_BIGQUERY_PROJECT_ID
 // - ${local.env_var_prefix}_BIGQUERY_DATASET
 // - ${local.env_var_prefix}_BIGQUERY_TABLE
-// - ${local.env_var_prefix}_DIAGNOSTICS_SECRET
 //
 // The prefix is an all-uppercase underscore-delimited version of the service ID,
 // for example:
@@ -85,9 +84,9 @@ var (
 //
 //	CODY_GATEWAY_
 //
-// Note that some variables like GOOGLE_PROJECT_ID and REDIS_ENDPOINT do not
-// get prefixed, and custom env vars configured on an environment are not prefixed
-// either.
+// Note that some variables conforming to conventions like DIAGNOSTICS_SECRET,
+// GOOGLE_PROJECT_ID, and REDIS_ENDPOINT do not get prefixed, and custom env
+// vars configured on an environment are not automatically prefixed either.
 func makeServiceEnvVarPrefix(serviceID string) string {
 	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
 }
@@ -136,8 +135,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			},
 			{
 				// Set up secret that service should accept for diagnostics
-				// endpoints
-				Name:  pointers.Ptr(serviceEnvVarPrefix + "DIAGNOSTICS_SECRET"),
+				// endpoints.
+				//
+				// We don't use serviceEnvVarPrefix here because this is a
+				// convention across MSP services.
+				Name:  pointers.Ptr("DIAGNOSTICS_SECRET"),
 				Value: &diagnosticsSecret.HexValue,
 			},
 		},
