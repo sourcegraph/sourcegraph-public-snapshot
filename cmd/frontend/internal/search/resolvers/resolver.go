@@ -2,10 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -80,7 +82,7 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			Ascending: !args.Descending,
-			OrderBy:   database.OrderBy{{Field: strings.ToLower(args.OrderBy)}}},
+			OrderBy:   database.OrderBy{{Field: strings.ToLower(args.OrderBy)}, {Field: "id"}}},
 	)
 }
 
@@ -121,21 +123,71 @@ func (s *searchJobsConnectionStore) ComputeNodes(ctx context.Context, args *data
 	return resolvers, nil
 }
 
-func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobResolver, _ database.OrderBy) (*string, error) {
+const searchJobsCursorKind = "SearchJobsCursor"
+
+func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobResolver, orderBy database.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New("node is nil")
 	}
-	cursor := string(node.ID())
-	return &cursor, nil
-}
 
-func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := UnmarshalSearchJobID(graphql.ID(cursor))
+	column := orderBy[0].Field
+
+	var value string
+	switch column {
+	case "created_at":
+		value = fmt.Sprintf("'%v'", node.CreatedAt().Format("2006-01-02 15:04:05.999999"))
+	case "state":
+		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
+	default:
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expeced one of (created_at, state). Actual: %s", column))
+	}
+
+	id, err := UnmarshalSearchJobID(node.ID())
 	if err != nil {
 		return nil, err
 	}
-	id := strconv.Itoa(int(nodeID))
-	return &id, nil
+
+	cursor := string(relay.MarshalID(
+		searchJobsCursorKind,
+		&types.Cursor{Column: column,
+			Value: fmt.Sprintf("%s@%d", value, id)},
+	))
+	return &cursor, nil
+}
+
+func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+	if kind := relay.UnmarshalKind(graphql.ID(cursor)); kind != searchJobsCursorKind {
+		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", searchJobsCursorKind, kind))
+	}
+	var spec *types.Cursor
+	if err := relay.UnmarshalSpec(graphql.ID(cursor), &spec); err != nil {
+		return nil, err
+	}
+	if len(orderBy) == 0 {
+		return nil, errors.New("no OrderBy provided")
+	}
+
+	column := orderBy[0].Field
+	if spec.Column != column {
+		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", column, spec.Column))
+	}
+
+	csv := ""
+	values := strings.Split(spec.Value, "@")
+	if len(values) != 2 {
+		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, spec.Value))
+	}
+
+	switch column {
+	case "created_at":
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	case "state":
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	default:
+		return nil, errors.New("Invalid OrderBy Field.")
+	}
+
+	return &csv, nil
 }
 
 func (r *Resolver) SearchJobs(_ context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {

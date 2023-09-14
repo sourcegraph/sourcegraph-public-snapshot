@@ -110,7 +110,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
     const [searchStateTerm, setSearchStateTerm] = useState('')
     const [selectedUsers, setUsers] = useState<User[]>([])
     const [selectedStates, setStates] = useState<SearchJobState[]>([])
-    const [sortBy, setSortBy] = useState<SearchJobsOrderBy>(SearchJobsOrderBy.CREATED_DATE)
+    const [sortBy, setSortBy] = useState<SearchJobsOrderBy>(SearchJobsOrderBy.CREATED_AT)
 
     const [jobToDelete, setJobToDelete] = useState<SearchJobNode | null>(null)
     const [jobToCancel, setJobToCancel] = useState<SearchJobNode | null>(null)
@@ -212,7 +212,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                         className={styles.sort}
                         selectClassName={styles.sortSelect}
                     >
-                        <option value={SearchJobsOrderBy.CREATED_DATE}>Sort by Created date</option>
+                        <option value={SearchJobsOrderBy.CREATED_AT}>Sort by Created date</option>
                         <option value={SearchJobsOrderBy.QUERY}>Sort by Query</option>
                         <option value={SearchJobsOrderBy.STATE}>Sort by Status</option>
                     </Select>

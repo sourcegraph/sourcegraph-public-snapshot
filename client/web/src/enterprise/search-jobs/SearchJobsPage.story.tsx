@@ -37,7 +37,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
             after: null,
             query: '',
             states: [],
-            orderBy: SearchJobsOrderBy.CREATED_DATE,
+            orderBy: SearchJobsOrderBy.CREATED_AT,
         },
     },
     result: {

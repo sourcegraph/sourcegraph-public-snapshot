@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -271,8 +270,6 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		q = pagination.AppendOrderToQuery(q)
 		q = pagination.AppendLimitToQuery(q)
 	}
-
-	fmt.Println(q.Query(sqlf.PostgresBindVar), q.Args())
 
 	return scanExhaustiveSearchJobs(s.Store.Query(ctx, q))
 }
