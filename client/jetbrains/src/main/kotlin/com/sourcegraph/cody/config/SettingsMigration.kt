@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture
 class SettingsMigration : StartupActivity, DumbAware {
 
   private val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
+
   override fun runActivity(project: Project) {
     RunOnceUtil.runOnceForProject(project, "CodyProjectSettingsMigration") {
       val customRequestHeaders = extractCustomRequestHeaders(project)

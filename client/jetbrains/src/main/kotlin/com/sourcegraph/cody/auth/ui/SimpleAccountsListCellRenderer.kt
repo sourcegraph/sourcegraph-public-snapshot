@@ -12,7 +12,6 @@ import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountDetails
 import com.sourcegraph.cody.auth.ServerAccount
 import com.sourcegraph.cody.config.CachingCodyUserAvatarLoader
-import org.jetbrains.annotations.Nls
 import java.awt.Component
 import java.awt.FlowLayout
 import java.awt.Font
@@ -26,6 +25,7 @@ import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.ListCellRenderer
+import org.jetbrains.annotations.Nls
 
 class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     private val listModel: AccountsListModel<A, *>,
@@ -132,13 +132,16 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
 
   private fun isDefault(account: A): Boolean =
       (listModel is AccountsListModel.WithActive) && account == listModel.activeAccount
+
   private fun editAccount(parentComponent: JComponent, account: A) =
       listModel.editAccount(parentComponent, account)
 
   private fun getDetails(account: A): D? = detailsProvider.getDetails(account)
+
   private fun getAvatarImage(account: A): Image? = detailsProvider.getAvatarImage(account)
 
   @Nls private fun getError(account: A): String? = detailsProvider.getErrorText(account)
+
   private fun needReLogin(account: A): Boolean = detailsProvider.checkErrorRequiresReLogin(account)
 
   companion object {

@@ -6,7 +6,7 @@ import com.sourcegraph.cody.auth.SingleValueModel
 import javax.swing.JComponent
 import javax.swing.ListModel
 
-interface AccountsListModel<A: Account, Cred> {
+interface AccountsListModel<A : Account, Cred> {
   var accounts: Set<A>
   var selectedAccount: A?
   val newCredentials: Map<A, Cred>
@@ -15,12 +15,14 @@ interface AccountsListModel<A: Account, Cred> {
   val busyStateModel: SingleValueModel<Boolean>
 
   fun addAccount(parentComponent: JComponent, point: RelativePoint? = null)
+
   fun editAccount(parentComponent: JComponent, account: A)
+
   fun clearNewCredentials()
 
   fun addCredentialsChangeListener(listener: (A) -> Unit)
 
-  interface WithActive<A: Account, Cred>: AccountsListModel<A, Cred> {
+  interface WithActive<A : Account, Cred> : AccountsListModel<A, Cred> {
     var activeAccount: A?
   }
 }
