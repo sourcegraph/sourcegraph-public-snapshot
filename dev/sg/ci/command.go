@@ -85,5 +85,6 @@ sg ci build --help
 		logsCommand,
 		docsCommand,
 		openCommand,
+		buildReleaseCommand,
 	},
 }
