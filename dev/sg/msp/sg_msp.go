@@ -202,7 +202,8 @@ func init() {
 			},
 		},
 		{
-			Name:        "tfc",
+			Name:        "terraform-cloud",
+			Aliases:     []string{"tfc"},
 			Description: "Manage Terraform Cloud workspaces for a service",
 			Subcommands: []*cli.Command{
 				{
