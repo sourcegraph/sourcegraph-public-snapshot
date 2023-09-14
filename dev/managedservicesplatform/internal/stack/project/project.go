@@ -38,17 +38,19 @@ var gcpServices = []string{
 
 const (
 	BillingAccountID = "017005-C370B2-0E3030"
-	// DefaultProjectFolderID points to the 'Managed Services' folder
+	// DefaultProjectFolderID points to the 'Managed Services' folder:
+	// https://console.cloud.google.com/welcome?folder=26336759932
 	DefaultProjectFolderID = "folders/26336759932"
 )
 
 var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
-	// Engineering Projects
+	// Engineering Projects - https://console.cloud.google.com/welcome?folder=795981974432
 	spec.EnvironmentCategoryTest: "folders/795981974432",
 
-	// spec.EnvironmentCategoryInternal: "", // TODO
+	// Internal Projects - https://console.cloud.google.com/welcome?folder=387815626940
+	spec.EnvironmentCategoryInternal: "folders/387815626940",
 
-	// Use default folder
+	// Use default folder - see DefaultProjectFolderID
 	spec.EnvironmentCategoryExternal: DefaultProjectFolderID,
 	spec.EnvironmentCategory(""):     DefaultProjectFolderID,
 }
