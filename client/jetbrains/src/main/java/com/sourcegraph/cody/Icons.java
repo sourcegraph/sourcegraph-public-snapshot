@@ -9,6 +9,7 @@ public interface Icons {
 
   interface Repository {
     Icon Indexed = IconLoader.getIcon("/icons/repositoryIndexed.svg", Icons.class);
+    Icon NoEmbedding = IconLoader.getIcon("/icons/repositoryNoEmbedding.svg", Icons.class);
     Icon Missing = IconLoader.getIcon("/icons/repositoryMissing.svg", Icons.class);
   }
 
