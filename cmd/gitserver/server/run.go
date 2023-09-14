@@ -197,6 +197,7 @@ type tlsConfig struct {
 // writeTempFile writes data to the TempFile with pattern. Returns the path of
 // the tempfile.
 func writeTempFile(pattern string, data []byte) (path string, err error) {
+	// TODO: use gitserver temp dir instead.
 	f, err := os.CreateTemp("", pattern)
 	if err != nil {
 		return "", err

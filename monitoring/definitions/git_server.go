@@ -232,19 +232,6 @@ func GitServer() *monitoring.Dashboard {
 								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
 							`,
 						},
-						{
-							Name:        "repository_existence_check_queue_size",
-							Description: "repository existence check queue size",
-							Query:       "sum(src_gitserver_lsremote_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
-							Panel:       monitoring.Panel().LegendFormat("queue size"),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps: `
-								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-								- **Check the gitserver logs for more information.**
-							`,
-						},
 					},
 					{
 						{

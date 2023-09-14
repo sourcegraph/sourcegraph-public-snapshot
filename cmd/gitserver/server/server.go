@@ -179,11 +179,9 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
-	// cloneLimiter and cloneableLimiter limits the number of concurrent
-	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
-	// s.acquireCloneableLimiter() instead of using these directly.
-	cloneLimiter     *limiter.MutableLimiter
-	cloneableLimiter *limiter.MutableLimiter
+	// cloneLimiter limits the number of concurrent clones. Use
+	// s.acquireCloneLimiter() instead of using this directly.
+	cloneLimiter *limiter.MutableLimiter
 
 	// RPSLimiter limits the remote code host git operations done per second
 	// per gitserver instance
@@ -304,13 +302,11 @@ func (s *Server) Handler() http.Handler {
 	// Max concurrent clones also means repo updates.
 	maxConcurrentClones := conf.GitMaxConcurrentClones()
 	s.cloneLimiter = limiter.NewMutable(maxConcurrentClones)
-	s.cloneableLimiter = limiter.NewMutable(maxConcurrentClones)
 
 	// TODO: Remove side-effects from this Handler method.
 	conf.Watch(func() {
 		limit := conf.GitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
-		s.cloneableLimiter.SetLimit(limit)
 	})
 
 	mux := http.NewServeMux()
@@ -530,15 +526,7 @@ func (p *clonePipelineRoutine) cloneJobConsumer(ctx context.Context, tasks <-cha
 		default:
 		}
 
-		ctx, cancel, err := p.s.acquireCloneLimiter(ctx)
-		if err != nil {
-			logger.Error("acquireCloneLimiter", log.Error(err))
-			continue
-		}
-
 		go func(task *cloneTask) {
-			defer cancel()
-
 			err := p.s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
 			if err != nil {
 				logger.Error("failed to clone repo", log.Error(err))
@@ -782,12 +770,6 @@ func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, cont
 	return s.cloneLimiter.Acquire(ctx)
 }
 
-func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	lsRemoteQueue.Inc()
-	defer lsRemoteQueue.Dec()
-	return s.cloneableLimiter.Acquire(ctx)
-}
-
 // tempDir is a wrapper around os.MkdirTemp, but using the given reposDir
 // temporary directory filepath.Join(s.ReposDir, tempDirName).
 //
@@ -907,41 +889,43 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
 		}
+
+		return resp
+	}
+
+	var statusErr, updateErr error
+
+	if debounce(req.Repo, req.Since) {
+		updateErr = s.doRepoUpdate(ctx, req.Repo, "")
+	}
+
+	// attempts to acquire these values are not contingent on the success of
+	// the update.
+	lastFetched, err := repoLastFetched(dir)
+	if err != nil {
+		statusErr = err
 	} else {
-		var statusErr, updateErr error
-
-		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
-		}
-
-		// attempts to acquire these values are not contingent on the success of
-		// the update.
-		lastFetched, err := repoLastFetched(dir)
-		if err != nil {
-			statusErr = err
-		} else {
-			resp.LastFetched = &lastFetched
-		}
-		lastChanged, err := repoLastChanged(dir)
-		if err != nil {
-			statusErr = err
-		} else {
-			resp.LastChanged = &lastChanged
-		}
-		if statusErr != nil {
-			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
-			// report this error in-band, but still produce a valid response with the
-			// other information.
-			resp.Error = statusErr.Error()
-		}
-		// If an error occurred during update, report it but don't actually make
-		// it into an http error; we want the client to get the information cleanly.
-		// An update error "wins" over a status error.
-		if updateErr != nil {
-			resp.Error = updateErr.Error()
-		} else {
-			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
-		}
+		resp.LastFetched = &lastFetched
+	}
+	lastChanged, err := repoLastChanged(dir)
+	if err != nil {
+		statusErr = err
+	} else {
+		resp.LastChanged = &lastChanged
+	}
+	if statusErr != nil {
+		logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+		// report this error in-band, but still produce a valid response with the
+		// other information.
+		resp.Error = statusErr.Error()
+	}
+	// If an error occurred during update, report it but don't actually make
+	// it into an http error; we want the client to get the information cleanly.
+	// An update error "wins" over a status error.
+	if updateErr != nil {
+		resp.Error = updateErr.Error()
+	} else {
+		s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
 	}
 
 	return resp
@@ -1963,21 +1947,6 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 		return "", err
 	}
 
-	// isCloneable causes a network request, so we limit the number that can
-	// run at one time. We use a separate semaphore to cloning since these
-	// checks being blocked by a few slow clones will lead to poor feedback to
-	// users. We can defer since the rest of the function does not block this
-	// goroutine.
-	ctx, cancel, err := s.acquireCloneableLimiter(ctx)
-	if err != nil {
-		return "", err // err will be a context error
-	}
-	defer cancel()
-
-	if err = s.RPSLimiter.Wait(ctx); err != nil {
-		return "", err
-	}
-
 	if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
 		redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
@@ -1999,16 +1968,12 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	}
 
 	if opts.Block {
-		ctx, cancel, err := s.acquireCloneLimiter(ctx)
-		if err != nil {
-			return "", err
-		}
-		defer cancel()
-
-		// We are blocking, so use the passed in context.
 		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-		err = errors.Wrapf(err, "failed to clone %s", repo)
-		return "", err
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to clone %s", repo)
+		}
+
+		return "", nil
 	}
 
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
@@ -2037,16 +2002,24 @@ func (s *Server) doClone(
 ) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
 
+	ctx, cancel, err := s.acquireCloneLimiter(ctx)
+	if err != nil {
+		return err
+	}
+	defer cancel()
+
 	defer lock.Release()
 	defer func() {
 		if err != nil {
 			repoCloneFailedCounter.Inc()
 		}
 	}()
+
 	if err := s.RPSLimiter.Wait(ctx); err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+
+	ctx, cancel = context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel()
 
 	dstPath := string(dir)
@@ -2090,12 +2063,17 @@ func (s *Server) doClone(
 	if err != nil {
 		return errors.Wrap(err, "get clone command")
 	}
-	if cmd.Env == nil {
-		cmd.Env = os.Environ()
+
+	// TODO: Move this block into the git VCS Syncer implementation, it's not
+	// necessary for package syncers and feels misplaced here.
+	{
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
+		// see issue #7322: skip LFS content in repositories with Git LFS configured
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	}
 
-	// see issue #7322: skip LFS content in repositories with Git LFS configured
-	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
 
 	pr, pw := io.Pipe()
@@ -2126,6 +2104,7 @@ func (s *Server) doClone(
 
 	if opts.Overwrite {
 		// remove the current repo by putting it into our temporary directory
+		// TODO: doesn't this put the old repo inside the new repo?
 		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
 		if err != nil && !os.IsNotExist(err) {
 			return errors.Wrapf(err, "failed to remove old clone")
@@ -2205,20 +2184,12 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
+	enableDBProgressLogging := featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false)
 
-	var logFile *os.File
-	var err error
+	logFile := cloneProgressLogFileWriter(logger, reposDir, repo)
+	defer func() { _ = logFile.Close() }()
 
-	if conf.Get().CloneProgressLog {
-		logFile, err = os.CreateTemp("", "")
-		if err != nil {
-			logger.Warn("failed to create temporary clone log file", log.Error(err), log.String("repo", string(repo)))
-		} else {
-			logger.Info("logging clone output", log.String("file", logFile.Name()), log.String("repo", string(repo)))
-			defer logFile.Close()
-		}
-	}
-
+	// Write at most 1/s to avoid spamming the db.
 	dbWritesLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
@@ -2236,17 +2207,19 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.
 
 		lock.SetStatus(redactedProgress)
 
-		if logFile != nil {
-			// Failing to write here is non-fatal and we don't want to spam our logs if there
-			// are issues
-			_, _ = fmt.Fprintln(logFile, progress)
-		}
+		// Failing to write here is non-fatal and we don't want to spam our logs if there
+		// are issues.
+		// Note: We explicitly write non-redacted progress here for better debugging.
+		_, _ = fmt.Fprintln(logFile, progress)
+
 		// Only write to the database persisted status if line indicates progress
 		// which is recognized by presence of a '%'. We filter these writes not to waste
 		// rate-limit tokens on log lines that would not be relevant to the user.
-		if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) &&
+		if enableDBProgressLogging &&
 			strings.Contains(redactedProgress, "%") &&
 			dbWritesLimiter.Allow() {
+			// TODO: Does this write progress at the end? I don't think we do a final write?
+			// TODO: Also, we don't seem to accumulate any logs while we skip writes.
 			if err := store.SetCloningProgress(ctx, repo, redactedProgress); err != nil {
 				logger.Error("error updating cloning progress in the db", log.Error(err))
 			}
@@ -2256,6 +2229,36 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.
 		logger.Error("error reporting progress", log.Error(err))
 	}
 }
+
+func cloneProgressLogFileWriter(logger log.Logger, reposDir string, repo api.RepoName) io.WriteCloser {
+	// If not enabled in config, return a no-op writer.
+	if !conf.Get().CloneProgressLog {
+		return nopCloseWriter{}
+	}
+
+	// We write all temporary files to the gitserver temp dir to avoid any issues
+	// with read-only rootFS.
+	tempDir, err := tempDir(reposDir, "clone-progress-log")
+	if err != nil {
+		logger.Warn("failed to create temp dir for clone progress log", log.Error(err))
+		return nopCloseWriter{}
+	}
+
+	logFile, err := os.CreateTemp(tempDir, "logfile")
+	if err != nil {
+		logger.Warn("failed to create temporary clone log file", log.Error(err), log.String("repo", string(repo)))
+		return nopCloseWriter{}
+	}
+
+	logger.Info("logging clone output", log.String("file", logFile.Name()), log.String("repo", string(repo)))
+	return logFile
+}
+
+// nopCloseWriter implements io.WriteCloser and discards all writes.
+type nopCloseWriter struct{}
+
+func (nopCloseWriter) Write(p []byte) (n int, err error) { return len(p), nil }
+func (nopCloseWriter) Close() error                      { return nil }
 
 // scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'
 // and it does not return tokens that contain only whitespace.
@@ -2312,10 +2315,6 @@ var (
 	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
-	})
-	lsRemoteQueue = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_lsremote_queue",
-		Help: "number of repos waiting to check existence on remote code host (git ls-remote).",
 	})
 	repoClonedCounter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repo_cloned",
