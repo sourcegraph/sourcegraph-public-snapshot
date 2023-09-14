@@ -69,8 +69,8 @@ internal class CodyTokenCredentialsUi(
         runCatching { SourcegraphServerPath.from(serverTextField.text, "") }.getOrNull()
             ?: return ""
     val productName = ApplicationNamesInfo.getInstance().fullProductName
-    val productNameDecoded = URLEncoder.encode(productName, "UTF-8")
-    return sourcegraphServerPath.url + "user/settings/tokens/new?description=" + productNameDecoded
+    val productNameEncoded= URLEncoder.encode(productName, "UTF-8")
+    return sourcegraphServerPath.url + "user/settings/tokens/new?description=" + productNameEncoded
   }
 
   override fun getValidator(): () -> ValidationInfo? = {
