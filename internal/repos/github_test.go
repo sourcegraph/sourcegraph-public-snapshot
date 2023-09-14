@@ -136,6 +136,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 	ratelimit.SetupForTest(t)
+	github.SetupForTest(t)
 
 	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
 	gheToken := prepareGheToken(t, fixtureName)
@@ -193,6 +194,7 @@ func prepareGheToken(t *testing.T, fixtureName string) string {
 }
 
 func TestGithubSource_GetRepo(t *testing.T) {
+	github.SetupForTest(t)
 	testCases := []struct {
 		name          string
 		nameWithOwner string
@@ -293,6 +295,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
+	github.SetupForTest(t)
 	testCases := []struct {
 		name          string
 		nameWithOwner string
@@ -408,6 +411,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	r := &github.Repository{
 		Description: "Fun nulls \x00\x00\x00",
@@ -429,6 +433,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
+	github.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -523,6 +528,7 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGitHubSource_doRecursively(t *testing.T) {
+	github.SetupForTest(t)
 	ctx := context.Background()
 
 	testCases := map[string]struct {
@@ -606,6 +612,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 }
 
 func TestGithubSource_ListRepos(t *testing.T) {
+	github.SetupForTest(t)
 	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -793,6 +800,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
@@ -827,6 +835,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
+	github.SetupForTest(t)
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
@@ -854,6 +863,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 }
 
 func TestGithubSource_GetVersion(t *testing.T) {
+	github.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
 		// The GitHubSource uses the github.Client under the hood, which
@@ -925,6 +935,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 }
 
 func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
+	github.SetupForTest(t)
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -992,6 +1003,7 @@ func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 }
 
 func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
+	github.SetupForTest(t)
 	for _, tc := range []struct {
 		name  string
 		query string
@@ -1064,6 +1076,7 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 }
 
 func TestGithubSource_SearchRepositories(t *testing.T) {
+	github.SetupForTest(t)
 	assertReposSearched := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -1269,6 +1282,7 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 // tests for GitHub App and non-GitHub App connections can be updated separately,
 // as setting up credentials for a GitHub App VCR test is significantly more effort.
 func TestGithubSource_ListRepos_GitHubApp(t *testing.T) {
+	github.SetupForTest(t)
 	// This private key is no longer valid. If this VCR test needs to be updated,
 	// a new GitHub App with new keys and secrets will have to be created
 	// and deleted afterwards.
