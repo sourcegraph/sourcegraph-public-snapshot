@@ -13,7 +13,13 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.cody.auth.ui.customAccountsPanel
-import com.sourcegraph.cody.config.*
+import com.sourcegraph.cody.config.CodyAccountDetailsProvider
+import com.sourcegraph.cody.config.CodyAccountListModel
+import com.sourcegraph.cody.config.CodyAccountManager
+import com.sourcegraph.cody.config.CodyAccountsHost
+import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.config.CodyProjectActiveAccountHolder
+import com.sourcegraph.cody.config.getFirstAccountOrNull
 import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
 import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
 import com.sourcegraph.config.ConfigUtil
@@ -60,7 +66,7 @@ class AccountConfigurable(val project: Project) :
                 row {
                     link("Open ${ConfigUtil.CODE_SEARCH_DISPLAY_NAME} settings...") {
                         ShowSettingsUtil.getInstance()
-                            .showSettingsDialog(project, CodyConfigurable::class.java)
+                            .showSettingsDialog(project, CodeSearchConfigurable::class.java)
                     }
                 }
             }
