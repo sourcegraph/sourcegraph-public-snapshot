@@ -36,12 +36,12 @@ func GetP4ChangelistID(body string) (string, error) {
 
 // ChangelistNotFoundError is an error that reports a revision doesn't exist.
 type ChangelistNotFoundError struct {
-	Repo api.RepoName
-	ID   string
+	RepoID api.RepoID
+	ID     int64
 }
 
 func (e *ChangelistNotFoundError) Error() string {
-	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.ID)
+	return fmt.Sprintf("changelist ID not found. repo=%d, changelist id=%d", e.RepoID, e.ID)
 }
 
 type BadChangelistError struct {
