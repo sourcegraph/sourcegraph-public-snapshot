@@ -86,6 +86,7 @@ type SearchJobsArgs struct {
 	States     *[]string
 	OrderBy    string
 	Descending bool
+	UserIDs    *[]graphql.ID
 }
 
 type SearchJobsConnectionResolver interface {

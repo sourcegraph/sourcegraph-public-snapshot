@@ -57,11 +57,23 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 		states = *args.States
 	}
 
+	var ids []int32
+	if args.UserIDs != nil {
+		for _, id := range *args.UserIDs {
+			userID, err := graphqlbackend.UnmarshalUserID(id)
+			if err != nil {
+				return nil, err
+			}
+			ids = append(ids, userID)
+		}
+	}
+
 	s := &searchJobsConnectionStore{
 		db:      db,
 		service: service,
 		states:  states,
 		query:   args.Query,
+		userIDs: ids,
 	}
 	return graphqlutil.NewConnectionResolver[graphqlbackend.SearchJobResolver](
 		s,
@@ -78,11 +90,12 @@ type searchJobsConnectionStore struct {
 	service *service.Service
 	states  []string
 	query   *string
+	userIDs []int32
 }
 
 func (s *searchJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
 	// TODO (stefan) add "Count" method to service
-	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{States: s.states, Query: s.query})
+	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{States: s.states, Query: s.query, UserIDs: s.userIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +105,7 @@ func (s *searchJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, e
 }
 
 func (s *searchJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.SearchJobResolver, error) {
-	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{PaginationArgs: args, States: s.states, Query: s.query})
+	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{PaginationArgs: args, States: s.states, Query: s.query, UserIDs: s.userIDs})
 	if err != nil {
 		return nil, err
 	}

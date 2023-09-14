@@ -53,6 +53,10 @@ extend type Query {
         """
         before: String
         """
+        List of users ids by which we will filter out search jobs list.
+        """
+        userIDs : [ID!]
+        """
         The query to filter the results by.
         """
         query: String
@@ -63,7 +67,7 @@ extend type Query {
         """
         The order by which to sort the results.
         """
-        orderBy: SearchJobsOrderBy = CREATED_DATE
+        orderBy: SearchJobsOrderBy = CREATED_AT
         """
         The determines the order of the returned searches. Defaults to ascending.
         """
@@ -110,11 +114,11 @@ enum SearchJobsOrderBy {
     """
     QUERY
     """
-    Sort search jobs by their created date.
+    Sort search jobs by their creation date.
     """
-    CREATED_DATE
+    CREATED_AT
     """
-    Sort search jobs by their started date.
+    Sort search jobs by their state.
     """
     STATE
 }

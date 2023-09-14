@@ -198,8 +198,9 @@ LIMIT 1
 
 type ListArgs struct {
 	*database.PaginationArgs
-	Query  *string
-	States []string
+	Query   *string
+	States  []string
+	UserIDs []int32
 }
 
 func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jobs []*types.ExhaustiveSearchJob, err error) {
@@ -227,8 +228,23 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		conds = append(conds, sqlf.Sprintf("state in (%s)", sqlf.Join(states, ",")))
 	}
 
-	// For now, we always limit the list to the jobs of the current user.
-	conds = append(conds, sqlf.Sprintf("initiator_id = %d", actor.UID))
+	// 🚨 SECURITY: Site admins see any job and may filter based on args.UserIDs.
+	// Other users only see their own jobs.
+	isSiteAdmin := auth.CheckUserIsSiteAdmin(ctx, s.db, actor.UID) == nil
+	if isSiteAdmin {
+		if len(args.UserIDs) > 0 {
+			ids := make([]*sqlf.Query, len(args.UserIDs))
+			for i, id := range args.UserIDs {
+				ids[i] = sqlf.Sprintf("%d", id)
+			}
+			conds = append(conds, sqlf.Sprintf("initiator_id in (%s)", sqlf.Join(ids, ",")))
+		}
+	} else {
+		if len(args.UserIDs) > 0 {
+			return nil, errors.New("cannot filter by user id if not a site admin")
+		}
+		conds = append(conds, sqlf.Sprintf("initiator_id = %d", actor.UID))
+	}
 
 	var pagination *database.QueryArgs
 	if args.PaginationArgs != nil {
@@ -251,8 +267,10 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		whereClause,
 	)
 
-	q = pagination.AppendOrderToQuery(q)
-	q = pagination.AppendLimitToQuery(q)
+	if pagination != nil {
+		q = pagination.AppendOrderToQuery(q)
+		q = pagination.AppendLimitToQuery(q)
+	}
 
 	fmt.Println(q.Query(sqlf.PostgresBindVar), q.Args())
 
