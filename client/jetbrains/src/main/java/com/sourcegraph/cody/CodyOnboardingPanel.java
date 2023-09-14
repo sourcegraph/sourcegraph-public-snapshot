@@ -1,16 +1,10 @@
 package com.sourcegraph.cody;
 
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
-import com.intellij.ui.components.AnActionLink;
+import com.intellij.ui.ColorUtil;
+import com.intellij.ui.SeparatorComponent;
 import com.intellij.util.ui.JBUI;
-import com.sourcegraph.cody.chat.ChatUIConstants;
-import com.sourcegraph.cody.chat.ContentWithGradientBorder;
-import com.sourcegraph.cody.config.ui.AccountConfigurable;
-import com.sourcegraph.cody.ui.Colors;
+import com.intellij.util.ui.UIUtil;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -24,45 +18,32 @@ public class CodyOnboardingPanel extends JPanel {
   // h2
   private static final int ADDITIONAL_PADDING_FOR_HEADER = PADDING - 10;
 
-  public CodyOnboardingPanel(
-      @NotNull Project project, @NotNull JEditorPane message, @NotNull JButton button) {
-    JPanel panelWithTheMessage =
-        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+  public CodyOnboardingPanel(@NotNull JEditorPane message, @NotNull JButton button) {
+    JPanel panelWithTheMessage = new JPanel();
+    panelWithTheMessage.setLayout(new BoxLayout(panelWithTheMessage, BoxLayout.Y_AXIS));
     message.setMargin(JBUI.emptyInsets());
     Border paddingInsideThePanel =
         JBUI.Borders.empty(ADDITIONAL_PADDING_FOR_HEADER, PADDING, 0, PADDING);
+    JLabel hiImCodyLabel = new JLabel(Icons.HiImCody);
+    JPanel hiImCodyPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+    hiImCodyPanel.add(hiImCodyLabel);
+    panelWithTheMessage.add(hiImCodyPanel);
     panelWithTheMessage.add(message);
     panelWithTheMessage.setBorder(paddingInsideThePanel);
+    JPanel separatorPanel = new JPanel(new BorderLayout());
+    separatorPanel.setBorder(JBUI.Borders.empty(PADDING, 0));
+    SeparatorComponent separatorComponent =
+        new SeparatorComponent(
+            3, ColorUtil.brighter(UIUtil.getPanelBackground(), 3), UIUtil.getPanelBackground());
+    separatorPanel.add(separatorComponent);
+    panelWithTheMessage.add(separatorPanel);
     JPanel buttonPanel = new JPanel(new BorderLayout());
     buttonPanel.add(button, BorderLayout.CENTER);
     buttonPanel.setOpaque(false);
-    buttonPanel.setBorder(JBUI.Borders.empty(PADDING, 0));
+    //    buttonPanel.setBorder(JBUI.Borders.empty(PADDING, 0));
     panelWithTheMessage.add(buttonPanel);
     this.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
     this.setBorder(JBUI.Borders.empty(PADDING));
     this.add(panelWithTheMessage);
-    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton(project);
-    this.add(goToSettingsPanel);
-  }
-
-  private JPanel createPanelWithGoToSettingsButton(@NotNull Project project) {
-    AnActionLink goToSettingsLink =
-        new AnActionLink(
-            "Sign in with an enterprise account",
-            new AnAction() {
-              @Override
-              public void actionPerformed(@NotNull AnActionEvent e) {
-                ShowSettingsUtil.getInstance()
-                    .showSettingsDialog(project, AccountConfigurable.class);
-              }
-            });
-    goToSettingsLink.setForeground(Colors.SECONDARY_LINK_COLOR);
-    goToSettingsLink.setAlignmentX(Component.CENTER_ALIGNMENT);
-    JPanel panelWithSettingsLink = new JPanel(new BorderLayout());
-    panelWithSettingsLink.setBorder(JBUI.Borders.empty(PADDING, 0));
-    JPanel linkPanel = new JPanel(new GridBagLayout());
-    linkPanel.add(goToSettingsLink);
-    panelWithSettingsLink.add(linkPanel, BorderLayout.PAGE_START);
-    return panelWithSettingsLink;
   }
 }
