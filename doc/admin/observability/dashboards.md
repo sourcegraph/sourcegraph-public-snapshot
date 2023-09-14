@@ -7718,11 +7718,11 @@ To see this dashboard, visit `/-/debug/grafana/d/github/github` on your Sourcegr
 
 ### GitHub: GitHub API monitoring
 
-#### github: src_github_concurrency_lock_waiting_requests
+#### github: src_githubcom_concurrency_lock_waiting_requests
 
 <p class="subtitle">Number of requests waiting on the global mutex</p>
 
-Refer to the [alerts reference](./alerts.md#github-src-github-concurrency-lock-waiting-requests) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-src-githubcom-concurrency-lock-waiting-requests) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100000` on your Sourcegraph instance.
 
@@ -7731,17 +7731,17 @@ To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100000` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_github_concurrency_lock_waiting_requests)`
+Query: `max(src_githubcom_concurrency_lock_waiting_requests)`
 
 </details>
 
 <br />
 
-#### github: src_github_concurrency_lock_failed_lock_requests
+#### github: src_githubcom_concurrency_lock_failed_lock_requests
 
 <p class="subtitle">Number of lock failures</p>
 
-Refer to the [alerts reference](./alerts.md#github-src-github-concurrency-lock-failed-lock-requests) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-src-githubcom-concurrency-lock-failed-lock-requests) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100010` on your Sourcegraph instance.
 
@@ -7750,17 +7750,17 @@ To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100010` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_github_concurrency_lock_failed_lock_requests[5m]))`
+Query: `sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))`
 
 </details>
 
 <br />
 
-#### github: src_github_concurrency_lock_failed_unlock_requests
+#### github: src_githubcom_concurrency_lock_failed_unlock_requests
 
 <p class="subtitle">Number of unlock failures</p>
 
-Refer to the [alerts reference](./alerts.md#github-src-github-concurrency-lock-failed-unlock-requests) for 1 alert related to this panel.
+Refer to the [alerts reference](./alerts.md#github-src-githubcom-concurrency-lock-failed-unlock-requests) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100011` on your Sourcegraph instance.
 
@@ -7769,13 +7769,13 @@ To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100011` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_github_concurrency_lock_failed_unlock_requests[5m]))`
+Query: `sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))`
 
 </details>
 
 <br />
 
-#### github: src_github_concurrency_lock_requests
+#### github: src_githubcom_concurrency_lock_requests
 
 <p class="subtitle">Number of locks taken global mutex</p>
 
@@ -7790,15 +7790,15 @@ To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100020` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_github_concurrency_lock_requests[5m]))`
+Query: `sum(rate(src_githubcom_concurrency_lock_requests[5m]))`
 
 </details>
 
 <br />
 
-#### github: src_github_concurrency_lock_acquire_duration_seconds_latency_p75
+#### github: src_githubcom_concurrency_lock_acquire_duration_seconds_latency_p75
 
-<p class="subtitle">75 percentile latency of src_github_concurrency_lock_acquire_duration_seconds</p>
+<p class="subtitle">75 percentile latency of src_githubcom_concurrency_lock_acquire_duration_seconds</p>
 
 99 percentile latency of acquiring the global GitHub concurrency lock.
 
@@ -7811,7 +7811,7 @@ To see this panel, visit `/-/debug/grafana/d/github/github?viewPanel=100021` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum(rate(src_github_concurrency_lock_acquire_duration_seconds_bucket[5m])) by (le))`
+Query: `histogram_quantile(0.75, sum(rate(src_githubcom_concurrency_lock_acquire_duration_seconds_bucket[5m])) by (le))`
 
 </details>
 

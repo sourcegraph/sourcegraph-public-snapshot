@@ -1862,7 +1862,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) 
 
 <br />
 
-## github: src_github_concurrency_lock_waiting_requests
+## github: src_githubcom_concurrency_lock_waiting_requests
 
 <p class="subtitle">number of requests waiting on the global mutex</p>
 
@@ -1875,12 +1875,12 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) 
 - 								- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
 								- **Check redis-store health.
 								- **Check GitHub status.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-github-concurrency-lock-waiting-requests).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-waiting-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github_src_github_concurrency_lock_waiting_requests"
+  "warning_github_src_githubcom_concurrency_lock_waiting_requests"
 ]
 ```
 
@@ -1889,13 +1889,13 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max(src_github_concurrency_lock_waiting_requests)) >= 100)`
+Generated query for warning alert: `max((max(src_githubcom_concurrency_lock_waiting_requests)) >= 100)`
 
 </details>
 
 <br />
 
-## github: src_github_concurrency_lock_failed_lock_requests
+## github: src_githubcom_concurrency_lock_failed_lock_requests
 
 <p class="subtitle">number of lock failures</p>
 
@@ -1907,12 +1907,12 @@ Generated query for warning alert: `max((max(src_github_concurrency_lock_waiting
 
 - 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
 							- **Check redis-store health.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-github-concurrency-lock-failed-lock-requests).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-lock-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github_src_github_concurrency_lock_failed_lock_requests"
+  "warning_github_src_githubcom_concurrency_lock_failed_lock_requests"
 ]
 ```
 
@@ -1921,13 +1921,13 @@ Generated query for warning alert: `max((max(src_github_concurrency_lock_waiting
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum(rate(src_github_concurrency_lock_failed_lock_requests[5m]))) >= 100)`
+Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))) >= 100)`
 
 </details>
 
 <br />
 
-## github: src_github_concurrency_lock_failed_unlock_requests
+## github: src_githubcom_concurrency_lock_failed_unlock_requests
 
 <p class="subtitle">number of unlock failures</p>
 
@@ -1939,12 +1939,12 @@ Generated query for warning alert: `max((sum(rate(src_github_concurrency_lock_fa
 
 - 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
 							- **Check redis-store health.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-github-concurrency-lock-failed-unlock-requests).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-unlock-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github_src_github_concurrency_lock_failed_unlock_requests"
+  "warning_github_src_githubcom_concurrency_lock_failed_unlock_requests"
 ]
 ```
 
@@ -1953,7 +1953,7 @@ Generated query for warning alert: `max((sum(rate(src_github_concurrency_lock_fa
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum(rate(src_github_concurrency_lock_failed_unlock_requests[5m]))) >= 100)`
+Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))) >= 100)`
 
 </details>
 

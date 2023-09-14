@@ -20,27 +20,27 @@ import (
 )
 
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_github_concurrency_lock_waiting_requests",
+	Name: "src_githubcom_concurrency_lock_waiting_requests",
 	Help: "Number of requests to GitHub.com waiting on the mutex",
 })
 
 var metricLockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_github_concurrency_lock_requests",
+	Name: "src_githubcom_concurrency_lock_requests",
 	Help: "Number of requests to GitHub.com that require a the mutex",
 })
 
 var metricFailedLockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_github_concurrency_lock_failed_lock_requests",
+	Name: "src_githubcom_concurrency_lock_failed_lock_requests",
 	Help: "Number of requests to GitHub.com that failed acquiring a the mutex",
 })
 
 var metricFailedUnlockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_github_concurrency_lock_failed_unlock_requests",
+	Name: "src_githubcom_concurrency_lock_failed_unlock_requests",
 	Help: "Number of requests to GitHub.com that failed unlocking a the mutex",
 })
 
 var metricLockRequestDurationGauge = promauto.NewHistogram(prometheus.HistogramOpts{
-	Name:    "src_github_concurrency_lock_acquire_duration_seconds",
+	Name:    "src_githubcom_concurrency_lock_acquire_duration_seconds",
 	Help:    "Current number of requests to GitHub.com running for a method.",
 	Buckets: prometheus.ExponentialBuckets(1, 2, 10),
 })
