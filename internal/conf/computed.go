@@ -746,6 +746,26 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
 		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
+		// If no endpoint is configured, no default available.
+		if completionsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "anthropic.claude-v2"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "anthropic.claude-instant-v1"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
+		}
 	}
 
 	// Make sure models are always treated case-insensitive.
@@ -1028,6 +1048,12 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		// We cannot know based on the model name what model is actually used,
 		// this is a sane default for GPT in general.
 		return 8_000
+	case conftypes.CompletionsProviderNameAWSBedrock:
+		if strings.HasPrefix(model, "anthropic.") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
+		}
+		// Fallback for weird values.
+		return 9_000
 	}
 
 	// Should be unreachable.
@@ -1039,7 +1065,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" {
+	if model == "claude-2" || model == "claude-v2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate
 		// that returning 100k here is the right thing to do.
 		return 12_000

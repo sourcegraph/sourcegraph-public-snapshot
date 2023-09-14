@@ -1,10 +1,12 @@
 package com.sourcegraph.cody.agent;
 
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public class ExtensionConfiguration {
 
   public String serverEndpoint;
+  public String proxy;
   public String accessToken;
   public Map<String, String> customHeaders;
   public String autocompleteAdvancedProvider;
@@ -13,10 +15,15 @@ public class ExtensionConfiguration {
   public boolean autocompleteAdvancedEmbeddings;
   public boolean debug;
   public boolean verboseDebug;
-  public String codebase;
+  @Nullable public String codebase;
 
   public ExtensionConfiguration setServerEndpoint(String serverEndpoint) {
     this.serverEndpoint = serverEndpoint;
+    return this;
+  }
+
+  public ExtensionConfiguration setProxy(String proxy) {
+    this.proxy = proxy;
     return this;
   }
 
@@ -74,6 +81,9 @@ public class ExtensionConfiguration {
     return "ExtensionConfiguration{"
         + "serverEndpoint='"
         + serverEndpoint
+        + '\''
+        + ", proxy='"
+        + proxy
         + '\''
         + ", accessToken='"
         + accessToken

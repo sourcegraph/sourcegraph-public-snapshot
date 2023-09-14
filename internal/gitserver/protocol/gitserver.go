@@ -254,6 +254,9 @@ func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
+	// ensureRevision is the revision to ensure is present in the repository before running the git command.
+	//
+	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
 	EnsureRevision string   `json:"ensureRevision"`
 	Args           []string `json:"args"`
 	Stdin          []byte   `json:"stdin,omitempty"`
@@ -642,11 +645,10 @@ type CreateCommitFromPatchRequest struct {
 	PushRef *string
 }
 
-func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
-	cc := &proto.CreateCommitFromPatchBinaryRequest{
+func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFromPatchBinaryRequest_Metadata {
+	cc := &proto.CreateCommitFromPatchBinaryRequest_Metadata{
 		Repo:         string(c.Repo),
 		BaseCommit:   string(c.BaseCommit),
-		Patch:        c.Patch,
 		TargetRef:    c.TargetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
@@ -661,7 +663,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata, patch []byte) {
 	gp := p.GetPush()
 	var pushConfig *PushConfig
 	if gp != nil {
@@ -672,9 +674,9 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
-		Patch:        p.GetPatch(),
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
+		Patch:        patch,
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
@@ -776,29 +778,28 @@ type CreateCommitFromPatchResponse struct {
 	ChangelistId string
 }
 
-func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
-	var err *proto.CreateCommitFromPatchError
-	if r.Error != nil {
-		err = r.Error.ToProto()
-	} else {
-		err = nil
-	}
-	return &proto.CreateCommitFromPatchBinaryResponse{
+func (r *CreateCommitFromPatchResponse) ToProto() (*proto.CreateCommitFromPatchBinaryResponse, *proto.CreateCommitFromPatchError) {
+	res := &proto.CreateCommitFromPatchBinaryResponse{
 		Rev:          r.Rev,
-		Error:        err,
 		ChangelistId: r.ChangelistId,
 	}
+
+	if r.Error != nil {
+		return res, r.Error.ToProto()
+	}
+
+	return res, nil
 }
 
-func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatchBinaryResponse) {
-	if p.GetError() == nil {
+func (r *CreateCommitFromPatchResponse) FromProto(res *proto.CreateCommitFromPatchBinaryResponse, err *proto.CreateCommitFromPatchError) {
+	if err == nil {
 		r.Error = nil
 	} else {
 		r.Error = &CreateCommitFromPatchError{}
-		r.Error.FromProto(p.GetError())
+		r.Error.FromProto(err)
 	}
-	r.Rev = p.GetRev()
-	r.ChangelistId = p.ChangelistId
+	r.Rev = res.GetRev()
+	r.ChangelistId = res.ChangelistId
 }
 
 // SetError adds the supplied error related details to e.

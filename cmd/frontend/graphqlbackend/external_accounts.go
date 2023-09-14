@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -126,6 +127,13 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	ExternalAccount graphql.ID
 },
 ) (*EmptyResponse, error) {
+	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "disallow-user-external-account-deletion")
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	} else if ff != nil && ff.Bool != nil && ff.Bool.Value {
+		return nil, errors.New("unlinking external account is not allowed")
+	}
+
 	id, err := unmarshalExternalAccountID(args.ExternalAccount)
 	if err != nil {
 		return nil, err

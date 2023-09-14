@@ -17,10 +17,10 @@ trap cleanup EXIT
   mkdir bin
 
   # Install melange from Sourcegraph cache
-  # Source: https://github.com/chainguard-dev/melange/releases/download/v0.2.0/melange_0.2.0_linux_amd64.tar.gz
-  wget https://storage.googleapis.com/package-repository/ci-binaries/melange_0.2.0_linux_amd64.tar.gz
-  tar zxf melange_0.2.0_linux_amd64.tar.gz
-  mv melange_0.2.0_linux_amd64/melange bin/melange
+  # Source: https://github.com/chainguard-dev/melange/releases/download/v0.4.0/melange_0.4.0_linux_amd64.tar.gz
+  wget https://storage.googleapis.com/package-repository/ci-binaries/melange_0.4.0_linux_amd64.tar.gz
+  tar zxf melange_0.4.0_linux_amd64.tar.gz
+  mv melange_0.4.0_linux_amd64/melange bin/melange
 
   # Install apk from Sourcegraph cache
   # Source: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic//v2.12.11/x86_64/apk.static

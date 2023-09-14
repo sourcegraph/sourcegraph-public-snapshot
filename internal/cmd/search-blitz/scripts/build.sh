@@ -6,6 +6,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 if [ -z "$1" ]; then
   echo "USAGE $0 VERSION"
   echo "To see current versions visit https://console.cloud.google.com/gcr/images/sourcegraph-dev/us/search-blitz?project=sourcegraph-dev"
+  gcloud container images list-tags us.gcr.io/sourcegraph-dev/search-blitz
   exit 1
 fi
 

@@ -11,6 +11,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/conc/pool"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
@@ -53,7 +55,7 @@ sg run gitserver frontend repo-updater
 # View configuration for a command
 sg run -describe jaeger
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "describe",

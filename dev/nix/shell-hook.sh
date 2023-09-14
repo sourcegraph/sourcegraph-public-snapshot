@@ -18,11 +18,17 @@ export SRC_DEV_EXCEPT="${SRC_DEV_EXCEPT:-postgres_exporter}"
 
 popd >/dev/null || exit
 
-# We run this check afterwards so we can read the values exported by the
-# start-*.sh scripts. We need to smuggle in these envvars for tests.
+# Use a hermetic and non-host CC compiler on NixOS.
 if [ -f /etc/NIXOS ]; then
   cat <<EOF > .bazelrc-nix
 build --extra_toolchains=@zig_sdk//toolchain:linux_amd64_gnu.2.34
+EOF
+fi
+
+# We run this check afterwards so we can read the values exported by the
+# start-*.sh scripts. We need to smuggle in these envvars for tests on both
+# linux and darwin.
+cat <<EOF > .bazelrc-nix
 build --action_env=PATH=$BAZEL_ACTION_PATH
 build --action_env=REDIS_ENDPOINT
 build --action_env=PGHOST
@@ -31,4 +37,3 @@ build --action_env=PGDATABASE
 build --action_env=PGDATASOURCE
 build --action_env=PGUSER
 EOF
-fi

@@ -1,0 +1,31 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gerrit",
+    srcs = ["config.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/gerrit",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/auth/providers",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/extsvc",
+        "//internal/extsvc/gerrit",
+        "//schema",
+    ],
+)
+
+go_test(
+    name = "gerrit_test",
+    timeout = "short",
+    srcs = ["config_test.go"],
+    embed = [":gerrit"],
+    deps = [
+        "//internal/conf",
+        "//internal/extsvc",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

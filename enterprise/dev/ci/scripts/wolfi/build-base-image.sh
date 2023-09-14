@@ -26,10 +26,10 @@ trap cleanup EXIT
   mkdir bin
 
   # Install apko from Sourcegraph cache
-  # Source: https://github.com/chainguard-dev/apko/releases/download/v0.6.0/apko_0.6.0_linux_amd64.tar.gz
-  wget https://storage.googleapis.com/package-repository/ci-binaries/apko_0.6.0_linux_amd64.tar.gz
-  tar zxf apko_0.6.0_linux_amd64.tar.gz
-  mv apko_0.6.0_linux_amd64/apko bin/apko
+  # Source: https://github.com/chainguard-dev/apko/releases/download/v0.10.0/apko_0.10.0_linux_amd64.tar.gz
+  wget https://storage.googleapis.com/package-repository/ci-binaries/apko_0.10.0_linux_amd64.tar.gz
+  tar zxf apko_0.10.0_linux_amd64.tar.gz
+  mv apko_0.10.0_linux_amd64/apko bin/apko
 
   # Install apk from Sourcegraph cache
   # Source: https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic//v2.12.11/x86_64/apk.static
@@ -101,19 +101,28 @@ apko build --debug "${add_custom_repo_cmd[@]}" \
   (echo "*** Build failed ***" && exit 1)
 
 # Tag image and upload to GCP Artifact Registry
+echo " * Loading built image into docker daemon..."
 docker load <"$tarball"
 
+# https://github.com/chainguard-dev/apko/issues/529
+# there is an unexpcted behaviour in upstream
+# where the arch is always appended to the tag
+# hardcode for now as we only support linux/amd64 anyway
+local_image_name="$image_name:latest-amd64"
+
 # Push to internal dev repo
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+echo " * Pushing image to internal dev repo..."
+docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+docker tag "$local_image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 
 # Push to Dockerhub only on main branch
 if [[ "$IS_MAIN" == "true" ]]; then
-  docker tag "$image_name" "sourcegraph/wolfi-${name}-base:$tag"
+  echo " * Pushing image to prod repo..."
+  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:$tag"
   docker push "sourcegraph/wolfi-${name}-base:$tag"
-  docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
+  docker tag "$local_image_name" "sourcegraph/wolfi-${name}-base:latest"
   docker push "sourcegraph/wolfi-${name}-base:latest"
 fi
 

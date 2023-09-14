@@ -7,6 +7,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/security",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/envvar",
+        "//internal/collections",
         "//internal/conf",
         "//internal/errcode",
         "//internal/lazyregexp",
@@ -50,5 +52,6 @@ go_test(
         "//internal/conf",
         "//schema",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

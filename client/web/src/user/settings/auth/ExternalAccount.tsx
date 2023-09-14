@@ -1,4 +1,4 @@
-import React, { useState, useCallback, FC } from 'react'
+import React, { useState, useCallback, type FC } from 'react'
 
 import type { ErrorLike } from '@sourcegraph/common'
 import { Button, Link, H3 } from '@sourcegraph/wildcard'

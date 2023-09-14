@@ -37,6 +37,9 @@ public interface CodyAgentServer {
   @JsonRequest("graphql/currentUserId")
   CompletableFuture<String> currentUserId();
 
+  @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
+  CompletableFuture<String> getRepoIdIfEmbeddingExists(EmbeddingExistsParams repoName);
+
   // Notifications
   @JsonNotification("initialized")
   void initialized();
@@ -61,4 +64,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("debug/message")
   void debugMessage(DebugMessage message);
+
+  @JsonNotification("autocomplete/clearLastCandidate")
+  void autocompleteClearLastCandidate();
 }

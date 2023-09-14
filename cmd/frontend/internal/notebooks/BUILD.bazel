@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "notebooks",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/internal/notebooks/resolvers",
+        "//internal/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/observation",
+    ],
+)

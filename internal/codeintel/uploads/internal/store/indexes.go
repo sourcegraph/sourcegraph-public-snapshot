@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -18,7 +17,7 @@ import (
 )
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error) {
+func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.String("state", opts.State),
@@ -118,7 +117,8 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -147,7 +147,7 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
-func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -173,6 +173,7 @@ func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 		&index.AssociatedUploadID,
 		&index.ShouldReindex,
 		pq.Array(&index.RequestedEnvVars),
+		&index.EnqueuerUserID,
 	); err != nil {
 		return index, err
 	}
@@ -183,7 +184,7 @@ func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error) {
+func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("id", id),
 	}})
@@ -191,7 +192,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return uploadsshared.Index{}, false, err
+		return shared.Index{}, false, err
 	}
 
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
@@ -221,7 +222,8 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -231,7 +233,7 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []uploadsshared.Index, err error) {
+func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.IntSlice("ids", ids),
 	}})
@@ -278,7 +280,8 @@ SELECT
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
 	u.should_reindex,
-	u.requested_envvars
+	u.requested_envvars,
+	u.enqueuer_user_id
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id

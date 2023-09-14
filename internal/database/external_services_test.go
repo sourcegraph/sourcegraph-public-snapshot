@@ -2585,3 +2585,20 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 		t.Fatalf("Expected 0 external service repos, got %d", len(haveRepos))
 	}
 }
+
+func Test_validateOtherExternalServiceConnection(t *testing.T) {
+	conn := &schema.OtherExternalServiceConnection{
+		MakeReposPublicOnDotCom: true,
+	}
+	// When not on DotCom, validation of a connection with "makeReposPublicOnDotCom" set to true should fail
+	err := validateOtherExternalServiceConnection(conn)
+	require.Error(t, err)
+
+	// On DotCom, no error should be returned
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
+	err = validateOtherExternalServiceConnection(conn)
+	require.NoError(t, err)
+}

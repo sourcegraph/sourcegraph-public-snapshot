@@ -17,7 +17,7 @@ type Config struct {
 
 	InsecureDev bool
 
-	Address string
+	Port int
 
 	DiagnosticsSecret string
 
@@ -73,7 +73,7 @@ type OpenTelemetryConfig struct {
 
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
-	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve Cody Gateway on.")
+	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
 	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
@@ -121,13 +121,14 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for OpenAI"))
 	}
 
-	c.Fireworks.AccessToken = c.Get("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "", "The Fireworks access token to be used.")
+	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
 			"accounts/fireworks/models/starcoder-16b-w8a16",
 			"accounts/fireworks/models/starcoder-7b-w8a16",
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/wizardcoder-15b",

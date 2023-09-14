@@ -31,7 +31,7 @@ The Sourcegraph backend, or "single binary" as it was previously known, contains
     -o .bin/sourcegraph-backend-aarch64-apple-darwin \
     -tags dist \
     -ldflags '-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app' \
-    ./enterprise/cmd/sourcegraph
+    ./cmd/sourcegraph
    ```
 
 3. The previous command will put a binary in `.bin` named `sourcegraph-backend-aarch64-apple-darwin`. Take note of the name, which is `sourcegraph-backend`. This name has to match the sidecar name in the `tauri.conf.json` and in the Rust code!

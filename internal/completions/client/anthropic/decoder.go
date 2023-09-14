@@ -74,7 +74,7 @@ func (d *decoder) Scan() bool {
 			// Just ignore these and continue scanning.
 			continue
 		default:
-			d.err = errors.Errorf("malformed data, expected data: %s", typ)
+			d.err = errors.Errorf("malformed data, expected data: %s %q", typ, line)
 			return false
 		}
 	}

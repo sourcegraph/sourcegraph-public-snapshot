@@ -12,13 +12,14 @@ import com.sourcegraph.Icons;
 import java.awt.datatransfer.StringSelection;
 import java.net.URI;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BrowserErrorNotification {
-  public static void show(Project project, URI uri) {
+  public static void show(@Nullable Project project, URI uri) {
     Notification notification =
         new Notification(
-            "Cody AI by Sourcegraph errors",
-            "Cody AI by Sourcegraph",
+            "Sourcegraph errors",
+            "Sourcegraph",
             "Opening an external browser is not supported. You can still copy the URL to your clipboard and open it manually.",
             NotificationType.WARNING);
     AnAction copyUrlAction =

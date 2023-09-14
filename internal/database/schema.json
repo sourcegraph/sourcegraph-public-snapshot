@@ -11768,16 +11768,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_jobs_pkey ON exhaustive_search_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "exhaustive_search_jobs_query_initiator_id_key",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX exhaustive_search_jobs_query_initiator_id_key ON exhaustive_search_jobs USING btree (query, initiator_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (query, initiator_id)"
         }
       ],
       "Constraints": [
@@ -16582,6 +16572,19 @@
           "Comment": "An array of pre-index [steps](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/stores/dbstore/docker_step.go#L9:6) to run."
         },
         {
+          "Name": "enqueuer_user_id",
+          "Index": 26,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 18,
           "TypeName": "json[]",
@@ -16873,6 +16876,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE state \u003c\u003e 'deleted'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_indexes_dequeue_order_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree ((enqueuer_user_id \u003e 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -29403,7 +29416,7 @@
     },
     {
       "Name": "lsif_indexes_with_repository_name",
-      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    u.should_reindex,\n    u.requested_envvars,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
+      "Definition": " SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    u.should_reindex,\n    u.requested_envvars,\n    r.name AS repository_name,\n    u.enqueuer_user_id\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);"
     },
     {
       "Name": "lsif_uploads_with_repository_name",

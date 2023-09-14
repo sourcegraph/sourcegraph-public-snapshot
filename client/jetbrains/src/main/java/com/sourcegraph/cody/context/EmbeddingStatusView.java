@@ -2,16 +2,15 @@ package com.sourcegraph.cody.context;
 
 import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
-import com.sourcegraph.cody.editor.EditorUtil;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentClient;
+import com.sourcegraph.cody.agent.protocol.EmbeddingExistsParams;
 import java.awt.FlowLayout;
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -43,13 +42,33 @@ public class EmbeddingStatusView extends JPanel {
     innerPanel.setBorder(new EmptyBorder(JBUI.insets(TEXT_MARGIN, TEXT_MARGIN, 0, TEXT_MARGIN)));
     this.add(innerPanel);
 
-    this.setEmbeddingStatus(new NoGitRepositoryEmbeddingStatus());
+    this.updateEmbeddingStatus();
+
     project
         .getMessageBus()
         .connect()
         .subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
             new CurrentlyOpenFileListener(project, this));
+  }
+
+  public void updateEmbeddingStatus() {
+    CodyAgentClient client = CodyAgent.getClient(project);
+    String repoName = client.codebase != null ? client.codebase.currentCodebase : null;
+    if (repoName == null) {
+      this.setEmbeddingStatus(new NoGitRepositoryEmbeddingStatus());
+    } else {
+      this.setEmbeddingStatus(new RepositoryMissingEmbeddingStatus(repoName));
+      CodyAgent.getInitializedServer(project)
+          .thenCompose(
+              server -> server.getRepoIdIfEmbeddingExists(new EmbeddingExistsParams(repoName)))
+          .thenAccept(
+              id -> {
+                if (id != null) {
+                  this.setEmbeddingStatus(new RepositoryIndexedEmbeddingStatus(repoName));
+                }
+              });
+    }
   }
 
   private void updateViewBasedOnStatus() {
@@ -69,17 +88,6 @@ public class EmbeddingStatusView extends JPanel {
   public void setEmbeddingStatus(EmbeddingStatus embeddingStatus) {
     this.embeddingStatus = embeddingStatus;
     updateViewBasedOnStatus();
-  }
-
-  private void updateEmbeddingStatusView() {
-    VirtualFile currentFile;
-    try {
-      currentFile = EditorUtil.getCurrentFile(project);
-    } catch (AlreadyDisposedException e) {
-      return;
-    }
-
-    ApplicationManager.getApplication().executeOnPooledThread(() -> {});
   }
 
   public void setOpenedFileName(@NotNull String fileName, @Nullable String filePath) {
