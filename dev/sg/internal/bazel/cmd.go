@@ -11,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+// announce displays a highlighted bazel command that is supposed to be run
+// after the announcement. This is meant to teach our users what Bazel commands
+// are run under the hood, rather than creating an opaque layer that will lead
+// to support request anytime Bazel is involved.
 func announce(command string, args ...string) {
 	std.Out.WriteLine(
 		output.Linef(
