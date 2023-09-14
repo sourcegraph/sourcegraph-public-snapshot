@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/sshagent"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -119,13 +120,13 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
-	redactor := newURLRedactor(remoteURL)
+	redactor := urlredactor.New(remoteURL)
 	defer func() {
 		if resp.Error != nil {
-			resp.Error.Command = redactor.redact(resp.Error.Command)
-			resp.Error.CombinedOutput = redactor.redact(resp.Error.CombinedOutput)
+			resp.Error.Command = redactor.Redact(resp.Error.Command)
+			resp.Error.CombinedOutput = redactor.Redact(resp.Error.CombinedOutput)
 			if resp.Error.InternalError != "" {
-				resp.Error.InternalError = redactor.redact(resp.Error.InternalError)
+				resp.Error.InternalError = redactor.Redact(resp.Error.InternalError)
 			}
 		}
 	}()
@@ -155,7 +156,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 		logger := logger.With(
 			log.String("prefix", prefix),
-			log.String("command", redactor.redact(argsToString(cmd.Args))),
+			log.String("command", redactor.Redact(argsToString(cmd.Args))),
 			log.Duration("duration", time.Since(t)),
 			log.String("output", string(out)),
 		)

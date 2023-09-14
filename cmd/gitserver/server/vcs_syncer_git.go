@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -82,7 +83,7 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName 
 	dir.Set(cmd)
 	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), configRemoteOpts, nil)
 	if err != nil {
-		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
+		return nil, &common.GitCommandError{Err: err, Output: urlredactor.New(remoteURL).Redact(string(output))}
 	}
 	return output, nil
 }
