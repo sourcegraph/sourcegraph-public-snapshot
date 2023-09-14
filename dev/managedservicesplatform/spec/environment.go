@@ -76,9 +76,17 @@ type EnvironmentDeployManualSpec struct {
 }
 
 type EnvironmentDomainSpec struct {
-	Type       string                           `json:"type"`
+	// Type is one of 'none' or 'cloudflare'. If empty, defaults to 'none'.
+	Type       EnvironmentDomainType            `json:"type"`
 	Cloudflare *EnvironmentDomainCloudflareSpec `json:"cloudflare,omitempty"`
 }
+
+type EnvironmentDomainType string
+
+const (
+	EnvironmentDomainTypeNone       = "none"
+	EnvironmentDomainTypeCloudflare = "cloudflare"
+)
 
 type EnvironmentDomainCloudflareSpec struct {
 	Subdomain string `json:"subdomain"`
@@ -87,7 +95,9 @@ type EnvironmentDomainCloudflareSpec struct {
 	// Proxied configures whether Cloudflare should proxy all traffic to get
 	// WAF protection instead of only DNS resolution.
 	Proxied bool `json:"proxied,omitempty"`
+
 	// Required configures whether traffic can only be allowed through Cloudflare.
+	// TODO: Unimplemented.
 	Required bool `json:"required,omitempty"`
 }
 
