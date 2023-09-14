@@ -26,13 +26,13 @@ const stalledIndexMaxAge = time.Second * 25
 const indexMaxNumResets = 3
 
 var (
-	useFifoAlgorithm    = env.MustGetBool("CODEINTEL_AUTOINDEXING_DEQUEUE_FIFO_ALGORITHM", false, "Use the original FIFO dequeueing algorithm instead of the newer moving-windo algorithm.")
-	indexLookbackWindow = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_CANDIDATE_JOB_WINDOW", "1d", "The window from the latest enqueued job to consider when finding candidate jobs to run.")
-	repoDequeueCooldown = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_COOLDOWN_DEBUFF", "6h", "How soon a repository should be on cooldown after a successful index before it can be a candidate when the most recently queued job is outside the lookback window.")
+	AutoIndexingUseFifoAlgorithm = env.MustGetBool("CODEINTEL_AUTOINDEXING_DEQUEUE_FIFO_ALGORITHM", false, "Use the original FIFO dequeueing algorithm instead of the newer moving-window algorithm.")
+	indexLookbackWindow          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_CANDIDATE_JOB_WINDOW", "1d", "The window from the latest enqueued job to consider when finding candidate jobs to run.")
+	repoDequeueCooldown          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_COOLDOWN_DEBUFF", "6h", "How soon a repository should be on cooldown after a successful index before it can be a candidate when the most recently queued job is outside the lookback window.")
 )
 
 var IndexWorkerStoreOptions = func() dbworkerstore.Options[uploadsshared.Index] {
-	if useFifoAlgorithm {
+	if AutoIndexingUseFifoAlgorithm {
 		return dbworkerstore.Options[uploadsshared.Index]{
 			Name:              "codeintel_index",
 			TableName:         "lsif_indexes",

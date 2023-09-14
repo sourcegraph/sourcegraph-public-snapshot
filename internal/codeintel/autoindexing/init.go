@@ -18,6 +18,7 @@ var (
 	IndexWorkerStoreOptions                 = background.IndexWorkerStoreOptions
 	DependencySyncingJobWorkerStoreOptions  = background.DependencySyncingJobWorkerStoreOptions
 	DependencyIndexingJobWorkerStoreOptions = background.DependencyIndexingJobWorkerStoreOptions
+	AutoIndexingUseFifoAlgorithm            = dependencies.AutoIndexingUseFifoAlgorithm
 )
 
 func NewService(
