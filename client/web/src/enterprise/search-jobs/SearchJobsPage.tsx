@@ -111,16 +111,14 @@ export const SearchJobsPage: FC = props => {
     >({
         query: SEARCH_JOBS_QUERY,
         variables: {
-            first: 5,
+            first: 20,
             after: null,
-            query: searchStateTerm,
+            query: searchTerm,
             states: selectedStates,
             orderBy: sortBy,
         },
         options: {
-            // Comment out since it causes problem in storybook stories,
-            // TODO Bring back polling interval as soon as BE is ready
-            // pollInterval: 5000,
+            pollInterval: 5000,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
