@@ -64,19 +64,15 @@ var AlertFuncs []func(AlertFuncArgs) []*Alert
 // Site.alerts value. They allow the functions to customize the returned alerts based on the
 // identity of the viewer (without needing to query for that on their own, which would be slow).
 type AlertFuncArgs struct {
-	IsAuthenticated      bool             // whether the viewer is authenticated
-	IsSiteAdmin          bool             // whether the viewer is a site admin
-	ViewerFinalSettings  *schema.Settings // the viewer's final user/org/global settings
-	GitserverSystemsInfo []gitserver.SystemInfo
+	IsAuthenticated     bool             // whether the viewer is authenticated
+	IsSiteAdmin         bool             // whether the viewer is a site admin
+	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
+
+	gitserverClient gitserver.Client // gitserver client
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	settings, err := settings.CurrentUserFinal(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-
-	si, err := r.gitserverClient.SystemsInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +82,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
 
-		// GitserverSystemsInfo retrieves disk information from all gitserver instances.
-		GitserverSystemsInfo: si,
+		gitserverClient: r.gitserverClient,
 	}
 
 	var alerts []*Alert
@@ -232,8 +227,6 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
-	// TODO(app): App Update Messaging
-	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsApp() {
 		return nil
 	}
@@ -495,13 +488,18 @@ func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
 		return nil
 	}
 
-	var alerts []*Alert
+	si, err := args.gitserverClient.SystemsInfo(context.Background())
+	if err != nil {
+		log15.Warn("Failed to gitserver systems info", "error", err)
+		return nil
+	}
 
-	for _, s := range args.GitserverSystemsInfo {
+	var alerts []*Alert
+	for _, s := range si {
 		if s.PercentUsed >= gitserverDiskAlertThreshold {
 			alerts = append(alerts, &Alert{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: fmt.Sprintf("The disk usage on gitserver **%q** is over 90%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, s.PercentUsed),
+				MessageValue: fmt.Sprintf("The disk usage on gitserver **%q** is over %d%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, gitserverDiskAlertThreshold, s.PercentUsed),
 			})
 		}
 	}

@@ -193,17 +193,23 @@ func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
 	})
 
 	t.Run("alert when usage exceeds threshold", func(t *testing.T) {
-		args := AlertFuncArgs{
-			IsSiteAdmin: true,
-			GitserverSystemsInfo: []gitserver.SystemInfo{
-				{Address: "gitserver1", PercentUsed: 95},
+		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
+			{
+				Address:     "gitserver1",
+				PercentUsed: 95.56394,
 			},
+		}, nil)
+
+		args := AlertFuncArgs{
+			IsSiteAdmin:     true,
+			gitserverClient: gitserverClient,
 		}
 
 		wantAlerts := []*Alert{
 			{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "The disk usage on gitserver \"gitserver1\" is over 90% (95.00% used). Free up disk space to avoid potential issues.",
+				MessageValue: "The disk usage on gitserver **\"gitserver1\"** is over 90% (95.56% used). Free up disk space to avoid potential issues.",
 			},
 		}
 
@@ -213,22 +219,35 @@ func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
 	})
 
 	t.Run("multiple alerts", func(t *testing.T) {
-		args := AlertFuncArgs{
-			IsSiteAdmin: true,
-			GitserverSystemsInfo: []gitserver.SystemInfo{
-				{Address: "gitserver1", PercentUsed: 95},
-				{Address: "gitserver2", PercentUsed: 92},
+		gitserverClient := gitserver.NewMockClient()
+		gitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
+			{
+				Address:     "gitserver1",
+				PercentUsed: 95.56394,
 			},
+			{
+				Address:     "gitserver2",
+				PercentUsed: 50.12345,
+			},
+			{
+				Address:     "gitserver3",
+				PercentUsed: 92.8432,
+			},
+		}, nil)
+
+		args := AlertFuncArgs{
+			IsSiteAdmin:     true,
+			gitserverClient: gitserverClient,
 		}
 
 		wantAlerts := []*Alert{
 			{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "The disk usage on gitserver \"gitserver1\" is over 90% (95.00% used). Free up disk space to avoid potential issues.",
+				MessageValue: "The disk usage on gitserver **\"gitserver1\"** is over 90% (95.56% used). Free up disk space to avoid potential issues.",
 			},
 			{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: "The disk usage on gitserver \"gitserver2\" is over 90% (92.00% used). Free up disk space to avoid potential issues.",
+				MessageValue: "The disk usage on gitserver **\"gitserver3\"** is over 90% (92.84% used). Free up disk space to avoid potential issues.",
 			},
 		}
 
