@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -126,6 +127,27 @@ func (r *externalServiceResolver) Kind() string {
 
 func (r *externalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
+}
+
+func (r *externalServiceResolver) RateLimiterState(ctx context.Context) (JSONValue, error) {
+	info, err := ratelimit.GetGlobalLimiterState(ctx)
+	if err != nil {
+		return JSONValue{}, errors.Wrap(err, "getting rate limiter state")
+	}
+
+	state, ok := info[r.externalService.URN()]
+	if !ok {
+		return JSONValue{}, errors.Errorf("no rate limiter state for %s", r.externalService.URN())
+	}
+
+	return JSONValue{Value: &types.ExternalServiceRateLimiterState{
+		CurrentCapacity:   state.CurrentCapacity,
+		Burst:             state.Burst,
+		Limit:             state.Limit,
+		Interval:          state.Interval/time.Second,
+		LastReplenishment: state.LastReplenishment,
+		Infinite:          state.Infinite,
+	}}, nil
 }
 
 func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, error) {

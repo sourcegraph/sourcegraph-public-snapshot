@@ -679,6 +679,15 @@ type ExternalServiceRepository struct {
 	ExternalID string       `json:"external_id"`
 }
 
+type ExternalServiceRateLimiterState struct {
+	CurrentCapacity   int           `json:"currentCapacity"`
+	Burst             int           `json:"burst"`
+	Limit             int           `json:"limit"`
+	Interval          time.Duration `json:"interval"`
+	LastReplenishment time.Time     `json:"lastReplenishment"`
+	Infinite          bool          `json:"infinite"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {

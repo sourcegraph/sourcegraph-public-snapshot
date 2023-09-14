@@ -3280,6 +3280,11 @@ type ExternalService implements Node {
     displayName: String!
 
     """
+    The current rate limiter state for the external service.
+    """
+    rateLimiterState: JSONValue!
+
+    """
     The JSON configuration of the external service.
     """
     config: JSONCString!

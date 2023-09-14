@@ -7,6 +7,8 @@ import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from '../../site-admin/WebhookInformation.module.scss'
 
+import { RateLimiterState } from './backend'
+
 interface ExternalServiceInformationProps {
     /**
      * Icon to show in the external service "button".
@@ -14,6 +16,7 @@ interface ExternalServiceInformationProps {
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     kind: ExternalServiceKind
     displayName: string
+    rateLimiterState?: RateLimiterState,
     codeHostID: string
     reposNumber: number
     syncInProgress: boolean
@@ -23,8 +26,34 @@ interface ExternalServiceInformationProps {
     } | null
 }
 
+export const RateLimiterStateInfo: FC<{ rateLimiterState: RateLimiterState }> = props => {
+    const { rateLimiterState } = props;
+    const rateLimiterDebug = Object.entries(rateLimiterState).map(([k,v]) => (
+        <div>{k}: {v.toString()}</div>
+    ))
+
+    return (
+        <tr>
+            <th className={styles.tableHeader}>Rate limit</th>
+            {rateLimiterState.infinite ? (
+                <td>
+                    <Tooltip content={rateLimiterDebug}>
+                        <span>No rate limit</span>
+                    </Tooltip>
+                </td>
+            ) : (
+                <td>
+                    <Tooltip content={rateLimiterDebug}>
+                        <span>{(3600 * rateLimiterState.limit / rateLimiterState.interval).toFixed()} requests per hour</span>
+                    </Tooltip>
+                </td>
+            )}
+        </tr>
+    )
+}
+
 export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = props => {
-    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress, gitHubApp } = props
+    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress, gitHubApp, rateLimiterState } = props
 
     return (
         <table className={classNames(styles.table, 'table')}>
@@ -66,6 +95,7 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                         )}
                     </td>
                 </tr>
+                {rateLimiterState && <RateLimiterStateInfo rateLimiterState={rateLimiterState} />}
             </tbody>
         </table>
     )
