@@ -33,6 +33,8 @@ import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.RecipeInfo;
+import com.sourcegraph.cody.auth.ui.SignInWithSourcegraphAction;
+import com.sourcegraph.cody.chat.*;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -42,7 +44,6 @@ import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
-import com.sourcegraph.cody.chat.*;
 import com.sourcegraph.cody.config.AccountType;
 import com.sourcegraph.cody.config.AccountsHostProjectHolder;
 import com.sourcegraph.cody.config.CodyAccount;
@@ -134,7 +135,9 @@ public class CodyToolWindowContent implements UpdatableChat {
         new DumbAwareAction() {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
-            if (promptInput.getCaretPosition() == 0) {
+            if (!chatMessageHistory.getUpperStack().isEmpty()
+                && (promptInput.getText().isEmpty()
+                    || promptInput.getText().equals(chatMessageHistory.getCurrentValue()))) {
               chatMessageHistory.popUpperMessage(promptInput);
             } else {
               promptInput.setCaretPosition(0);
@@ -146,7 +149,8 @@ public class CodyToolWindowContent implements UpdatableChat {
           @Override
           public void actionPerformed(@NotNull AnActionEvent e) {
             int promptLastPosition = promptInput.getText().length();
-            if (promptInput.getCaretPosition() == promptLastPosition) {
+            if (promptInput.getText().isEmpty()
+                || promptInput.getText().equals(chatMessageHistory.getCurrentValue())) {
               chatMessageHistory.popLowerMessage(promptInput);
             } else {
               promptInput.setCaretPosition(promptLastPosition);
