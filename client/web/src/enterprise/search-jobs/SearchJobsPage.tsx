@@ -1,7 +1,8 @@
-import { FC, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
 import { mdiRefresh, mdiDelete, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
+import { timeFormat } from 'd3-time-format'
 import { upperFirst } from 'lodash'
 import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
@@ -31,6 +32,11 @@ import {
     Text,
     H2,
     Tooltip,
+    Popover,
+    PopoverTrigger,
+    PopoverTail,
+    PopoverContent,
+    TetherInstanceAPI,
 } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -38,6 +44,7 @@ import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
+import { SearchJobLogs } from './SearchJobLogs'
 import { User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
@@ -205,7 +212,7 @@ export const SearchJobsPage: FC = props => {
                     </Select>
                 </header>
 
-                {error && !loading && <ErrorAlert error={error} />}
+                {error && !loading && <ErrorAlert error={error} className="mt-4 mb-0" />}
 
                 {loading && !connection && (
                     <Text>
@@ -213,7 +220,7 @@ export const SearchJobsPage: FC = props => {
                     </Text>
                 )}
 
-                {connection && (
+                {!error && connection && (
                     <ul className={styles.jobs}>
                         {connection.nodes.length === 0 && (
                             <SearchJobsZeroState
@@ -229,7 +236,7 @@ export const SearchJobsPage: FC = props => {
                     </ul>
                 )}
 
-                {connection && connection.nodes.length > 0 && (
+                {!error && connection && connection.nodes.length > 0 && (
                     <footer className={styles.footer}>
                         {hasNextPage && (
                             <Button variant="secondary" outline={true} disabled={loading} onClick={fetchMore}>
@@ -247,6 +254,9 @@ export const SearchJobsPage: FC = props => {
     )
 }
 
+const formatDate = timeFormat('%Y-%m-%d %H:%M:%S')
+const formatDateSlim = timeFormat('%Y-%m-%d')
+
 interface SearchJobProps {
     job: SearchJobNode
 }
@@ -255,10 +265,21 @@ const SearchJob: FC<SearchJobProps> = props => {
     const { job } = props
     const { repoStats } = job
 
+    const [tether, setTether] = useState<TetherInstanceAPI | null>(null)
+
+    const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
+    const fullStartDate = useMemo(() => (job.startedAt ? formatDate(new Date(job.startedAt)) : ''), [job.startedAt])
+
+    const handleContentChange = useCallback(() => {
+        tether?.forceUpdate()
+    }, [tether])
+
     return (
         <li className={styles.job}>
             <span className={styles.jobStatus}>
-                <span>{job.startedAt}</span>
+                <Tooltip content={fullStartDate} placement="top">
+                    <span>{startDate}</span>
+                </Tooltip>
                 <SearchJobBadge job={job} />
             </span>
 
@@ -274,13 +295,20 @@ const SearchJob: FC<SearchJobProps> = props => {
 
             <span className={styles.jobCreator}>
                 <UserAvatar user={job.creator!} />
-                {job.creator?.displayName}
+                {job.creator?.displayName ?? job.creator?.username}
             </span>
 
             <span className={styles.jobActions}>
-                <Button variant="link" className={styles.jobViewLogs}>
-                    View logs
-                </Button>
+                <Popover>
+                    <PopoverTrigger as={Button} variant="link" className={styles.jobViewLogs}>
+                        View logs
+                    </PopoverTrigger>
+
+                    <PopoverContent onTetherCreate={setTether} position="left">
+                        <SearchJobLogs jobId={job.id} onContentChange={handleContentChange} />
+                    </PopoverContent>
+                    <PopoverTail />
+                </Popover>
 
                 <Tooltip content="Rerun search job">
                     <Button variant="secondary" outline={true} className={styles.jobSlimAction}>
