@@ -275,6 +275,14 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 				Name: existingWorkspace.Name,
 			})
 
+			// VCSRepo must be removed by explicitly using the API - update
+			// doesn't remove it - if we want to remove the connection.
+			if existingWorkspace.VCSRepo != nil && wantWorkspaceOptions.VCSRepo == nil {
+				if _, err := c.client.Workspaces.RemoveVCSConnection(ctx, c.org, workspaceName); err != nil {
+					return nil, errors.Wrap(err, "failed to remove VCS connection")
+				}
+			}
+
 			// Forcibly update the workspace to match our expected configuration
 			if _, err := c.client.Workspaces.Update(ctx, c.org, workspaceName,
 				wantWorkspaceOptions.AsUpdate()); err != nil {
