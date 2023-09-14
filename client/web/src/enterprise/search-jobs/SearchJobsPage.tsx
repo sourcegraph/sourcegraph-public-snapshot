@@ -1,6 +1,6 @@
 import { FC, useMemo, useState } from 'react'
 
-import { mdiRefresh, mdiDelete, mdiDownload } from '@mdi/js'
+import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
 import { upperFirst } from 'lodash'
@@ -12,12 +12,11 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
-    Badge,
-    BadgeVariantType,
     Button,
     Container,
     ErrorAlert,
     FeedbackBadge,
+    H2,
     Icon,
     Input,
     Link,
@@ -30,7 +29,6 @@ import {
     PageHeader,
     Select,
     Text,
-    H2,
     Tooltip,
     useDebounce,
 } from '@sourcegraph/wildcard'
@@ -40,6 +38,8 @@ import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
+import { SearchJobBadge } from './SearchJobBadge/SearchJobBadge'
+import { CancelSearchJobModal, RerunSearchJobModal, SearchJobDeleteModal } from './SearchJobModal/SearchJobModal'
 import { User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
@@ -50,6 +50,7 @@ const SEARCH_JOB_STATES = [
     SearchJobState.FAILED,
     SearchJobState.QUEUED,
     SearchJobState.PROCESSING,
+    SearchJobState.CANCELED,
 ]
 
 /**
@@ -104,6 +105,10 @@ export const SearchJobsPage: FC = props => {
     const [selectedUsers, setUsers] = useState<User[]>([])
     const [selectedStates, setStates] = useState<SearchJobState[]>([])
     const [sortBy, setSortBy] = useState<SearchJobsOrderBy>(SearchJobsOrderBy.CREATED_DATE)
+
+    const [jobToDelete, setJobToDelete] = useState<SearchJobNode | null>(null)
+    const [jobToCancel, setJobToCancel] = useState<SearchJobNode | null>(null)
+    const [jobToRestart, setJobToRestart] = useState<SearchJobNode | null>(null)
 
     const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
@@ -209,7 +214,7 @@ export const SearchJobsPage: FC = props => {
 
                 {error && !loading && <ErrorAlert error={error} className="mt-4 mb-0" />}
 
-                {loading && !connection && (
+                {!error && loading && !connection && (
                     <Text>
                         <LoadingSpinner /> Fetching search jobs list
                     </Text>
@@ -226,7 +231,13 @@ export const SearchJobsPage: FC = props => {
                         )}
 
                         {connection.nodes.map(searchJob => (
-                            <SearchJob key={searchJob.id} job={searchJob} />
+                            <SearchJob
+                                key={searchJob.id}
+                                job={searchJob}
+                                onRerun={setJobToRestart}
+                                onCancel={setJobToCancel}
+                                onDelete={setJobToDelete}
+                            />
                         ))}
                     </ul>
                 )}
@@ -245,6 +256,10 @@ export const SearchJobsPage: FC = props => {
                     </footer>
                 )}
             </Container>
+
+            {jobToDelete && <SearchJobDeleteModal searchJob={jobToDelete} onDismiss={() => setJobToDelete(null)} />}
+            {jobToRestart && <RerunSearchJobModal searchJob={jobToRestart} onDismiss={() => setJobToRestart(null)} />}
+            {jobToCancel && <CancelSearchJobModal searchJob={jobToCancel} onDismiss={() => setJobToCancel(null)} />}
         </Page>
     )
 }
@@ -254,10 +269,13 @@ const formatDateSlim = timeFormat('%Y-%m-%d')
 
 interface SearchJobProps {
     job: SearchJobNode
+    onRerun: (job: SearchJobNode) => void
+    onCancel: (job: SearchJobNode) => void
+    onDelete: (job: SearchJobNode) => void
 }
 
 const SearchJob: FC<SearchJobProps> = props => {
-    const { job } = props
+    const { job, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
 
     const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
@@ -266,10 +284,10 @@ const SearchJob: FC<SearchJobProps> = props => {
     return (
         <li className={styles.job}>
             <span className={styles.jobStatus}>
-                <Tooltip content={fullStartDate} placement="top">
+                <Tooltip content={`Started at ${fullStartDate}`} placement="top">
                     <span>{startDate}</span>
                 </Tooltip>
-                <SearchJobBadge job={job} />
+                <SearchJobBadge job={job} withProgress={true} />
             </span>
 
             <span className={styles.jobQuery}>
@@ -293,13 +311,41 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Button>
 
                 <Tooltip content="Rerun search job">
-                    <Button variant="secondary" outline={true} className={styles.jobSlimAction}>
+                    <Button
+                        variant="secondary"
+                        outline={true}
+                        className={styles.jobSlimAction}
+                        onClick={() => onRerun(job)}
+                    >
                         <Icon svgPath={mdiRefresh} aria-hidden={true} />
                     </Button>
                 </Tooltip>
 
+                {job.state !== SearchJobState.FAILED &&
+                    job.state !== SearchJobState.CANCELED &&
+                    job.state !== SearchJobState.COMPLETED && (
+                        <Tooltip content="Cancel search job">
+                            <Button
+                                variant="secondary"
+                                outline={true}
+                                className={styles.jobSlimAction}
+                                onClick={() => onCancel(job)}
+                            >
+                                <Icon svgPath={mdiStop} aria-hidden={true} />
+                            </Button>
+                        </Tooltip>
+                    )}
+
                 <Tooltip content="Delete search job">
-                    <Button variant="danger" outline={true} className={styles.jobSlimAction}>
+                    <Button
+                        variant="danger"
+                        outline={true}
+                        className={styles.jobSlimAction}
+                        onClick={() => {
+                            console.log('Delete click', job)
+                            onDelete(job)
+                        }}
+                    >
                         <Icon svgPath={mdiDelete} aria-hidden={true} />
                     </Button>
                 </Tooltip>
@@ -311,46 +357,6 @@ const SearchJob: FC<SearchJobProps> = props => {
             </Button>
         </li>
     )
-}
-
-interface SearchJobBadgeProps {
-    job: SearchJobNode
-}
-
-const SearchJobBadge: FC<SearchJobBadgeProps> = props => {
-    const { job } = props
-
-    if (job.state === SearchJobState.PROCESSING) {
-        const totalRepo = job.repoStats.total
-        const totalProcessedRepos = job.repoStats.completed
-
-        return (
-            <div className={styles.jobProgress}>
-                <div
-                    // eslint-disable-next-line react/forbid-dom-props
-                    style={{ width: `${100 * (totalProcessedRepos / totalRepo)}%` }}
-                    className={styles.jobProgressBar}
-                />
-            </div>
-        )
-    }
-
-    return <Badge variant={getBadgeVariant(job.state)}>{job.state.toString()}</Badge>
-}
-
-const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType => {
-    switch (jobStatus) {
-        case SearchJobState.COMPLETED:
-            return 'success'
-        case SearchJobState.QUEUED:
-            return 'secondary'
-        case SearchJobState.ERRORED:
-            return 'warning'
-        case SearchJobState.FAILED:
-            return 'danger'
-        case SearchJobState.PROCESSING:
-            return 'primary'
-    }
 }
 
 interface SearchJobsZeroStateProps {
