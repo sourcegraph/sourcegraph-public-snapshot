@@ -40,6 +40,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
             after: null,
             query: '',
             states: [],
+            usersIds: [],
             orderBy: SearchJobsOrderBy.CREATED_DATE,
         },
     },

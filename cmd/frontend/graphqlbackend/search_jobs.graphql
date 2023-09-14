@@ -52,6 +52,10 @@ extend type Query {
         """
         states: [SearchJobState!]
         """
+        List of users ids by which we wil filter out search jobs list.
+        """
+        usersIds: [ID!]
+        """
         The order by which to sort the results.
         """
         orderBy: SearchJobsOrderBy = CREATED_DATE
