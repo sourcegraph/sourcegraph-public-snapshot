@@ -1756,11 +1756,11 @@ type OrganizationInvitations struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
-	// DotComPublic description: Whether or not these repositories should be marked as public on Sourcegraph.com. Defaults to false.
-	DotComPublic bool `json:"dotComPublic,omitempty"`
 	// Exclude description: A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({"name": "myrepo"}) or regular expression ({"pattern": ".*secret.*"}).
 	Exclude []*ExcludedOtherRepo `json:"exclude,omitempty"`
-	Repos   []string             `json:"repos"`
+	// MakeReposPublicOnDotCom description: Whether or not these repositories should be marked as public on Sourcegraph.com. Defaults to false.
+	MakeReposPublicOnDotCom bool     `json:"makeReposPublicOnDotCom,omitempty"`
+	Repos                   []string `json:"repos"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
 	//
 	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.

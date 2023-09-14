@@ -186,7 +186,7 @@ func TestOther_DotComConfig(t *testing.T) {
 		source, err := NewOtherSource(context.Background(), &types.ExternalService{
 			ID:     1,
 			Kind:   extsvc.KindOther,
-			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "dotComPublic": true}`, "src-expose")),
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "makeReposPublicOnDotCom": true}`, "src-expose")),
 		}, nil, nil)
 		require.NoError(t, err)
 		return source
