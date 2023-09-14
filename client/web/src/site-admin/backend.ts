@@ -14,7 +14,6 @@ import {
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
     AllConfigResult,
-    CheckMirrorRepositoryConnectionResult,
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
