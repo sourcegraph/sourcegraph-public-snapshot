@@ -8,6 +8,7 @@ webpack_binary(
 
 exports_files(srcs = [
     "eslint-report-test.sh",
+    "finalize_release_patch.sh",
     "release_patch.sh.tpl",
 ])
 

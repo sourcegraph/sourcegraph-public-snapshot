@@ -332,6 +332,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Final Bazel images
 		publishOps.Append(bazelPushImagesFinal(c.Version))
 		ops.Merge(publishOps)
+
+		// If we're doing a release patch build, we want to wait a final time, then finalize the release.
+		if c.RunType.Is(runtype.WIPRelease) {
+			ops.Append(wait)
+			ops.Append(finalizeReleasePatch(c))
+		}
 	}
 
 	// Construct pipeline

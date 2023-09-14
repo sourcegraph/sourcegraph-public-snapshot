@@ -5,4 +5,9 @@ go_library(
     srcs = ["cmd.go"],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/bazel",
     visibility = ["//dev/sg:__subpackages__"],
+    deps = [
+        "//dev/sg/internal/run",
+        "//dev/sg/internal/std",
+        "//lib/output",
+    ],
 )
