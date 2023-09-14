@@ -87,7 +87,6 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 }
 
 type searchJobsConnectionStore struct {
-	ctx     context.Context
 	db      database.DB
 	service *service.Service
 	states  []string
@@ -137,7 +136,7 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	case "created_at":
 		value = fmt.Sprintf("'%v'", node.CreatedAt().Format("2006-01-02 15:04:05.999999"))
 	case "state":
-		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
+		value = fmt.Sprintf("'%v'", strings.ToLower(node.State()))
 	default:
 		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expeced one of (created_at, state). Actual: %s", column))
 	}
