@@ -9,6 +9,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -42,9 +43,9 @@ type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OAuthC
 // If the Authenticator implements the AuthenticatorWithRefresh interface,
 // it will also attempt to refresh the token in case of a 401 response.
 // If the token is updated successfully, the same request will be retried exactly once.
-func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *http.Request, auther auth.Authenticator) (*http.Response, error) {
+func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *http.Request, auther auth.Authenticator, doRequest func(*http.Request) (*http.Response, error)) (*http.Response, error) {
 	if auther == nil {
-		return doer.Do(req.WithContext(ctx))
+		return doRequest(req.WithContext(ctx))
 	}
 
 	// Try a pre-emptive token refresh in case we know it is definitely expired
@@ -70,7 +71,7 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 	}
 	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	// Do first request
-	resp, err := doer.Do(req.WithContext(ctx))
+	resp, err := doRequest(req.WithContext(ctx))
 	if err != nil {
 		return resp, err
 	}
@@ -87,7 +88,7 @@ func DoRequest(ctx context.Context, logger log.Logger, doer httpcli.Doer, req *h
 		}
 		// We need to reset the body before retrying the request
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-		resp, err = doer.Do(req.WithContext(ctx))
+		resp, err = doRequest(req.WithContext(ctx))
 	}
 
 	return resp, err

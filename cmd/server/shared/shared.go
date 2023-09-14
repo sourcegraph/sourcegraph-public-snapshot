@@ -45,7 +45,6 @@ var DefaultEnv = map[string]string{
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
-	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL":          "http://127.0.0.1:3370",
 	"PROMETHEUS_URL":              "http://127.0.0.1:9090",
@@ -162,7 +161,6 @@ func Main() {
 		gitserverLine,
 		`symbols: symbols`,
 		`searcher: searcher`,
-		`github-proxy: github-proxy`,
 		`worker: worker`,
 		`repo-updater: repo-updater`,
 		`precise-code-intel-worker: precise-code-intel-worker`,
