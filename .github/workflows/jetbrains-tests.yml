@@ -46,5 +46,8 @@ jobs:
       - name: Run Build Plugin
         run: ./gradlew buildPlugin
 
+      - name: Verify Plugin Compatibility
+        run: ./gradlew runPluginVerifier
+
       - name: Check formatting
         run: ./gradlew spotlessCheck
