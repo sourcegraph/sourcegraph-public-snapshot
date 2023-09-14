@@ -32,6 +32,7 @@ import {
     Text,
     H2,
     Tooltip,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -104,6 +105,8 @@ export const SearchJobsPage: FC = props => {
     const [selectedStates, setStates] = useState<SearchJobState[]>([])
     const [sortBy, setSortBy] = useState<SearchJobsOrderBy>(SearchJobsOrderBy.CREATED_DATE)
 
+    const debouncedSearchTerm = useDebounce(searchTerm, 500)
+
     const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         SearchJobsResult,
         SearchJobsVariables,
@@ -113,7 +116,7 @@ export const SearchJobsPage: FC = props => {
         variables: {
             first: 20,
             after: null,
-            query: searchTerm,
+            query: debouncedSearchTerm,
             states: selectedStates,
             orderBy: sortBy,
         },
