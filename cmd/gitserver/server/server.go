@@ -2103,7 +2103,7 @@ func (s *Server) doClone(
 
 	redactor := urlredactor.New(remoteURL)
 
-	go readCloneProgress(s.DB, logger, redactor, lock, pr, s.ReposDir, repo)
+	go readCloneProgress(s.DB, logger, redactor, lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := redactor.Redact(string(output))
@@ -2201,7 +2201,7 @@ func postRepoFetchActions(
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.URLRedactor, lock RepositoryLock, pr io.Reader, reposDir string, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.URLRedactor, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
