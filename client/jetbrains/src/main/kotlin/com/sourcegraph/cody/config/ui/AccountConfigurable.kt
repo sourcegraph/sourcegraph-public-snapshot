@@ -82,16 +82,17 @@ class AccountConfigurable(val project: Project) :
     val bus = project.messageBus
     val publisher = bus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
 
-    val oldDefaultAccount = activeAccountHolder.account
-    val oldUrl = oldDefaultAccount?.server?.url ?: ""
+    val oldActiveAccount = activeAccountHolder.account
+    val oldUrl = oldActiveAccount?.server?.url ?: ""
 
     var activeAccount = accountsModel.activeAccount
-    val newAccessToken = activeAccount?.let { accountsModel.newCredentials[it] }
     val activeAccountRemoved = !accountsModel.accounts.contains(activeAccount)
-    if (activeAccountRemoved) {
+    if (activeAccountRemoved || activeAccount == null) {
       activeAccount = accountsModel.accounts.getFirstAccountOrNull()
     }
-    val activeAccountChanged = oldDefaultAccount != activeAccount
+    val newAccessToken = activeAccount?.let { accountsModel.newCredentials[it] }
+
+    val activeAccountChanged = oldActiveAccount != activeAccount
     val accessTokenChanged = newAccessToken != null || activeAccountRemoved || activeAccountChanged
 
     val newUrl = activeAccount?.server?.url ?: ""
