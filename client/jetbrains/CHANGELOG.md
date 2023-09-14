@@ -21,6 +21,7 @@
 - Enabled manually triggering autocomplete even when implicit autocomplete is disabled (globally or for a language) [#56473](https://github.com/sourcegraph/sourcegraph/pull/56473)
 - Onboarding notifications merged into one simple notification to Open Cody [#56610](https://github.com/sourcegraph/sourcegraph/pull/56610)
 - Enabled implicit autocomplete by default [#56617](https://github.com/sourcegraph/sourcegraph/pull/56617)
+- Bumped JetBrains platform plugin compat to `221.5080.210` and higher [#56625](https://github.com/sourcegraph/sourcegraph/pull/56625)
 
 ### Deprecated
 
