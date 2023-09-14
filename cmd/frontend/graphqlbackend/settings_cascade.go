@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -21,9 +20,8 @@ import (
 // - Organization settings
 // - Current user settings
 type settingsCascade struct {
-	db              database.DB
-	gitserverClient gitserver.Client
-	subject         *settingsSubjectResolver
+	db      database.DB
+	subject *settingsSubjectResolver
 }
 
 func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubjectResolver, error) {
@@ -64,9 +62,9 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 		return nil, err
 	}
 	if user == nil {
-		return &settingsCascade{db: r.db, gitserverClient: r.gitserverClient, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.db)}}, nil
+		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.db)}}, nil
 	}
-	return &settingsCascade{db: r.db, gitserverClient: r.gitserverClient, subject: &settingsSubjectResolver{user: user}}, nil
+	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: user}}, nil
 }
 
 // Deprecated: in the GraphQL API

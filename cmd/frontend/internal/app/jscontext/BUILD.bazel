@@ -22,7 +22,6 @@ go_library(
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/env",
-        "//internal/gitserver",
         "//internal/insights",
         "//internal/lazyregexp",
         "//internal/siteid",
