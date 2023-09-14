@@ -3,13 +3,11 @@ package bazel
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -24,28 +22,24 @@ func announce(command string, args ...string) {
 
 func Build(ctx context.Context, args ...string) error {
 	announce("build", args...)
-	cmd := exec.CommandContext(ctx, "bazel", append([]string{"build"}, args...)...)
-	_, err := run.InRoot(cmd)
-	return err
+	bazelCmd := fmt.Sprintf("bazel build %s", strings.Join(args, " "))
+	// have to execute bazel inside bash since there are some env vars that gets used by bazel
+	cmd := exec.CommandContext(ctx, "bash", []string{"-c", bazelCmd}...)
+	return run.InteractiveInRoot(cmd)
 }
 
 func Test(ctx context.Context, args ...string) error {
 	announce("test", args...)
-	cmd := exec.CommandContext(ctx, "bazel", append([]string{"test"}, args...)...)
-	_, err := run.InRoot(cmd)
-	return err
+	bazelCmd := fmt.Sprintf("bazel test %s", strings.Join(args, " "))
+	// have to execute bazel inside bash since there are some env vars that gets used by bazel
+	cmd := exec.CommandContext(ctx, "bash", []string{"-c", bazelCmd}...)
+	return run.InteractiveInRoot(cmd)
 }
 
 func Run(ctx context.Context, args ...string) error {
 	announce("run", args...)
-	cmd := exec.CommandContext(ctx, "bazel", append([]string{"run"}, args...)...)
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return err
-	}
-
-	cmd.Dir = repoRoot
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	bazelCmd := fmt.Sprintf("bazel run %s", strings.Join(args, " "))
+	// have to execute bazel inside bash since there are some env vars that gets used by bazel
+	cmd := exec.CommandContext(ctx, "bash", []string{"-c", bazelCmd}...)
+	return run.InteractiveInRoot(cmd)
 }
