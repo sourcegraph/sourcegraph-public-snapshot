@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -26,8 +27,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	if err != nil {
 		return errors.Errorf("create server handler: %v", err)
 	}
+
+	addr := fmt.Sprintf(":%d", config.Port)
 	server := httpserver.NewFromAddr(
-		config.Address,
+		addr,
 		&http.Server{
 			ReadTimeout:  75 * time.Second,
 			WriteTimeout: 10 * time.Minute,
@@ -37,7 +40,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Mark health server as ready and go!
 	ready()
-	obctx.Logger.Info("service ready", log.String("address", config.Address))
+	obctx.Logger.Info("service ready", log.String("address", addr))
 
 	// Block until done
 	goroutine.MonitorBackgroundRoutines(ctx, server)
@@ -56,7 +59,13 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	if err != nil {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
 	}
-	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("full-suite") == "" {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("OK"))
+			return
+		}
+
 		// NOTE: Only mark as failed and respond with a non-200 status code if a critical
 		// component fails, otherwise the service would be marked as unhealthy and stop
 		// serving requests (in Cloud Run).

@@ -7,7 +7,7 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	Address string
+	Port int
 
 	PubSub struct {
 		ProjectID string
@@ -16,7 +16,7 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	c.Address = c.Get("PINGS_ADDR", ":10086", "Address to serve Ping service on.")
+	c.Port = c.GetInt("PORT", "10086", "Port to serve Pings service on, generally injected by Cloud Run.")
 	c.PubSub.ProjectID = c.Get("PINGS_PUBSUB_PROJECT_ID", "", "The project ID for the Pub/Sub.")
 	c.PubSub.TopicID = c.Get("PINGS_PUBSUB_TOPIC_ID", "", "The topic ID for the Pub/Sub.")
 }
