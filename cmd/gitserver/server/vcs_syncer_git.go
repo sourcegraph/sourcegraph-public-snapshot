@@ -46,8 +46,9 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, 
 	ctx, cancel := context.WithTimeout(ctx, shortGitCommandTimeout(args))
 	defer cancel()
 
+	r := newURLRedactor(remoteURL)
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), true, nil)
+	out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.redact), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -81,7 +82,8 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), configRemoteOpts, nil)
+	r := newURLRedactor(remoteURL)
+	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd).WithRedactorFunc(r.redact), configRemoteOpts, nil)
 	if err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: urlredactor.New(remoteURL).Redact(string(output))}
 	}
