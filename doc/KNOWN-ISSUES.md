@@ -15,9 +15,6 @@ Our Known Issues page is designed to keep you informed about any current issues 
 
 ---
 
-- ### Sourcegraph does not recognize GitHub Enterprise Repository Visibility as described [here](https://docs.github.com/en/enterprise-server@3.10/repositories/creating-and-managing-repositories/about-repositories#about-repository-visibility).
-    **Status:** [Bug Reported](https://github.com/sourcegraph/sourcegraph/pull/54419)
-
 - ### There is an issue with Sourcegraph instances configured to use explicit permissions using permissions.userMapping in Site configuration, where repository permissions are not enforced. Customers using the explicit permissions API are advised to upgrade to v5.1.1 directly.
     **Status:** [Fixed in v5.1.2](https://github.com/sourcegraph/sourcegraph/pull/54419)
 
