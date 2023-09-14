@@ -11,6 +11,7 @@ internal class CodyAuthData(val account: CodyAccount, login: String, token: Stri
     AuthData(login, token) {
   val server: SourcegraphServerPath
     get() = account.server
+
   val token: String
     get() = password!!
 }
@@ -48,8 +49,7 @@ class CodyAuthenticationManager internal constructor() {
   }
 
   fun getDefaultAccountType(project: Project): AccountType {
-    return getActiveAccount(project)?.getAccountType()
-        ?: AccountType.DOTCOM
+    return getActiveAccount(project)?.getAccountType() ?: AccountType.DOTCOM
   }
 
   companion object {

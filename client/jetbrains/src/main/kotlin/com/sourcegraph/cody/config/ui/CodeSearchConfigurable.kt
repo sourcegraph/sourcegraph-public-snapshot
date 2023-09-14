@@ -18,6 +18,7 @@ class CodeSearchConfigurable(val project: Project) :
   private lateinit var dialogPanel: DialogPanel
   private val settingsModel = SettingsModel()
   private val codyProjectSettings = project.service<CodyProjectSettings>()
+
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
       group("Code search") {

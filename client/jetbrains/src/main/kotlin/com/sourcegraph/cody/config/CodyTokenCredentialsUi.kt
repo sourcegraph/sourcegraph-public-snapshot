@@ -69,7 +69,7 @@ internal class CodyTokenCredentialsUi(
         runCatching { SourcegraphServerPath.from(serverTextField.text, "") }.getOrNull()
             ?: return ""
     val productName = ApplicationNamesInfo.getInstance().fullProductName
-    val productNameEncoded= URLEncoder.encode(productName, "UTF-8")
+    val productNameEncoded = URLEncoder.encode(productName, "UTF-8")
     return sourcegraphServerPath.url + "user/settings/tokens/new?description=" + productNameEncoded
   }
 
@@ -92,6 +92,7 @@ internal class CodyTokenCredentialsUi(
       } else {
         null
       }
+
   private fun isServerPathValid(text: String): Boolean {
     return runCatching { SourcegraphServerPath.from(text, "") }.getOrNull() != null
   }
