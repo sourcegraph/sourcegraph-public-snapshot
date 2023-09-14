@@ -45,7 +45,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
   public boolean isCodyEnabled = true;
-  @Nullable public Boolean isCodyAutocompleteEnabled;
+  @Nullable public Boolean isCodyAutocompleteEnabled = true;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
   @Nullable public Boolean isCodyDebugEnabled;

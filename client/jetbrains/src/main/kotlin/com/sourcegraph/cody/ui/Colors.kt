@@ -14,5 +14,5 @@ object Colors {
 
   @JvmField
   val SECONDARY_LINK_COLOR: Color =
-      JBColor(JBUI.CurrentTheme.Link.Foreground.ENABLED, Color(168, 173, 189))
+      JBColor(JBUI.CurrentTheme.Link.Foreground.ENABLED, Color(129, 133, 148))
 }

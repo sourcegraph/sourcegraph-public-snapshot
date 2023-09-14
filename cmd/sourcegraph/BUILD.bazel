@@ -9,7 +9,6 @@ go_library(
         "//cmd/blobstore/shared",
         "//cmd/executor/singlebinary",
         "//cmd/frontend/shared",
-        "//cmd/github-proxy/shared",
         "//cmd/gitserver/shared",
         "//cmd/precise-code-intel-worker/shared",
         "//cmd/repo-updater/shared",

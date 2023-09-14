@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1978,7 +1979,7 @@ func (s *Server) CloneRepo(ctx context.Context, repo api.RepoName, opts CloneOpt
 	}
 
 	if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
-		redactedErr := newURLRedactor(remoteURL).redact(err.Error())
+		redactedErr := urlredactor.New(remoteURL).Redact(err.Error())
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
 
@@ -2100,10 +2101,12 @@ func (s *Server) doClone(
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	redactor := urlredactor.New(remoteURL)
+
+	go readCloneProgress(s.DB, logger, redactor, lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
-	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
+	redactedOutput := redactor.Redact(string(output))
 	// best-effort update the output of the clone
 	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
 		s.Logger.Warn("Setting last output in DB", log.Error(err))
@@ -2198,7 +2201,7 @@ func postRepoFetchActions(
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.URLRedactor, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
@@ -2229,7 +2232,7 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 		// $ git clone http://token@github.com/foo/bar
 		// Cloning into 'nick'...
 		// fatal: repository 'http://token@github.com/foo/bar/' not found
-		redactedProgress := redactor.redact(progress)
+		redactedProgress := redactor.Redact(progress)
 
 		lock.SetStatus(redactedProgress)
 
@@ -2252,44 +2255,6 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 	if err := scan.Err(); err != nil {
 		logger.Error("error reporting progress", log.Error(err))
 	}
-}
-
-// urlRedactor redacts all sensitive strings from a message.
-type urlRedactor struct {
-	// sensitive are sensitive strings to be redacted.
-	// The strings should not be empty.
-	sensitive []string
-}
-
-// newURLRedactor returns a new urlRedactor that redacts
-// credentials found in rawurl, and the rawurl itself.
-func newURLRedactor(parsedURL *vcs.URL) *urlRedactor {
-	var sensitive []string
-	pw, _ := parsedURL.User.Password()
-	u := parsedURL.User.Username()
-	if pw != "" && u != "" {
-		// Only block password if we have both as we can
-		// assume that the username isn't sensitive in this case
-		sensitive = append(sensitive, pw)
-	} else {
-		if pw != "" {
-			sensitive = append(sensitive, pw)
-		}
-		if u != "" {
-			sensitive = append(sensitive, u)
-		}
-	}
-	sensitive = append(sensitive, parsedURL.String())
-	return &urlRedactor{sensitive: sensitive}
-}
-
-// redact returns a redacted version of message.
-// Sensitive strings are replaced with "<redacted>".
-func (r *urlRedactor) redact(message string) string {
-	for _, s := range r.sensitive {
-		message = strings.ReplaceAll(message, s, "<redacted>")
-	}
-	return message
 }
 
 // scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'
@@ -2511,7 +2476,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	defer cleanTmpFiles(s.Logger, dir)
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
-	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
+	redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
 	// best-effort update the output of the fetch
 	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
 		s.Logger.Warn("Setting last output in DB", log.Error(err))

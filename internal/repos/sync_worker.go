@@ -123,7 +123,7 @@ DELETE FROM external_service_sync_jobs
 WHERE
 	finished_at < NOW() - INTERVAL '1 day'
   	AND
-  	state IN ('completed', 'failed')
+  	state IN ('completed', 'failed', 'canceled')
 `
 
 func newJobCleanerRoutine(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) goroutine.BackgroundRoutine {

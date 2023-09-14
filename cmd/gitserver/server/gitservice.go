@@ -74,10 +74,12 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 	logger := s.Logger.Scoped("gitServiceHandler", "smart Git HTTP transfer protocol")
 
 	return &gitservice.Handler{
-		Logger: logger,
-
 		Dir: func(d string) string {
 			return string(repoDirFromName(s.ReposDir, api.RepoName(d)))
+		},
+
+		ErrorHook: func(err error, stderr string) {
+			logger.Error("git-service error", log.Error(err), log.String("stderr", stderr))
 		},
 
 		// Limit rate of stdout from git.

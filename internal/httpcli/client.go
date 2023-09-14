@@ -301,18 +301,6 @@ func ContextErrorMiddleware(cli Doer) Doer {
 	})
 }
 
-// GitHubProxyRedirectMiddleware rewrites requests to the "github-proxy" host
-// to "https://api.github.com".
-func GitHubProxyRedirectMiddleware(cli Doer) Doer {
-	return DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
-}
-
 // requestContextKey is used to denote keys to fields that should be logged by the logging
 // middleware. They should be set to the request context associated with a response.
 type requestContextKey int

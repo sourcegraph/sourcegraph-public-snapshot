@@ -16,6 +16,10 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 
 ## Unreleased
 
+#### Notes for 5.2:
+
+- The GitHub proxy service has been removed and is no longer required. You can safely remove it. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
+
 No applicable notes for unreleased versions.
 
 <!-- Add changes changes to this section before release. -->
