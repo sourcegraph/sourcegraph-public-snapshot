@@ -2,8 +2,10 @@ import React, { useCallback, useState, FC, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
+import { useMutation, gql } from '@sourcegraph/http-client'
 import type { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
 import {
@@ -20,6 +22,8 @@ import {
     Form,
     ProductStatusBadge,
     Alert,
+    ErrorAlert,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components'
@@ -298,14 +302,49 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
     )
 }
 
+const CREATE_SEARCH_JOB = gql`
+    mutation CreateSearchJob($query: String!) {
+        createSearchJob(query: $query) {
+            id
+            query
+            state
+            URL
+            startedAt
+            finishedAt
+            repoStats {
+                total
+                completed
+                failed
+                inProgress
+            }
+            creator {
+                id
+                displayName
+                username
+                avatarURL
+            }
+        }
+    }
+`
+
 interface ExhaustiveSearchMessageProps {
     query: string
 }
 
 export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props => {
     const { query } = props
+    const navigate = useNavigate()
+    const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
 
     const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
+    const handleCreateSearchJobClick = async () => {
+        try {
+            await createSearchJob({ variables: { query } })
+            navigate('/search-jobs')
+        } catch (error) {
+            console.error(error)
+        }
+    }
 
     return (
         <section className={styles.exhaustiveSearch}>
@@ -327,9 +366,25 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             <Text className={classNames(validationErrors.length > 0 && 'text-muted', styles.exhaustiveSearchText)}>
                 Search jobs exhaustively return all matches of a query. Results can be downloaded via CSV.
             </Text>
-            <Button variant="secondary" size="sm" disabled={validationErrors.length > 0} className="mt-2">
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
-                Create a search job
+
+            {error && <ErrorAlert error={error} className="mt-3" />}
+            <Button
+                variant="secondary"
+                size="sm"
+                disabled={validationErrors.length > 0 || loading}
+                className={styles.exhaustiveSearchSubmit}
+                onClick={handleCreateSearchJobClick}
+            >
+                {loading ? (
+                    <>
+                        <LoadingSpinner /> Starting search job
+                    </>
+                ) : (
+                    <>
+                        <Icon aria-hidden={true} svgPath={mdiMagnify} />
+                        Create a search job
+                    </>
+                )}
             </Button>
         </section>
     )

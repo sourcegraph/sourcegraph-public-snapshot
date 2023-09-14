@@ -92,4 +92,11 @@
         margin: 0;
         padding: 0 1rem;
     }
+
+    &-submit {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.75rem;
+    }
 }
