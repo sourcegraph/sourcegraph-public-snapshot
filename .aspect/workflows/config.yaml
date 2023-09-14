@@ -1,4 +1,5 @@
 ---
+queue: aspect-default
 tasks:
     # Checks that the branch is current
     branch_freshness:
