@@ -109,7 +109,7 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
     const loading = cancelLoading || creationLoading
     const error = cancelError || creationError
 
-    const handleRerunClick = async () => {
+    const handleRerunClick = async (): Promise<void> => {
         await cancelSearchJob({ variables: { id: searchJob.id } })
         await createSearchJob({ variables: { query: searchJob.query } })
 

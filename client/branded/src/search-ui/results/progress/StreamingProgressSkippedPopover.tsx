@@ -337,7 +337,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
     const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
 
     const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
-    const handleCreateSearchJobClick = async () => {
+    const handleCreateSearchJobClick = async (): Promise<void> => {
         await createSearchJob({ variables: { query } })
         navigate('/search-jobs')
     }
