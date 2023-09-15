@@ -195,6 +195,22 @@ func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin 
 	return repos, nil
 }
 
+func getAllAuthenticatedUserInternalRepositories(ctx context.Context, cli client) ([]*github.Repository, error) {
+	var repos []*github.Repository
+	orgs, err := getAllAuthenticatedUserOrgs(ctx, cli)
+	if err != nil {
+		return nil, err
+	}
+	for _, org := range orgs {
+		orgRepos, err := getAllInternalRepositoriesForOrg(ctx, cli, org.Login)
+		if err != nil {
+			return repos, err
+		}
+		repos = append(repos, orgRepos...)
+	}
+	return repos, nil
+}
+
 func getAllAuthenticatedUserAffiliatedRepositories(ctx context.Context, cli client, affiliations ...github.RepositoryAffiliation) ([]*github.Repository, error) {
 	var repos []*github.Repository
 	// Sync direct affiliations
@@ -307,15 +323,14 @@ func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, 
 
 	// Repository affiliations to list for - groupsCache only lists for a subset. Left
 	// unset indicates all affiliations should be sync'd.
-	var affiliations []github.RepositoryAffiliation
-
-	userRepos := collections.NewSet[extsvc.RepoID]()
-
-	if p.groupsCache != nil { // Groups cache is enabled
+	affiliations := []github.RepositoryAffiliation{}
+	if p.groupsCache != nil {
 		// We sync just a subset of direct affiliations - we let other permissions
 		// ('organization' affiliation) be sync'd by teams/orgs.
 		affiliations = []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
 	}
+
+	userRepos := collections.NewSet[extsvc.RepoID]()
 
 	// Sync direct affiliations
 	repos, err := getAllAuthenticatedUserAffiliatedRepositories(ctx, cli, affiliations...)
@@ -330,29 +345,20 @@ func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, 
 	// If cache is disabled, we also need to fetch a list of internal repositories for each
 	// org the user belongs to.
 	if p.groupsCache == nil {
-		orgs, err := getAllAuthenticatedUserOrgs(ctx, cli)
+		internalRepos, err := getAllAuthenticatedUserInternalRepositories(ctx, cli)
+		for _, r := range internalRepos {
+			userRepos.Add(extsvc.RepoID(r.ID))
+		}
 		if err != nil {
 			return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
 		}
-		for _, org := range orgs {
-			repos, err := getAllInternalRepositoriesForOrg(ctx, cli, org.Login)
-			// There may be partial results, so we add those to the perms first
-			for _, r := range repos {
-				userRepos.Add(extsvc.RepoID(r.ID))
-			}
-			if err != nil {
-				return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
-			}
-		}
-	}
-
-	// If groups caching is enabled, we need to fetch cached repositories as well
-	if p.groupsCache != nil {
+	} else {
+		// If groups caching is enabled, we need to fetch cached repositories as well
 		groupsPerms, err := p.fetchCachedAuthenticatedUserPerms(ctx, logger, cli, accountID, opts)
+		userRepos = userRepos.Union(groupsPerms)
 		if err != nil {
 			return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
 		}
-		userRepos = userRepos.Union(groupsPerms)
 	}
 
 	return &authz.ExternalUserPermissions{
