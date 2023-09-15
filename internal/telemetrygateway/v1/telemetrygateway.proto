@@ -94,19 +94,19 @@ message EventUser {
   //
   // We use an int64 as an ID because in Sourcegraph, database user IDs are
   // always integers.
-  int64 user_id = 1;
+  optional int64 user_id = 1;
   // Randomized unique identifier for client (i.e. stored in localstorage in web
   // client).
-  string anonymous_user_id = 2;
+  optional string anonymous_user_id = 2;
 }
 
 message EventMarketingTracking {
-  string url = 1;
-  string first_source_url = 2;
-  string cohort_id = 3;
-  string referrer = 4;
-  string last_source_url = 5;
-  string device_session_id = 6;
-  string session_referrer = 7;
-  string session_first_url = 8;
+  optional string url = 1;
+  optional string first_source_url = 2;
+  optional string cohort_id = 3;
+  optional string referrer = 4;
+  optional string last_source_url = 5;
+  optional string device_session_id = 6;
+  optional string session_referrer = 7;
+  optional string session_first_url = 8;
 }
