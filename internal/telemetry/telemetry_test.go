@@ -1,124 +1,58 @@
-package telemetry
+package telemetry_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
-	"time"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/tj/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 )
 
-func TestMakeRawEvent(t *testing.T) {
-	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
-	require.NoError(t, err)
+func TestRecorderEndToEnd(t *testing.T) {
+	var userID int32 = 123
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	for _, tc := range []struct {
-		name   string
-		ctx    context.Context
-		event  Event
-		expect autogold.Value
-	}{
-		{
-			name: "basic",
-			ctx:  context.Background(),
-			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
-			},
-			expect: autogold.Expect(`{
-"action": "exampleAction",
-"feature": "exampleFeature",
-"parameters": {},
-"source": {
-	"server": {
-		"version": "0.0.0+dev"
-	}
-},
-"timestamp": "2023-02-24T14:48:30Z"
-}`),
-		},
-		{
-			name: "with user",
-			ctx:  actor.WithActor(context.Background(), actor.FromAnonymousUser("1234")),
-			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
-			},
-			expect: autogold.Expect(`{
-"action": "exampleAction",
-"feature": "exampleFeature",
-"parameters": {},
-"source": {
-	"server": {
-		"version": "0.0.0+dev"
-	}
-},
-"timestamp": "2023-02-24T14:48:30Z"
-}`),
-		},
-		{
-			name: "with parameters",
-			ctx:  context.Background(),
-			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
-				Parameters: EventParameters{
-					Version: 0,
-					Metadata: EventMetadata{
-						"foobar": 3,
-					},
-					PrivateMetadata: map[string]any{
-						"barbaz": "hello world!",
-					},
-					BillingMetadata: &EventBillingMetadata{
-						Product:  BillingProductExample,
-						Category: BillingCategoryExample,
-					},
-				},
-			},
-			expect: autogold.Expect(`{
-"action": "exampleAction",
-"feature": "exampleFeature",
-"parameters": {
-	"billingMetadata": {
-		"category": "EXAMPLE",
-		"product": "EXAMPLE"
-	},
-	"metadata": {
-		"foobar": "3"
-	},
-	"privateMetadata": {
-		"barbaz": "hello world!"
-	}
-},
-"source": {
-	"server": {
-		"version": "0.0.0+dev"
-	}
-},
-"timestamp": "2023-02-24T14:48:30Z"
-}`),
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := makeRawEvent(tc.ctx, staticTime, tc.event.Feature, tc.event.Action, tc.event.Parameters)
+	recorder := telemetry.NewEventRecorder(teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()))
 
-			protodata, err := protojson.Marshal(got)
-			require.NoError(t, err)
+	wantEvents := 3
+	t.Run("Record and BatchRecord", func(t *testing.T) {
+		assert.NoError(t, recorder.Record(ctx, "Test", "Action1", telemetry.EventParameters{
+			Metadata: telemetry.EventMetadata{
+				"metadata": 1,
+			},
+			PrivateMetadata: map[string]any{
+				"private": "sensitive",
+			},
+		}))
+		assert.NoError(t, recorder.BatchRecord(ctx,
+			telemetry.Event{
+				Feature: "Test",
+				Action:  "Action2",
+			},
+			telemetry.Event{
+				Feature: "Test",
+				Action:  "Action3",
+			}))
+	})
 
-			// Protojson output isn't stable by injecting randomized whitespace,
-			// so we re-marshal it to stabilize the output for golden tests.
-			// https://github.com/golang/protobuf/issues/1082
-			var gotJSON map[string]any
-			require.NoError(t, json.Unmarshal(protodata, &gotJSON))
-			jsondata, err := json.MarshalIndent(gotJSON, "", "\t")
-			require.NoError(t, err)
-			tc.expect.Equal(t, string(jsondata))
-		})
-	}
+	t.Run("tee to EventLogs", func(t *testing.T) {
+		eventLogs, err := db.EventLogs().ListAll(ctx, database.EventLogsListOptions{UserID: userID})
+		require.NoError(t, err)
+		assert.Len(t, eventLogs, wantEvents)
+	})
+
+	t.Run("tee to TelemetryEvents", func(t *testing.T) {
+		telemetryEvents, err := db.TelemetryEventsExportQueue().ListForExport(ctx, 999)
+		require.NoError(t, err)
+		assert.Len(t, telemetryEvents, wantEvents)
+	})
 }
