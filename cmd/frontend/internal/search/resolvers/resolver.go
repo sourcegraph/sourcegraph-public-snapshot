@@ -71,11 +71,16 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 		}
 	}
 
+	query := ""
+	if args.Query != nil {
+		query = *args.Query
+	}
+
 	s := &searchJobsConnectionStore{
 		db:      db,
 		service: service,
 		states:  states,
-		query:   args.Query,
+		query:   query,
 		userIDs: ids,
 	}
 	return graphqlutil.NewConnectionResolver[graphqlbackend.SearchJobResolver](
@@ -91,7 +96,7 @@ type searchJobsConnectionStore struct {
 	db      database.DB
 	service *service.Service
 	states  []string
-	query   *string
+	query   string
 	userIDs []int32
 }
 

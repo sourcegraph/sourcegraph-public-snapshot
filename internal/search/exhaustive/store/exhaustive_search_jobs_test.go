@@ -192,7 +192,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 			name: "query: 1 job",
 			ctx:  ctx,
 			args: store.ListArgs{
-				Query: strptr("job1"),
+				Query: "job1",
 			},
 			wantIDs: []int64{jobs[0].ID},
 		},
@@ -200,7 +200,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 			name: "query: all jobs",
 			ctx:  ctx,
 			args: store.ListArgs{
-				Query: strptr("repo"),
+				Query: "repo",
 			},
 			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
 		},
@@ -217,7 +217,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 			ctx:  ctx,
 			args: store.ListArgs{
 				PaginationArgs: &database.PaginationArgs{First: intptr(1), Ascending: true},
-				Query:          strptr("repo"),
+				Query:          "repo",
 			},
 			wantIDs: []int64{jobs[0].ID},
 		},
@@ -226,7 +226,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 			name: "query: no result",
 			ctx:  ctx,
 			args: store.ListArgs{
-				Query: strptr("foo"),
+				Query: "foo",
 			},
 			wantIDs: []int64{},
 		},
@@ -280,5 +280,4 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	}
 }
 
-func strptr(s string) *string { return &s }
-func intptr(s int) *int       { return &s }
+func intptr(s int) *int { return &s }

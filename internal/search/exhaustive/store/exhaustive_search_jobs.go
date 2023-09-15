@@ -197,7 +197,7 @@ LIMIT 1
 
 type ListArgs struct {
 	*database.PaginationArgs
-	Query   *string
+	Query   string
 	States  []string
 	UserIDs []int32
 }
@@ -218,8 +218,8 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 	var conds []*sqlf.Query
 
 	// Filter by query.
-	if args.Query != nil && *args.Query != "" {
-		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+*args.Query+"%"))
+	if args.Query != "" {
+		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+args.Query+"%"))
 	}
 
 	// Filter by state.
