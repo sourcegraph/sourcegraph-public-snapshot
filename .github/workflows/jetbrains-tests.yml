@@ -11,8 +11,8 @@ name: JetBrains Tests
 on:
   # Trigger the workflow on any pull request that touches the jetbrains src folder
   pull_request:
-      paths:
-       - client/jetbrains/**
+      # paths:
+      #  - client/jetbrains/**
 
 jobs:
   test:
