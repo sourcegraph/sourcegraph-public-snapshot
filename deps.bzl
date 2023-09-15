@@ -6380,8 +6380,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:30sVCGSj0tgC4SPRZiRTm7wJ6VbXMPM9w7w3PU+R/4A=",
-        version = "v0.0.0-20230913182917-2d1affd44cb7",
+        sum = "h1:3kfH34XVB2XOwTzngxNTxmIFAzSZ1BHlcg1quePg3TU=",
+        version = "v0.0.0-20230915165638-19f03eed7c10",
     )
 
     go_repository(
