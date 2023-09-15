@@ -91,11 +91,18 @@ func (s *s3Store) List(ctx context.Context, prefix string) (_ *iterator.Iterator
 	}})
 	defer endObservation(1, observation.Args{})
 
-	// We wrap the client's paginator and just return the keys.
-	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{
+	listObjectsV2Input := s3.ListObjectsV2Input{
 		Bucket: aws.String(s.bucket),
-		Prefix: aws.String(prefix),
-	})
+	}
+
+	// This may be unnecessary, but we're being extra careful because we don't know
+	// how s3 handles a pointer to an empty string.
+	if prefix != "" {
+		listObjectsV2Input.Prefix = aws.String(prefix)
+	}
+
+	// We wrap the client's paginator and just return the keys.
+	paginator := s.client.NewListObjectsV2Paginator(&listObjectsV2Input)
 
 	next := func() ([]string, error) {
 		if !paginator.HasMorePages() {
