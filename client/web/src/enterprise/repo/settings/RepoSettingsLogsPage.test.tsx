@@ -80,6 +80,8 @@ describe('RepoSettingsLogsPage', () => {
                                     command: 'git cat-file -t -- 4b825dc642cb6eb9a060e54bf8d69288fbee4904',
                                     dir: '/Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git',
                                     __typename: 'RecordedCommand',
+                                    isSuccess: false,
+                                    output: '',
                                 },
                                 {
                                     path: '/usr/bin/git',
@@ -88,6 +90,8 @@ describe('RepoSettingsLogsPage', () => {
                                     command: 'git config --get sourcegraph.type',
                                     dir: '/Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git',
                                     __typename: 'RecordedCommand',
+                                    isSuccess: true,
+                                    output: 'git',
                                 },
                             ],
                             totalCount: 2,

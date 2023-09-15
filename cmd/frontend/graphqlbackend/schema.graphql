@@ -4022,6 +4022,16 @@ type RecordedCommand {
     Path to command executable (git executable in most cases).
     """
     path: String!
+
+    """
+    Output of the command.
+    """
+    output: String!
+
+    """
+    Indicates whether the command execution was successful.
+    """
+    isSuccess: Boolean!
 }
 
 """
