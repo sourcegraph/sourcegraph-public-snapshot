@@ -13,11 +13,16 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
 func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
-	ctx := context.Background()
+	// Context with FF enabled.
+	ff := featureflag.NewMemoryStore(
+		nil, nil, map[string]bool{FeatureFlagTelemetryExport: true})
+	ctx := featureflag.WithFlags(context.Background(), ff)
+
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -45,11 +50,18 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	}}
 	eventsToExport := []string{"1", "2"}
 
+	t.Run("feature flag off", func(t *testing.T) {
+		require.NoError(t, store.QueueForExport(context.Background(), events))
+		export, err := store.ListForExport(ctx, 100)
+		require.NoError(t, err)
+		assert.Len(t, export, 0)
+	})
+
 	t.Run("QueueForExport", func(t *testing.T) {
 		require.NoError(t, store.QueueForExport(ctx, events))
 	})
 
-	t.Run("QueueForExport", func(t *testing.T) {
+	t.Run("ListForExport", func(t *testing.T) {
 		limit := len(events) - 1
 		export, err := store.ListForExport(ctx, limit)
 		require.NoError(t, err)

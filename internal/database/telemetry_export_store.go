@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// FeatureFlagTelemetryExport enables telemetry export by allowing events to be
+// queued for export via (TelemetryEventsExportQueueStore).QueueForExport
 const FeatureFlagTelemetryExport = "telemetry-export"
 
 type TelemetryEventsExportQueueStore interface {
@@ -70,6 +72,9 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 		tr.SetAttributes(attribute.Bool("enabled", true))
 	}
 
+	if len(events) == 0 {
+		return nil
+	}
 	return batch.InsertValues(ctx,
 		s.Handle(),
 		"telemetry_events_export_queue",

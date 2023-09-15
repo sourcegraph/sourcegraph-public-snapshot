@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
+// DefaultEventIDFunc is the default generator for telemetry event IDs.
 var DefaultEventIDFunc = uuid.NewString
 
 // NewEventWithDefaults creates a uniform event with defaults filled in. All
