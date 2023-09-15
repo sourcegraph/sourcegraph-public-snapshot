@@ -14,6 +14,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
   private inner class EditCodebaseDialog : DialogWrapper(null, true) {
     val gitURL =
         ExtendableTextField(CodyAgent.getClient(project).codebase?.currentCodebase() ?: "", 40)
+
     init {
       init()
       title = "Context Selection"
@@ -52,6 +53,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
       }
     }
   }
+
   override fun actionPerformed(e: ActionEvent?) {
     EditCodebaseDialog().showAndGet()
   }
