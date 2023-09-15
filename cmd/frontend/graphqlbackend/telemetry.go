@@ -51,8 +51,8 @@ type TelemetryEventUser struct {
 }
 
 type TelemetryEventBillingMetadataInput struct {
-	Product  *int32 `json:"product,omitempty"`
-	Category *int32 `json:"category,omitempty"`
+	Product  string `json:"product"`
+	Category string `json:"category"`
 }
 
 type TelemetryEventMarketingTrackingInput struct {
