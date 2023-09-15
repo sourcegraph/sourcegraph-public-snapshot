@@ -246,6 +246,11 @@ func toBuildNotification(b *build.Build) *notify.BuildNotification {
 		Failed:             []notify.JobLine{},
 	}
 
+	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
+	// 1st build comes through it failed - we send a notification. 2nd build - a retry - comes through,
+	// build passed. Now if we checked for build failed and didn't do any processing, we wouldn't be able
+	// to process that the build has been fixed
+
 	groups := build.GroupByStatus(b.Steps)
 	for _, j := range groups[build.JobFixed] {
 		info.Fixed = append(info.Fixed, j)
@@ -254,14 +259,15 @@ func toBuildNotification(b *build.Build) *notify.BuildNotification {
 		info.Failed = append(info.Failed, j)
 	}
 
-	if len(groups[build.JobFailed]) > 0 {
+	if len(groups[build.JobInProgress]) > 0 {
+		info.BuildStatus = string(build.BuildInProgress)
+	} else if len(groups[build.JobFailed]) > 0 {
 		info.BuildStatus = string(build.BuildFailed)
 	} else if len(groups[build.JobFixed]) > 0 {
 		info.BuildStatus = string(build.BuildFixed)
 	} else {
 		info.BuildStatus = string(build.BuildPassed)
 	}
-
 	return &info
 }
 

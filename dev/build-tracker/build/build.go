@@ -272,7 +272,8 @@ func (s *Store) Add(event *Event) {
 	newJob := event.WrappedJob()
 	err := build.AddJob(newJob)
 	if err != nil {
-		s.logger.Warn("job for step has no name - not added",
+		s.logger.Warn("job not added",
+			log.Error(err),
 			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
 			log.Int("totalSteps", len(build.Steps)),
@@ -287,7 +288,6 @@ func (s *Store) Add(event *Event) {
 		)
 
 	}
-
 }
 
 func (s *Store) Set(build *Build) {

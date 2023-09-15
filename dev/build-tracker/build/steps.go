@@ -11,9 +11,10 @@ import (
 type JobStatus string
 
 const (
-	JobFixed  JobStatus = JobStatus(BuildFixed)
-	JobFailed JobStatus = JobStatus(BuildFailed)
-	JobPassed JobStatus = JobStatus(BuildPassed)
+	JobFixed      JobStatus = JobStatus(BuildFixed)
+	JobFailed     JobStatus = JobStatus(BuildFailed)
+	JobPassed     JobStatus = JobStatus(BuildPassed)
+	JobInProgress JobStatus = JobStatus(BuildInProgress)
 )
 
 func (js JobStatus) ToBuildStatus() BuildStatus {
@@ -45,14 +46,18 @@ func (j *Job) finished() bool {
 }
 
 func (j *Job) state() string {
-	return strings.ToTitle(util.Strp(j.State))
+	return strings.ToLower(util.Strp(j.State))
 }
 
 func (j *Job) status() JobStatus {
-	if j.failed() {
+	switch {
+	case !j.finished():
+		return JobInProgress
+	case j.failed():
 		return JobFailed
+	default:
+		return JobPassed
 	}
-	return JobPassed
 }
 
 func (j *Job) hasTimedOut() bool {
