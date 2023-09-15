@@ -78,7 +78,12 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.SearchJobs,
-        element: <LegacyRoute render={props => <SearchJob />} condition={isSearchJobsEnabled} />,
+        element: (
+            <LegacyRoute
+                render={props => <SearchJob isAdmin={props.authenticatedUser?.siteAdmin} />}
+                condition={isSearchJobsEnabled}
+            />
+        ),
     },
     {
         path: EnterprisePageRoutes.Sentinel,

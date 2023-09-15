@@ -33,7 +33,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
     request: {
         query: getDocumentNode(SEARCH_JOBS_QUERY),
         variables: {
-            first: 5,
+            first: 20,
             after: null,
             query: '',
             states: [],
@@ -260,6 +260,6 @@ const USER_PICKER_QUERY_MOCK: MockedResponse<GetUsersListResult, GetUsersListVar
 
 export const SearchJobsListPage: Story = () => (
     <MockedTestProvider mocks={[SEARCH_JOBS_MOCK, USER_PICKER_QUERY_MOCK]}>
-        <SearchJobsPage />
+        <SearchJobsPage isAdmin={false} />
     </MockedTestProvider>
 )

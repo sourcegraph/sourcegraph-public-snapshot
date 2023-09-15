@@ -99,7 +99,13 @@ export const SEARCH_JOBS_QUERY = gql`
     }
 `
 
-export const SearchJobsPage: FC = props => {
+interface SearchJobsPageProps {
+    isAdmin: boolean
+}
+
+export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
+    const { isAdmin } = props
+
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [searchStateTerm, setSearchStateTerm] = useState('')
     const [selectedUsers, setUsers] = useState<User[]>([])
@@ -196,7 +202,7 @@ export const SearchJobsPage: FC = props => {
                         </MultiComboboxPopover>
                     </MultiCombobox>
 
-                    <UsersPicker value={selectedUsers} onChange={setUsers} />
+                    {isAdmin && <UsersPicker value={selectedUsers} onChange={setUsers} />}
 
                     <Select
                         aria-label="Filter by search job status"
@@ -234,6 +240,7 @@ export const SearchJobsPage: FC = props => {
                             <SearchJob
                                 key={searchJob.id}
                                 job={searchJob}
+                                withCreatorColumn={isAdmin}
                                 onRerun={setJobToRestart}
                                 onCancel={setJobToCancel}
                                 onDelete={setJobToDelete}
@@ -269,13 +276,14 @@ const formatDateSlim = timeFormat('%Y-%m-%d')
 
 interface SearchJobProps {
     job: SearchJobNode
+    withCreatorColumn: boolean
     onRerun: (job: SearchJobNode) => void
     onCancel: (job: SearchJobNode) => void
     onDelete: (job: SearchJobNode) => void
 }
 
 const SearchJob: FC<SearchJobProps> = props => {
-    const { job, onRerun, onCancel, onDelete } = props
+    const { job, withCreatorColumn, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
 
     const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
@@ -300,10 +308,12 @@ const SearchJob: FC<SearchJobProps> = props => {
                 <SyntaxHighlightedSearchQuery query={job.query} />
             </span>
 
-            <span className={styles.jobCreator}>
-                <UserAvatar user={job.creator!} />
-                {job.creator?.displayName ?? job.creator?.username}
-            </span>
+            {withCreatorColumn && (
+                <span className={styles.jobCreator}>
+                    <UserAvatar user={job.creator!} />
+                    {job.creator?.displayName ?? job.creator?.username}
+                </span>
+            )}
 
             <span className={styles.jobActions}>
                 <Button variant="link" className={styles.jobViewLogs}>
