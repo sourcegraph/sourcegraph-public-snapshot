@@ -177,7 +177,11 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) (err err
 		return err
 	}
 
-	return copyBlobs(ctx, iter, s.uploadStore, w)
+	err = copyBlobs(ctx, iter, s.uploadStore, w)
+	if err != nil {
+		return errors.Wrapf(err, "copying blobs for job %d", id)
+	}
+	return nil
 }
 
 // discards output from br up until delim is read. If an error is encountered
@@ -225,18 +229,13 @@ func copyBlobs(ctx context.Context, iter *iterator.Iterator[string], uploadStore
 	}
 
 	// For the first blob we want the header, for the rest we don't
-	if iter.Next() {
-		key := iter.Current()
-		if err := copyBlob(key, false); err != nil {
-			return err
-		}
-	}
-
+	skipHeader := false
 	for iter.Next() {
 		key := iter.Current()
-		if err := copyBlob(key, true); err != nil {
-			return err
+		if err := copyBlob(key, skipHeader); err != nil {
+			return errors.Wrapf(err, "copying blob %q", key)
 		}
+		skipHeader = true
 	}
 
 	return iter.Err()

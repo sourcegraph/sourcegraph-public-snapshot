@@ -21,6 +21,9 @@ func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.csv\"", jobID))
+
 		err = svc.CopyBlobs(r.Context(), w, int64(jobID))
 		if err != nil {
 			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
@@ -31,7 +34,5 @@ func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.csv\"", jobID))
 	}
 }
