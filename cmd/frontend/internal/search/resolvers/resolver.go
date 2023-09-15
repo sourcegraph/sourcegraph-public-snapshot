@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -51,7 +52,12 @@ func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.Can
 }
 
 func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.DeleteSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
-	return nil, errors.New("not implemented")
+	jobID, err := UnmarshalSearchJobID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, r.svc.DeleteSearchJob(ctx, jobID)
 }
 
 func newSearchJobConnectionResolver(db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
