@@ -49,7 +49,32 @@ func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection)
 // from the subsequent calls. This is going to be expanded as part of issue #44683
 // to actually only return true if the source can serve requests.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
-	return nil
+	// pick one depot to check for connectivity
+	for _, depot := range s.config.Depots {
+		// Tiny optimization: exit early if context has been canceled.
+		if err := ctx.Err(); err != nil {
+			return errors.Wrap(err, "context canceled")
+		}
+		u := url.URL{
+			Scheme: "perforce",
+			Host:   s.config.P4Port,
+			Path:   depot,
+			User:   url.UserPassword(s.config.P4User, s.config.P4Passwd),
+		}
+		p4Url, err := vcs.ParseURL(u.String())
+		if err != nil {
+			continue
+		}
+		syncer := server.PerforceDepotSyncer{}
+		// We don't need to provide repo name and use "" instead because p4 commands are
+		// not recorded in the following `syncer.IsCloneable` call.
+		if err := syncer.IsCloneable(ctx, "", p4Url); err == nil {
+			return errors.Wrap(err, "check connection")
+		} else {
+			return nil
+		}
+	}
+	return errors.New("no depots configured for this code host")
 }
 
 // ListRepos returns all Perforce depots accessible to all connections
