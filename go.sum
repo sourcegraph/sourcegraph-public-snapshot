@@ -2050,8 +2050,8 @@ github.com/sourcegraph/tiktoken-go v0.0.0-20230905173153-caab340cf008 h1:Wu8W50q
 github.com/sourcegraph/tiktoken-go v0.0.0-20230905173153-caab340cf008/go.mod h1:9NiV+i9mJKGj1rYOT+njbv+ZwA/zJxYdewGl6qVatpg=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230913182917-2d1affd44cb7 h1:30sVCGSj0tgC4SPRZiRTm7wJ6VbXMPM9w7w3PU+R/4A=
-github.com/sourcegraph/zoekt v0.0.0-20230913182917-2d1affd44cb7/go.mod h1:K8nIDzlYzrAHu27Gp8Emrk0044Y7pvYkq1bHi5eqS2Q=
+github.com/sourcegraph/zoekt v0.0.0-20230915165638-19f03eed7c10 h1:3kfH34XVB2XOwTzngxNTxmIFAzSZ1BHlcg1quePg3TU=
+github.com/sourcegraph/zoekt v0.0.0-20230915165638-19f03eed7c10/go.mod h1:ycHcqoBnw6ukAzL6BKuCmAnwplDLyNgMnXXW+Z1zWqw=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
