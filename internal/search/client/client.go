@@ -16,10 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -54,13 +52,15 @@ type SearchClient interface {
 // New will create a search client with a zoekt and searcher backed by conf.
 func New(logger log.Logger, db database.DB) SearchClient {
 	return &searchClient{
-		logger:                      logger,
-		db:                          db,
-		zoekt:                       search.Indexed(),
-		searcherURLs:                search.SearcherURLs(),
-		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-		settingsService:             settings.NewService(db),
-		sourcegraphDotComMode:       envvar.SourcegraphDotComMode(),
+		runtimeClients: job.RuntimeClients{
+			Logger:                      logger,
+			DB:                          db,
+			Zoekt:                       search.Indexed(),
+			SearcherURLs:                search.SearcherURLs(),
+			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
+		},
+		settingsService:       settings.NewService(db),
+		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 }
 
@@ -68,22 +68,20 @@ func New(logger log.Logger, db database.DB) SearchClient {
 // zoektStreamer.
 func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
 	return &searchClient{
-		logger:                logger,
-		db:                    db,
-		zoekt:                 zoektStreamer,
+		runtimeClients: job.RuntimeClients{
+			Logger: logger,
+			DB:     db,
+			Zoekt:  zoektStreamer,
+		},
 		settingsService:       settings.Mock(&schema.Settings{}),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 }
 
 type searchClient struct {
-	logger                      log.Logger
-	db                          database.DB
-	zoekt                       zoekt.Streamer
-	searcherURLs                *endpoint.Map
-	searcherGRPCConnectionCache *defaults.ConnectionCache
-	settingsService             settings.Service
-	sourcegraphDotComMode       bool
+	runtimeClients        job.RuntimeClients
+	settingsService       settings.Service
+	sourcegraphDotComMode bool
 }
 
 func (s *searchClient) Plan(
@@ -115,7 +113,7 @@ func (s *searchClient) Plan(
 	// Beta: create a step to replace each context in the query with its repository query if any.
 	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
-		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, s.db, context)
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, s.runtimeClients.DB, context)
 		if err != nil {
 			return "", err
 		}
@@ -140,10 +138,10 @@ func (s *searchClient) Plan(
 		SearchMode:             searchMode,
 		UserSettings:           settings,
 		OnSourcegraphDotCom:    s.sourcegraphDotComMode,
-		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
+		Features:               ToFeatures(featureflag.FromContext(ctx), s.runtimeClients.Logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
-		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
+		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
 	tr.AddEvent("parsed query", attribute.Stringer("query", inputs.Query))
@@ -168,14 +166,9 @@ func (s *searchClient) Execute(
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
-	return job.RuntimeClients{
-		Logger:                      s.logger,
-		DB:                          s.db,
-		Zoekt:                       s.zoekt,
-		SearcherURLs:                s.searcherURLs,
-		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
-		Gitserver:                   gitserver.NewClient(),
-	}
+	clients := s.runtimeClients
+	clients.Gitserver = gitserver.NewClient()
+	return clients
 }
 
 func sanitizeSearchPatterns(ctx context.Context, db database.DB, log log.Logger) []*regexp.Regexp {
