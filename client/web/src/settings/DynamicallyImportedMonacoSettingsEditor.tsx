@@ -159,7 +159,6 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             if (newConfig) {
                 this.setState({ value: newConfig })
             }
-            window.location.reload()
         }
     }
 

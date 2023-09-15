@@ -1,4 +1,4 @@
-import { type FC, type PropsWithChildren, useCallback, useState } from 'react'
+import { type FC, useCallback, useState } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiCheckCircle, mdiCheckCircleOutline } from '@mdi/js'
 // eslint-disable-next-line id-length
@@ -6,6 +6,7 @@ import cx from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
+    Alert,
     H4,
     LoadingSpinner,
     Text,
@@ -37,7 +38,11 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
         return <LoadingSpinner data-testid="onboard-loading" />
     }
     if (error) {
-        return <></>
+        return (
+            <Alert variant="danger" className={styles.alert}>
+                Error in Site configuration.
+            </Alert>
+        )
     }
 
     const { licenseKey, checklistItem, config, id } = data
@@ -56,7 +61,7 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
                     <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                 </PopoverTrigger>
                 <PopoverContent className={styles.container} position={Position.bottom}>
-                    <OnboardingChecklistList>
+                    <ul data-testid="onboard-content" className={styles.list}>
                         {content.map(({ id, isComplete, title, description, link }) => (
                             <OnboardingChecklistItem
                                 key={id}
@@ -66,7 +71,7 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
                                 link={link}
                             />
                         ))}
-                    </OnboardingChecklistList>
+                    </ul>
                 </PopoverContent>
             </Popover>
             {!hasCompletedLicenseCheck && (
@@ -81,12 +86,6 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
         </>
     )
 }
-
-const OnboardingChecklistList: FC<PropsWithChildren<{}>> = ({ children }): JSX.Element => (
-    <ul data-testid="onboard-content" className={styles.list}>
-        {children}
-    </ul>
-)
 
 const OnboardingChecklistItem: FC<OnboardingChecklistItemProps> = ({
     isComplete,

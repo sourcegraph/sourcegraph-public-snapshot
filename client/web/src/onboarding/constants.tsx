@@ -9,6 +9,7 @@ export const DEFAULT_FORMAT_OPTIONS = {
 }
 
 export const DEBOUNCE_DELAY_MS = 500
+export const MIN_INPUT_LENGTH = 10
 
 export const DEFAULT_LICENSE_KEY_INFO: LicenseKeyInfo = {
     title: 'Current License',

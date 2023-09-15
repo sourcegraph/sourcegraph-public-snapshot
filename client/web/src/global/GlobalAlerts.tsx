@@ -43,23 +43,27 @@ const QUERY = gql`
     ${siteFlagFieldsFragment}
 `
 /**
+ * Alerts that should not be visible when admin onboarding is enabled
+ */
+const adminOnboardingRemovedAlerts = ['externalURL', 'email.smtp', 'enable repository permissions']
+
+/**
  * Fetches and displays relevant global alerts at the top of the page
  */
 export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphApp }) => {
     const settings = useSettings()
-    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
+    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding', true)
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
-    const adminOnboardingRemovedAlerts = ['externalURL', 'email.smtp', 'enable repository permissions']
-    const alerts =
-        siteFlagsValue?.alerts.filter(({ message }) => {
-            if (isAdminOnboardingEnabled) {
-                return !adminOnboardingRemovedAlerts.some(alt => message.includes(alt))
-            }
-            return true
-        }) || []
+    let alerts = siteFlagsValue?.alerts ?? []
+    if (isAdminOnboardingEnabled) {
+        alerts =
+            siteFlagsValue?.alerts.filter(
+                ({ message }) => !adminOnboardingRemovedAlerts.some(alt => message.includes(alt))
+            ) ?? []
+    }
 
     const showNoEmbeddingPoliciesAlert =
         window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0

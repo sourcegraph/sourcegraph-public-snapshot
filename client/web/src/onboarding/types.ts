@@ -50,21 +50,6 @@ export interface OnboardingChecklistItemProps {
     link: string
 }
 
-export interface LicenseKeyModalProps {
-    id: number
-    config: string
-    licenseKey: LicenseInfo
-    refetch?: () => Promise<ApolloQueryResult<SiteConfigResult>>
-    onHandleLicenseCheck: (
-        newValue: boolean | ((previousValue: boolean | undefined) => boolean | undefined) | undefined
-    ) => void
-}
-
-export interface LicenseKeyProps {
-    isValid: boolean
-    licenseInfo: LicenseInfo
-}
-
 export interface LicenseKeyInfo {
     title: string
     type: string

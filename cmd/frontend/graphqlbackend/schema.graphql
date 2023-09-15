@@ -7555,7 +7555,7 @@ type SiteConfiguration {
         before: String
     ): SiteConfigurationChangeConnection
     """
-    License information from license key.
+    License information from license key. Available only to site-admins.
     """
     licenseInfo: LicenseInfo!
 }

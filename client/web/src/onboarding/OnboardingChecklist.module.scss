@@ -45,6 +45,10 @@ $quinary: #ffffff;
     }
 }
 
+.alert {
+    margin: 0;
+}
+
 :global(.theme-light) {
     .button:not(:disabled):not(.disabled):not([aria-disabled='true']) {
         box-shadow: none;
