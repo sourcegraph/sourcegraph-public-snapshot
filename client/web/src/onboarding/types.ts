@@ -1,5 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react'
-
 import type { ApolloQueryResult } from '@apollo/client'
 import type { SiteConfigResult } from 'src/graphql-operations'
 
@@ -43,23 +41,9 @@ export interface EffectiveContent {
     'auth.providers': string[]
 }
 
-export interface OnboardingChecklistItemProps {
-    isComplete: boolean
-    title: string
-    description: string
-    link: string
-}
-
 export interface LicenseKeyInfo {
     title: string
     type: string
     description: string
     logo: JSX.Element
-}
-
-export interface OnboardingChecklistProps {
-    isModalOpen: boolean
-    onHandleOpen: Dispatch<SetStateAction<boolean>>
-    keepOpen: boolean
-    onHandleKeepOpen: Dispatch<SetStateAction<boolean>>
 }

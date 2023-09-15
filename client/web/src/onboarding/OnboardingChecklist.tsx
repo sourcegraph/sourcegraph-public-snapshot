@@ -19,7 +19,7 @@ import {
 import { useOnboardingChecklistQuery } from './graphql-hooks'
 import { LicenseKeyModal } from './LicenseModal'
 import { content } from './OnboardingChecklist.content'
-import type { ChecklistItem, OnboardingChecklistItemProps } from './types'
+import type { ChecklistItem } from './types'
 
 import styles from './OnboardingChecklist.module.scss'
 
@@ -79,6 +79,13 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
             )}
         </>
     )
+}
+
+export interface OnboardingChecklistItemProps {
+    isComplete: boolean
+    title: string
+    description: string
+    link: string
 }
 
 const OnboardingChecklistItem: FC<OnboardingChecklistItemProps> = ({
