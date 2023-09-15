@@ -85,9 +85,24 @@ const maxZeroReads = 3
 // in a row.
 var errNoDownloadProgress = errors.New("no download progress")
 
-func (s *s3Store) List(ctx context.Context) (*iterator.Iterator[string], error) {
+func (s *s3Store) List(ctx context.Context, prefix string) (_ *iterator.Iterator[string], err error) {
+	ctx, _, endObservation := s.operations.List.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	listObjectsV2Input := s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+	}
+
+	// This may be unnecessary, but we're being extra careful because we don't know
+	// how s3 handles a pointer to an empty string.
+	if prefix != "" {
+		listObjectsV2Input.Prefix = aws.String(prefix)
+	}
+
 	// We wrap the client's paginator and just return the keys.
-	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{Bucket: &s.bucket})
+	paginator := s.client.NewListObjectsV2Paginator(&listObjectsV2Input)
 
 	next := func() ([]string, error) {
 		if !paginator.HasMorePages() {
