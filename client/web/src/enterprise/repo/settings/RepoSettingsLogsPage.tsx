@@ -19,7 +19,6 @@ import {
     LoadingSpinner,
     ErrorAlert,
     Button,
-    Code,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
