@@ -38,11 +38,7 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
         return <LoadingSpinner data-testid="onboard-loading" />
     }
     if (error) {
-        return (
-            <Alert variant="danger" className={styles.alert}>
-                Error in Site configuration.
-            </Alert>
-        )
+        return <></>
     }
 
     const { licenseKey, checklistItem, config, id } = data
