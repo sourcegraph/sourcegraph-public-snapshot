@@ -50,11 +50,6 @@ input TelemetryEventInput {
     parameters: TelemetryEventParametersInput!
 
     """
-    Optional user associated with the event.
-    """
-    user: TelemetryEventUserInput
-
-    """
     Optional marketing campaign tracking parameters.
     """
     marketingTracking: TelemetryEventMarketingTrackingInput
@@ -115,21 +110,6 @@ input TelemetryEventMetadataInput {
     Numeric value associated with the key.
     """
     value: Int!
-}
-
-"""
-User associated with a telemetry V2 event.
-"""
-input TelemetryEventUserInput {
-    """
-    Database user ID of signed in user.
-    """
-    userID: Int
-    """
-    Randomized unique identifier for client (i.e. stored in localstorage in web
-    client).
-    """
-    anonymousUserID: String
 }
 
 """

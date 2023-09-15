@@ -24,7 +24,6 @@ type TelemetryEventInput struct {
 	Action            string                                `json:"action"`
 	Source            TelemetryEventSourceInput             `json:"source"`
 	Parameters        TelemetryEventParametersInput         `json:"parameters"`
-	User              *TelemetryEventUser                   `json:"user,omitempty"`
 	MarketingTracking *TelemetryEventMarketingTrackingInput `json:"marketingTracking,omitempty"`
 }
 
@@ -43,11 +42,6 @@ type TelemetryEventParametersInput struct {
 type TelemetryEventMetadataInput struct {
 	Key   string `json:"key"`
 	Value int32  `json:"value"`
-}
-
-type TelemetryEventUser struct {
-	UserID          *int32  `json:"userID,omitempty"`
-	AnonymousUserID *string `json:"anonymousUserID,omitempty"`
 }
 
 type TelemetryEventBillingMetadataInput struct {
