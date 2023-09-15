@@ -369,8 +369,8 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	r := newURLRedactor(remoteURL)
-	_, err := runCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd).WithRedactorFunc(r.redact))
+	r := urlredactor.New(remoteURL)
+	_, err := runCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {
