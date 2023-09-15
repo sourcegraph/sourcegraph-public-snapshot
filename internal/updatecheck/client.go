@@ -756,11 +756,12 @@ func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, 
 	return kinds, err
 }
 
+const defaultUpdateCheckURL = "https://pings.sourcegraph.com/updates"
+
 // updateCheckURL returns an URL to the update checks route on Sourcegraph.com or
 // if provided through "UPDATE_CHECK_BASE_URL", that specific endpoint instead, to
 // accomodate network limitations on the customer side.
 func updateCheckURL(logger log.Logger) string {
-	const defaultUpdateCheckURL = "https://pings.sourcegraph.com/updates"
 	base := os.Getenv("UPDATE_CHECK_BASE_URL")
 	if base == "" {
 		return defaultUpdateCheckURL
