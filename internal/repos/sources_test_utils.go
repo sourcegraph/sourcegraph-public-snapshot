@@ -11,6 +11,7 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -40,7 +41,7 @@ func Update(name string) bool {
 func TestClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := NewRecorder(t, cassete, Update(name))
-	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, GitserverRedirectMiddleware)
+	mws = append(mws, GitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
 	return mw, rec
 }

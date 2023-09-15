@@ -74,6 +74,7 @@ type OpenTelemetryConfig struct {
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
 	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
+	// TODO: Eventually migrate to MSP standard (no prefix)
 	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 

@@ -6,12 +6,15 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2serviceiammember"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflare"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflareorigincert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/managedcert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
@@ -74,7 +77,6 @@ var (
 // - ${local.env_var_prefix}_BIGQUERY_PROJECT_ID
 // - ${local.env_var_prefix}_BIGQUERY_DATASET
 // - ${local.env_var_prefix}_BIGQUERY_TABLE
-// - ${local.env_var_prefix}_DIAGNOSTICS_SECRET
 //
 // The prefix is an all-uppercase underscore-delimited version of the service ID,
 // for example:
@@ -85,9 +87,9 @@ var (
 //
 //	CODY_GATEWAY_
 //
-// Note that some variables like GOOGLE_PROJECT_ID and REDIS_ENDPOINT do not
-// get prefixed, and custom env vars configured on an environment are not prefixed
-// either.
+// Note that some variables conforming to conventions like DIAGNOSTICS_SECRET,
+// GOOGLE_PROJECT_ID, and REDIS_ENDPOINT do not get prefixed, and custom env
+// vars configured on an environment are not automatically prefixed either.
 func makeServiceEnvVarPrefix(serviceID string) string {
 	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
 }
@@ -136,8 +138,11 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			},
 			{
 				// Set up secret that service should accept for diagnostics
-				// endpoints
-				Name:  pointers.Ptr(serviceEnvVarPrefix + "DIAGNOSTICS_SECRET"),
+				// endpoints.
+				//
+				// We don't use serviceEnvVarPrefix here because this is a
+				// convention across MSP services.
+				Name:  pointers.Ptr("DIAGNOSTICS_SECRET"),
 				Value: &diagnosticsSecret.HexValue,
 			},
 		},
@@ -224,16 +229,64 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		return nil, err
 	}
 
-	// Now we add a load balancer
-	lb := loadbalancer.New(stack, resourceid.New("lb-backend"), loadbalancer.Config{
-		ProjectID:     vars.ProjectID,
-		Region:        gcpRegion,
-		TargetService: service,
+	// Allow IAM-free access to the service - auth should be handled generally
+	// by the service itself.
+	//
+	// TODO: Parameterize this so internal services can choose to auth only via
+	// GCP IAM?
+	_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-allusers-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
+		Name:     service.Name(),
+		Location: service.Location(),
+		Project:  &vars.ProjectID,
+		Member:   pointers.Ptr("allUsers"),
+		Role:     pointers.Ptr("roles/run.invoker"),
 	})
 
 	// Then whatever the user requested to expose the service publicly
-	switch vars.Environment.Domain.Type {
-	case "cloudflare":
+	switch domain := vars.Environment.Domain; domain.Type {
+	case "", spec.EnvironmentDomainTypeNone:
+		// do nothing
+
+	case spec.EnvironmentDomainTypeCloudflare:
+		// set zero value for convenience
+		if domain.Cloudflare == nil {
+			return nil, errors.Newf("domain type %q specified but Cloudflare configuration is nil",
+				domain.Type)
+		}
+		if domain.Cloudflare.Subdomain == "" || domain.Cloudflare.Zone == "" {
+			return nil, errors.Newf("domain type %q requires 'cloudflare.subdomain' and 'cloudflare.zone' to be set",
+				domain.Type)
+		}
+
+		// Provision SSL cert
+		var sslCertificate loadbalancer.SSLCertificate
+		if domain.Cloudflare.Proxied {
+			sslCertificate = cloudflareorigincert.New(stack,
+				resourceid.New("cf-origin-cert"),
+				cloudflareorigincert.Config{
+					ProjectID: vars.ProjectID,
+				}).Certificate
+		} else {
+			sslCertificate = managedcert.New(stack,
+				resourceid.New("managed-cert"),
+				managedcert.Config{
+					ProjectID: vars.ProjectID,
+					Domain:    fmt.Sprintf("%s.%s", domain.Cloudflare.Subdomain, domain.Cloudflare.Zone),
+				}).Certificate
+		}
+
+		// Create load-balancer pointing to Cloud Run service
+		lb, err := loadbalancer.New(stack, resourceid.New("loadbalancer"), loadbalancer.Config{
+			ProjectID:      vars.ProjectID,
+			Region:         gcpRegion,
+			TargetService:  service,
+			SSLCertificate: sslCertificate,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "loadbalancer.New")
+		}
+
+		// Now set up a DNS record in Cloudflare to route to the load balancer
 		if _, err := cloudflare.New(stack, resourceid.New("cf"), cloudflare.Config{
 			Spec:   *vars.Environment.Domain.Cloudflare,
 			Target: *lb,
@@ -341,34 +394,47 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 					c.AdditionalEnv...),
 
 				// Do healthchecks with authorization based on MSP convention.
-				StartupProbe: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
-					HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
-						Path: pointers.Ptr(healthCheckEndpoint),
-						HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-							Name:  pointers.Ptr("Bearer"),
-							Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
-						}},
-					},
-					InitialDelaySeconds: pointers.Float64(0),
-					TimeoutSeconds:      pointers.Float64(1),
-					PeriodSeconds:       pointers.Float64(2),
-					FailureThreshold:    pointers.Float64(3),
-				},
+				StartupProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe {
+					// Default: enabled
+					if vars.Environment.StatupProbe != nil &&
+						pointers.Deref(vars.Environment.StatupProbe.Disabled, false) {
+						return nil
+					}
 
+					// Set zero value for ease of reference
+					if vars.Environment.StatupProbe == nil {
+						vars.Environment.StatupProbe = &spec.EnvironmentStartupProbeSpec{}
+					}
+
+					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
+						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
+							Path: pointers.Ptr(healthCheckEndpoint),
+							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
+								Name:  pointers.Ptr("Authorization"),
+								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
+							}},
+						},
+						InitialDelaySeconds: pointers.Float64(0),
+						TimeoutSeconds:      pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Timeout, 1)),
+						PeriodSeconds:       pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Interval, 1)),
+						FailureThreshold:    pointers.Float64(3),
+					}
+				}(),
 				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
-					if vars.Environment.Healthcheck == nil || vars.Environment.Healthcheck.LivenessProbeInterval == nil {
+					// Default: disabled
+					if vars.Environment.LivenessProbe == nil {
 						return nil
 					}
 					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGet{
 							Path: pointers.Ptr(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Bearer"),
-								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+								Name:  pointers.Ptr("Authorization"),
+								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
-						TimeoutSeconds:   pointers.Float64(3),
-						PeriodSeconds:    pointers.Float64(*vars.Environment.Healthcheck.LivenessProbeInterval),
+						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),
+						PeriodSeconds:    pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Interval, 1)),
 						FailureThreshold: pointers.Float64(2),
 					}
 				}(),

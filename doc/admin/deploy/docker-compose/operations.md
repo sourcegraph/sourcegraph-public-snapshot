@@ -59,7 +59,6 @@ caddy                       caddy run --config /etc/ca ...   Up                 
 cadvisor                    /usr/bin/cadvisor -logtost ...   Up (health: starting)   8080/tcp
 codeinsights-db             docker-entrypoint.sh postgres    Up                      5432/tcp
 codeintel-db                /postgres.sh                     Up (healthy)            5432/tcp
-github-proxy                /sbin/tini -- /usr/local/b ...   Up
 gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
@@ -137,7 +136,6 @@ caddy                       caddy run --config /etc/ca ...   Up                 
 cadvisor                    /usr/bin/cadvisor -logtost ...   Up (health: starting)   8080/tcp
 codeinsights-db             docker-entrypoint.sh postgres    Up                      5432/tcp
 codeintel-db                /postgres.sh                     Up (healthy)            5432/tcp
-github-proxy                /sbin/tini -- /usr/local/b ...   Up
 gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,
@@ -205,7 +203,6 @@ caddy                       caddy run --config /etc/ca ...   Up                 
 cadvisor                    /usr/bin/cadvisor -logtost ...   Up (health: starting)   8080/tcp
 codeinsights-db             docker-entrypoint.sh postgres    Up                      5432/tcp
 codeintel-db                /postgres.sh                     Up (healthy)            5432/tcp
-github-proxy                /sbin/tini -- /usr/local/b ...   Up
 gitserver-0                 /sbin/tini -- /usr/local/b ...   Up
 grafana                     /entry.sh                        Up                      3000/tcp, 0.0.0.0:3370->3370/tcp
 jaeger                      /go/bin/all-in-one-linux - ...   Up                      0.0.0.0:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, 5775/udp, 0.0.0.0:5778->5778/tcp,

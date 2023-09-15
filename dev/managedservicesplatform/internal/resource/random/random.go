@@ -15,6 +15,8 @@ type Config struct {
 	//
 	//   ${prefix}-${randomSuffix}
 	Prefix string
+	// Keepers, if changed, rotates the random ID.
+	Keepers map[string]*string
 }
 
 type Output struct {
@@ -35,6 +37,13 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		&randomid.IdConfig{
 			ByteLength: pointers.Float64(config.ByteLength),
 			Prefix:     prefix,
+
+			Keepers: func() *map[string]*string {
+				if config.Keepers != nil {
+					return &config.Keepers
+				}
+				return nil
+			}(),
 		},
 	)
 	return &Output{HexValue: *rid.Hex()}
