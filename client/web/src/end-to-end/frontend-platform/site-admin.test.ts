@@ -1,4 +1,4 @@
-import { describe, test, before, after } from 'mocha'
+import { describe, test, after, Context } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
@@ -13,16 +13,6 @@ const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUr
 describe('Site Admin', () => {
     let driver: Driver
 
-    before(async function () {
-        driver = await initEndToEndTest()
-
-        await cloneRepos({
-            driver,
-            mochaContext: this,
-            repoSlugs: ['gorilla/mux'],
-        })
-    })
-
     after('Close browser', () => driver?.close())
 
     afterEachSaveScreenshotIfFailed(() => driver.page)
@@ -30,6 +20,14 @@ describe('Site Admin', () => {
 
     // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
     test.skip('Overview', async () => {
+        driver = await initEndToEndTest()
+        const ctx = new Context()
+
+        await cloneRepos({
+            driver,
+            mochaContext: ctx,
+            repoSlugs: ['gorilla/mux'],
+        })
         if (driver) {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
             await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
@@ -37,6 +35,7 @@ describe('Site Admin', () => {
     })
 
     test('Repositories list', async () => {
+        driver = await initEndToEndTest()
         if (driver) {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })

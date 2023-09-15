@@ -10,7 +10,6 @@ export async function initEndToEndTest(): Promise<Driver> {
     MockDate.reset()
 
     const config = getConfig('headless', 'slowMo', 'testUserPassword')
-
     // Start browser
     const driver = await createDriverForTest({
         sourcegraphBaseUrl,
@@ -18,12 +17,8 @@ export async function initEndToEndTest(): Promise<Driver> {
         ...config,
     })
 
-    try {
-        await driver.ensureSignedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
-        await driver.resetUserSettings()
-    } catch (error) {
-        console.error('failed to ensureSignedIn', error)
-    }
+    await driver.ensureSignedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
+    await driver.resetUserSettings()
 
     return driver
 }
