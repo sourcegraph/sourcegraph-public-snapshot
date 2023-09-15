@@ -514,6 +514,7 @@ public class CodyToolWindowContent implements UpdatableChat {
               addWelcomeMessage();
               messagesPanel.revalidate();
               messagesPanel.repaint();
+              CodyAgent.getInitializedServer(project).thenAccept(CodyAgentServer::transcriptReset);
             });
   }
 

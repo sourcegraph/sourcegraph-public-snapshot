@@ -47,6 +47,9 @@ public interface CodyAgentServer {
   @JsonNotification("exit")
   void exit();
 
+  @JsonNotification("transcript/reset")
+  void transcriptReset();
+
   @JsonNotification("extensionConfiguration/didChange")
   void configurationDidChange(ExtensionConfiguration document);
 
