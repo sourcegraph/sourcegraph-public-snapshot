@@ -292,6 +292,7 @@ go_test(
         "//internal/jsonc",
         "//internal/own/codeowners/v1:codeowners",
         "//internal/own/types",
+        "//internal/perforce",
         "//internal/rbac/types",
         "//internal/search/result",
         "//internal/temporarysettings",
