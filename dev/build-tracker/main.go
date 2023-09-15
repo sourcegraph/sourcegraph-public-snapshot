@@ -241,7 +241,7 @@ func toBuildNotification(b *build.Build) *notify.BuildNotification {
 		Message:            b.GetMessage(),
 		Commit:             b.GetCommit(),
 		BuildStatus:        "",
-		BuildURL:           *b.WebURL,
+		BuildURL:           b.GetWebURL(),
 		Fixed:              []notify.JobLine{},
 		Failed:             []notify.JobLine{},
 	}

@@ -115,11 +115,21 @@ func (b *Build) GetAuthorEmail() string {
 	return b.Author.Email
 }
 
+func (b *Build) GetWebURL() string {
+	if b.WebURL == nil {
+		return ""
+	}
+	return util.Strp(b.WebURL)
+}
+
 func (b *Build) GetState() string {
 	return util.Strp(b.State)
 }
 
 func (b *Build) GetCommit() string {
+	if b.Commit == nil {
+		return ""
+	}
 	return util.Strp(b.Commit)
 }
 
@@ -132,6 +142,9 @@ func (b *Build) GetBranch() string {
 }
 
 func (b *Build) GetMessage() string {
+	if b.Message == nil {
+		return ""
+	}
 	return util.Strp(b.Message)
 }
 
