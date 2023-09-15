@@ -98,6 +98,7 @@ func (s *gcsStore) List(ctx context.Context, prefix string) (_ *sgiterator.Itera
 		for len(keys) < maxKeys {
 			attr, err := iter.Next()
 			if err != nil && err != iterator.Done {
+				s.operations.List.Logger.Error("Failed to list objects in GCS bucket", sglog.Error(err))
 				return nil, err
 			}
 			if err == iterator.Done {
