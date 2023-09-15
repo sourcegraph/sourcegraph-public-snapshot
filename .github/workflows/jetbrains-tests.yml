@@ -11,8 +11,6 @@ name: JetBrains Tests
 on:
   # Trigger the workflow on any pull request that touches the jetbrains src folder
   pull_request:
-      paths:
-       - client/jetbrains/**
 
 jobs:
   test:
@@ -25,6 +23,10 @@ jobs:
       # Check out current repository
       - name: Fetch Sources
         uses: actions/checkout@v3
+
+      - run: gh pr diff --name-only | grep -q 'client/jetbrains/'
+        if: ${{ failure() }}
+        continue-on-error: true
 
       # Validate wrapper
       - name: Gradle Wrapper Validation
