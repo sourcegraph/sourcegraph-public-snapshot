@@ -322,12 +322,18 @@ public class CodyToolWindowContent implements UpdatableChat {
     signInWithSourcegraphButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
     signInWithSourcegraphButton.addActionListener(
         e -> {
-          int port = ApplicationManager.getApplication().getService(BuiltInServerOptions.class).builtInServerPort;
-          BrowserUtil.browse(ConfigUtil.DOTCOM_URL
-              + "user/settings/tokens/new/callback"
-              + "?requestFrom=JETBRAINS"
-              + "&port=" + port
-              + "&destination=%2F" + project.getLocationHash());
+          int port =
+              ApplicationManager.getApplication()
+                  .getService(BuiltInServerOptions.class)
+                  .builtInServerPort;
+          BrowserUtil.browse(
+              ConfigUtil.DOTCOM_URL
+                  + "user/settings/tokens/new/callback"
+                  + "?requestFrom=JETBRAINS"
+                  + "&port="
+                  + port
+                  + "&destination=%2F"
+                  + project.getLocationHash());
           updateVisibilityOfContentPanels();
         });
     CodyOnboardingPanel codyOnboardingPanel =

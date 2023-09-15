@@ -21,7 +21,8 @@ public class SaveAccessTokenHttpService extends org.jetbrains.ide.RestService {
 
   @Nullable
   @Override
-  public String execute(@NotNull QueryStringDecoder queryStringDecoder,
+  public String execute(
+      @NotNull QueryStringDecoder queryStringDecoder,
       @NotNull FullHttpRequest request,
       @NotNull ChannelHandlerContext context) {
     final boolean keepAlive = HttpUtil.isKeepAlive(request);
@@ -29,14 +30,21 @@ public class SaveAccessTokenHttpService extends org.jetbrains.ide.RestService {
 
     QueryStringDecoder urlDecoder = new QueryStringDecoder(request.uri());
     if (urlDecoder.path().startsWith("/" + PREFIX + "/" + getServiceName() + "/")) {
-      urlDecoder = new QueryStringDecoder(
-          urlDecoder.path().substring(1 + PREFIX.length() + 1 + getServiceName().length()));
+      urlDecoder =
+          new QueryStringDecoder(
+              urlDecoder.path().substring(1 + PREFIX.length() + 1 + getServiceName().length()));
 
       String accessToken = urlDecoder.parameters().get("token").get(0);
-      String destination = urlDecoder.parameters().get("destination").get(0); // Destination is "/projectLocationHash"
-      String projectLocationHash = (destination != null && destination.length() > 1) ? destination.substring(1) : null;
-      if (accessToken == null || projectLocationHash == null || !projectLocationHash.equals(
-          project.getLocationHash())) {
+      String destination =
+          urlDecoder
+              .parameters()
+              .get("destination")
+              .get(0); // Destination is "/projectLocationHash"
+      String projectLocationHash =
+          (destination != null && destination.length() > 1) ? destination.substring(1) : null;
+      if (accessToken == null
+          || projectLocationHash == null
+          || !projectLocationHash.equals(project.getLocationHash())) {
         sendStatus(HttpResponseStatus.BAD_REQUEST, keepAlive, channel);
         return null;
       }
