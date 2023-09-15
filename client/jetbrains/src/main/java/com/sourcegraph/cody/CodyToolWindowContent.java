@@ -325,7 +325,7 @@ public class CodyToolWindowContent implements UpdatableChat {
           int port =
               ApplicationManager.getApplication()
                   .getService(BuiltInServerOptions.class)
-                  .builtInServerPort;
+                  .getEffectiveBuiltInServerPort();
           BrowserUtil.browse(
               ConfigUtil.DOTCOM_URL
                   + "user/settings/tokens/new/callback"
