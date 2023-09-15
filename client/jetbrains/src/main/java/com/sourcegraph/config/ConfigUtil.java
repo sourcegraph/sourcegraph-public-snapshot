@@ -8,6 +8,8 @@ import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentCodebase;
 import com.sourcegraph.cody.agent.ExtensionConfiguration;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
@@ -31,6 +33,8 @@ public class ConfigUtil {
   @NotNull
   public static ExtensionConfiguration getAgentConfiguration(@NotNull Project project) {
     ServerAuth serverAuth = ServerAuthLoader.loadServerAuth(project);
+    CodyAgentCodebase codebase = CodyAgent.getClient(project).codebase;
+
     ExtensionConfiguration config =
         new ExtensionConfiguration()
             .setServerEndpoint(serverAuth.getInstanceUrl())
@@ -41,7 +45,8 @@ public class ConfigUtil {
             .setAutocompleteAdvancedAccessToken(UserLevelConfig.getAutocompleteAccessToken())
             .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
             .setDebug(isCodyDebugEnabled())
-            .setVerboseDebug(isCodyVerboseDebugEnabled());
+            .setVerboseDebug(isCodyVerboseDebugEnabled())
+            .setCodebase(codebase != null ? codebase.getCurrentCodebase() : null);
 
     if (UserLevelConfig.getAutocompleteProviderType() != null) {
       config.setAutocompleteAdvancedProvider(
@@ -65,10 +70,10 @@ public class ConfigUtil {
 
   @NotNull
   public static SourcegraphServerPath getServerPath(@NotNull Project project) {
-    CodyAccount defaultAccount = CodyAuthenticationManager.getInstance().getDefaultAccount(project);
+    CodyAccount activeAccount = CodyAuthenticationManager.getInstance().getActiveAccount(project);
 
-    return defaultAccount != null
-        ? defaultAccount.getServer()
+    return activeAccount != null
+        ? activeAccount.getServer()
         : SourcegraphServerPath.from(DOTCOM_URL, "");
   }
 
@@ -89,10 +94,6 @@ public class ConfigUtil {
     IdeaPluginDescriptor plugin =
         PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
     return plugin != null ? plugin.getVersion() : "unknown";
-  }
-
-  public static boolean isDefaultDotcomAccountNotificationDismissed() {
-    return CodyApplicationSettings.getInstance().isDefaultDotcomAccountNotificationDismissed();
   }
 
   public static boolean isCodyEnabled() {

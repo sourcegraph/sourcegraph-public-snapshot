@@ -6,7 +6,9 @@ import com.intellij.ui.scale.UserScaleContext
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Function
 
-open class ScaleContextCache<D, S : UserScaleContext>(private val myDataProvider: Function<in S, out D>) {
+open class ScaleContextCache<D, S : UserScaleContext>(
+    private val myDataProvider: Function<in S, out D>
+) {
 
   private val myData = AtomicReference<Pair<Double, D>?>(null)
 

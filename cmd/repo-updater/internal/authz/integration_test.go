@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -53,6 +54,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Skip()
 	}
 
+	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
 
 	logger := logtest.Scoped(t)

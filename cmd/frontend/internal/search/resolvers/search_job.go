@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -76,5 +75,13 @@ func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
 }
 
 func (r searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	return nil, errors.New("not implemented")
+	// TODO: This needs to be implemented properly, this is fake data
+	stats := &searchJobStatsResolver{
+		total:      99,
+		completed:  80,
+		failed:     10,
+		inProgress: 9,
+	}
+
+	return stats, nil
 }

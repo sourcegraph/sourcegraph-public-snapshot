@@ -37,12 +37,18 @@ public interface CodyAgentServer {
   @JsonRequest("graphql/currentUserId")
   CompletableFuture<String> currentUserId();
 
+  @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
+  CompletableFuture<String> getRepoIdIfEmbeddingExists(EmbeddingExistsParams repoName);
+
   // Notifications
   @JsonNotification("initialized")
   void initialized();
 
   @JsonNotification("exit")
   void exit();
+
+  @JsonNotification("transcript/reset")
+  void transcriptReset();
 
   @JsonNotification("extensionConfiguration/didChange")
   void configurationDidChange(ExtensionConfiguration document);

@@ -99,6 +99,7 @@ sealed class SourcegraphApiRequest<out T>(val url: String) {
       }
     }
   }
+
   companion object {
     private fun <T> parseGQLResponse(
         response: SourcegraphApiResponse,

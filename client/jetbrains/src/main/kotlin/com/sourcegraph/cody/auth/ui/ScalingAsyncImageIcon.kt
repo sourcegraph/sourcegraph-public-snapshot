@@ -37,6 +37,7 @@ class ScalingAsyncImageIcon(
       }
 
   override fun getIconHeight() = baseIcon.iconHeight
+
   override fun getIconWidth() = baseIcon.iconWidth
 
   override fun paintIcon(c: Component, g: Graphics, x: Int, y: Int) {

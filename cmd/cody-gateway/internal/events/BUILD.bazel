@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
+        "//internal/actor",
         "//internal/codygateway",
         "//internal/goroutine",
         "//internal/trace",

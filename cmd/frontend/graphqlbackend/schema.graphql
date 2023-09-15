@@ -149,12 +149,7 @@ type Mutation {
         """
         The ID of the existing repository whose mirror to check.
         """
-        repository: ID
-        """
-        The name of a repository whose mirror to check. If the name is provided, the repository need not be added
-        to the site (but the site configuration must define a code host that knows how to handle the name).
-        """
-        name: String
+        repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
     """
     Schedule the mirror repository to be updated from its original source repository. Updating
@@ -4027,6 +4022,16 @@ type RecordedCommand {
     Path to command executable (git executable in most cases).
     """
     path: String!
+
+    """
+    Output of the command.
+    """
+    output: String!
+
+    """
+    Indicates whether the command execution was successful.
+    """
+    isSuccess: Boolean!
 }
 
 """
@@ -7411,6 +7416,10 @@ type CodyLLMConfiguration {
     Maximum number of tokens client should use when talking to the completionModel.
     """
     completionModelMaxTokens: Int
+    """
+    Name of the provider being used for LLM interactions.
+    """
+    provider: String!
 }
 
 """

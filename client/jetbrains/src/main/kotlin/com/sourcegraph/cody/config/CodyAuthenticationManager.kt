@@ -4,7 +4,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.AuthData
 import com.intellij.util.concurrency.annotations.RequiresEdt
-import com.sourcegraph.cody.localapp.LocalAppManager
 import java.awt.Component
 import org.jetbrains.annotations.CalledInAny
 
@@ -12,6 +11,7 @@ internal class CodyAuthData(val account: CodyAccount, login: String, token: Stri
     AuthData(login, token) {
   val server: SourcegraphServerPath
     get() = account.server
+
   val token: String
     get() = password!!
 }
@@ -41,16 +41,15 @@ class CodyAuthenticationManager internal constructor() {
   internal fun updateAccountToken(account: CodyAccount, newToken: String) =
       accountManager.updateAccount(account, newToken)
 
-  fun getDefaultAccount(project: Project): CodyAccount? =
-      project.service<CodyProjectDefaultAccountHolder>().account
+  fun getActiveAccount(project: Project): CodyAccount? =
+      project.service<CodyProjectActiveAccountHolder>().account
 
-  fun setDefaultAccount(project: Project, account: CodyAccount?) {
-    project.service<CodyProjectDefaultAccountHolder>().account = account
+  fun setActiveAccount(project: Project, account: CodyAccount?) {
+    project.service<CodyProjectActiveAccountHolder>().account = account
   }
 
-  fun getDefaultAccountType(project: Project): AccountType {
-    return getDefaultAccount(project)?.getAccountType()
-        ?: AccountType.DOTCOM
+  fun getActiveAccountType(project: Project): AccountType {
+    return getActiveAccount(project)?.getAccountType() ?: AccountType.DOTCOM
   }
 
   companion object {

@@ -6,6 +6,7 @@ open class SourcegraphConfusingException : IOException {
   private var myDetails: String? = null
 
   constructor(message: String?) : super(message)
+
   constructor(message: String?, cause: Throwable?) : super(message, cause)
 
   fun setDetails(details: String?) {

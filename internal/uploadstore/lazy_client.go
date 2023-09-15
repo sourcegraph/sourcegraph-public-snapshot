@@ -33,12 +33,12 @@ func (s *lazyStore) Get(ctx context.Context, key string) (io.ReadCloser, error) 
 	return s.store.Get(ctx, key)
 }
 
-func (s *lazyStore) List(ctx context.Context) (*iterator.Iterator[string], error) {
+func (s *lazyStore) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
 	if err := s.initOnce(ctx); err != nil {
 		return nil, err
 	}
 
-	return s.store.List(ctx)
+	return s.store.List(ctx, prefix)
 }
 
 func (s *lazyStore) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {

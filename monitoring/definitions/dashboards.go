@@ -12,7 +12,7 @@ func Default() Dashboards {
 	return []*monitoring.Dashboard{
 		Frontend(),
 		GitServer(),
-		GitHubProxy(),
+		GitHub(),
 		Postgres(),
 		PreciseCodeIntelWorker(),
 		Redis(),

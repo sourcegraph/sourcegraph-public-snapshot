@@ -3,7 +3,9 @@ package shared
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -26,8 +28,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	if err != nil {
 		return errors.Errorf("create server handler: %v", err)
 	}
+
+	addr := fmt.Sprintf(":%d", config.Port)
 	server := httpserver.NewFromAddr(
-		config.Address,
+		addr,
 		&http.Server{
 			ReadTimeout:  75 * time.Second,
 			WriteTimeout: 10 * time.Minute,
@@ -37,7 +41,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Mark health server as ready and go!
 	ready()
-	obctx.Logger.Info("service ready", log.String("address", config.Address))
+	obctx.Logger.Info("service ready", log.String("address", addr))
 
 	// Block until done
 	goroutine.MonitorBackgroundRoutines(ctx, server)
@@ -56,7 +60,19 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	if err != nil {
 		return nil, errors.Errorf("create Pub/Sub client: %v", err)
 	}
-	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		secret := strings.TrimPrefix(strings.ToLower(r.Header.Get("Authorization")), "bearer ")
+		if secret != config.DiagnosticsSecret {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		if r.URL.Query().Get("full-suite") == "" {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("OK"))
+			return
+		}
+
 		// NOTE: Only mark as failed and respond with a non-200 status code if a critical
 		// component fails, otherwise the service would be marked as unhealthy and stop
 		// serving requests (in Cloud Run).
@@ -65,6 +81,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		if err := pubsubClient.Ping(context.Background()); err != nil {
 			failed = true
 			status["pubsubClient"] = err.Error()
+			logger.Error("failed to ping Pub/Sub client", log.Error(err))
 		} else {
 			status["pubsubClient"] = "OK"
 		}
@@ -72,6 +89,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		if hubspotutil.HasAPIKey() {
 			if err := hubspotutil.Client().Ping(30 * time.Second); err != nil {
 				status["hubspotClient"] = err.Error()
+				logger.Error("failed to ping HubSpot client", log.Error(err))
 			} else {
 				status["hubspotClient"] = "OK"
 			}
