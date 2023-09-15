@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package telemetrygateway.v1;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1";
 
