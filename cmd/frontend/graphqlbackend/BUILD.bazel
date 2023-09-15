@@ -509,6 +509,7 @@ go_test(
         "//internal/search",
         "//internal/search/backend",
         "//internal/search/client",
+        "//internal/search/job",
         "//internal/search/query",
         "//internal/search/repos",
         "//internal/search/result",
