@@ -86,10 +86,9 @@ const REQUESTERS: Record<string, TokenRequester> = {
         name: 'JetBrains IDE',
         redirectURL: 'http://localhost:11111/api/sourcegraph/token?token=$TOKEN',
         successMessage: 'Now opening your IDE...',
-        infoMessage: 'Please make sure you still have your IDE running on your machine when clicking this link.',
+        infoMessage:
+            'Please make sure you still have your IDE (IntelliJ, GoLand, PyCharm, etc.) running on your machine when clicking this link.',
         callbackType: 'open',
-        onlyDotCom: false,
-        forwardDestination: true,
     },
 }
 

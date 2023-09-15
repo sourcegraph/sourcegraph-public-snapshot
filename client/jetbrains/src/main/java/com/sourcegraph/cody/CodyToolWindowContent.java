@@ -331,9 +331,7 @@ public class CodyToolWindowContent implements UpdatableChat {
                   + "user/settings/tokens/new/callback"
                   + "?requestFrom=JETBRAINS"
                   + "&port="
-                  + port
-                  + "&destination=%2F"
-                  + project.getLocationHash());
+                  + port);
           updateVisibilityOfContentPanels();
         });
     CodyOnboardingPanel codyOnboardingPanel =
