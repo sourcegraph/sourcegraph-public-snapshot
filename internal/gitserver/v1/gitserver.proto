@@ -36,6 +36,9 @@ message DiskInfoResponse {
 
   // total_space is the total amount of space on a gitserver instance.
   uint64 total_space = 2;
+
+  // percent_used is the percent of disk space used on a gitserver instance.
+  float percent_used = 3;
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
