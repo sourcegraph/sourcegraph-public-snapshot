@@ -115,7 +115,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	r.Path("/updates").
 		Methods(http.MethodGet, http.MethodPost).
 		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			updatecheck.HandlePingRequest(logger, pubsubClient, w, r)
+			updatecheck.Handle(logger, pubsubClient, w, r)
 		})
 	return r, nil
 }

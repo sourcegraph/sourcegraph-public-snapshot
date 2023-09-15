@@ -167,7 +167,7 @@ func NewHandler(
 		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
 
-		updatecheckHandler, err := updatecheck.HandlerWithLog(logger)
+		updatecheckHandler, err := updatecheck.ForwardHandler()
 		if err != nil {
 			return nil, errors.Errorf("create updatecheck handler: %v", err)
 		}
