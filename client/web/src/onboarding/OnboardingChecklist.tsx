@@ -1,8 +1,7 @@
 import { type FC, useCallback, useState } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiCheckCircle, mdiCheckCircleOutline } from '@mdi/js'
-// eslint-disable-next-line id-length
-import cx from 'classnames'
+import classnames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
@@ -93,7 +92,7 @@ const OnboardingChecklistItem: FC<OnboardingChecklistItemProps> = ({
             <Icon
                 aria-hidden={true}
                 svgPath={isComplete ? mdiCheckCircle : mdiCheckCircleOutline}
-                className={cx({ [styles.checked]: isComplete })}
+                className={classnames({ [styles.checked]: isComplete })}
             />
             <div className={styles.content}>
                 <H4>{title}</H4>
