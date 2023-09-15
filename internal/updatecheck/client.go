@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
@@ -751,9 +750,6 @@ func authProviderTypes() []string {
 	return types
 }
 
-const defaultUpdateCheckBaseURL = "https://sourcegraph.com"
-const updateCheckPath = "/.api/updates"
-
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
 	kinds, err = db.ExternalServices().DistinctKinds(ctx)
@@ -764,17 +760,21 @@ func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, 
 // if provided through "UPDATE_CHECK_BASE_URL", that specific endpoint instead, to
 // accomodate network limitations on the customer side.
 func updateCheckURL(logger log.Logger) string {
+	const defaultUpdateCheckURL = "https://pings.sourcegraph.com/updates"
 	base := os.Getenv("UPDATE_CHECK_BASE_URL")
 	if base == "" {
-		base = defaultUpdateCheckBaseURL
+		return defaultUpdateCheckURL
 	}
+
 	u, err := url.Parse(base)
-	if err != nil || u.Scheme != "https" {
+	if err == nil && u.Scheme != "https" {
+		logger.Warn(`UPDATE_CHECK_BASE_URL scheme should be "https"`, log.String("UPDATE_CHECK_BASE_URL", base))
+		return defaultUpdateCheckURL
+	} else if err != nil {
 		logger.Error("Invalid UPDATE_CHECK_BASE_URL", log.String("UPDATE_CHECK_BASE_URL", base))
-		// Revert to the default value
-		return fmt.Sprintf("%s%s", defaultUpdateCheckBaseURL, updateCheckPath)
+		return defaultUpdateCheckURL
 	}
-	u.Path = updateCheckPath
+	u.Path = "/.api/updates" // Use the old path for backwards compatibility
 	return u.String()
 }
 
