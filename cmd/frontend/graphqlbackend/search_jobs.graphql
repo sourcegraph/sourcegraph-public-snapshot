@@ -55,7 +55,7 @@ extend type Query {
         """
         List of users ids by which we will filter out search jobs list.
         """
-        userIDs : [ID!]
+        userIDs: [ID!]
         """
         The query to filter the results by.
         """
