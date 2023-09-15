@@ -65,6 +65,8 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 		attribute.Int("events", len(events)))
 	defer tr.End()
 
+	logger := trace.Logger(ctx, s.logger)
+
 	if flags := featureflag.FromContext(ctx); flags == nil || !flags.GetBoolOr(FeatureFlagTelemetryExport, false) {
 		tr.SetAttributes(attribute.Bool("enabled", false))
 		return nil // no-op
@@ -84,7 +86,7 @@ func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, ev
 			"timestamp",
 			"payload_pb",
 		},
-		insertChannel(s.logger, events))
+		insertChannel(logger, events))
 }
 
 func insertChannel(logger log.Logger, events []*telemetrygatewayv1.Event) <-chan []any {
