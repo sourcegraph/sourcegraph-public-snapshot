@@ -159,6 +159,7 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 	}, true
 }
 
+// getAllAuthenticatedUserOrgs gets all the orgs the authenticated user is a member of.
 func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) ([]*github.Org, error) {
 	var orgs []*github.Org
 	for page := 1; true; page++ {
@@ -177,6 +178,7 @@ func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) ([]*github.Org
 	return orgs, nil
 }
 
+// getAllInternalRepositoriesForOrg fetches all internal repositories for the given org.
 func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin string) ([]*github.Repository, error) {
 	var repos []*github.Repository
 	for page := 1; true; page++ {
@@ -195,6 +197,8 @@ func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin 
 	return repos, nil
 }
 
+// getAllAuthenticatedUserInternalRepositories returns all internal repositories that the authenticated
+// user has access to across all orgs.
 func getAllAuthenticatedUserInternalRepositories(ctx context.Context, cli client) ([]*github.Repository, error) {
 	var repos []*github.Repository
 	orgs, err := getAllAuthenticatedUserOrgs(ctx, cli)
@@ -230,8 +234,14 @@ func getAllAuthenticatedUserAffiliatedRepositories(ctx context.Context, cli clie
 	return repos, nil
 }
 
+// fetchCachedAuthenticatedUserPerms fetches permissions for the authenticated user using cached group membership data.
 func (p *Provider) fetchCachedAuthenticatedUserPerms(ctx context.Context, logger log.Logger, cli client, accountID extsvc.AccountID, opts authz.FetchPermsOptions) (collections.Set[extsvc.RepoID], error) {
 	userRepos := collections.NewSet[extsvc.RepoID]()
+
+	// If groupsCache is disabled, return early
+	if p.groupsCache == nil {
+		return userRepos, nil
+	}
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
@@ -344,6 +354,7 @@ func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, 
 
 	// If cache is disabled, we also need to fetch a list of internal repositories for each
 	// org the user belongs to.
+	// If caching is enabled, then the internal repositories will be fetched as part of the group sync.
 	if p.groupsCache == nil {
 		internalRepos, err := getAllAuthenticatedUserInternalRepositories(ctx, cli)
 		for _, r := range internalRepos {
