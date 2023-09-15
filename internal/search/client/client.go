@@ -58,6 +58,7 @@ func New(logger log.Logger, db database.DB) SearchClient {
 			Zoekt:                       search.Indexed(),
 			SearcherURLs:                search.SearcherURLs(),
 			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
+			Gitserver:                   gitserver.NewClient(),
 		},
 		settingsService:       settings.NewService(db),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -166,9 +167,7 @@ func (s *searchClient) Execute(
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
-	clients := s.runtimeClients
-	clients.Gitserver = gitserver.NewClient()
-	return clients
+	return s.runtimeClients
 }
 
 func sanitizeSearchPatterns(ctx context.Context, db database.DB, log log.Logger) []*regexp.Regexp {
