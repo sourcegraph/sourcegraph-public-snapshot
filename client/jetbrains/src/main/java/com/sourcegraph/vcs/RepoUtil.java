@@ -212,6 +212,10 @@ public class RepoUtil {
 
   private static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
     Optional<Repository> firstFoundRepository =
+        // NOTE(olafurpg): getRepositories() returns an empty stream in most cases. I made multiple
+        // failed attempts to infer the repository from a project. Ideally, we should just persist
+        // the codebase per project so that we only have to wait until the user has opened a file
+        // once for any given project.
         VcsRepositoryManager.getInstance(project).getRepositories().stream()
             .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))
             .findFirst();

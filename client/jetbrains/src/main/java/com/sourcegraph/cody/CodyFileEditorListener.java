@@ -35,7 +35,7 @@ public class CodyFileEditorListener implements FileEditorManagerListener {
     if (client.codebase == null) {
       return;
     }
-    client.codebase.handlePotentialCodebaseChange(source.getProject(), file);
+    client.codebase.onFileOpened(source.getProject(), file);
   }
 
   @Override

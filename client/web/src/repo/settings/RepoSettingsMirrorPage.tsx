@@ -150,7 +150,7 @@ const CheckMirrorRepositoryConnectionActionContainer: FC<
         CheckMirrorRepositoryConnectionResult,
         CheckMirrorRepositoryConnectionVariables
     >(CHECK_MIRROR_REPOSITORY_CONNECTION, {
-        variables: { repository: props.repo.id, name: null },
+        variables: { repository: props.repo.id },
         onCompleted: result => {
             props.onDidUpdateReachability(result.checkMirrorRepositoryConnection.error === null)
         },

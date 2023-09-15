@@ -2,20 +2,19 @@ package loadbalancer
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computebackendservice"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobalforwardingrule"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computemanagedsslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeregionnetworkendpointgroup"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -28,6 +27,15 @@ type Config struct {
 	Region    string
 
 	TargetService cloudrunv2service.CloudRunV2Service
+
+	// SSLCertificate must be either computesslcertificate.ComputeSslCertificate
+	// or computemanagedsslcertificate.ComputeManagedSslCertificate. It's used
+	// by the loadbalancer's HTTPS proxy.
+	SSLCertificate SSLCertificate
+}
+
+type SSLCertificate interface {
+	Id() *string
 }
 
 // New instantiates a set of resources for a load-balancer backend that routes
@@ -43,7 +51,15 @@ type Config struct {
 //
 // Typically some other frontend will then be placed in front of URLMap, e.g.
 // resource/cloudflare.
-func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
+func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
+	switch config.SSLCertificate.(type) {
+	case computesslcertificate.ComputeSslCertificate, computemanagedsslcertificate.ComputeManagedSslCertificate:
+		// ok
+	default:
+		return nil, errors.Newf("SSLCertificate must be either ComputeSslCertificate or ComputeManagedSslCertificate, got %T",
+			config.SSLCertificate)
+	}
+
 	// Endpoint group represents the Cloud Run service.
 	endpointGroup := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
 		id.ResourceID("endpoint_group"),
@@ -86,30 +102,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			DefaultService: backendService.Id(),
 		})
 
-	// Create an SSL certificate from a secret in the shared secrets project
-	//
-	// TODO(@bobheadxi): Provision our own certificates with
-	// computesslcertificate.NewComputeSslCertificate, see sourcegraph/controller
-	sslCert := computesslcertificate.NewComputeSslCertificate(scope,
-		id.ResourceID("origin-cert"),
-		&computesslcertificate.ComputeSslCertificateConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
-			Project: pointers.Ptr(config.ProjectID),
-
-			PrivateKey: &gsmsecret.Get(scope, id.SubID("secret-origin-private-key"), gsmsecret.DataConfig{
-				Secret:    googlesecretsmanager.SecretSourcegraphWildcardKey,
-				ProjectID: googlesecretsmanager.ProjectID,
-			}).Value,
-			Certificate: &gsmsecret.Get(scope, id.SubID("secret-origin-cert"), gsmsecret.DataConfig{
-				Secret:    googlesecretsmanager.SecretSourcegraphWildcardCert,
-				ProjectID: googlesecretsmanager.ProjectID,
-			}).Value,
-
-			Lifecycle: &cdktf.TerraformResourceLifecycle{
-				CreateBeforeDestroy: pointers.Ptr(true),
-			},
-		})
-
 	// Set up an HTTPS proxy to route incoming HTTPS requests to our target's
 	// URL map, which handles load balancing for a service.
 	httpsProxy := computetargethttpsproxy.NewComputeTargetHttpsProxy(scope,
@@ -121,7 +113,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			UrlMap: urlMap.Id(),
 			// via our SSL configuration
 			SslCertificates: pointers.Ptr([]*string{
-				sslCert.Id(),
+				config.SSLCertificate.Id(),
 			}),
 			SslPolicy: computesslpolicy.NewComputeSslPolicy(
 				scope,
@@ -165,5 +157,5 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 
 	return &Output{
 		ExternalAddress: externalAddress,
-	}
+	}, nil
 }

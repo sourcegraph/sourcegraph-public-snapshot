@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -81,6 +82,12 @@ type Variables struct {
 
 const StackName = "project"
 
+const (
+	// https://cloud.google.com/resource-manager/reference/rest/v1/projects
+	projectIDMaxLength              = 30
+	projectIDRandomizedSuffixLength = 6
+)
+
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	stack := stacks.New(StackName,
@@ -91,8 +98,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// Name all stack resources after the desired project ID
 	id := resourceid.New(vars.ProjectIDPrefix)
 
+	// The project ID must leave room for a randomized suffix and a separator.
+	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + projectIDRandomizedSuffixLength; afterSuffixLength > projectIDMaxLength {
+		return nil, errors.Newf("project ID prefix %q is too long after adding random suffix (%d characters) - got %d characters, but maximum is %d characters",
+			vars.ProjectIDPrefix, projectIDRandomizedSuffixLength, afterSuffixLength, projectIDMaxLength)
+	}
 	projectID := random.New(stack, id, random.Config{
-		ByteLength: 6,
+		ByteLength: projectIDRandomizedSuffixLength,
 		Prefix:     vars.ProjectIDPrefix,
 	})
 
