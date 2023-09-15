@@ -298,6 +298,9 @@ func init() {
 									}
 									return errors.New("some errors occurred when deleting workspaces")
 								}
+
+								std.Out.WriteSuccessf("Deleted Terraform Cloud workspaces for environment %q", deployEnv.ID)
+								return nil
 							}
 
 							workspaces, err := tfcClient.SyncWorkspaces(c.Context, service.Service, deployEnv, cdktf.Stacks())
