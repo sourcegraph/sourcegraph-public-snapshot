@@ -5,8 +5,8 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
+import { isSearchJobsEnabled } from '../search-jobs/utility'
 
-import { isSearchJobsEnabled } from './search-jobs/utils'
 import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
 
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
@@ -80,7 +80,7 @@ export const enterpriseRoutes: RouteObject[] = [
         path: EnterprisePageRoutes.SearchJobs,
         element: (
             <LegacyRoute
-                render={props => <SearchJob isAdmin={props.authenticatedUser?.siteAdmin} />}
+                render={props => <SearchJob isAdmin={props.authenticatedUser?.siteAdmin ?? false} />}
                 condition={isSearchJobsEnabled}
             />
         ),

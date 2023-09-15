@@ -34,11 +34,11 @@ export const SearchJobDeleteModal: FC<SearchJobModalProps> = props => {
 
     return (
         <Modal position="center" aria-label="Delete search job" onDismiss={onDismiss}>
-            <H2>Do you want to delete search job?</H2>
+            <H2>Do you want to delete this search job?</H2>
 
             <Text className="mt-4">
-                <b>Note:</b> All query runs across all repositories will be stopped or canceled in case if the search
-                job is still running, search results will be deleted.
+                <b>Note:</b> All query runs across all repositories will be stopped or canceled. In case if the search
+                job is still running search results will be deleted.
             </Text>
 
             <SearchJobCard searchJob={searchJob} />
@@ -59,7 +59,7 @@ export const SearchJobDeleteModal: FC<SearchJobModalProps> = props => {
                             <LoadingSpinner /> Deleting
                         </>
                     ) : (
-                        <>Delete</>
+                        'Delete'
                     )}
                 </Button>
             </footer>
@@ -118,10 +118,10 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
 
     return (
         <Modal position="center" aria-label="Delete search job" onDismiss={onDismiss}>
-            <H2>Do you want to re-run search job?</H2>
+            <H2>Do you want to re-run this search job?</H2>
 
             <Text className="mt-4">
-                <b>Note:</b> Re-run will produce new search job, the current search job will be cancelled.
+                <b>Note:</b> Re-run will create a new search job, the current search job will be cancelled.
             </Text>
 
             <SearchJobCard searchJob={searchJob} />
@@ -153,7 +153,7 @@ export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
 
     return (
         <Modal position="center" aria-label="Delete search job" onDismiss={onDismiss}>
-            <H2>Do you want to cancel search job?</H2>
+            <H2>Do you want to cancel this search job?</H2>
 
             <Text className="mt-4">
                 <b>Note:</b> All query runs across all repositories and revisions will be stopped. You can re-run this

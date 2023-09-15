@@ -33,6 +33,7 @@ import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
+import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import type { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
@@ -153,7 +154,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
-    const isSearchJobsEnabled = window.context.experimentalFeatures.searchJobs ?? false
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
@@ -187,7 +187,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     </>
                 ),
             },
-            !!isSearchJobsEnabled && {
+            !!isSearchJobsEnabled() && {
                 path: EnterprisePageRoutes.SearchJobs,
                 content: (
                     <>
