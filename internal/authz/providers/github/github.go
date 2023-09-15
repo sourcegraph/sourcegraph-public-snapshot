@@ -158,6 +158,38 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 	}, true
 }
 
+func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []github.OrgDetailsAndMembership, err error) {
+	for page := 1; true; page++ {
+		pageOrgs, hasNextPage, _, err := cli.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
+		if err != nil {
+			return nil, errors.Wrap(err, "list orgs for authenticated user")
+		}
+		orgs = append(orgs, pageOrgs...)
+
+		if !hasNextPage {
+			break
+		}
+	}
+
+	return orgs, err
+}
+
+func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, org github.OrgDetailsAndMembership) (repos []*github.Repository, err error) {
+	for page := 1; true; page++ {
+		pageRepos, hasNextPage, _, err := cli.ListOrgRepositories(ctx, org.Login, page, "internal")
+		if err != nil {
+			return nil, errors.Wrap(err, "list internal repos for org")
+		}
+		repos = append(repos, pageRepos...)
+
+		if !hasNextPage {
+			break
+		}
+	}
+
+	return repos, err
+}
+
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
@@ -227,6 +259,24 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 		for _, r := range repos {
 			addRepoToUserPerms(extsvc.RepoID(r.ID))
+		}
+	}
+
+	// If cache is disabled, we also need to fetch a list of internal repositories for each
+	// org the user belongs to.
+	if p.groupsCache == nil {
+		orgs, err := getAllAuthenticatedUserOrgs(ctx, client)
+		if err != nil {
+			return perms, err
+		}
+		for _, org := range orgs {
+			repos, err := getAllInternalRepositoriesForOrg(ctx, client, org)
+			if err != nil {
+				return perms, err
+			}
+			for _, r := range repos {
+				addRepoToUserPerms(extsvc.RepoID(r.ID))
+			}
 		}
 	}
 
