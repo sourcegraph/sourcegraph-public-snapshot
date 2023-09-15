@@ -162,7 +162,8 @@ func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []github
 	for page := 1; true; page++ {
 		pageOrgs, hasNextPage, _, err := cli.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
 		if err != nil {
-			return nil, errors.Wrap(err, "list orgs for authenticated user")
+			// We return partial results
+			return orgs, errors.Wrap(err, "list orgs for authenticated user")
 		}
 		orgs = append(orgs, pageOrgs...)
 
@@ -174,13 +175,14 @@ func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []github
 	return orgs, err
 }
 
-func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, org github.OrgDetailsAndMembership) (repos []*github.Repository, err error) {
+func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin string) (repos []*github.Repository, err error) {
 	for page := 1; true; page++ {
-		pageRepos, hasNextPage, _, err := cli.ListOrgRepositories(ctx, org.Login, page, "internal")
+		reposPage, hasNextPage, _, err := cli.ListOrgRepositories(ctx, orgLogin, page, "internal")
 		if err != nil {
-			return nil, errors.Wrap(err, "list internal repos for org")
+			// We return partial results
+			return repos, errors.Wrap(err, "list internal repos for org")
 		}
-		repos = append(repos, pageRepos...)
+		repos = append(repos, reposPage...)
 
 		if !hasNextPage {
 			break
@@ -270,12 +272,13 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 			return perms, err
 		}
 		for _, org := range orgs {
-			repos, err := getAllInternalRepositoriesForOrg(ctx, client, org)
-			if err != nil {
-				return perms, err
-			}
+			repos, err := getAllInternalRepositoriesForOrg(ctx, client, org.Login)
+			// There may be partial results, so we add those to the perms first
 			for _, r := range repos {
 				addRepoToUserPerms(extsvc.RepoID(r.ID))
+			}
+			if err != nil {
+				return perms, err
 			}
 		}
 	}
