@@ -158,9 +158,9 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 	}, true
 }
 
-func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []github.OrgDetailsAndMembership, err error) {
+func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []*github.Org, err error) {
 	for page := 1; true; page++ {
-		pageOrgs, hasNextPage, _, err := cli.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
+		pageOrgs, hasNextPage, _, err := cli.GetAuthenticatedUserOrgs(ctx, page)
 		if err != nil {
 			// We return partial results
 			return orgs, errors.Wrap(err, "list orgs for authenticated user")

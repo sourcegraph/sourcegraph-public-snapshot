@@ -49,7 +49,7 @@ interactions:
       repository for storing various know how across the code insights team at @sourcegraph.\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/code-insights-scratch/deployments\",\"created_at\":\"2022-06-29T13:31:13Z\",\"updated_at\":\"2022-07-22T10:13:52Z\",\"pushed_at\":\"2023-03-30T08:49:52Z\",\"git_url\":\"git://github.com/sourcegraph/code-insights-scratch.git\",\"ssh_url\":\"git@github.com:sourcegraph/code-insights-scratch.git\",\"clone_url\":\"https://github.com/sourcegraph/code-insights-scratch.git\",\"svn_url\":\"https://github.com/sourcegraph/code-insights-scratch\",\"homepage\":\"\",\"size\":62,\"stargazers_count\":0,\"watchers_count\":0,\"language\":null,\"has_issues\":false,\"has_projects\":false,\"has_downloads\":true,\"has_wiki\":true,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":0,\"license\":{\"key\":\"other\",\"name\":\"Other\",\"spdx_id\":\"NOASSERTION\",\"url\":null,\"node_id\":\"MDc6TGljZW5zZTA=\"},\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":0,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":false,\"maintain\":true,\"push\":true,\"triage\":true,\"pull\":true}},{\"id\":507845891,\"node_id\":\"R_kgDOHkUdAw\",\"name\":\"code-intel-scratch\",\"full_name\":\"sourcegraph/code-intel-scratch\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/code-intel-scratch\",\"description\":\"Notes
       and other things related to Code Intel\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/code-intel-scratch/deployments\",\"created_at\":\"2022-06-27T09:33:20Z\",\"updated_at\":\"2022-08-04T12:44:45Z\",\"pushed_at\":\"2022-08-04T12:44:42Z\",\"git_url\":\"git://github.com/sourcegraph/code-intel-scratch.git\",\"ssh_url\":\"git@github.com:sourcegraph/code-intel-scratch.git\",\"clone_url\":\"https://github.com/sourcegraph/code-intel-scratch.git\",\"svn_url\":\"https://github.com/sourcegraph/code-intel-scratch\",\"homepage\":null,\"size\":8,\"stargazers_count\":0,\"watchers_count\":0,\"language\":\"Alloy\",\"has_issues\":true,\"has_projects\":true,\"has_downloads\":true,\"has_wiki\":true,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":0,\"license\":{\"key\":\"apache-2.0\",\"name\":\"Apache
       License 2.0\",\"spdx_id\":\"Apache-2.0\",\"url\":\"https://api.github.com/licenses/apache-2.0\",\"node_id\":\"MDc6TGljZW5zZTI=\"},\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":0,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":false,\"maintain\":false,\"push\":false,\"triage\":false,\"pull\":true}},{\"id\":506471023,\"node_id\":\"R_kgDOHjAibw\",\"name\":\"cloud\",\"full_name\":\"sourcegraph/cloud\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/cloud\",\"description\":\"\U0001F324
-      Sourcegraph Cloud v2 (Managed Instances) deployments\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/cloud\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/cloud/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/cloud/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/cloud/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/cloud/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/cloud/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/cloud/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/cloud/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/cloud/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/cloud/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/cloud/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/cloud/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/cloud/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/cloud/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/cloud/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/cloud/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/cloud/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/cloud/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/cloud/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/cloud/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/cloud/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/cloud/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/cloud/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/cloud/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/cloud/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/cloud/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/cloud/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/cloud/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/cloud/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/cloud/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/cloud/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/cloud/deployments\",\"created_at\":\"2022-06-23T02:25:47Z\",\"updated_at\":\"2023-03-15T18:18:37Z\",\"pushed_at\":\"2023-09-15T10:03:00Z\",\"git_url\":\"git://github.com/sourcegraph/cloud.git\",\"ssh_url\":\"git@github.com:sourcegraph/cloud.git\",\"clone_url\":\"https://github.com/sourcegraph/cloud.git\",\"svn_url\":\"https://github.com/sourcegraph/cloud\",\"homepage\":\"https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/\",\"size\":15896,\"stargazers_count\":0,\"watchers_count\":0,\"language\":\"Smarty\",\"has_issues\":false,\"has_projects\":false,\"has_downloads\":true,\"has_wiki\":false,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":8,\"license\":null,\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[\"cloud\",\"infrastructure\"],\"visibility\":\"private\",\"forks\":0,\"open_issues\":8,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":false,\"maintain\":false,\"push\":false,\"triage\":false,\"pull\":true}},{\"id\":486664957,\"node_id\":\"R_kgDOHQHq_Q\",\"name\":\"security\",\"full_name\":\"sourcegraph/security\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/security\",\"description\":\"Security
+      Sourcegraph Cloud v2 (Managed Instances) deployments\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/cloud\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/cloud/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/cloud/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/cloud/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/cloud/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/cloud/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/cloud/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/cloud/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/cloud/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/cloud/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/cloud/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/cloud/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/cloud/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/cloud/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/cloud/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/cloud/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/cloud/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/cloud/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/cloud/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/cloud/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/cloud/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/cloud/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/cloud/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/cloud/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/cloud/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/cloud/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/cloud/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/cloud/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/cloud/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/cloud/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/cloud/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/cloud/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/cloud/deployments\",\"created_at\":\"2022-06-23T02:25:47Z\",\"updated_at\":\"2023-03-15T18:18:37Z\",\"pushed_at\":\"2023-09-15T10:03:00Z\",\"git_url\":\"git://github.com/sourcegraph/cloud.git\",\"ssh_url\":\"git@github.com:sourcegraph/cloud.git\",\"clone_url\":\"https://github.com/sourcegraph/cloud.git\",\"svn_url\":\"https://github.com/sourcegraph/cloud\",\"homepage\":\"https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/\",\"size\":15898,\"stargazers_count\":0,\"watchers_count\":0,\"language\":\"Smarty\",\"has_issues\":false,\"has_projects\":false,\"has_downloads\":true,\"has_wiki\":false,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":8,\"license\":null,\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[\"cloud\",\"infrastructure\"],\"visibility\":\"private\",\"forks\":0,\"open_issues\":8,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":false,\"maintain\":false,\"push\":false,\"triage\":false,\"pull\":true}},{\"id\":486664957,\"node_id\":\"R_kgDOHQHq_Q\",\"name\":\"security\",\"full_name\":\"sourcegraph/security\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/security\",\"description\":\"Security
       team resources\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/security\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/security/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/security/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/security/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/security/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/security/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/security/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/security/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/security/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/security/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/security/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/security/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/security/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/security/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/security/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/security/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/security/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/security/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/security/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/security/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/security/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/security/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/security/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/security/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/security/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/security/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/security/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/security/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/security/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/security/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/security/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/security/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/security/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/security/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/security/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/security/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/security/deployments\",\"created_at\":\"2022-04-28T16:13:17Z\",\"updated_at\":\"2023-05-11T10:01:33Z\",\"pushed_at\":\"2023-08-24T11:02:35Z\",\"git_url\":\"git://github.com/sourcegraph/security.git\",\"ssh_url\":\"git@github.com:sourcegraph/security.git\",\"clone_url\":\"https://github.com/sourcegraph/security.git\",\"svn_url\":\"https://github.com/sourcegraph/security\",\"homepage\":null,\"size\":123,\"stargazers_count\":0,\"watchers_count\":0,\"language\":null,\"has_issues\":true,\"has_projects\":true,\"has_downloads\":true,\"has_wiki\":true,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":199,\"license\":null,\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":199,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":false,\"maintain\":false,\"push\":false,\"triage\":true,\"pull\":true}},{\"id\":483835791,\"node_id\":\"R_kgDOHNa_jw\",\"name\":\"devops-gist\",\"full_name\":\"sourcegraph/devops-gist\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/devops-gist\",\"description\":\"DevOps
       team private gist (how come GH doesn't have organizational gist???)\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/devops-gist\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/devops-gist/deployments\",\"created_at\":\"2022-04-20T22:46:37Z\",\"updated_at\":\"2023-02-09T15:23:45Z\",\"pushed_at\":\"2023-08-10T01:40:07Z\",\"git_url\":\"git://github.com/sourcegraph/devops-gist.git\",\"ssh_url\":\"git@github.com:sourcegraph/devops-gist.git\",\"clone_url\":\"https://github.com/sourcegraph/devops-gist.git\",\"svn_url\":\"https://github.com/sourcegraph/devops-gist\",\"homepage\":\"\",\"size\":294,\"stargazers_count\":0,\"watchers_count\":0,\"language\":\"HCL\",\"has_issues\":true,\"has_projects\":true,\"has_downloads\":true,\"has_wiki\":true,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":2,\"license\":null,\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":2,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":false,\"maintain\":false,\"push\":true,\"triage\":true,\"pull\":true}},{\"id\":474019626,\"node_id\":\"R_kgDOHED3Kg\",\"name\":\"upgrade-to-react-18-one\",\"full_name\":\"sourcegraph-testing/upgrade-to-react-18-one\",\"private\":true,\"owner\":{\"login\":\"sourcegraph-testing\",\"id\":57702698,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjU3NzAyNjk4\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/57702698?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph-testing\",\"html_url\":\"https://github.com/sourcegraph-testing\",\"followers_url\":\"https://api.github.com/users/sourcegraph-testing/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph-testing/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph-testing/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph-testing/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph-testing/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph-testing/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph-testing/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph-testing/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph-testing/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph-testing/upgrade-to-react-18-one\",\"description\":null,\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one\",\"forks_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph-testing/upgrade-to-react-18-one/deployments\",\"created_at\":\"2022-03-25T13:26:31Z\",\"updated_at\":\"2022-03-25T13:28:11Z\",\"pushed_at\":\"2022-03-25T13:58:35Z\",\"git_url\":\"git://github.com/sourcegraph-testing/upgrade-to-react-18-one.git\",\"ssh_url\":\"git@github.com:sourcegraph-testing/upgrade-to-react-18-one.git\",\"clone_url\":\"https://github.com/sourcegraph-testing/upgrade-to-react-18-one.git\",\"svn_url\":\"https://github.com/sourcegraph-testing/upgrade-to-react-18-one\",\"homepage\":null,\"size\":13,\"stargazers_count\":0,\"watchers_count\":0,\"language\":\"TypeScript\",\"has_issues\":true,\"has_projects\":true,\"has_downloads\":true,\"has_wiki\":false,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":0,\"license\":null,\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":0,\"watchers\":0,\"default_branch\":\"main\",\"permissions\":{\"admin\":true,\"maintain\":true,\"push\":true,\"triage\":true,\"pull\":true}},{\"id\":467099183,\"node_id\":\"R_kgDOG9deLw\",\"name\":\"private-automation-testing\",\"full_name\":\"sourcegraph/private-automation-testing\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/private-automation-testing\",\"description\":\"This
       repository is used to test opening and closing pull request with Automation\",\"fork\":false,\"url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing\",\"forks_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/forks\",\"keys_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/keys{/key_id}\",\"collaborators_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/collaborators{/collaborator}\",\"teams_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/teams\",\"hooks_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/hooks\",\"issue_events_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/issues/events{/number}\",\"events_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/events\",\"assignees_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/assignees{/user}\",\"branches_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/branches{/branch}\",\"tags_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/tags\",\"blobs_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/git/blobs{/sha}\",\"git_tags_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/git/tags{/sha}\",\"git_refs_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/git/refs{/sha}\",\"trees_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/git/trees{/sha}\",\"statuses_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/statuses/{sha}\",\"languages_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/languages\",\"stargazers_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/stargazers\",\"contributors_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/contributors\",\"subscribers_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/subscribers\",\"subscription_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/subscription\",\"commits_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/commits{/sha}\",\"git_commits_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/git/commits{/sha}\",\"comments_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/comments{/number}\",\"issue_comment_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/issues/comments{/number}\",\"contents_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/contents/{+path}\",\"compare_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/compare/{base}...{head}\",\"merges_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/merges\",\"archive_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/{archive_format}{/ref}\",\"downloads_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/downloads\",\"issues_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/issues{/number}\",\"pulls_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/pulls{/number}\",\"milestones_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/milestones{/number}\",\"notifications_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/notifications{?since,all,participating}\",\"labels_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/labels{/name}\",\"releases_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/releases{/id}\",\"deployments_url\":\"https://api.github.com/repos/sourcegraph/private-automation-testing/deployments\",\"created_at\":\"2022-03-07T13:09:48Z\",\"updated_at\":\"2022-03-07T13:10:58Z\",\"pushed_at\":\"2022-11-24T20:28:42Z\",\"git_url\":\"git://github.com/sourcegraph/private-automation-testing.git\",\"ssh_url\":\"git@github.com:sourcegraph/private-automation-testing.git\",\"clone_url\":\"https://github.com/sourcegraph/private-automation-testing.git\",\"svn_url\":\"https://github.com/sourcegraph/private-automation-testing\",\"homepage\":null,\"size\":196,\"stargazers_count\":0,\"watchers_count\":0,\"language\":\"TypeScript\",\"has_issues\":true,\"has_projects\":true,\"has_downloads\":true,\"has_wiki\":true,\"has_pages\":false,\"has_discussions\":false,\"forks_count\":0,\"mirror_url\":null,\"archived\":false,\"disabled\":false,\"open_issues_count\":3,\"license\":null,\"allow_forking\":false,\"is_template\":false,\"web_commit_signoff_required\":false,\"topics\":[],\"visibility\":\"private\",\"forks\":0,\"open_issues\":3,\"watchers\":0,\"default_branch\":\"master\",\"permissions\":{\"admin\":false,\"maintain\":false,\"push\":true,\"triage\":true,\"pull\":true}},{\"id\":464608616,\"node_id\":\"R_kgDOG7FdaA\",\"name\":\"product-education\",\"full_name\":\"sourcegraph/product-education\",\"private\":true,\"owner\":{\"login\":\"sourcegraph\",\"id\":3979584,\"node_id\":\"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3979584?v=4\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/sourcegraph\",\"html_url\":\"https://github.com/sourcegraph\",\"followers_url\":\"https://api.github.com/users/sourcegraph/followers\",\"following_url\":\"https://api.github.com/users/sourcegraph/following{/other_user}\",\"gists_url\":\"https://api.github.com/users/sourcegraph/gists{/gist_id}\",\"starred_url\":\"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}\",\"subscriptions_url\":\"https://api.github.com/users/sourcegraph/subscriptions\",\"organizations_url\":\"https://api.github.com/users/sourcegraph/orgs\",\"repos_url\":\"https://api.github.com/users/sourcegraph/repos\",\"events_url\":\"https://api.github.com/users/sourcegraph/events{/privacy}\",\"received_events_url\":\"https://api.github.com/users/sourcegraph/received_events\",\"type\":\"Organization\",\"site_admin\":false},\"html_url\":\"https://github.com/sourcegraph/product-education\",\"description\":\"Repository
@@ -117,9 +117,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:41 GMT
+      - Fri, 15 Sep 2023 11:31:53 GMT
       Etag:
-      - W/"e45e8d511dbc8f36d99aa04f63d6ea3600a689eb0553d394eabc28245118feb4"
+      - W/"1020a9fd2a717024beb350c45761f7447abd85affb0c36449702b1aec936dda1"
       Link:
       - <https://api.github.com/user/repos?sort=created&visibility=private&page=2&per_page=100>;
         rel="next", <https://api.github.com/user/repos?sort=created&visibility=private&page=2&per_page=100>;
@@ -143,17 +143,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A008:8191F9:650436C4
+      - F3C0:29A4:621B11:79CE46:650440A7
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4986"
+      - "4922"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "14"
+      - "78"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -190,7 +190,7 @@ interactions:
       License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":1,"watchers":0,"default_branch":"master","permissions":{"admin":true,"maintain":true,"push":true,"triage":true,"pull":true}},{"id":141836873,"node_id":"MDEwOlJlcG9zaXRvcnkxNDE4MzY4NzM=","name":"cxp-cli","full_name":"sourcegraph/cxp-cli","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/cxp-cli","description":"Unarchived
       only for testing Codecov on private repositories","fork":false,"url":"https://api.github.com/repos/sourcegraph/cxp-cli","forks_url":"https://api.github.com/repos/sourcegraph/cxp-cli/forks","keys_url":"https://api.github.com/repos/sourcegraph/cxp-cli/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/cxp-cli/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/cxp-cli/teams","hooks_url":"https://api.github.com/repos/sourcegraph/cxp-cli/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/cxp-cli/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/cxp-cli/events","assignees_url":"https://api.github.com/repos/sourcegraph/cxp-cli/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/cxp-cli/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/cxp-cli/tags","blobs_url":"https://api.github.com/repos/sourcegraph/cxp-cli/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/cxp-cli/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/cxp-cli/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/cxp-cli/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/cxp-cli/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/cxp-cli/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/cxp-cli/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/cxp-cli/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/cxp-cli/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/cxp-cli/subscription","commits_url":"https://api.github.com/repos/sourcegraph/cxp-cli/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/cxp-cli/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/cxp-cli/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/cxp-cli/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/cxp-cli/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/cxp-cli/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/cxp-cli/merges","archive_url":"https://api.github.com/repos/sourcegraph/cxp-cli/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/cxp-cli/downloads","issues_url":"https://api.github.com/repos/sourcegraph/cxp-cli/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/cxp-cli/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/cxp-cli/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/cxp-cli/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/cxp-cli/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/cxp-cli/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/cxp-cli/deployments","created_at":"2018-07-21T18:28:29Z","updated_at":"2023-01-28T19:00:00Z","pushed_at":"2019-02-18T21:16:05Z","git_url":"git://github.com/sourcegraph/cxp-cli.git","ssh_url":"git@github.com:sourcegraph/cxp-cli.git","clone_url":"https://github.com/sourcegraph/cxp-cli.git","svn_url":"https://github.com/sourcegraph/cxp-cli","homepage":"","size":277,"stargazers_count":0,"watchers_count":0,"language":"TypeScript","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":true,"disabled":false,"open_issues_count":11,"license":{"key":"apache-2.0","name":"Apache
       License 2.0","spdx_id":"Apache-2.0","url":"https://api.github.com/licenses/apache-2.0","node_id":"MDc6TGljZW5zZTI="},"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":11,"watchers":0,"default_branch":"master","permissions":{"admin":true,"maintain":true,"push":true,"triage":true,"pull":true}},{"id":139586339,"node_id":"MDEwOlJlcG9zaXRvcnkxMzk1ODYzMzk=","name":"kube-backup","full_name":"sourcegraph/kube-backup","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/kube-backup","description":"Contains
-      backups of our production and dogfood kubernetes resources","fork":false,"url":"https://api.github.com/repos/sourcegraph/kube-backup","forks_url":"https://api.github.com/repos/sourcegraph/kube-backup/forks","keys_url":"https://api.github.com/repos/sourcegraph/kube-backup/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/kube-backup/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/kube-backup/teams","hooks_url":"https://api.github.com/repos/sourcegraph/kube-backup/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/kube-backup/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/kube-backup/events","assignees_url":"https://api.github.com/repos/sourcegraph/kube-backup/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/kube-backup/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/kube-backup/tags","blobs_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/kube-backup/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/kube-backup/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/kube-backup/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/kube-backup/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/kube-backup/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/kube-backup/subscription","commits_url":"https://api.github.com/repos/sourcegraph/kube-backup/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/kube-backup/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/kube-backup/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/kube-backup/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/kube-backup/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/kube-backup/merges","archive_url":"https://api.github.com/repos/sourcegraph/kube-backup/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/kube-backup/downloads","issues_url":"https://api.github.com/repos/sourcegraph/kube-backup/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/kube-backup/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/kube-backup/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/kube-backup/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/kube-backup/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/kube-backup/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/kube-backup/deployments","created_at":"2018-07-03T13:19:27Z","updated_at":"2022-11-18T17:01:14Z","pushed_at":"2023-09-15T10:42:39Z","git_url":"git://github.com/sourcegraph/kube-backup.git","ssh_url":"git@github.com:sourcegraph/kube-backup.git","clone_url":"https://github.com/sourcegraph/kube-backup.git","svn_url":"https://github.com/sourcegraph/kube-backup","homepage":null,"size":386316,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":["repo-type-infrastructure"],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":138263155,"node_id":"MDEwOlJlcG9zaXRvcnkxMzgyNjMxNTU=","name":"release","full_name":"sourcegraph/release","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/release","description":null,"fork":false,"url":"https://api.github.com/repos/sourcegraph/release","forks_url":"https://api.github.com/repos/sourcegraph/release/forks","keys_url":"https://api.github.com/repos/sourcegraph/release/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/release/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/release/teams","hooks_url":"https://api.github.com/repos/sourcegraph/release/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/release/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/release/events","assignees_url":"https://api.github.com/repos/sourcegraph/release/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/release/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/release/tags","blobs_url":"https://api.github.com/repos/sourcegraph/release/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/release/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/release/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/release/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/release/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/release/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/release/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/release/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/release/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/release/subscription","commits_url":"https://api.github.com/repos/sourcegraph/release/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/release/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/release/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/release/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/release/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/release/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/release/merges","archive_url":"https://api.github.com/repos/sourcegraph/release/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/release/downloads","issues_url":"https://api.github.com/repos/sourcegraph/release/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/release/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/release/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/release/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/release/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/release/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/release/deployments","created_at":"2018-06-22T06:22:30Z","updated_at":"2018-08-03T01:04:58Z","pushed_at":"2018-08-03T01:04:57Z","git_url":"git://github.com/sourcegraph/release.git","ssh_url":"git@github.com:sourcegraph/release.git","clone_url":"https://github.com/sourcegraph/release.git","svn_url":"https://github.com/sourcegraph/release","homepage":null,"size":36,"stargazers_count":0,"watchers_count":0,"language":"Shell","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":136873096,"node_id":"MDEwOlJlcG9zaXRvcnkxMzY4NzMwOTY=","name":"interviews","full_name":"sourcegraph/interviews","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/interviews","description":"How
+      backups of our production and dogfood kubernetes resources","fork":false,"url":"https://api.github.com/repos/sourcegraph/kube-backup","forks_url":"https://api.github.com/repos/sourcegraph/kube-backup/forks","keys_url":"https://api.github.com/repos/sourcegraph/kube-backup/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/kube-backup/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/kube-backup/teams","hooks_url":"https://api.github.com/repos/sourcegraph/kube-backup/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/kube-backup/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/kube-backup/events","assignees_url":"https://api.github.com/repos/sourcegraph/kube-backup/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/kube-backup/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/kube-backup/tags","blobs_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/kube-backup/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/kube-backup/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/kube-backup/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/kube-backup/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/kube-backup/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/kube-backup/subscription","commits_url":"https://api.github.com/repos/sourcegraph/kube-backup/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/kube-backup/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/kube-backup/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/kube-backup/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/kube-backup/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/kube-backup/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/kube-backup/merges","archive_url":"https://api.github.com/repos/sourcegraph/kube-backup/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/kube-backup/downloads","issues_url":"https://api.github.com/repos/sourcegraph/kube-backup/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/kube-backup/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/kube-backup/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/kube-backup/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/kube-backup/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/kube-backup/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/kube-backup/deployments","created_at":"2018-07-03T13:19:27Z","updated_at":"2022-11-18T17:01:14Z","pushed_at":"2023-09-15T11:31:44Z","git_url":"git://github.com/sourcegraph/kube-backup.git","ssh_url":"git@github.com:sourcegraph/kube-backup.git","clone_url":"https://github.com/sourcegraph/kube-backup.git","svn_url":"https://github.com/sourcegraph/kube-backup","homepage":null,"size":386454,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":["repo-type-infrastructure"],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":138263155,"node_id":"MDEwOlJlcG9zaXRvcnkxMzgyNjMxNTU=","name":"release","full_name":"sourcegraph/release","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/release","description":null,"fork":false,"url":"https://api.github.com/repos/sourcegraph/release","forks_url":"https://api.github.com/repos/sourcegraph/release/forks","keys_url":"https://api.github.com/repos/sourcegraph/release/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/release/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/release/teams","hooks_url":"https://api.github.com/repos/sourcegraph/release/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/release/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/release/events","assignees_url":"https://api.github.com/repos/sourcegraph/release/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/release/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/release/tags","blobs_url":"https://api.github.com/repos/sourcegraph/release/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/release/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/release/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/release/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/release/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/release/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/release/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/release/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/release/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/release/subscription","commits_url":"https://api.github.com/repos/sourcegraph/release/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/release/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/release/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/release/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/release/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/release/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/release/merges","archive_url":"https://api.github.com/repos/sourcegraph/release/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/release/downloads","issues_url":"https://api.github.com/repos/sourcegraph/release/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/release/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/release/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/release/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/release/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/release/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/release/deployments","created_at":"2018-06-22T06:22:30Z","updated_at":"2018-08-03T01:04:58Z","pushed_at":"2018-08-03T01:04:57Z","git_url":"git://github.com/sourcegraph/release.git","ssh_url":"git@github.com:sourcegraph/release.git","clone_url":"https://github.com/sourcegraph/release.git","svn_url":"https://github.com/sourcegraph/release","homepage":null,"size":36,"stargazers_count":0,"watchers_count":0,"language":"Shell","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":136873096,"node_id":"MDEwOlJlcG9zaXRvcnkxMzY4NzMwOTY=","name":"interviews","full_name":"sourcegraph/interviews","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/interviews","description":"How
       we interview candidates","fork":false,"url":"https://api.github.com/repos/sourcegraph/interviews","forks_url":"https://api.github.com/repos/sourcegraph/interviews/forks","keys_url":"https://api.github.com/repos/sourcegraph/interviews/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/interviews/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/interviews/teams","hooks_url":"https://api.github.com/repos/sourcegraph/interviews/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/interviews/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/interviews/events","assignees_url":"https://api.github.com/repos/sourcegraph/interviews/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/interviews/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/interviews/tags","blobs_url":"https://api.github.com/repos/sourcegraph/interviews/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/interviews/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/interviews/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/interviews/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/interviews/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/interviews/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/interviews/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/interviews/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/interviews/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/interviews/subscription","commits_url":"https://api.github.com/repos/sourcegraph/interviews/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/interviews/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/interviews/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/interviews/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/interviews/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/interviews/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/interviews/merges","archive_url":"https://api.github.com/repos/sourcegraph/interviews/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/interviews/downloads","issues_url":"https://api.github.com/repos/sourcegraph/interviews/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/interviews/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/interviews/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/interviews/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/interviews/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/interviews/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/interviews/deployments","created_at":"2018-06-11T04:05:59Z","updated_at":"2023-06-23T15:20:03Z","pushed_at":"2023-01-16T15:13:02Z","git_url":"git://github.com/sourcegraph/interviews.git","ssh_url":"git@github.com:sourcegraph/interviews.git","clone_url":"https://github.com/sourcegraph/interviews.git","svn_url":"https://github.com/sourcegraph/interviews","homepage":null,"size":30103,"stargazers_count":1,"watchers_count":1,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":2,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":8,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":["repo-type-business"],"visibility":"private","forks":2,"open_issues":8,"watchers":1,"default_branch":"master","permissions":{"admin":true,"maintain":true,"push":true,"triage":true,"pull":true}},{"id":136368529,"node_id":"MDEwOlJlcG9zaXRvcnkxMzYzNjg1Mjk=","name":"issues-twosigma","full_name":"sourcegraph/issues-twosigma","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/issues-twosigma","description":"Private
       issue tracker for Sourcegraph issues and feedback from Two Sigma","fork":false,"url":"https://api.github.com/repos/sourcegraph/issues-twosigma","forks_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/forks","keys_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/teams","hooks_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/events","assignees_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/tags","blobs_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/subscription","commits_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/merges","archive_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/downloads","issues_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/issues-twosigma/deployments","created_at":"2018-06-06T18:14:32Z","updated_at":"2023-01-27T22:41:28Z","pushed_at":"2018-06-06T18:14:34Z","git_url":"git://github.com/sourcegraph/issues-twosigma.git","ssh_url":"git@github.com:sourcegraph/issues-twosigma.git","clone_url":"https://github.com/sourcegraph/issues-twosigma.git","svn_url":"https://github.com/sourcegraph/issues-twosigma","homepage":null,"size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":true,"disabled":false,"open_issues_count":2,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":2,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":118994137,"node_id":"MDEwOlJlcG9zaXRvcnkxMTg5OTQxMzc=","name":"issues-uber","full_name":"sourcegraph/issues-uber","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/issues-uber","description":null,"fork":false,"url":"https://api.github.com/repos/sourcegraph/issues-uber","forks_url":"https://api.github.com/repos/sourcegraph/issues-uber/forks","keys_url":"https://api.github.com/repos/sourcegraph/issues-uber/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/issues-uber/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/issues-uber/teams","hooks_url":"https://api.github.com/repos/sourcegraph/issues-uber/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/issues-uber/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/issues-uber/events","assignees_url":"https://api.github.com/repos/sourcegraph/issues-uber/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/issues-uber/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/issues-uber/tags","blobs_url":"https://api.github.com/repos/sourcegraph/issues-uber/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/issues-uber/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/issues-uber/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/issues-uber/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/issues-uber/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/issues-uber/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/issues-uber/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/issues-uber/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/issues-uber/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/issues-uber/subscription","commits_url":"https://api.github.com/repos/sourcegraph/issues-uber/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/issues-uber/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/issues-uber/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/issues-uber/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/issues-uber/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/issues-uber/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/issues-uber/merges","archive_url":"https://api.github.com/repos/sourcegraph/issues-uber/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/issues-uber/downloads","issues_url":"https://api.github.com/repos/sourcegraph/issues-uber/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/issues-uber/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/issues-uber/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/issues-uber/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/issues-uber/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/issues-uber/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/issues-uber/deployments","created_at":"2018-01-26T02:20:40Z","updated_at":"2023-01-27T22:41:28Z","pushed_at":"2018-01-26T02:24:32Z","git_url":"git://github.com/sourcegraph/issues-uber.git","ssh_url":"git@github.com:sourcegraph/issues-uber.git","clone_url":"https://github.com/sourcegraph/issues-uber.git","svn_url":"https://github.com/sourcegraph/issues-uber","homepage":null,"size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":true,"disabled":false,"open_issues_count":18,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":["repo-type-customer"],"visibility":"private","forks":0,"open_issues":18,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":112548506,"node_id":"MDEwOlJlcG9zaXRvcnkxMTI1NDg1MDY=","name":"new-blank-repo","full_name":"sgtest/new-blank-repo","private":true,"owner":{"login":"sgtest","id":5858054,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU4NTgwNTQ=","avatar_url":"https://avatars.githubusercontent.com/u/5858054?v=4","gravatar_id":"","url":"https://api.github.com/users/sgtest","html_url":"https://github.com/sgtest","followers_url":"https://api.github.com/users/sgtest/followers","following_url":"https://api.github.com/users/sgtest/following{/other_user}","gists_url":"https://api.github.com/users/sgtest/gists{/gist_id}","starred_url":"https://api.github.com/users/sgtest/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sgtest/subscriptions","organizations_url":"https://api.github.com/users/sgtest/orgs","repos_url":"https://api.github.com/users/sgtest/repos","events_url":"https://api.github.com/users/sgtest/events{/privacy}","received_events_url":"https://api.github.com/users/sgtest/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sgtest/new-blank-repo","description":null,"fork":false,"url":"https://api.github.com/repos/sgtest/new-blank-repo","forks_url":"https://api.github.com/repos/sgtest/new-blank-repo/forks","keys_url":"https://api.github.com/repos/sgtest/new-blank-repo/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sgtest/new-blank-repo/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sgtest/new-blank-repo/teams","hooks_url":"https://api.github.com/repos/sgtest/new-blank-repo/hooks","issue_events_url":"https://api.github.com/repos/sgtest/new-blank-repo/issues/events{/number}","events_url":"https://api.github.com/repos/sgtest/new-blank-repo/events","assignees_url":"https://api.github.com/repos/sgtest/new-blank-repo/assignees{/user}","branches_url":"https://api.github.com/repos/sgtest/new-blank-repo/branches{/branch}","tags_url":"https://api.github.com/repos/sgtest/new-blank-repo/tags","blobs_url":"https://api.github.com/repos/sgtest/new-blank-repo/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sgtest/new-blank-repo/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sgtest/new-blank-repo/git/refs{/sha}","trees_url":"https://api.github.com/repos/sgtest/new-blank-repo/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sgtest/new-blank-repo/statuses/{sha}","languages_url":"https://api.github.com/repos/sgtest/new-blank-repo/languages","stargazers_url":"https://api.github.com/repos/sgtest/new-blank-repo/stargazers","contributors_url":"https://api.github.com/repos/sgtest/new-blank-repo/contributors","subscribers_url":"https://api.github.com/repos/sgtest/new-blank-repo/subscribers","subscription_url":"https://api.github.com/repos/sgtest/new-blank-repo/subscription","commits_url":"https://api.github.com/repos/sgtest/new-blank-repo/commits{/sha}","git_commits_url":"https://api.github.com/repos/sgtest/new-blank-repo/git/commits{/sha}","comments_url":"https://api.github.com/repos/sgtest/new-blank-repo/comments{/number}","issue_comment_url":"https://api.github.com/repos/sgtest/new-blank-repo/issues/comments{/number}","contents_url":"https://api.github.com/repos/sgtest/new-blank-repo/contents/{+path}","compare_url":"https://api.github.com/repos/sgtest/new-blank-repo/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sgtest/new-blank-repo/merges","archive_url":"https://api.github.com/repos/sgtest/new-blank-repo/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sgtest/new-blank-repo/downloads","issues_url":"https://api.github.com/repos/sgtest/new-blank-repo/issues{/number}","pulls_url":"https://api.github.com/repos/sgtest/new-blank-repo/pulls{/number}","milestones_url":"https://api.github.com/repos/sgtest/new-blank-repo/milestones{/number}","notifications_url":"https://api.github.com/repos/sgtest/new-blank-repo/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sgtest/new-blank-repo/labels{/name}","releases_url":"https://api.github.com/repos/sgtest/new-blank-repo/releases{/id}","deployments_url":"https://api.github.com/repos/sgtest/new-blank-repo/deployments","created_at":"2017-11-30T01:27:06Z","updated_at":"2017-11-30T01:27:06Z","pushed_at":"2017-11-30T01:27:07Z","git_url":"git://github.com/sgtest/new-blank-repo.git","ssh_url":"git@github.com:sgtest/new-blank-repo.git","clone_url":"https://github.com/sgtest/new-blank-repo.git","svn_url":"https://github.com/sgtest/new-blank-repo","homepage":null,"size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true}},{"id":112242248,"node_id":"MDEwOlJlcG9zaXRvcnkxMTIyNDIyNDg=","name":"private","full_name":"sgtest/private","private":true,"owner":{"login":"sgtest","id":5858054,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU4NTgwNTQ=","avatar_url":"https://avatars.githubusercontent.com/u/5858054?v=4","gravatar_id":"","url":"https://api.github.com/users/sgtest","html_url":"https://github.com/sgtest","followers_url":"https://api.github.com/users/sgtest/followers","following_url":"https://api.github.com/users/sgtest/following{/other_user}","gists_url":"https://api.github.com/users/sgtest/gists{/gist_id}","starred_url":"https://api.github.com/users/sgtest/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sgtest/subscriptions","organizations_url":"https://api.github.com/users/sgtest/orgs","repos_url":"https://api.github.com/users/sgtest/repos","events_url":"https://api.github.com/users/sgtest/events{/privacy}","received_events_url":"https://api.github.com/users/sgtest/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sgtest/private","description":null,"fork":false,"url":"https://api.github.com/repos/sgtest/private","forks_url":"https://api.github.com/repos/sgtest/private/forks","keys_url":"https://api.github.com/repos/sgtest/private/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sgtest/private/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sgtest/private/teams","hooks_url":"https://api.github.com/repos/sgtest/private/hooks","issue_events_url":"https://api.github.com/repos/sgtest/private/issues/events{/number}","events_url":"https://api.github.com/repos/sgtest/private/events","assignees_url":"https://api.github.com/repos/sgtest/private/assignees{/user}","branches_url":"https://api.github.com/repos/sgtest/private/branches{/branch}","tags_url":"https://api.github.com/repos/sgtest/private/tags","blobs_url":"https://api.github.com/repos/sgtest/private/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sgtest/private/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sgtest/private/git/refs{/sha}","trees_url":"https://api.github.com/repos/sgtest/private/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sgtest/private/statuses/{sha}","languages_url":"https://api.github.com/repos/sgtest/private/languages","stargazers_url":"https://api.github.com/repos/sgtest/private/stargazers","contributors_url":"https://api.github.com/repos/sgtest/private/contributors","subscribers_url":"https://api.github.com/repos/sgtest/private/subscribers","subscription_url":"https://api.github.com/repos/sgtest/private/subscription","commits_url":"https://api.github.com/repos/sgtest/private/commits{/sha}","git_commits_url":"https://api.github.com/repos/sgtest/private/git/commits{/sha}","comments_url":"https://api.github.com/repos/sgtest/private/comments{/number}","issue_comment_url":"https://api.github.com/repos/sgtest/private/issues/comments{/number}","contents_url":"https://api.github.com/repos/sgtest/private/contents/{+path}","compare_url":"https://api.github.com/repos/sgtest/private/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sgtest/private/merges","archive_url":"https://api.github.com/repos/sgtest/private/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sgtest/private/downloads","issues_url":"https://api.github.com/repos/sgtest/private/issues{/number}","pulls_url":"https://api.github.com/repos/sgtest/private/pulls{/number}","milestones_url":"https://api.github.com/repos/sgtest/private/milestones{/number}","notifications_url":"https://api.github.com/repos/sgtest/private/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sgtest/private/labels{/name}","releases_url":"https://api.github.com/repos/sgtest/private/releases{/id}","deployments_url":"https://api.github.com/repos/sgtest/private/deployments","created_at":"2017-11-27T20:00:32Z","updated_at":"2020-10-13T23:28:44Z","pushed_at":"2020-10-13T23:28:41Z","git_url":"git://github.com/sgtest/private.git","ssh_url":"git@github.com:sgtest/private.git","clone_url":"https://github.com/sgtest/private.git","svn_url":"https://github.com/sgtest/private","homepage":null,"size":1,"stargazers_count":0,"watchers_count":0,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"private","forks":0,"open_issues":0,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":false,"triage":false,"pull":true}},{"id":103449384,"node_id":"MDEwOlJlcG9zaXRvcnkxMDM0NDkzODQ=","name":"Graphbook","full_name":"sourcegraph/Graphbook","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/Graphbook","description":"All
       things HR","fork":false,"url":"https://api.github.com/repos/sourcegraph/Graphbook","forks_url":"https://api.github.com/repos/sourcegraph/Graphbook/forks","keys_url":"https://api.github.com/repos/sourcegraph/Graphbook/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/Graphbook/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/Graphbook/teams","hooks_url":"https://api.github.com/repos/sourcegraph/Graphbook/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/Graphbook/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/Graphbook/events","assignees_url":"https://api.github.com/repos/sourcegraph/Graphbook/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/Graphbook/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/Graphbook/tags","blobs_url":"https://api.github.com/repos/sourcegraph/Graphbook/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/Graphbook/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/Graphbook/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/Graphbook/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/Graphbook/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/Graphbook/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/Graphbook/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/Graphbook/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/Graphbook/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/Graphbook/subscription","commits_url":"https://api.github.com/repos/sourcegraph/Graphbook/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/Graphbook/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/Graphbook/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/Graphbook/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/Graphbook/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/Graphbook/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/Graphbook/merges","archive_url":"https://api.github.com/repos/sourcegraph/Graphbook/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/Graphbook/downloads","issues_url":"https://api.github.com/repos/sourcegraph/Graphbook/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/Graphbook/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/Graphbook/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/Graphbook/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/Graphbook/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/Graphbook/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/Graphbook/deployments","created_at":"2017-09-13T20:54:39Z","updated_at":"2023-01-28T15:52:59Z","pushed_at":"2020-02-05T20:12:44Z","git_url":"git://github.com/sourcegraph/Graphbook.git","ssh_url":"git@github.com:sourcegraph/Graphbook.git","clone_url":"https://github.com/sourcegraph/Graphbook.git","svn_url":"https://github.com/sourcegraph/Graphbook","homepage":null,"size":8039,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":true,"disabled":false,"open_issues_count":3,"license":null,"allow_forking":false,"is_template":false,"web_commit_signoff_required":false,"topics":["repo-type-business"],"visibility":"private","forks":0,"open_issues":3,"watchers":0,"default_branch":"master","permissions":{"admin":false,"maintain":false,"push":true,"triage":true,"pull":true}},{"id":101939133,"node_id":"MDEwOlJlcG9zaXRvcnkxMDE5MzkxMzM=","name":"old-vscode-web","full_name":"sourcegraph/old-vscode-web","private":true,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/old-vscode-web","description":"The
@@ -271,9 +271,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:43 GMT
+      - Fri, 15 Sep 2023 11:31:54 GMT
       Etag:
-      - W/"8c9a83f0db596b92dd498d95e89fb9bd7a87033dbba3716dd1db880a12fd5386"
+      - W/"9779406f789df1977577ead900127ee3682ef9f34921db908644c2b5a95777e7"
       Link:
       - <https://api.github.com/user/repos?sort=created&visibility=private&page=1&per_page=100>;
         rel="prev", <https://api.github.com/user/repos?sort=created&visibility=private&page=1&per_page=100>;
@@ -297,17 +297,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A027:81921F:650436C6
+      - F3C0:29A4:621B40:79CE7C:650440A9
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4985"
+      - "4921"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "15"
+      - "79"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -346,7 +346,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:44 GMT
+      - Fri, 15 Sep 2023 11:31:54 GMT
       Etag:
       - W/"47e0d758e8b52cd3c6617fad1e07c954c99cfc3fe613f5ed4514e2ba4c8ae5be"
       Referrer-Policy:
@@ -368,587 +368,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A044:819247:650436C7
+      - F3C0:29A4:621B6B:79CEB5:650440AA
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4984"
+      - "4920"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "16"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph
-    method: GET
-  response:
-    body: '{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
-      AI platform: Cody and Code Search","name":"Sourcegraph","company":null,"blog":"https://sourcegraph.com","location":null,"email":"hi@sourcegraph.com","twitter_username":"sourcegraph","is_verified":true,"has_organization_projects":true,"has_repository_projects":true,"public_repos":516,"public_gists":0,"followers":528,"following":0,"html_url":"https://github.com/sourcegraph","created_at":"2013-03-26T22:29:42Z","updated_at":"2023-06-18T19:16:25Z","archived_at":null,"type":"Organization","total_private_repos":312,"owned_private_repos":311,"private_gists":null,"disk_usage":null,"collaborators":null,"billing_email":null,"default_repository_permission":null,"members_can_create_repositories":true,"two_factor_requirement_enabled":null,"members_allowed_repository_creation_type":"all","members_can_create_public_repositories":true,"members_can_create_private_repositories":true,"members_can_create_internal_repositories":false,"members_can_create_pages":true,"members_can_fork_private_repositories":false,"web_commit_signoff_required":false,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"team","space":976562499,"private_repos":999999,"filled_seats":213,"seats":233}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:44 GMT
-      Etag:
-      - W/"395e284c914ca45104f7525b817686207a7d7375cd07c3ccf47b3e631f916a9d"
-      Last-Modified:
-      - Sun, 18 Jun 2023 19:16:25 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A04B:81924F:650436C8
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4983"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "17"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/user/memberships/orgs/sourcegraph
-    method: GET
-  response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph/memberships/sourcegraph-vcr","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph","user":{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/3979584?v=4","description":"Code
-      AI platform: Cody and Code Search"}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:44 GMT
-      Etag:
-      - W/"2f87cacd108d9c5ceee2525cba02ff18122fac94767301687a3726455dc87aa0"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A052:819258:650436C8
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4982"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "18"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sgtest
-    method: GET
-  response:
-    body: '{"login":"sgtest","id":5858054,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU4NTgwNTQ=","url":"https://api.github.com/orgs/sgtest","repos_url":"https://api.github.com/orgs/sgtest/repos","events_url":"https://api.github.com/orgs/sgtest/events","hooks_url":"https://api.github.com/orgs/sgtest/hooks","issues_url":"https://api.github.com/orgs/sgtest/issues","members_url":"https://api.github.com/orgs/sgtest/members{/member}","public_members_url":"https://api.github.com/orgs/sgtest/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/5858054?v=4","description":null,"name":null,"company":null,"blog":null,"location":null,"email":null,"twitter_username":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":176,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sgtest","created_at":"2013-11-05T07:51:14Z","updated_at":"2019-01-11T03:47:41Z","archived_at":null,"type":"Organization","total_private_repos":3,"owned_private_repos":3,"private_gists":null,"disk_usage":null,"collaborators":null,"billing_email":null,"default_repository_permission":null,"members_can_create_repositories":true,"two_factor_requirement_enabled":null,"members_allowed_repository_creation_type":"all","members_can_create_public_repositories":true,"members_can_create_private_repositories":true,"members_can_create_internal_repositories":false,"members_can_create_pages":true,"members_can_fork_private_repositories":false,"web_commit_signoff_required":false,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"free","space":976562499,"private_repos":10000,"filled_seats":17,"seats":0}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:45 GMT
-      Etag:
-      - W/"9d0b67c505166ba8f28ce4b464f0a563e35aee1a97073793b643935e5601b927"
-      Last-Modified:
-      - Fri, 11 Jan 2019 03:47:41 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A05A:819260:650436C9
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4981"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "19"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/user/memberships/orgs/sgtest
-    method: GET
-  response:
-    body: '{"url":"https://api.github.com/orgs/sgtest/memberships/sourcegraph-vcr","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sgtest","user":{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false},"organization":{"login":"sgtest","id":5858054,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU4NTgwNTQ=","url":"https://api.github.com/orgs/sgtest","repos_url":"https://api.github.com/orgs/sgtest/repos","events_url":"https://api.github.com/orgs/sgtest/events","hooks_url":"https://api.github.com/orgs/sgtest/hooks","issues_url":"https://api.github.com/orgs/sgtest/issues","members_url":"https://api.github.com/orgs/sgtest/members{/member}","public_members_url":"https://api.github.com/orgs/sgtest/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/5858054?v=4","description":null}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:45 GMT
-      Etag:
-      - W/"d8243c1ecffc1d1725170bc85aa316dc36103d6810713e79013dc2522b8cb8c8"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A060:81926A:650436C9
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4980"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "20"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-testing
-    method: GET
-  response:
-    body: '{"login":"sourcegraph-testing","id":57702698,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU3NzAyNjk4","url":"https://api.github.com/orgs/sourcegraph-testing","repos_url":"https://api.github.com/orgs/sourcegraph-testing/repos","events_url":"https://api.github.com/orgs/sourcegraph-testing/events","hooks_url":"https://api.github.com/orgs/sourcegraph-testing/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-testing/issues","members_url":"https://api.github.com/orgs/sourcegraph-testing/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-testing/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/57702698?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":130,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-testing","created_at":"2019-11-13T07:40:10Z","updated_at":"2022-11-04T17:45:48Z","archived_at":null,"type":"Organization","total_private_repos":13,"owned_private_repos":13,"private_gists":null,"disk_usage":null,"collaborators":null,"billing_email":null,"default_repository_permission":null,"members_can_create_repositories":true,"two_factor_requirement_enabled":null,"members_allowed_repository_creation_type":"all","members_can_create_public_repositories":true,"members_can_create_private_repositories":true,"members_can_create_internal_repositories":false,"members_can_create_pages":true,"members_can_fork_private_repositories":false,"web_commit_signoff_required":false,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"free","space":976562499,"private_repos":10000,"filled_seats":21,"seats":9}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:46 GMT
-      Etag:
-      - W/"76bf8d86c43acd4f1869bacaa28f51898ed7e4c52492174693aceba4fa9ae685"
-      Last-Modified:
-      - Fri, 04 Nov 2022 17:45:48 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A068:819277:650436C9
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4979"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "21"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/user/memberships/orgs/sourcegraph-testing
-    method: GET
-  response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph-testing/memberships/sourcegraph-vcr","state":"active","role":"member","organization_url":"https://api.github.com/orgs/sourcegraph-testing","user":{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph-testing","id":57702698,"node_id":"MDEyOk9yZ2FuaXphdGlvbjU3NzAyNjk4","url":"https://api.github.com/orgs/sourcegraph-testing","repos_url":"https://api.github.com/orgs/sourcegraph-testing/repos","events_url":"https://api.github.com/orgs/sourcegraph-testing/events","hooks_url":"https://api.github.com/orgs/sourcegraph-testing/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-testing/issues","members_url":"https://api.github.com/orgs/sourcegraph-testing/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-testing/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/57702698?v=4","description":null}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:46 GMT
-      Etag:
-      - W/"adea7bd24eb51892435824bdf1c292ae769d1c93f8a2332cff27bf7f30379784"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A076:819287:650436CA
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4978"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "22"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/orgs/sourcegraph-vcr-repos
-    method: GET
-  response:
-    body: '{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","archived_at":null,"type":"Organization","total_private_repos":2,"owned_private_repos":2,"private_gists":0,"disk_usage":2,"collaborators":1,"billing_email":"joe+sourcegraph-vcr@sourcegraph.com","default_repository_permission":"none","members_can_create_repositories":true,"two_factor_requirement_enabled":false,"members_allowed_repository_creation_type":"all","members_can_create_public_repositories":true,"members_can_create_private_repositories":true,"members_can_create_internal_repositories":false,"members_can_create_pages":true,"members_can_fork_private_repositories":false,"web_commit_signoff_required":false,"members_can_create_public_pages":true,"members_can_create_private_pages":true,"plan":{"name":"free","space":976562499,"private_repos":10000,"filled_seats":4,"seats":0},"advanced_security_enabled_for_new_repositories":false,"dependabot_alerts_enabled_for_new_repositories":false,"dependabot_security_updates_enabled_for_new_repositories":false,"dependency_graph_enabled_for_new_repositories":false,"secret_scanning_enabled_for_new_repositories":false,"secret_scanning_push_protection_enabled_for_new_repositories":false,"secret_scanning_push_protection_custom_link_enabled":false,"secret_scanning_push_protection_custom_link":null}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:47 GMT
-      Etag:
-      - W/"f7b8dbaabc4f49069e9394034d71f60e872b15449c44d1e5376e256278e824a9"
-      Last-Modified:
-      - Mon, 11 May 2020 12:18:26 GMT
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A082:819294:650436CA
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4977"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "23"
-      X-Varied-Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      X-Xss-Protection:
-      - "0"
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Accept:
-      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
-      - application/vnd.github.machine-man-preview+json
-      Cache-Control:
-      - max-age=0
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://api.github.com/user/memberships/orgs/sourcegraph-vcr-repos
-    method: GET
-  response:
-    body: '{"url":"https://api.github.com/orgs/sourcegraph-vcr-repos/memberships/sourcegraph-vcr","state":"active","role":"admin","organization_url":"https://api.github.com/orgs/sourcegraph-vcr-repos","user":{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false},"organization":{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null}}'
-    headers:
-      Access-Control-Allow-Origin:
-      - '*'
-      Access-Control-Expose-Headers:
-      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
-        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
-        X-GitHub-Request-Id, Deprecation, Sunset
-      Cache-Control:
-      - private, max-age=60, s-maxage=60
-      Content-Security-Policy:
-      - default-src 'none'
-      Content-Type:
-      - application/json; charset=utf-8
-      Date:
-      - Fri, 15 Sep 2023 10:49:47 GMT
-      Etag:
-      - W/"802f8c36ca078ddad2dca3794fa027471e0a3874a096ca3c58cb148629fb380f"
-      Referrer-Policy:
-      - origin-when-cross-origin, strict-origin-when-cross-origin
-      Server:
-      - GitHub.com
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubdomains; preload
-      Vary:
-      - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding, Accept, X-Requested-With
-      X-Content-Type-Options:
-      - nosniff
-      X-Frame-Options:
-      - deny
-      X-Github-Api-Version-Selected:
-      - "2022-11-28"
-      X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
-        format=json
-      X-Github-Request-Id:
-      - F4E1:7FE1:67A08F:81929F:650436CB
-      X-Ratelimit-Limit:
-      - "5000"
-      X-Ratelimit-Remaining:
-      - "4976"
-      X-Ratelimit-Reset:
-      - "1694778574"
-      X-Ratelimit-Resource:
-      - core
-      X-Ratelimit-Used:
-      - "24"
+      - "80"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -988,7 +418,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:47 GMT
+      - Fri, 15 Sep 2023 11:31:55 GMT
       Etag:
       - '"44be30d40f6a1863029d4e2a5a8766bbb937198c4d4cfc7b8648afcdbb1b576d"'
       Referrer-Policy:
@@ -1010,17 +440,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A096:8192A8:650436CB
+      - F3C0:29A4:621B7E:79CEC0:650440AB
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4975"
+      - "4919"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "25"
+      - "81"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -1060,7 +490,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:48 GMT
+      - Fri, 15 Sep 2023 11:31:55 GMT
       Etag:
       - '"44be30d40f6a1863029d4e2a5a8766bbb937198c4d4cfc7b8648afcdbb1b576d"'
       Referrer-Policy:
@@ -1082,17 +512,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A0A0:8192B5:650436CC
+      - F3C0:29A4:621B87:79CECB:650440AB
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4974"
+      - "4918"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "26"
+      - "82"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -1132,7 +562,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:48 GMT
+      - Fri, 15 Sep 2023 11:31:56 GMT
       Etag:
       - '"44be30d40f6a1863029d4e2a5a8766bbb937198c4d4cfc7b8648afcdbb1b576d"'
       Referrer-Policy:
@@ -1154,17 +584,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A0A9:8192BE:650436CC
+      - F3C0:29A4:621B91:79CED6:650440AB
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4973"
+      - "4917"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "27"
+      - "83"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -1204,7 +634,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 15 Sep 2023 10:49:49 GMT
+      - Fri, 15 Sep 2023 11:31:56 GMT
       Etag:
       - '"44be30d40f6a1863029d4e2a5a8766bbb937198c4d4cfc7b8648afcdbb1b576d"'
       Referrer-Policy:
@@ -1226,17 +656,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F4E1:7FE1:67A0B0:8192C5:650436CC
+      - F3C0:29A4:621B9B:79CEE0:650440AC
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4972"
+      - "4916"
       X-Ratelimit-Reset:
       - "1694778574"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "28"
+      - "84"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:

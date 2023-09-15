@@ -232,7 +232,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	var err error
 	page := 1
 	for hasNextPage {
-		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
+		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgs(ctx, page)
 
 		if err != nil {
 			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)

@@ -363,7 +363,7 @@ func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNa
 			return
 		}
 		var pageOrgs []*github.Org
-		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgs(ctx, page)
 		if err != nil {
 			results <- SourceNamespaceResult{Source: s, Err: err}
 			continue
