@@ -51,6 +51,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	r := mux.NewRouter()
 
+	r.Path("/").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://docs.sourcegraph.com/admin/pings", http.StatusFound)
+	})
+
 	r.Path("/-/version").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(version.Version()))
