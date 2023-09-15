@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -626,7 +627,8 @@ func (e pushCommitError) Error() string {
 }
 
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
-	res, err := e.client.CreateCommitFromPatch(ctx, opts)
+	cctx := wrexec.SetCommandReason(ctx, wrexec.BatchChangeReason)
+	res, err := e.client.CreateCommitFromPatch(cctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {

@@ -1005,7 +1005,8 @@ var (
 func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) bool {
 	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
+	ctx := wrexec.SetCommandReason(context.Background(), wrexec.JanitorReason)
+	wrappedCmd := rcf.WrapWithRepoName(ctx, log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
 	b, _ := wrappedCmd.Output()
 	b = bytes.TrimSpace(b)
 	return bytes.Equal(b, []byte("false"))
