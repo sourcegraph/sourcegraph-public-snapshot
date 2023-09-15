@@ -55,15 +55,13 @@ jobs:
 
       - name: Run Tests
         run: |
-          git fetch origin main
-          if git diff --name-only origin/main origin/${GITHUB_HEAD_REF} | grep -E '^client/jetbrains'; then
+          if gh pr diff --name-only | grep -E '^client/jetbrains'; then
             ./gradlew test
           fi
 
       - name: Run Build Plugin
         run: |
-          git fetch origin main
-          if git diff --name-only origin/main origin/${GITHUB_HEAD_REF} | grep -E '^client/jetbrains'; then
+          if gh pr diff --name-only | grep -E '^client/jetbrains'; then
             ./gradlew buildPlugin
           fi
 
@@ -73,8 +71,8 @@ jobs:
 
       - name: Check formatting
         run: |
-          git fetch origin main
-          if git diff --name-only origin/main origin/${GITHUB_HEAD_REF} | grep -E '^client/jetbrains'; then
+          if gh pr diff --name-only | grep -E '^client/jetbrains'; then
+            ./gradlew buildPlugin
             ./gradlew spotlessCheck
           fi
 
