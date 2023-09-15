@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -98,6 +100,7 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 
 			// Parameters.BillingMetadata
 			BillingProductCategory: pointers.NonZeroPtr(e.GetParameters().GetBillingMetadata().GetCategory()),
+			BillingEventID:         nil, // No equivalents in telemetry events
 
 			// Source.Client
 			Source: func() string {
@@ -125,11 +128,16 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 			Referrer:       pointers.NonZeroPtr(e.GetMarketingTracking().GetReferrer()),
 			DeviceID:       pointers.NonZeroPtr(e.GetMarketingTracking().GetDeviceSessionId()),
 
-			// No equivalents in telemetry events
-			BillingEventID: nil,
-
-			// TODO: Equivalent is needed
-			EvaluatedFlagSet: nil,
+			// FeatureFlags
+			EvaluatedFlagSet: func() featureflag.EvaluatedFlagSet {
+				flags := e.GetFeatureFlags().GetFlags()
+				set := make(featureflag.EvaluatedFlagSet, len(flags))
+				for k, v := range flags {
+					// We can expect all values to be bools for now
+					set[k], _ = strconv.ParseBool(v)
+				}
+				return set
+			}(),
 		}
 	}
 	return eventLogs
