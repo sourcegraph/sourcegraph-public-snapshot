@@ -6,7 +6,6 @@ import cx from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
-    Alert,
     H4,
     LoadingSpinner,
     Text,
