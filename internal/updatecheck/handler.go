@@ -70,7 +70,7 @@ func getLatestRelease(deployType string) pingResponse {
 
 // ForwardHandler returns a handler that forwards the request to
 // https://pings.sourcegraph.com.
-func ForwardHandler(logger log.Logger) (http.HandlerFunc, error) {
+func ForwardHandler() (http.HandlerFunc, error) {
 	remote, err := url.Parse(defaultUpdateCheckURL)
 	if err != nil {
 		return nil, errors.Errorf("parse default update check URL: %v", err)
@@ -80,8 +80,6 @@ func ForwardHandler(logger log.Logger) (http.HandlerFunc, error) {
 	remotePath := remote.Path
 	remote.Path = ""
 	proxy := httputil.NewSingleHostReverseProxy(remote)
-
-	logger = logger.Scoped("updatecheck.forwardHandler", "handler that that forwards the request to https://pings.sourcegraph.com")
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Host = remote.Host
 		r.URL.Path = remotePath
