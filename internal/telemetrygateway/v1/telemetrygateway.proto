@@ -59,7 +59,7 @@ message EventSource {
   }
   message Client {
     string name = 1;
-    string version = 2;
+    optional string version = 2;
   }
 
   // Information about the Sourcegraph instance that received the event.
