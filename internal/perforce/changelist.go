@@ -40,6 +40,8 @@ type ChangelistNotFoundError struct {
 	ID     int64
 }
 
+func (e *ChangelistNotFoundError) NotFound() bool { return true }
+
 func (e *ChangelistNotFoundError) Error() string {
 	return fmt.Sprintf("changelist ID not found. repo=%d, changelist id=%d", e.RepoID, e.ID)
 }
