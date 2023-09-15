@@ -16,20 +16,10 @@ export type TourProps = TelemetryProps & {
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
     ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
-        const {
-            completedStepIds = [],
-            status,
-            setStepCompleted,
-            setStatus,
-            restart,
-        } = useTour(tourId)
+        const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
-                telemetryService.log(
-                    tourId + eventName,
-                    { ...eventProperties },
-                    { ...publicArgument }
-                )
+                telemetryService.log(tourId + eventName, { ...eventProperties }, { ...publicArgument })
             },
             [telemetryService, tourId]
         )
@@ -81,7 +71,8 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                         ...task,
                         steps: extendedSteps,
                         completed: Math.round(
-                            (100 * extendedSteps.filter(step => step.isCompleted).length) / (task.requiredSteps ?? extendedSteps.length)
+                            (100 * extendedSteps.filter(step => step.isCompleted).length) /
+                                (task.requiredSteps ?? extendedSteps.length)
                         ),
                     }
                 }),
@@ -108,11 +99,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         return (
             <TourContext.Provider value={{ onStepClick, onRestart }}>
-                <TourContent
-                    {...props}
-                    onClose={onClose}
-                    tasks={extendedTasks}
-                />
+                <TourContent {...props} onClose={onClose} tasks={extendedTasks} />
                 <TourAgent tasks={extendedTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
             </TourContext.Provider>
         )

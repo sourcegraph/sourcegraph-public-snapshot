@@ -6,16 +6,16 @@ import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
 
 import { ModalVideo } from '@sourcegraph/branded'
+import { AskCodyIcon } from '@sourcegraph/cody-ui/dist/icons/AskCodyIcon'
 import { TourIcon, type TourTaskStepType, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { TourContext } from './context'
+import { SearchTask } from './SearchTask'
 import { TourNewTabLink } from './TourNewTabLink'
+import { buildURIMarkers } from './utils'
 
 import styles from './Tour.module.scss'
-import { AskCodyIcon } from '@sourcegraph/cody-ui/dist/icons/AskCodyIcon'
-import { SearchTask } from './SearchTask'
-import { buildURIMarkers } from './utils'
 
 type TourTaskProps = TourTaskType & {
     variant?: 'small'
@@ -35,9 +35,7 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
     const { onStepClick, onRestart } = useContext(TourContext)
 
     const handleLinkClick = useCallback(
-        (
-            step: TourTaskStepType
-        ) => {
+        (step: TourTaskStepType) => {
             onStepClick(step)
         },
         [onStepClick]
@@ -165,9 +163,13 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
     )
 }
 
-const TaskIcon: FC<{icon: TourIcon}> = ({icon}) => {
+const TaskIcon: FC<{ icon: TourIcon }> = ({ icon }) => {
     if (icon === TourIcon.Cody) {
-        return <span className={styles.taskIcon}><AskCodyIcon /></span>
+        return (
+            <span className={styles.taskIcon}>
+                <AskCodyIcon />
+            </span>
+        )
     }
 
     let svgPath: string
@@ -186,12 +188,16 @@ const TaskIcon: FC<{icon: TourIcon}> = ({icon}) => {
             break
     }
 
-    return <span className={styles.taskIcon}><Icon
-        className={className}
-        svgPath={svgPath}
-        inline={false}
-        aria-hidden={true}
-        height="2.3rem"
-        width="2.3rem"
-    /></span>
+    return (
+        <span className={styles.taskIcon}>
+            <Icon
+                className={className}
+                svgPath={svgPath}
+                inline={false}
+                aria-hidden={true}
+                height="2.3rem"
+                width="2.3rem"
+            />
+        </span>
+    )
 }

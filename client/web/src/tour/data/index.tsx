@@ -56,7 +56,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 action: {
                     type: 'new-tab-link',
                     value: 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai',
-                }
+                },
             },
             {
                 id: 'CodyJetbrains',
@@ -64,7 +64,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 action: {
                     type: 'new-tab-link',
                     value: 'https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph',
-                }
+                },
             },
             {
                 id: 'CodyWeb',
@@ -72,7 +72,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 action: {
                     type: 'new-tab-link',
                     value: '/cody',
-                }
+                },
             },
         ],
         requiredSteps: 1,
@@ -87,7 +87,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 action: {
                     type: 'new-tab-link',
                     value: 'https://docs.sourcegraph.com/integration/browser_extension',
-                }
+                },
             },
         ],
     },

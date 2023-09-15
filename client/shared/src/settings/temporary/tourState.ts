@@ -17,7 +17,7 @@ export enum TourIcon {
     Search = 'Search',
     Cody = 'Cody',
     Extension = 'Extension',
-    Check= 'Check'
+    Check = 'Check',
 }
 
 /**
@@ -56,7 +56,7 @@ export interface TourTaskStepType {
         | {
               type: 'search-query'
               query: string
-              snippets?: string[]|Record<string,string[]>
+              snippets?: string[] | Record<string, string[]>
           }
     /**
      * String, which will be displayed in info box when navigating to a step link.

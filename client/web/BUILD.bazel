@@ -1670,6 +1670,7 @@ ts_project(
         "src/team/new/team-select/backend.ts",
         "src/tour/GettingStartedTour.tsx",
         "src/tour/components/ItemPicker.tsx",
+        "src/tour/components/Tour/SearchTask.tsx",
         "src/tour/components/Tour/Tour.tsx",
         "src/tour/components/Tour/TourAgent.tsx",
         "src/tour/components/Tour/TourContent.tsx",

@@ -1,8 +1,9 @@
 import { type FC, useState, useEffect, useMemo } from 'react'
 
+import classNames from 'classnames'
+import { noop, memoize } from 'lodash'
 import { Subscriber, Subscription, fromEvent, of } from 'rxjs'
 import { map } from 'rxjs/operators'
-import {noop, memoize} from 'lodash'
 
 import {
     LATEST_VERSION,
@@ -14,17 +15,16 @@ import {
     observeMessages,
     SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Link } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 import { defaultSnippets } from '../../data'
-import classNames from 'classnames'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 interface SearchTaskProps {
     label: string
     template: string
-    snippets?: string[]|Record<string, string[]>
+    snippets?: string[] | Record<string, string[]>
     handleLinkClick: (event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>) => void
 }
 
@@ -36,44 +36,49 @@ export const SearchTask: FC<SearchTaskProps> = ({ template, snippets, label, han
     const [lang] = useState<string>('go')
 
     const hasSnippet = hasSnippetPlaceholder(template)
-    const baseQuery = useMemo(() => org && repo && lang ? buildQuery(template, {
-        [QueryPlacholder.Org]: org,
-        [QueryPlacholder.Repo]: repo,
-        [QueryPlacholder.Lang]: lang,
-    }) : null, [org, repo, lang])
+    const baseQuery = useMemo(
+        () =>
+            org && repo && lang
+                ? buildQuery(template, {
+                      [QueryPlacholder.Org]: org,
+                      [QueryPlacholder.Repo]: repo,
+                      [QueryPlacholder.Lang]: lang,
+                  })
+                : null,
+        [org, repo, lang]
+    )
 
     useEffect(() => {
         if (baseQuery && hasSnippet && lang) {
-
             const snippetsQueue = [
                 // Configures snippets (if any)
-                snippets ? Array.isArray(snippets) ? snippets : getLanguageSnippets(snippets, lang) : null,
+                snippets ? (Array.isArray(snippets) ? snippets : getLanguageSnippets(snippets, lang)) : null,
                 // Hardcoded default language snippets
                 getLanguageSnippets(defaultSnippets, lang),
                 // Hardcoded default snippets for all languages
                 defaultSnippets['*'],
             ].filter((snippets): snippets is string[] => snippets !== null)
 
-            findQueryFromQueue(baseQuery, snippetsQueue).then(
-                setSelectedQuery,
-                () => setSelectedQuery(buildQuery(baseQuery, {[QueryPlacholder.Snippet]: ""}))
+            findQueryFromQueue(baseQuery, snippetsQueue).then(setSelectedQuery, () =>
+                setSelectedQuery(buildQuery(baseQuery, { [QueryPlacholder.Snippet]: '' }))
             )
         } else if (baseQuery) {
-            setSelectedQuery(buildQuery(baseQuery, {[QueryPlacholder.Snippet]: ""}))
+            setSelectedQuery(buildQuery(baseQuery, { [QueryPlacholder.Snippet]: '' }))
         }
     }, [baseQuery, hasSnippet, snippets, lang])
 
-    return selectedQuery ?
+    return selectedQuery ? (
         <Link
             className={classNames('flex-grow-1')}
             to={`/search?${buildSearchURLQuery(selectedQuery, SearchPatternType.standard, false)}`}
             onClick={handleLinkClick}
         >
             {label}
-        </Link> : null
+        </Link>
+    ) : null
 }
 
-function getLanguageSnippets(snippets: Record<string, string[]>, language: string): string[]|null {
+function getLanguageSnippets(snippets: Record<string, string[]>, language: string): string[] | null {
     const languageLower = language.toLowerCase()
     for (const [langKey, values] of Object.entries(snippets)) {
         if (langKey.toLowerCase() === languageLower) {
@@ -86,8 +91,8 @@ function getLanguageSnippets(snippets: Record<string, string[]>, language: strin
 function findQuery(baseQuery: string, snippets: string[]): Promise<string> {
     let promises = []
     for (const snippet of snippets) {
-        const query = buildQuery(baseQuery, {[QueryPlacholder.Snippet]: snippet})
-        promises.push(isQuerySuccessful(query).then(isSuccessful => isSuccessful ? query : Promise.reject()))
+        const query = buildQuery(baseQuery, { [QueryPlacholder.Snippet]: snippet })
+        promises.push(isQuerySuccessful(query).then(isSuccessful => (isSuccessful ? query : Promise.reject())))
     }
 
     return Promise.any(promises)
@@ -162,21 +167,24 @@ const firstMatchMessageHandlers: MessageHandlers = {
 /**
  * Initiates a streaming search, stop at the first `matches` event, and aggregate the results.
  */
-const fetchStreamSuggestions = memoize((query: string, sourcegraphURL?: string): Promise<SearchMatch[]> => {
-    return search(
-        of(query),
-        {
-            version: LATEST_VERSION,
-            patternType: SearchPatternType.standard,
-            caseSensitive: false,
-            trace: undefined,
-            sourcegraphURL,
-        },
-        firstMatchMessageHandlers
-    )
-        .pipe(
-            switchAggregateSearchResults,
-            map(suggestions => suggestions.results)
+const fetchStreamSuggestions = memoize(
+    (query: string, sourcegraphURL?: string): Promise<SearchMatch[]> => {
+        return search(
+            of(query),
+            {
+                version: LATEST_VERSION,
+                patternType: SearchPatternType.standard,
+                caseSensitive: false,
+                trace: undefined,
+                sourcegraphURL,
+            },
+            firstMatchMessageHandlers
         )
-        .toPromise()
-}, (query, sourcegraphURL) => `${query} + ${sourcegraphURL}`)
+            .pipe(
+                switchAggregateSearchResults,
+                map(suggestions => suggestions.results)
+            )
+            .toPromise()
+    },
+    (query, sourcegraphURL) => `${query} + ${sourcegraphURL}`
+)
