@@ -117,13 +117,15 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// Set up configuration for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
-		ServiceAccount: serviceaccount.New(stack, resourceid.New("cloudrun"), serviceaccount.Config{
-			ProjectID: vars.ProjectID,
-			AccountID: vars.Service.ID,
-			DisplayName: fmt.Sprintf("%s Service Account",
-				pointers.Deref(vars.Service.Name, vars.Service.ID)),
-			Roles: serviceAccountRoles,
-		}),
+		ServiceAccount: serviceaccount.New(stack,
+			resourceid.New("cloudrun"),
+			serviceaccount.Config{
+				ProjectID: vars.ProjectID,
+				AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
+				DisplayName: fmt.Sprintf("%s Service Account",
+					pointers.Deref(vars.Service.Name, vars.Service.ID)),
+				Roles: serviceAccountRoles,
+			}),
 
 		DiagnosticsSecret: diagnosticsSecret,
 		// Set up some base env vars
