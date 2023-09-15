@@ -4677,6 +4677,13 @@ CREATE SEQUENCE teams_id_seq
 
 ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
 
+CREATE TABLE telemetry_events_export_queue (
+    id text NOT NULL,
+    "timestamp" timestamp with time zone NOT NULL,
+    payload_pb bytea NOT NULL,
+    exported_at timestamp with time zone
+);
+
 CREATE TABLE temporary_settings (
     id integer NOT NULL,
     user_id integer NOT NULL,
@@ -5761,6 +5768,9 @@ ALTER TABLE ONLY team_members
 ALTER TABLE ONLY teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY telemetry_events_export_queue
+    ADD CONSTRAINT telemetry_events_export_queue_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_pkey PRIMARY KEY (id);
 
@@ -6290,6 +6300,8 @@ CREATE UNIQUE INDEX sub_repo_permissions_repo_id_user_id_version_uindex ON sub_r
 CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id);
 
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
+
+CREATE INDEX telemetry_events_export_queue_id_idx ON telemetry_events_export_queue USING btree (id);
 
 CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
 
