@@ -4,7 +4,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost;
 import com.sourcegraph.cody.config.SourcegraphServerPath;
-import com.sourcegraph.config.AccessTokenStorage;
 import com.sourcegraph.config.ConfigUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -42,7 +41,8 @@ public class SaveAccessTokenHttpService extends org.jetbrains.ide.RestService {
       // Save token
       Project project = ProjectManager.getInstance().getOpenProjects()[0];
       var accountsHost = new CodyPersistentAccountsHost(project);
-      accountsHost.addAccount(new SourcegraphServerPath(ConfigUtil.DOTCOM_URL, ""), "", accessToken);
+      accountsHost.addAccount(
+          new SourcegraphServerPath(ConfigUtil.DOTCOM_URL, ""), "", accessToken);
 
       // Send response
       String htmlContent =
