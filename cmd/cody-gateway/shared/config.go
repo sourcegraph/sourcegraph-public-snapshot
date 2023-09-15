@@ -28,9 +28,10 @@ type Config struct {
 	}
 
 	Anthropic struct {
-		AllowedModels     []string
-		AccessToken       string
-		MaxTokensToSample int
+		AllowedModels         []string
+		AccessToken           string
+		MaxTokensToSample     int
+		AllowedPromptPatterns []string
 	}
 
 	OpenAI struct {
@@ -111,6 +112,7 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for Anthropic"))
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
+	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
 
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")

@@ -47,6 +47,8 @@ replace (
 	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
 	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+	// Pending: https://github.com/pkoukk/tiktoken-go/pull/40
+	github.com/pkoukk/tiktoken-go => github.com/sourcegraph/tiktoken-go v0.0.0-20230905173153-caab340cf008
 	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
@@ -277,6 +279,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mroth/weightedrand/v2 v2.0.1
+	github.com/pkoukk/tiktoken-go v0.1.5
 	github.com/prometheus/statsd_exporter v0.22.7
 	github.com/qdrant/go-client v1.3.0
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
@@ -426,7 +429,7 @@ require (
 	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/djherbis/buffer v1.2.0 // indirect
 	github.com/djherbis/nio/v3 v3.0.1 // indirect
-	github.com/dlclark/regexp2 v1.8.0 // indirect
+	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/docker/docker v23.0.1+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
