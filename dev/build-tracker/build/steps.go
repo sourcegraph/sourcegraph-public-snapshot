@@ -40,6 +40,10 @@ func (j *Job) failed() bool {
 	return !j.SoftFailed && j.exitStatus() > 0
 }
 
+func (j *Job) finished() bool {
+	return j.state() == JobFinishedState
+}
+
 func (j *Job) state() string {
 	return strings.ToTitle(util.Strp(j.State))
 }

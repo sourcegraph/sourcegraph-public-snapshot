@@ -54,9 +54,15 @@ type BuildStatus string
 
 const (
 	BuildStatusUnknown BuildStatus = ""
+	BuildInProgress    BuildStatus = "InProgress"
 	BuildPassed        BuildStatus = "Passed"
 	BuildFailed        BuildStatus = "Failed"
 	BuildFixed         BuildStatus = "Fixed"
+
+	EventJobFinished   = "job.finished"
+	EventBuildFinished = "build.finished"
+
+	JobFinishedState = "finished"
 )
 
 func (b *Build) AddJob(j *Job) error {
@@ -173,11 +179,11 @@ func (b *Event) WrappedPipeline() *Pipeline {
 }
 
 func (b *Event) IsBuildFinished() bool {
-	return b.Name == "build.finished"
+	return b.Name == EventBuildFinished
 }
 
 func (b *Event) IsJobFinished() bool {
-	return b.Name == "job.finished"
+	return b.Name == EventJobFinished
 }
 
 func (b *Event) GetJobName() string {

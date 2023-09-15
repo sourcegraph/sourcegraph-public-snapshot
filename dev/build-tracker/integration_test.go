@@ -34,10 +34,12 @@ func (l *TestJobLine) LogURL() string {
 func newJob(t *testing.T, name string, exit int) *build.Job {
 	t.Helper()
 
+	state := build.JobFinishedState
 	return &build.Job{
 		Job: buildkite.Job{
 			Name:       &name,
 			ExitStatus: &exit,
+			State:      &state,
 		},
 	}
 }

@@ -222,10 +222,12 @@ func (s *Server) processEvent(event *build.Event) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
 	s.store.Add(event)
 	b := s.store.GetByBuildNumber(event.GetBuildNumber())
-	shouldNotify := event.IsBuildFinished() || (b.IsFailed() && event.IsJobFinished())
-	if shouldNotify {
-		if err := s.notifyIfFailed(b); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+	if event.IsBuildFinished() {
+		shouldNotify := b.IsFailed() && event.IsJobFinished()
+		if shouldNotify {
+			if err := s.notifyIfFailed(b); err != nil {
+				s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
+			}
 		}
 	}
 }
