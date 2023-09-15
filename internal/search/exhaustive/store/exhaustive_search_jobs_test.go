@@ -143,7 +143,11 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	userID, err := createUser(bs, "alice")
 	require.NoError(t, err)
 
+	adminID, err := createUser(bs, "admin")
+	require.NoError(t, err)
+
 	ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(adminID))
 
 	s := store.New(db, &observation.TestContext)
 
@@ -179,11 +183,14 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 
 	tc := []struct {
 		name    string
+		ctx     context.Context
 		args    store.ListArgs
 		wantIDs []int64
+		wantErr bool
 	}{
 		{
 			name: "query: 1 job",
+			ctx:  ctx,
 			args: store.ListArgs{
 				Query: strptr("job1"),
 			},
@@ -191,6 +198,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 		},
 		{
 			name: "query: all jobs",
+			ctx:  ctx,
 			args: store.ListArgs{
 				Query: strptr("repo"),
 			},
@@ -198,6 +206,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 		},
 		{
 			name: "states: queued jobs",
+			ctx:  ctx,
 			args: store.ListArgs{
 				States: []string{string(types.JobStateQueued)},
 			},
@@ -205,6 +214,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 		},
 		{
 			name: "query: all jobs but ask for 1 job only",
+			ctx:  ctx,
 			args: store.ListArgs{
 				PaginationArgs: &database.PaginationArgs{First: intptr(1), Ascending: true},
 				Query:          strptr("repo"),
@@ -214,24 +224,48 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 		// negative test
 		{
 			name: "query: no result",
+			ctx:  ctx,
 			args: store.ListArgs{
 				Query: strptr("foo"),
 			},
 			wantIDs: []int64{},
 		},
 		{
-			name: "state: no result",
+			name: "states: no result",
+			ctx:  ctx,
 			args: store.ListArgs{
 				States: []string{string(types.JobStateCompleted)},
 			},
 			wantIDs: []int64{},
 		},
+		// Security tests
+		{
+			name: "userIDs: Admins can ask for userIDs",
+			ctx:  adminCtx,
+			args: store.ListArgs{
+				UserIDs: []int32{userID},
+			},
+			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+		},
+		{
+			name: "userIDs: Non-admins CANNOT ask for userIDs",
+			ctx:  ctx,
+			args: store.ListArgs{
+				UserIDs: []int32{userID + 1},
+			},
+			wantIDs: []int64{},
+			wantErr: true,
+		},
 	}
 
 	for _, c := range tc {
 		t.Run(c.name, func(t *testing.T) {
-			haveJobs, err := s.ListExhaustiveSearchJobs(ctx, c.args)
-			require.NoError(t, err)
+			haveJobs, err := s.ListExhaustiveSearchJobs(c.ctx, c.args)
+			if c.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			require.Equal(t, len(haveJobs), len(c.wantIDs))
 
 			haveIDs := make([]int64, len(haveJobs))
