@@ -36,7 +36,7 @@ type Server struct {
 	logger       log.Logger
 	store        *build.Store
 	config       *config.Config
-	notifyClient *notify.Client
+	notifyClient notify.NotificationClient
 	http         *http.Server
 }
 
@@ -225,11 +225,8 @@ func (s *Server) processEvent(event *build.Event) {
 	s.store.Add(event)
 	b := s.store.GetByBuildNumber(event.GetBuildNumber())
 	if event.IsBuildFinished() {
-		shouldNotify := b.IsFailed() && event.IsJobFinished()
-		if shouldNotify {
-			if err := s.notifyIfFailed(b); err != nil {
-				s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
-			}
+		if err := s.notifyIfFailed(b); err != nil {
+			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 		}
 	}
 }
