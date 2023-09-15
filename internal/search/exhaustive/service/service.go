@@ -45,11 +45,11 @@ func opAttrs(attrs ...attribute.KeyValue) observation.Args {
 }
 
 type operations struct {
-	createSearchJob *observation.Operation
-	getSearchJob    *observation.Operation
-	listSearchJobs  *observation.Operation
-	cancelSearchJob *observation.Operation
-	copyBlobs       *observation.Operation
+	createSearchJob   *observation.Operation
+	getSearchJob      *observation.Operation
+	listSearchJobs    *observation.Operation
+	cancelSearchJob   *observation.Operation
+	writeSearchJobCSV *observation.Operation
 }
 
 var (
@@ -79,11 +79,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 		}
 
 		singletonOperations = &operations{
-			createSearchJob: op("CreateSearchJob"),
-			getSearchJob:    op("GetSearchJob"),
-			listSearchJobs:  op("ListSearchJobs"),
-			cancelSearchJob: op("CancelSearchJob"),
-			copyBlobs:       op("CopyBlobs"),
+			createSearchJob:   op("CreateSearchJob"),
+			getSearchJob:      op("GetSearchJob"),
+			listSearchJobs:    op("ListSearchJobs"),
+			cancelSearchJob:   op("CancelSearchJob"),
+			writeSearchJobCSV: op("WriteSearchJobCSV"),
 		}
 	})
 	return singletonOperations
@@ -160,9 +160,10 @@ func getPrefix(id int64) string {
 	return fmt.Sprintf("%d-", id)
 }
 
-// CopyBlobs copies all the blobs associated with a search job to the given writer.
-func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) (err error) {
-	ctx, _, endObservation := s.operations.copyBlobs.With(ctx, &err, opAttrs(
+// WriteSearchJobCSV copies all CSVs associated with a search job to the given
+// writer.
+func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) (err error) {
+	ctx, _, endObservation := s.operations.writeSearchJobCSV.With(ctx, &err, opAttrs(
 		attribute.Int64("id", id)))
 	defer endObservation(1, observation.Args{})
 
@@ -177,9 +178,9 @@ func (s *Service) CopyBlobs(ctx context.Context, w io.Writer, id int64) (err err
 		return err
 	}
 
-	err = copyBlobs(ctx, iter, s.uploadStore, w)
+	err = writeSearchJobCSV(ctx, iter, s.uploadStore, w)
 	if err != nil {
-		return errors.Wrapf(err, "copying blobs for job %d", id)
+		return errors.Wrapf(err, "writing csv for job %d", id)
 	}
 	return nil
 }
@@ -199,10 +200,10 @@ func discardUntil(br *bufio.Reader, delim byte) error {
 	}
 }
 
-func copyBlobs(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
+func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
 	// keep a single bufio.Reader so we can reuse its buffer.
 	var br bufio.Reader
-	copyBlob := func(key string, skipHeader bool) error {
+	writeKey := func(key string, skipHeader bool) error {
 		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
 			_ = rc.Close()
@@ -232,8 +233,8 @@ func copyBlobs(ctx context.Context, iter *iterator.Iterator[string], uploadStore
 	skipHeader := false
 	for iter.Next() {
 		key := iter.Current()
-		if err := copyBlob(key, skipHeader); err != nil {
-			return errors.Wrapf(err, "copying blob %q", key)
+		if err := writeKey(key, skipHeader); err != nil {
+			return errors.Wrapf(err, "writing csv for key %q", key)
 		}
 		skipHeader = true
 	}

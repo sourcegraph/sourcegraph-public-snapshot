@@ -28,7 +28,7 @@ func Test_copyBlobs(t *testing.T) {
 
 	w := &bytes.Buffer{}
 
-	err := copyBlobs(context.Background(), keysIter, blobstore, w)
+	err := writeSearchJobCSV(context.Background(), keysIter, blobstore, w)
 	require.NoError(t, err)
 
 	want := "h/h/h\na/a/a\nb/b/b\nc/c/c\n"
