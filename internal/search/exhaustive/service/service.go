@@ -182,8 +182,8 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 	for iter.Next() {
 		key := iter.Current()
 		err := s.uploadStore.Delete(ctx, key)
-		// If we continued we might have leftover data in the store without entries in
-		// the db to reference it.
+		// If we continued, we might end up with data in the upload store without
+		// entries in the db to reference it.
 		if err != nil {
 			return errors.Wrapf(err, "deleting key %q", key)
 		}
