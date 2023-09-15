@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/lib/pq"
@@ -11,9 +12,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const FeatureFlagTelemetryExport = "telemetry-export"
 
 type TelemetryEventsExportQueueStore interface {
 	basestore.ShareableStore
@@ -53,6 +58,18 @@ type telemetryEventsExportQueueStore struct {
 
 // See interface docstring.
 func (s *telemetryEventsExportQueueStore) QueueForExport(ctx context.Context, events []*telemetrygatewayv1.Event) error {
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "telemetryevents.QueueForExport",
+		attribute.Int("events", len(events)))
+	defer tr.End()
+
+	if flags := featureflag.FromContext(ctx); flags == nil || !flags.GetBoolOr(FeatureFlagTelemetryExport, false) {
+		tr.SetAttributes(attribute.Bool("enabled", false))
+		return nil // no-op
+	} else {
+		tr.SetAttributes(attribute.Bool("enabled", true))
+	}
+
 	return batch.InsertValues(ctx,
 		s.Handle(),
 		"telemetry_events_export_queue",
@@ -95,6 +112,13 @@ func insertChannel(logger log.Logger, events []*telemetrygatewayv1.Event) <-chan
 
 // See interface docstring.
 func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, limit int) ([]*telemetrygatewayv1.Event, error) {
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "telemetryevents.ListForExport",
+		attribute.Int("limit", limit))
+	defer tr.End()
+
+	logger := trace.Logger(ctx, s.logger)
+
 	rows, err := s.ShareableStore.Handle().QueryContext(ctx, `
 		SELECT id, payload_pb
 		FROM telemetry_events_export_queue
@@ -115,10 +139,17 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 		}
 		var event telemetrygatewayv1.Event
 		if err := proto.Unmarshal(payloadPB, &event); err != nil {
-			return nil, errors.Wrapf(err, "unmarshal telemetry event payload ID %q", id)
+			tr.RecordError(err)
+			logger.Error("failed to unmarshal telemetry event payload",
+				log.String("id", id),
+				log.Error(err))
+			// Not fatal, just ignore this event for now, leaving it in DB for
+			// investigation.
+			continue
 		}
 		events = append(events, &event)
 	}
+	tr.SetAttributes(attribute.Int("events", len(events)))
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
