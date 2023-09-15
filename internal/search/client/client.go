@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -65,15 +64,10 @@ func New(logger log.Logger, db database.DB) SearchClient {
 	}
 }
 
-// MockedZoekt will return a search client for tests which uses the mocked
-// zoektStreamer.
-func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
+// Mocked will return a search client for tests which uses runtimeClients.
+func Mocked(runtimeClients job.RuntimeClients) SearchClient {
 	return &searchClient{
-		runtimeClients: job.RuntimeClients{
-			Logger: logger,
-			DB:     db,
-			Zoekt:  zoektStreamer,
-		},
+		runtimeClients:        runtimeClients,
 		settingsService:       settings.Mock(&schema.Settings{}),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
