@@ -149,12 +149,7 @@ type Mutation {
         """
         The ID of the existing repository whose mirror to check.
         """
-        repository: ID
-        """
-        The name of a repository whose mirror to check. If the name is provided, the repository need not be added
-        to the site (but the site configuration must define a code host that knows how to handle the name).
-        """
-        name: String
+        repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
     """
     Schedule the mirror repository to be updated from its original source repository. Updating

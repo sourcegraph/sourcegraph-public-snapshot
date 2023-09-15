@@ -458,10 +458,16 @@ func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
+
+	if req.Repo == "" {
+		return nil, status.Error(codes.InvalidArgument, "no Repo given")
+	}
+
 	resp, err := gs.Server.isRepoCloneable(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.ToProto(), nil
 }
 
