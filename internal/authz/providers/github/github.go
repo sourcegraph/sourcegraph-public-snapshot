@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -158,7 +159,8 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 	}, true
 }
 
-func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []*github.Org, err error) {
+func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) ([]*github.Org, error) {
+	var orgs []*github.Org
 	for page := 1; true; page++ {
 		pageOrgs, hasNextPage, _, err := cli.GetAuthenticatedUserOrgs(ctx, page)
 		if err != nil {
@@ -172,10 +174,11 @@ func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) (orgs []*githu
 		}
 	}
 
-	return orgs, err
+	return orgs, nil
 }
 
-func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin string) (repos []*github.Repository, err error) {
+func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin string) ([]*github.Repository, error) {
+	var repos []*github.Repository
 	for page := 1; true; page++ {
 		reposPage, hasNextPage, _, err := cli.ListOrgRepositories(ctx, orgLogin, page, "internal")
 		if err != nil {
@@ -189,110 +192,36 @@ func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin 
 		}
 	}
 
-	return repos, err
+	return repos, nil
 }
 
-// fetchUserPermsByToken fetches all the private repo ids that the token can access.
-//
-// This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
-
-	client, err := p.client()
-	if err != nil {
-		return nil, errors.Wrap(err, "get client")
-	}
-
-	client = client.WithAuthenticator(token)
-
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	const repoSetSize = 100
-
-	var (
-		// perms tracks repos this user has access to
-		perms = &authz.ExternalUserPermissions{
-			Exacts: make([]extsvc.RepoID, 0, repoSetSize),
-		}
-		// seenRepos helps prevent duplication if necessary for groupsCache. Left unset
-		// indicates it is unused.
-		seenRepos map[extsvc.RepoID]struct{}
-		// addRepoToUserPerms checks if the given repos are already tracked before adding
-		// it to perms for groupsCache, otherwise just adds directly
-		addRepoToUserPerms func(repos ...extsvc.RepoID)
-		// Repository affiliations to list for - groupsCache only lists for a subset. Left
-		// unset indicates all affiliations should be sync'd.
-		affiliations []github.RepositoryAffiliation
-	)
-
-	// If cache is disabled the code path is simpler, avoid allocating memory
-	if p.groupsCache == nil { // Groups cache is disabled
-		// addRepoToUserPerms just appends
-		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
-			perms.Exacts = append(perms.Exacts, repos...)
-		}
-	} else { // Groups cache is enabled
-		// Instantiate map for deduplicating repos
-		seenRepos = make(map[extsvc.RepoID]struct{}, repoSetSize)
-		// addRepoToUserPerms checks for duplicates before appending
-		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
-			for _, repo := range repos {
-				if _, exists := seenRepos[repo]; !exists {
-					seenRepos[repo] = struct{}{}
-					perms.Exacts = append(perms.Exacts, repo)
-				}
-			}
-		}
-		// We sync just a subset of direct affiliations - we let other permissions
-		// ('organization' affiliation) be sync'd by teams/orgs.
-		affiliations = []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
-	}
-
+func getAllAuthenticatedUserAffiliatedRepositories(ctx context.Context, cli client, affiliations ...github.RepositoryAffiliation) ([]*github.Repository, error) {
+	var repos []*github.Repository
 	// Sync direct affiliations
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var err error
-		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
+	for page := 1; true; page++ {
+		reposPage, hasNextPage, _, err := cli.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
 		if err != nil {
-			return perms, errors.Wrap(err, "list repos for user")
+			return repos, errors.Wrap(err, "list affiliated repos for user")
 		}
 
-		for _, r := range repos {
-			addRepoToUserPerms(extsvc.RepoID(r.ID))
+		repos = append(repos, reposPage...)
+
+		if !hasNextPage {
+			break
 		}
 	}
 
-	// If cache is disabled, we also need to fetch a list of internal repositories for each
-	// org the user belongs to.
-	if p.groupsCache == nil {
-		orgs, err := getAllAuthenticatedUserOrgs(ctx, client)
-		if err != nil {
-			return perms, err
-		}
-		for _, org := range orgs {
-			repos, err := getAllInternalRepositoriesForOrg(ctx, client, org.Login)
-			// There may be partial results, so we add those to the perms first
-			for _, r := range repos {
-				addRepoToUserPerms(extsvc.RepoID(r.ID))
-			}
-			if err != nil {
-				return perms, err
-			}
-		}
-	}
+	return repos, nil
+}
 
-	// We're done if groups caching is disabled or no accountID is available.
-	if p.groupsCache == nil || accountID == "" {
-		return perms, nil
-	}
+func (p *Provider) fetchCachedAuthenticatedUserPerms(ctx context.Context, logger log.Logger, cli client, accountID extsvc.AccountID, opts authz.FetchPermsOptions) (collections.Set[extsvc.RepoID], error) {
+	userRepos := collections.NewSet[extsvc.RepoID]()
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
-	groups, err := p.getUserAffiliatedGroups(ctx, client, opts)
+	groups, err := p.getUserAffiliatedGroups(ctx, cli, opts)
 	if err != nil {
-		return perms, errors.Wrap(err, "get groups affiliated with user")
+		return userRepos, errors.Wrap(err, "get groups affiliated with user")
 	}
 
 	// Get repos from groups, cached if possible.
@@ -318,20 +247,20 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		// because it is possible this cached group does not have any repositories, in
 		// which case it should have a non-nil length 0 slice of repositories.
 		if group.Repositories != nil {
-			addRepoToUserPerms(group.Repositories...)
+			userRepos.Add(group.Repositories...)
 			continue
 		}
 
 		// Perform full sync. Start with instantiating the repos slice.
-		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
+		group.Repositories = make([]extsvc.RepoID, 0, 100)
 		isOrg := group.Team == ""
-		hasNextPage = true
+		hasNextPage := true
 		for page := 1; hasNextPage; page++ {
 			var repos []*github.Repository
 			if isOrg {
-				repos, hasNextPage, _, err = client.ListOrgRepositories(ctx, group.Org, page, "")
+				repos, hasNextPage, _, err = cli.ListOrgRepositories(ctx, group.Org, page, "")
 			} else {
-				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
+				repos, hasNextPage, _, err = cli.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
 			if github.IsNotFound(err) || github.HTTPErrorCode(err) == http.StatusForbidden {
 				// If we get a 403/404 here, something funky is going on and this is very
@@ -348,15 +277,15 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 				// Add and return what we've found on this page but don't persist group
 				// to cache
 				for _, r := range repos {
-					addRepoToUserPerms(extsvc.RepoID(r.ID))
+					userRepos.Add(extsvc.RepoID(r.ID))
 				}
-				return perms, errors.Wrap(err, "list repos for group")
+				return userRepos, errors.Wrap(err, "list repos for group")
 			}
 			// Add results to both group (for persistence) and permissions for user
 			for _, r := range repos {
 				repoID := extsvc.RepoID(r.ID)
 				group.Repositories = append(group.Repositories, repoID)
-				addRepoToUserPerms(repoID)
+				userRepos.Add(repoID)
 			}
 		}
 
@@ -366,7 +295,69 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 	}
 
-	return perms, nil
+	return userRepos, nil
+}
+
+// fetchAuthenticatedUserPerms fetches all the private repo ids that the authenticated client can access.
+//
+// This may return a partial result if an error is encountered, e.g. via rate limits.
+func (p *Provider) fetchAuthenticatedUserPerms(ctx context.Context, cli client, accountID extsvc.AccountID, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
+	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+
+	// Repository affiliations to list for - groupsCache only lists for a subset. Left
+	// unset indicates all affiliations should be sync'd.
+	var affiliations []github.RepositoryAffiliation
+
+	userRepos := collections.NewSet[extsvc.RepoID]()
+
+	if p.groupsCache != nil { // Groups cache is enabled
+		// We sync just a subset of direct affiliations - we let other permissions
+		// ('organization' affiliation) be sync'd by teams/orgs.
+		affiliations = []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+	}
+
+	// Sync direct affiliations
+	repos, err := getAllAuthenticatedUserAffiliatedRepositories(ctx, cli, affiliations...)
+	// May return partial results, so we add possible repos first
+	for _, r := range repos {
+		userRepos.Add(extsvc.RepoID(r.ID))
+	}
+	if err != nil {
+		return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, errors.Wrap(err, "list repos for user")
+	}
+
+	// If cache is disabled, we also need to fetch a list of internal repositories for each
+	// org the user belongs to.
+	if p.groupsCache == nil {
+		orgs, err := getAllAuthenticatedUserOrgs(ctx, cli)
+		if err != nil {
+			return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
+		}
+		for _, org := range orgs {
+			repos, err := getAllInternalRepositoriesForOrg(ctx, cli, org.Login)
+			// There may be partial results, so we add those to the perms first
+			for _, r := range repos {
+				userRepos.Add(extsvc.RepoID(r.ID))
+			}
+			if err != nil {
+				return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
+			}
+		}
+	}
+
+	// If groups caching is enabled, we need to fetch cached repositories as well
+	if p.groupsCache != nil {
+		groupsPerms, err := p.fetchCachedAuthenticatedUserPerms(ctx, logger, cli, accountID, opts)
+		if err != nil {
+			return &authz.ExternalUserPermissions{Exacts: userRepos.Values()}, err
+		}
+		userRepos = userRepos.Union(groupsPerms)
+	}
+
+	return &authz.ExternalUserPermissions{
+		Exacts: userRepos.Values(),
+	}, nil
 }
 
 // FetchUserPerms returns a list of repository IDs (on code host) that the given account
@@ -400,7 +391,14 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		NeedsRefreshBuffer: 5,
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+	client, err := p.client()
+	if err != nil {
+		return nil, errors.Wrap(err, "get client")
+	}
+
+	client = client.WithAuthenticator(oauthToken)
+
+	return p.fetchAuthenticatedUserPerms(ctx, client, extsvc.AccountID(account.AccountID), opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

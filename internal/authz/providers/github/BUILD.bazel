@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//internal/authz",
         "//internal/authz/types",
+        "//internal/collections",
         "//internal/database",
         "//internal/encryption/keyring",
         "//internal/extsvc",
