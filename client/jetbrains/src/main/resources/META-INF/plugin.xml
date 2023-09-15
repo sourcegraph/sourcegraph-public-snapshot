@@ -32,7 +32,7 @@
             parentId="tools"
             instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
             id="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            displayName="Sourcegraph"
+            displayName="Sourcegraph &amp; Cody"
             nonDefaultProject="false"
         />
         <projectConfigurable
@@ -194,7 +194,6 @@
             icon="/icons/codyLogoSm.svg"/>
 
 
-
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
@@ -245,7 +244,7 @@
     </actions>
 
     <projectListeners>
-    <listener topic="com.intellij.openapi.command.CommandListener"
-              class="com.sourcegraph.cody.editor.CodyCommandListener"/>
+        <listener topic="com.intellij.openapi.command.CommandListener"
+                  class="com.sourcegraph.cody.editor.CodyCommandListener"/>
     </projectListeners>
 </idea-plugin>
