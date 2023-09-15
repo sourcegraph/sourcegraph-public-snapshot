@@ -48,7 +48,7 @@ class CodyAuthenticationManager internal constructor() {
     project.service<CodyProjectActiveAccountHolder>().account = account
   }
 
-  fun getDefaultAccountType(project: Project): AccountType {
+  fun getActiveAccountType(project: Project): AccountType {
     return getActiveAccount(project)?.getAccountType() ?: AccountType.DOTCOM
   }
 

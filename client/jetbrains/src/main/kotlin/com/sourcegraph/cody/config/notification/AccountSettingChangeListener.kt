@@ -2,6 +2,7 @@ package com.sourcegraph.cody.config.notification
 
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyAgentProjectListener
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.config.CodyApplicationSettings.Companion.getInstance
 import com.sourcegraph.config.ConfigUtil
@@ -37,6 +38,12 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             val agentServer = CodyAgent.getServer(project)
             if (ConfigUtil.isCodyEnabled() && agentServer != null) {
               agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+            }
+
+            // Refresh onboarding panels
+            if (ConfigUtil.isCodyEnabled()) {
+              val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
+              codyToolWindowContent.refreshPanelsVisibility()
             }
 
             // Log install events
