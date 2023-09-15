@@ -1,5 +1,7 @@
 <!-- Plugin description -->
 
+foobar
+
 # Sourcegraph Cody + Code Search
 
 Use Sourcegraph’s AI assistant Cody and Sourcegraph Code Search directly from your JetBrains IDE.
