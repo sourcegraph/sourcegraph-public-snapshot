@@ -133,7 +133,7 @@ func NewAnthropicHandler(
 
 					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
 					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
-						logger.Error("failed to record flagged prompt", log.Error(err))
+						logger.Warn("failed to record flagged prompt", log.Error(err))
 					}
 				}
 
