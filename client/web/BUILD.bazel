@@ -1025,8 +1025,12 @@ ts_project(
         "src/enterprise/repo/settings/sidebaritems.ts",
         "src/enterprise/repo/settings/utils.ts",
         "src/enterprise/routes.tsx",
+        "src/enterprise/search-jobs/SearchJobBadge/SearchJobBadge.tsx",
+        "src/enterprise/search-jobs/SearchJobCard/SearchJobCard.tsx",
+        "src/enterprise/search-jobs/SearchJobModal/SearchJobModal.tsx",
         "src/enterprise/search-jobs/SearchJobsPage.tsx",
         "src/enterprise/search-jobs/UsersPicker.tsx",
+        "src/enterprise/search-jobs/index.ts",
         "src/enterprise/searchContexts/CreateSearchContextPage.tsx",
         "src/enterprise/searchContexts/DeleteSearchContextModal.tsx",
         "src/enterprise/searchContexts/EditSearchContextPage.tsx",
@@ -1403,6 +1407,7 @@ ts_project(
         "src/savedSearches/SavedSearchListPage.tsx",
         "src/savedSearches/SavedSearchModal.tsx",
         "src/savedSearches/SavedSearchUpdateForm.tsx",
+        "src/search-jobs/utility.ts",
         "src/search/Notepad.tsx",
         "src/search/QuickLinks.tsx",
         "src/search/SearchConsolePage.tsx",
@@ -2061,7 +2066,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 12,  # empirical
+    shard_count = 8,  # empirical
     tags = [
         "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.

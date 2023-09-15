@@ -18,7 +18,7 @@ import { SEARCH_JOBS_QUERY, SearchJobsPage } from './SearchJobsPage'
 import { GET_USERS_QUERY } from './UsersPicker'
 
 const defaultStory: Meta = {
-    title: 'web/search-jobs/SearchJobsPage',
+    title: 'web/search-jobs',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {
@@ -33,7 +33,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
     request: {
         query: getDocumentNode(SEARCH_JOBS_QUERY),
         variables: {
-            first: 5,
+            first: 20,
             after: null,
             query: '',
             states: [],
@@ -50,7 +50,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         __typename: 'SearchJob',
                         id: '001',
                         finishedAt: null,
-                        startedAt: '2023-08-22',
+                        startedAt: '2023-09-12T20:42:46Z',
                         state: SearchJobState.QUEUED,
                         query: 'repo:sourcegraph/* insights rev:asdf',
                         URL: null,
@@ -73,7 +73,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         __typename: 'SearchJob',
                         id: '002',
                         finishedAt: null,
-                        startedAt: '2023-08-23',
+                        startedAt: '2023-09-12T20:42:46Z',
                         state: SearchJobState.PROCESSING,
                         query: 'repo:sourcegraph/* batch-changes rev:asdf',
                         URL: null,
@@ -96,7 +96,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         __typename: 'SearchJob',
                         id: '003',
                         finishedAt: null,
-                        startedAt: '2023-08-23',
+                        startedAt: '2023-09-12T20:42:46Z',
                         state: SearchJobState.FAILED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
@@ -260,6 +260,6 @@ const USER_PICKER_QUERY_MOCK: MockedResponse<GetUsersListResult, GetUsersListVar
 
 export const SearchJobsListPage: Story = () => (
     <MockedTestProvider mocks={[SEARCH_JOBS_MOCK, USER_PICKER_QUERY_MOCK]}>
-        <SearchJobsPage />
+        <SearchJobsPage isAdmin={false} />
     </MockedTestProvider>
 )

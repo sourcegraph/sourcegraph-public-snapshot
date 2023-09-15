@@ -86,6 +86,8 @@ enum SearchJobState {
     The search job has completed.
     """
     COMPLETED
+
+    CANCELED
 }
 
 """
