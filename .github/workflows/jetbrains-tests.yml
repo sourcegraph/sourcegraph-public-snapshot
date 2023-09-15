@@ -54,14 +54,23 @@ jobs:
 #            ${{ runner.os }}-
 
       - name: Run Tests
-        run: ./gradlew test
+        run: |
+          if git diff --name-only main | grep -E '^client/jetbrains'; then
+            ./gradlew test
+          fi
 
       - name: Run Build Plugin
-        run: ./gradlew buildPlugin
+        run: |
+          if git diff --name-only main | grep -E '^client/jetbrains'; then
+            ./gradlew buildPlugin
+          fi
 
 #      # Note: very time & memory consuming, can enable when resources are available
 #      - name: Verify Plugin Compatibility
 #        run: ./gradlew runPluginVerifier
 
       - name: Check formatting
-        run: ./gradlew spotlessCheck
+        run: |
+          if git diff --name-only main | grep -E '^client/jetbrains'; then
+            ./gradlew spotlessCheck
+          fi
