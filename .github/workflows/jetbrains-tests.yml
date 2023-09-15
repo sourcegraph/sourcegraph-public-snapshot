@@ -54,12 +54,16 @@ jobs:
 #            ${{ runner.os }}-
 
       - name: Run Tests
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if gh pr diff --name-only | grep -E '^client/jetbrains'; then
             ./gradlew test
           fi
 
       - name: Run Build Plugin
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if gh pr diff --name-only | grep -E '^client/jetbrains'; then
             ./gradlew buildPlugin
@@ -70,6 +74,8 @@ jobs:
 #        run: ./gradlew runPluginVerifier
 
       - name: Check formatting
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if gh pr diff --name-only | grep -E '^client/jetbrains'; then
             ./gradlew buildPlugin
