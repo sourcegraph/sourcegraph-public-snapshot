@@ -14,7 +14,7 @@ go_library(
         "executor.go",
         "frontend.go",
         "git_server.go",
-        "github_proxy.go",
+        "github.go",
         "otel_collector.go",
         "postgres.go",
         "precise_code_intel_worker.go",

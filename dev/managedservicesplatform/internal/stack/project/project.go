@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -37,9 +39,22 @@ var gcpServices = []string{
 
 const (
 	BillingAccountID = "017005-C370B2-0E3030"
-	// DefaultProjectFolderID points to the 'Managed Services' folder
+	// DefaultProjectFolderID points to the 'Managed Services' folder:
+	// https://console.cloud.google.com/welcome?folder=26336759932
 	DefaultProjectFolderID = "folders/26336759932"
 )
+
+var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
+	// Engineering Projects - https://console.cloud.google.com/welcome?folder=795981974432
+	spec.EnvironmentCategoryTest: "folders/795981974432",
+
+	// Internal Projects - https://console.cloud.google.com/welcome?folder=387815626940
+	spec.EnvironmentCategoryInternal: "folders/387815626940",
+
+	// Use default folder - see DefaultProjectFolderID
+	spec.EnvironmentCategoryExternal: DefaultProjectFolderID,
+	spec.EnvironmentCategory(""):     DefaultProjectFolderID,
+}
 
 type Output struct {
 	// Project is created with a generated project ID.
@@ -57,9 +72,8 @@ type Variables struct {
 	// Labels to apply to the project.
 	Labels map[string]string
 
-	// ProjectFolderID is a 'folders/'-prefixed folder ID to create the project
-	// in. A default project is set.
-	ProjectFolderID *string
+	// Category determines what folder the project will be created in.
+	Category *spec.EnvironmentCategory
 
 	// EnableAuditLogs ships GCP audit logs to security cluster.
 	// TODO: Not yet implemented
@@ -67,6 +81,12 @@ type Variables struct {
 }
 
 const StackName = "project"
+
+const (
+	// https://cloud.google.com/resource-manager/reference/rest/v1/projects
+	projectIDMaxLength              = 30
+	projectIDRandomizedSuffixLength = 6
+)
 
 // NewStack creates a stack that provisions a GCP project.
 func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
@@ -78,8 +98,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	// Name all stack resources after the desired project ID
 	id := resourceid.New(vars.ProjectIDPrefix)
 
+	// The project ID must leave room for a randomized suffix and a separator.
+	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + projectIDRandomizedSuffixLength; afterSuffixLength > projectIDMaxLength {
+		return nil, errors.Newf("project ID prefix %q is too long after adding random suffix (%d characters) - got %d characters, but maximum is %d characters",
+			vars.ProjectIDPrefix, projectIDRandomizedSuffixLength, afterSuffixLength, projectIDMaxLength)
+	}
 	projectID := random.New(stack, id, random.Config{
-		ByteLength: 6,
+		ByteLength: projectIDRandomizedSuffixLength,
 		Prefix:     vars.ProjectIDPrefix,
 	})
 
@@ -91,7 +116,13 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 				ProjectId:         &projectID.HexValue,
 				AutoCreateNetwork: false,
 				BillingAccount:    pointers.Ptr(BillingAccountID),
-				FolderId:          pointers.Ptr(pointers.Deref(vars.ProjectFolderID, DefaultProjectFolderID)),
+				FolderId: func() *string {
+					folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
+					if ok {
+						return &folder
+					}
+					return pointers.Ptr(string(DefaultProjectFolderID))
+				}(),
 				Labels: func(input map[string]string) *map[string]*string {
 					labels := make(map[string]*string)
 					for k, v := range input {

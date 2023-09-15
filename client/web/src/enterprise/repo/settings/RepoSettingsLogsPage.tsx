@@ -1,6 +1,7 @@
 import { type FC, useCallback, useEffect, useState } from 'react'
 
-import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
+import { mdiAlertCircleOutline, mdiCheckCircleOutline, mdiClockOutline, mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import { useSearchParams } from 'react-router-dom'
 
@@ -80,17 +81,17 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
                     onChange={setActiveTab}
                 >
                     <TabList>
-                        <Tab>Last executed commands</Tab>
-                        <Tab>Last sync output</Tab>
+                        <Tab>Command logs</Tab>
+                        <Tab>Sync output</Tab>
                     </TabList>
 
                     <TabPanels>
                         <TabPanel>
-                            <LastExecutedCommands repo={repo} />
+                            <CommandLogs repo={repo} />
                         </TabPanel>
 
                         <TabPanel>
-                            <LastSyncOutput mirrorInfo={repo.mirrorInfo} />
+                            <SyncOutput mirrorInfo={repo.mirrorInfo} />
                         </TabPanel>
                     </TabPanels>
                 </Tabs>
@@ -99,11 +100,11 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
     )
 }
 
-interface LastExecutedCommandsProps {
+interface CommandLogsProps {
     repo: SettingsAreaRepositoryFields
 }
 
-const LastExecutedCommands: FC<LastExecutedCommandsProps> = ({ repo }) => {
+const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
     const { recordedCommands, loading, error, fetchMore, hasNextPage } = useFetchRecordedCommands(repo.id)
 
     return (
@@ -135,6 +136,15 @@ interface LastExecutedCommandNodeProps {
 }
 
 const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mirrorInfo }) => {
+    const [isExpanded, setIsExpanded] = useState(false)
+    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
+        event => {
+            event.preventDefault()
+            setIsExpanded(!isExpanded)
+        },
+        [isExpanded]
+    )
+
     const startDate = parseISO(command.start)
     const duration = formatDuration(command.duration)
 
@@ -142,47 +152,73 @@ const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mi
         <div className={styles.commandNode}>
             <div className={styles.commandNodeHeader}>
                 <div>
-                    <Icon aria-hidden={true} svgPath={mdiCalendar} className="mr-1" />
-                    <Timestamp date={startDate} />
+                    <Icon
+                        aria-hidden={true}
+                        svgPath={command.isSuccess ? mdiCheckCircleOutline : mdiAlertCircleOutline}
+                        className={classNames(styles.commandNodeStatus, {
+                            [styles.commandNodeSuccessStatus]: command.isSuccess,
+                            [styles.commandNodeErrorStatus]: !command.isSuccess,
+                        })}
+                    />
+                    <span className="font-weight-bold">{command.isSuccess ? 'Succeeded' : 'Failed'}</span>{' '}
+                    <span className="text-muted">
+                        <Timestamp date={startDate} /> on shard {mirrorInfo.shard}
+                    </span>
                 </div>
 
-                {/* Replace this we type when we have the type field */}
-                <Text />
-
                 <div className={styles.commandNodeDurationGroup}>
-                    <Icon aria-hidden={true} svgPath={mdiClockAlertOutline} className="mr-1" />
-                    <Text className="mb-0">Ran in {duration}</Text>
+                    <Icon aria-hidden={true} svgPath={mdiClockOutline} className="mr-1 text-muted" />
+                    <Text className="mb-0 text-muted">{duration}</Text>
                 </div>
             </div>
 
-            <LogOutput className={styles.commandNodeLogOutput} text={command.command} logDescription="Command:" />
+            <LogOutput
+                className={classNames(styles.commandNodeLogOutput, {
+                    [styles.commandNodeLogOutputFailState]: !command.isSuccess,
+                })}
+                text={command.command}
+                logDescription="Command:"
+            />
 
             <div className={styles.commandNodeFooter}>
-                <small className="mt-2 mb-0">
-                    <span className="font-weight-bold">Shard:</span> {mirrorInfo.shard}
-                </small>
-                {command.dir && (
-                    <small className="mt-2 mb-0">
-                        <span className="font-weight-bold">Path:</span> {command.dir}
-                    </small>
+                <div>
+                    {command.output && (
+                        <Button
+                            variant="icon"
+                            aria-label={isExpanded ? 'Hide output' : 'Show output'}
+                            onClick={toggleIsExpanded}
+                            className="mr-2"
+                        >
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={isExpanded ? mdiChevronDown : mdiChevronRight}
+                                className={styles.commandNodeExpandBtn}
+                            />
+                            <small>Command output</small>
+                        </Button>
+                    )}
+                </div>
+                <small className={classNames('text-muted', styles.commandNodePath)}>Path: {command.dir}</small>
+                {isExpanded && (
+                    <LogOutput text={command.output} logDescription="Output:" className={styles.commandNodeOutput} />
                 )}
             </div>
         </div>
     )
 }
 
-interface LastSyncOutputProps {
+interface SyncOutputProps {
     mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
 }
 
-const LastSyncOutput: FC<LastSyncOutputProps> = props => {
+const SyncOutput: FC<SyncOutputProps> = props => {
     const output =
         (props.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
         props.mirrorInfo.lastSyncOutput ||
         'Last sync command did not produce any output'
     return (
         <div className="mt-2">
-            <Text>Output from this repository's most recent sync</Text>
+            <Text className="mb-1">Output from this repository's most recent sync</Text>
             <LogOutput text={output} logDescription="Job output:" />
         </div>
     )

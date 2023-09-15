@@ -21,6 +21,9 @@ Our Known Issues page is designed to keep you informed about any current issues 
 - ### There is an issue with creating and updating existing Bitbucket.org (Cloud) code host connections due to problem with JSON schema validation which prevents the JSON editor from loading and surfaces as an error in the UI.
     **Status:** [Fixed in v5.1.2](https://github.com/sourcegraph/sourcegraph/pull/54496)
 
+
+=======
+
 ## v5.0.1 - April 5, 2023
 
 ---

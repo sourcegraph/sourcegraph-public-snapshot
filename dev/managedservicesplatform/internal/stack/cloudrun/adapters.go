@@ -44,7 +44,8 @@ func makeContainerEnvVars(
 			Name: pointers.Ptr(k),
 			ValueSource: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnvValueSource{
 				SecretKeyRef: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnvValueSourceSecretKeyRef{
-					Secret: pointers.Ptr(secretEnv[k]),
+					Secret:  pointers.Ptr(secretEnv[k]),
+					Version: pointers.Ptr("latest"),
 				},
 			},
 		})

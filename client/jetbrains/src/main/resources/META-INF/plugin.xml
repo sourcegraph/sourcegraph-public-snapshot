@@ -32,7 +32,7 @@
             parentId="tools"
             instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
             id="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            displayName="Sourcegraph"
+            displayName="Sourcegraph &amp; Cody"
             nonDefaultProject="false"
         />
         <projectConfigurable
@@ -59,10 +59,7 @@
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph Cody + Code Search plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
-        <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.config.CodyAuthNotificationActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoActiveAccount"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
 
         <!-- Cody -->
         <toolWindow
@@ -194,7 +191,6 @@
             icon="/icons/codyLogoSm.svg"/>
 
 
-
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
@@ -245,7 +241,7 @@
     </actions>
 
     <projectListeners>
-    <listener topic="com.intellij.openapi.command.CommandListener"
-              class="com.sourcegraph.cody.editor.CodyCommandListener"/>
+        <listener topic="com.intellij.openapi.command.CommandListener"
+                  class="com.sourcegraph.cody.editor.CodyCommandListener"/>
     </projectListeners>
 </idea-plugin>

@@ -90,7 +90,6 @@ pkg_tar(
 )
 
 DEPS = [
-    "//cmd/github-proxy",
     "//cmd/precise-code-intel-worker",
     "//cmd/searcher",
     "//enterprise/cmd/embeddings",
