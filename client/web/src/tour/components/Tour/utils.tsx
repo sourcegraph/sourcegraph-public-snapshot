@@ -1,7 +1,5 @@
 import isAbsoluteURL from 'is-absolute-url'
 
-import type { TourLanguage, TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
-
 /**
  * Returns a new URL w/ tour state tracking query parameters. This is used to show/hide tour task info box.
  *
@@ -9,7 +7,7 @@ import type { TourLanguage, TourTaskStepType } from '@sourcegraph/shared/src/set
  * @param stepId TourTaskStepType id
  * @example /search?q=context:global+repo:my-repo&patternType=literal + &tour=true&stepId=DiffSearch
  */
-const buildURIMarkers = (href: string, stepId: string): string => {
+export const buildURIMarkers = (href: string, stepId: string): string => {
     const isRelative = !isAbsoluteURL(href)
 
     try {
@@ -31,18 +29,3 @@ export const parseURIMarkers = (searchParameters: string): { isTour: boolean; st
     const stepId = parameters.get('stepId')
     return { isTour, stepId }
 }
-
-/**
- * Check if given TourTaskStepType.action has a language specific value
- */
-export const isLanguageRequired = (step: TourTaskStepType): boolean => typeof step.action.value !== 'string'
-
-/**
- * Returns a TourTaskStepType.action.value if possible, '#' otherwise.
- */
-export const getTourTaskStepActionValue = (step: TourTaskStepType, language?: TourLanguage): string =>
-    typeof step.action.value === 'string'
-        ? buildURIMarkers(step.action.value, step.id)
-        : language
-        ? buildURIMarkers(step.action.value[language], step.id)
-        : '#'

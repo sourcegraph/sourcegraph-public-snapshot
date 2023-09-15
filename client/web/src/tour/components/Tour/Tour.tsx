@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import type { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TourContext } from './context'
 import { TourAgent } from './TourAgent'
 import { TourContent } from './TourContent'
 import { useTour } from './useTour'
-import { isLanguageRequired } from './utils'
 
 export type TourProps = TelemetryProps & {
     id: string
@@ -19,9 +18,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
     ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
         const {
             completedStepIds = [],
-            language,
             status,
-            setLanguage,
             setStepCompleted,
             setStatus,
             restart,
@@ -30,11 +27,11 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
                 telemetryService.log(
                     tourId + eventName,
-                    { language, ...eventProperties },
-                    { language, ...publicArgument }
+                    { ...eventProperties },
+                    { ...publicArgument }
                 )
             },
-            [language, telemetryService, tourId]
+            [telemetryService, tourId]
         )
 
         useEffect(() => {
@@ -54,22 +51,14 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         )
 
         const onStepClick = useCallback(
-            (step: TourTaskStepType, language?: TourLanguage) => {
-                onLogEvent(step.id + 'Clicked', { language }, { language })
-                if (step.completeAfterEvents || (isLanguageRequired(step) && !language)) {
+            (step: TourTaskStepType) => {
+                onLogEvent(step.id + 'Clicked')
+                if (step.completeAfterEvents) {
                     return
                 }
                 onStepComplete(step)
             },
             [onLogEvent, onStepComplete]
-        )
-
-        const onLanguageSelect = useCallback(
-            (language: TourLanguage) => {
-                setLanguage(language)
-                onLogEvent('LanguageClicked', { language }, { language })
-            },
-            [onLogEvent, setLanguage]
         )
 
         const onRestart = useCallback(
@@ -80,7 +69,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             [onLogEvent, restart]
         )
 
-        const extendedTasks: TourTaskType[] = useMemo(
+        let extendedTasks: TourTaskType[] = useMemo(
             () =>
                 tasks.map(task => {
                     const extendedSteps = task.steps.map(step => ({
@@ -92,7 +81,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                         ...task,
                         steps: extendedSteps,
                         completed: Math.round(
-                            (100 * extendedSteps.filter(step => step.isCompleted).length) / extendedSteps.length
+                            (100 * extendedSteps.filter(step => step.isCompleted).length) / (task.requiredSteps ?? extendedSteps.length)
                         ),
                     }
                 }),
@@ -113,17 +102,16 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             return null
         }
 
+        if (status === 'completed' && extraTask) {
+            extendedTasks = [extraTask, ...extendedTasks]
+        }
+
         return (
-            <TourContext.Provider value={{ onStepClick, language, onLanguageSelect, onRestart }}>
+            <TourContext.Provider value={{ onStepClick, onRestart }}>
                 <TourContent
                     {...props}
                     onClose={onClose}
-                    tasks={
-                        [status === 'completed' && extraTask, ...extendedTasks].filter(Boolean) as (
-                            | TourTaskType
-                            | TourTaskType
-                        )[]
-                    }
+                    tasks={extendedTasks}
                 />
                 <TourAgent tasks={extendedTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
             </TourContext.Provider>
