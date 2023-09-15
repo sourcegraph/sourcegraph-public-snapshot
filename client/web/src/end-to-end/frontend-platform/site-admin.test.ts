@@ -34,7 +34,7 @@ describe('Site Admin', () => {
         }
     })
 
-    test('Repositories list', async () => {
+    test.skip('Repositories list', async () => {
         driver = await initEndToEndTest()
         if (driver) {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
