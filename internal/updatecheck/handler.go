@@ -83,7 +83,6 @@ func ForwardHandler() (http.HandlerFunc, error) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Host = remote.Host
 		r.URL.Path = remotePath
-		fmt.Println("updatecheck.forwardHandler", 222, r.URL)
 		proxy.ServeHTTP(w, r)
 	}, nil
 }
