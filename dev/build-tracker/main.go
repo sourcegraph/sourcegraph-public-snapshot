@@ -166,10 +166,12 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(b *build.Build) error {
-	info := toBuildNotification(b)
+	// This determines the final build status
+	info := determineBuildStatusNotification(b)
+
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
 		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
-		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
+		// We lock the build while we send a notification so that we can ensure any late jobs do not interfere with what
 		// we're about to send.
 		b.Lock()
 		defer b.Unlock()
@@ -177,7 +179,7 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 		return err
 	}
 
-	s.logger.Info("build has not failed", log.Int("buildNumber", b.GetNumber()))
+	s.logger.Info("build has not failed", log.Int("buildNumber", b.GetNumber()), log.String("buildStatus", info.BuildStatus))
 	return nil
 }
 
@@ -232,7 +234,7 @@ func (s *Server) processEvent(event *build.Event) {
 	}
 }
 
-func toBuildNotification(b *build.Build) *notify.BuildNotification {
+func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification {
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
