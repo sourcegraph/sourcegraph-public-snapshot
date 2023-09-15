@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"encoding/csv"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -22,24 +21,18 @@ func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
 			return
 		}
 
-		_, err = svc.GetSearchJob(r.Context(), int64(jobID))
+		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.csv\"", jobID))
+
+		err = svc.WriteSearchJobCSV(r.Context(), w, int64(jobID))
 		if err != nil {
 			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
 				http.Error(w, err.Error(), http.StatusForbidden)
 				return
-			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
 			}
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
-		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.csv\"", jobID))
-
-		// dummy data
-		csvWriter := csv.NewWriter(w)
-		_ = csvWriter.Write([]string{"repo", "revspec", "revision"})
-		_ = csvWriter.Write([]string{"1", "spec", "2"})
-		csvWriter.Flush()
 	}
 }
