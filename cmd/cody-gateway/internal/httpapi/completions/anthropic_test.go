@@ -26,15 +26,7 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
 		require.NoError(t, err)
 		require.True(t, flagged)
-		require.Equal(t, "unknwon_preamble", reason)
-	})
-
-	t.Run("missing known preamble", func(t *testing.T) {
-		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile("cody-gateway")})
-		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, "unknwon_preamble", reason)
+		require.Equal(t, "unknown_prompt", reason)
 	})
 
 	t.Run("preamble not configured ", func(t *testing.T) {
