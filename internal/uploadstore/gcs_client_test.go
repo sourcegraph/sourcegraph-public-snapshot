@@ -180,7 +180,7 @@ func TestGCSList(t *testing.T) {
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
 
-	objects := []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}}
+	objects := []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}, {Name: "other-key"}}
 	bucketHandle.ObjectsFunc.SetDefaultHook(func(ctx context.Context, query *storage.Query) gcsObjectIterator {
 		j := 0
 		for i, obj := range objects {
