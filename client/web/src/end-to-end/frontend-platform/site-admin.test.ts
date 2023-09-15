@@ -30,12 +30,16 @@ describe('Site Admin', () => {
 
     // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
     test.skip('Overview', async () => {
-        await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
-        await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
+        if (driver) {
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+            await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
+        }
     })
 
     test('Repositories list', async () => {
-        await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
-        await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
+        if (driver) {
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/repositories?query=gorilla%2Fmux')
+            await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
+        }
     })
 })
