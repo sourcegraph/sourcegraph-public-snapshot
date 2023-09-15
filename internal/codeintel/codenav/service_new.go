@@ -154,6 +154,7 @@ func (s *Service) gatherLocations(
 		args,
 		requestState,
 		cursor,
+		tableName,
 	)
 	if err != nil {
 		return nil, Cursor{}, err
@@ -280,6 +281,7 @@ func (s *Service) newGetVisibleUploadsFromCursor(
 	args PositionalRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
+	operationName string,
 ) ([]visibleUpload, Cursor, error) {
 	if cursor.VisibleUploads != nil {
 		visibleUploads := make([]visibleUpload, 0, len(cursor.VisibleUploads))
@@ -300,7 +302,7 @@ func (s *Service) newGetVisibleUploadsFromCursor(
 		return visibleUploads, cursor, nil
 	}
 
-	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState, operationName)
 	if err != nil {
 		return nil, Cursor{}, err
 	}

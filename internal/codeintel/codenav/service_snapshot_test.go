@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -24,7 +25,7 @@ func TestSnapshotForDocument(t *testing.T) {
 	mockGitserverClient := gitserver.NewMockClient()
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, dbmocks.NewMockEventLogStore(), mockUploadSvc, mockGitserverClient)
 
 	mockUploadSvc.GetDumpsByIDsFunc.SetDefaultReturn([]shared.Dump{{}}, nil)
 	mockRepoStore.GetFunc.SetDefaultReturn(&types.Repo{}, nil)

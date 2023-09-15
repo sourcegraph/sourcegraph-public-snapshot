@@ -2822,6 +2822,26 @@ func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args
 	return refs, nil
 }
 
+func (c *clientImplementor) CommitDistance(ctx context.Context, repo api.RepoName, old, new api.CommitID) (int, error) {
+	cmdArgs := []string{"rev-list", "--count", "--first-parent", string(old) + "..." + string(new)}
+	cmd := c.gitCommand(repo, cmdArgs...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if gitdomain.IsRepoNotExist(err) {
+			return 0, err
+		}
+		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+	}
+
+	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
+	distance, err := strconv.Atoi(string(out))
+	if err != nil {
+		return 0, errors.Wrap(err, "output of rev-list --count was not a parseable number")
+	}
+
+	return distance, nil
+}
+
 // rel strips the leading "/" prefix from the path string, effectively turning
 // an absolute path into one relative to the root directory. A path that is just
 // "/" is treated specially, returning just ".".

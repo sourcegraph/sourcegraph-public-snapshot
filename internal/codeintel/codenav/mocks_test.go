@@ -2519,6 +2519,9 @@ type MockGitTreeTranslator struct {
 	// function object controlling the behavior of the method
 	// GetTargetCommitRangeFromSourceRange.
 	GetTargetCommitRangeFromSourceRangeFunc *GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc
+	// SourceCommitFunc is an instance of a mock function object controlling
+	// the behavior of the method SourceCommit.
+	SourceCommitFunc *GitTreeTranslatorSourceCommitFunc
 }
 
 // NewMockGitTreeTranslator creates a new mock of the GitTreeTranslator
@@ -2538,6 +2541,11 @@ func NewMockGitTreeTranslator() *MockGitTreeTranslator {
 		},
 		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
 			defaultHook: func(context.Context, string, string, shared.Range, bool) (r0 string, r1 shared.Range, r2 bool, r3 error) {
+				return
+			},
+		},
+		SourceCommitFunc: &GitTreeTranslatorSourceCommitFunc{
+			defaultHook: func() (r0 string) {
 				return
 			},
 		},
@@ -2564,6 +2572,11 @@ func NewStrictMockGitTreeTranslator() *MockGitTreeTranslator {
 				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 			},
 		},
+		SourceCommitFunc: &GitTreeTranslatorSourceCommitFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockGitTreeTranslator.SourceCommit")
+			},
+		},
 	}
 }
 
@@ -2580,6 +2593,9 @@ func NewMockGitTreeTranslatorFrom(i GitTreeTranslator) *MockGitTreeTranslator {
 		},
 		GetTargetCommitRangeFromSourceRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFunc{
 			defaultHook: i.GetTargetCommitRangeFromSourceRange,
+		},
+		SourceCommitFunc: &GitTreeTranslatorSourceCommitFunc{
+			defaultHook: i.SourceCommit,
 		},
 	}
 }
@@ -2958,6 +2974,107 @@ func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Args() []i
 // invocation.
 func (c GitTreeTranslatorGetTargetCommitRangeFromSourceRangeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// GitTreeTranslatorSourceCommitFunc describes the behavior when the
+// SourceCommit method of the parent MockGitTreeTranslator instance is
+// invoked.
+type GitTreeTranslatorSourceCommitFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []GitTreeTranslatorSourceCommitFuncCall
+	mutex       sync.Mutex
+}
+
+// SourceCommit delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) SourceCommit() string {
+	r0 := m.SourceCommitFunc.nextHook()()
+	m.SourceCommitFunc.appendCall(GitTreeTranslatorSourceCommitFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SourceCommit method
+// of the parent MockGitTreeTranslator instance is invoked and the hook
+// queue is empty.
+func (f *GitTreeTranslatorSourceCommitFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SourceCommit method of the parent MockGitTreeTranslator instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitTreeTranslatorSourceCommitFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitTreeTranslatorSourceCommitFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitTreeTranslatorSourceCommitFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *GitTreeTranslatorSourceCommitFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitTreeTranslatorSourceCommitFunc) appendCall(r0 GitTreeTranslatorSourceCommitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitTreeTranslatorSourceCommitFuncCall
+// objects describing the invocations of this function.
+func (f *GitTreeTranslatorSourceCommitFunc) History() []GitTreeTranslatorSourceCommitFuncCall {
+	f.mutex.Lock()
+	history := make([]GitTreeTranslatorSourceCommitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitTreeTranslatorSourceCommitFuncCall is an object that describes an
+// invocation of method SourceCommit on an instance of
+// MockGitTreeTranslator.
+type GitTreeTranslatorSourceCommitFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitTreeTranslatorSourceCommitFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitTreeTranslatorSourceCommitFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockUploadService is a mock implementation of the UploadService interface

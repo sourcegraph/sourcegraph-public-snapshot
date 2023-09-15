@@ -21,6 +21,7 @@ func NewService(
 		observationCtx,
 		db.Repos(),
 		lsifStore,
+		db.EventLogs(),
 		uploadSvc,
 		gitserver,
 	)

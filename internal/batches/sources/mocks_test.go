@@ -10751,6 +10751,9 @@ type MockGitserverClient struct {
 	// CommitDateFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitDate.
 	CommitDateFunc *GitserverClientCommitDateFunc
+	// CommitDistanceFunc is an instance of a mock function object
+	// controlling the behavior of the method CommitDistance.
+	CommitDistanceFunc *GitserverClientCommitDistanceFunc
 	// CommitExistsFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitExists.
 	CommitExistsFunc *GitserverClientCommitExistsFunc
@@ -10924,6 +10927,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		CommitDateFunc: &GitserverClientCommitDateFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID) (r0 string, r1 time.Time, r2 bool, r3 error) {
+				return
+			},
+		},
+		CommitDistanceFunc: &GitserverClientCommitDistanceFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -11194,6 +11202,11 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.CommitDate")
 			},
 		},
+		CommitDistanceFunc: &GitserverClientCommitDistanceFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitDistance")
+			},
+		},
 		CommitExistsFunc: &GitserverClientCommitExistsFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID) (bool, error) {
 				panic("unexpected invocation of MockGitserverClient.CommitExists")
@@ -11447,6 +11460,9 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		CommitDateFunc: &GitserverClientCommitDateFunc{
 			defaultHook: i.CommitDate,
+		},
+		CommitDistanceFunc: &GitserverClientCommitDistanceFunc{
+			defaultHook: i.CommitDistance,
 		},
 		CommitExistsFunc: &GitserverClientCommitExistsFunc{
 			defaultHook: i.CommitExists,
@@ -12365,6 +12381,122 @@ func (c GitserverClientCommitDateFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientCommitDateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// GitserverClientCommitDistanceFunc describes the behavior when the
+// CommitDistance method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientCommitDistanceFunc struct {
+	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error)
+	history     []GitserverClientCommitDistanceFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitDistance delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) CommitDistance(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (int, error) {
+	r0, r1 := m.CommitDistanceFunc.nextHook()(v0, v1, v2, v3)
+	m.CommitDistanceFunc.appendCall(GitserverClientCommitDistanceFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitDistance
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientCommitDistanceFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitDistance method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientCommitDistanceFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverClientCommitDistanceFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverClientCommitDistanceFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientCommitDistanceFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientCommitDistanceFunc) appendCall(r0 GitserverClientCommitDistanceFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientCommitDistanceFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientCommitDistanceFunc) History() []GitserverClientCommitDistanceFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientCommitDistanceFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientCommitDistanceFuncCall is an object that describes an
+// invocation of method CommitDistance on an instance of
+// MockGitserverClient.
+type GitserverClientCommitDistanceFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 api.CommitID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientCommitDistanceFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientCommitDistanceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverClientCommitExistsFunc describes the behavior when the
