@@ -49,8 +49,10 @@ message Event {
   EventParameters parameters = 6;
   // Optional user associated with the event.
   optional EventUser user = 7;
+  // Optional feature flags configured in the context of the event.
+  optional EventFeatureFlags feature_flags = 8;
   // Optional marketing campaign tracking parameters.
-  optional EventMarketingTracking marketing_tracking = 8;
+  optional EventMarketingTracking marketing_tracking = 9;
 }
 
 message EventSource {
@@ -98,6 +100,13 @@ message EventUser {
   // Randomized unique identifier for client (i.e. stored in localstorage in web
   // client).
   optional string anonymous_user_id = 2;
+}
+
+message EventFeatureFlags {
+  // Evaluated feature flags. In Soucegraph we currently only support boolean
+  // feature flags, but in the API we allow arbitrary string values for future
+  // extensibility.
+  map<string, string> flags = 1;
 }
 
 message EventMarketingTracking {
