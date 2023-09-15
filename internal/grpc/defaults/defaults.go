@@ -11,13 +11,12 @@ import (
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-
-	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
