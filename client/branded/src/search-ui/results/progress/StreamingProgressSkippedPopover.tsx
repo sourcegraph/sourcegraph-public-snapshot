@@ -338,12 +338,8 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
 
     const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
     const handleCreateSearchJobClick = async () => {
-        try {
-            await createSearchJob({ variables: { query } })
-            navigate('/search-jobs')
-        } catch (error) {
-            console.error(error)
-        }
+        await createSearchJob({ variables: { query } })
+        navigate('/search-jobs')
     }
 
     return (

@@ -351,10 +351,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                         variant="danger"
                         outline={true}
                         className={styles.jobSlimAction}
-                        onClick={() => {
-                            console.log('Delete click', job)
-                            onDelete(job)
-                        }}
+                        onClick={() => onDelete(job)}
                     >
                         <Icon svgPath={mdiDelete} aria-hidden={true} />
                     </Button>

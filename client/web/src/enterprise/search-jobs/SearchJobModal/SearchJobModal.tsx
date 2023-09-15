@@ -110,14 +110,10 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
     const error = cancelError || creationError
 
     const handleRerunClick = async () => {
-        try {
-            await cancelSearchJob({ variables: { id: searchJob.id } })
-            await createSearchJob({ variables: { query: searchJob.query } })
+        await cancelSearchJob({ variables: { id: searchJob.id } })
+        await createSearchJob({ variables: { query: searchJob.query } })
 
-            onDismiss()
-        } catch (error) {
-            console.error(error)
-        }
+        onDismiss()
     }
 
     return (
