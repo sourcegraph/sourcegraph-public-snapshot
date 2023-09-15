@@ -2,7 +2,7 @@
 
 ## Overview
 
-As part of our continuous effort to enhance performance and reliability, in Sourcegraph 5.2 we’re introducing [gRPC](https://grpc.io/)  as the primary communication method for our internal services. 
+As part of our continuous effort to enhance performance and reliability, in Sourcegraph 5.2 we’re introducing [gRPC](https://grpc.io/) as the primary communication method for our internal services. 
 
 This guide will help you understand this change and its implications for your setup.
 
