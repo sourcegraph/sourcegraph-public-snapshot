@@ -299,11 +299,19 @@ type dotcomPromptRecorder struct {
 
 var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
+// https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
+const dotcomProductSubscriptionID = "d3d2b638-d0a2-4539-a099-b36860b09819"
+
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com: https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
-	if actor.FromContext(ctx).ID != "d3d2b638-d0a2-4539-a099-b36860b09819" {
-		return errors.New("attempted to record prompt from non-dotcom actor")
+	act := actor.FromContext(ctx)
+	// Only log prompts from Sourcegraph.com subscription
+	if act.ID != dotcomProductSubscriptionID &&
+		// or dotcom actors, which use Sourcegraph.com accounts.
+		act.GetSource() != codygateway.ActorSourceDotcomUser {
+		return errors.Newf("attempted to record prompt from non-dotcom actor %s",
+			act.Summary())
 	}
+
 	// Must expire entries
 	if p.ttlSeconds == 0 {
 		return errors.New("prompt recorder must have TTL")

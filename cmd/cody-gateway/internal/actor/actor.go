@@ -137,6 +137,16 @@ func (a *Actor) TraceAttributes() []attribute.KeyValue {
 	return attrs
 }
 
+// Summary creates a non-sensitive summary string useful for identifying an
+// actor for diagnostics.
+func (a *Actor) Summary() string {
+	if a == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("ID: %s, Source: %s",
+		a.ID, a.GetSource())
+}
+
 // WithActor returns a new context with the given Actor instance.
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
