@@ -18,11 +18,17 @@ message RecordEventsRequestMetadata {
 }
 
 message RecordEventsRequest {
+  message Events {
+    repeated Event events = 1;
+  }
+
   oneof payload {
     // Metadata about the events being recorded.
     RecordEventsRequestMetadata metadata = 1;
-    // Event to record.
-    Event event = 2;
+    // Events to record in a single request. Clients should aim to batch large
+    // event backlogs into a series of smaller requests each <1MB in size in the
+    // RecordEvents stream, e.g. using (google.golang.org/protobuf/proto).Size(...).
+    Events events = 2;
   }
 }
 
