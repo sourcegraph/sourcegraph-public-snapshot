@@ -44,8 +44,10 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
               cell(gitURL)
             }
             .rowComment("Example: github.com/sourcegraph/cody")
+        row { text("The URL will be used to retrieve the code context from the Cody API.") }
         row {
-          text("If left empty, Cody will automatically the URL from your project's Git metadata.")
+          text(
+              "If left empty, Cody will automatically infer the URL from your project's Git metadata.")
         }
       }
     }
