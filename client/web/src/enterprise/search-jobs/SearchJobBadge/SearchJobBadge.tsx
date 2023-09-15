@@ -32,7 +32,7 @@ export const SearchJobBadge: FC<SearchJobBadgeProps> = props => {
     return <Badge variant={getBadgeVariant(job.state)}>{job.state.toString()}</Badge>
 }
 
-const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType => {
+const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType | undefined => {
     switch (jobStatus) {
         case SearchJobState.COMPLETED:
             return 'success'
@@ -44,5 +44,8 @@ const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType => {
             return 'danger'
         case SearchJobState.PROCESSING:
             return 'primary'
+
+        default:
+            return
     }
 }
