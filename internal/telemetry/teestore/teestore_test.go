@@ -31,56 +31,56 @@ func TestToEventLogs(t *testing.T) {
 			name:   "handles nil entry",
 			events: []*telemetrygatewayv1.Event{nil},
 			expectEventLogs: autogold.Expect(`[
-{
-	"ID": 0,
-	"Name": ".",
-	"URL": "",
-	"UserID": 0,
-	"AnonymousUserID": "",
-	"Argument": null,
-	"PublicArgument": null,
-	"Source": "",
-	"Version": "",
-	"Timestamp": "2022-11-03T02:00:00Z",
-	"EvaluatedFlagSet": null,
-	"CohortID": null,
-	"FirstSourceURL": null,
-	"LastSourceURL": null,
-	"Referrer": null,
-	"DeviceID": null,
-	"InsertID": null,
-	"Client": ":",
-	"BillingProductCategory": null,
-	"BillingEventID": null
-}
+  {
+    "ID": 0,
+    "Name": ".",
+    "URL": "",
+    "UserID": 0,
+    "AnonymousUserID": "",
+    "Argument": null,
+    "PublicArgument": null,
+    "Source": "BACKEND",
+    "Version": "",
+    "Timestamp": "2022-11-03T02:00:00Z",
+    "EvaluatedFlagSet": null,
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": null,
+    "BillingProductCategory": null,
+    "BillingEventID": null
+  }
 ]`),
 		},
 		{
 			name:   "handles nil fields",
 			events: []*telemetrygatewayv1.Event{{}},
 			expectEventLogs: autogold.Expect(`[
-{
-	"ID": 0,
-	"Name": ".",
-	"URL": "",
-	"UserID": 0,
-	"AnonymousUserID": "",
-	"Argument": null,
-	"PublicArgument": null,
-	"Source": "",
-	"Version": "",
-	"Timestamp": "2022-11-03T02:00:00Z",
-	"EvaluatedFlagSet": null,
-	"CohortID": null,
-	"FirstSourceURL": null,
-	"LastSourceURL": null,
-	"Referrer": null,
-	"DeviceID": null,
-	"InsertID": null,
-	"Client": ":",
-	"BillingProductCategory": null,
-	"BillingEventID": null
-}
+  {
+    "ID": 0,
+    "Name": ".",
+    "URL": "",
+    "UserID": 0,
+    "AnonymousUserID": "",
+    "Argument": null,
+    "PublicArgument": null,
+    "Source": "BACKEND",
+    "Version": "",
+    "Timestamp": "2022-11-03T02:00:00Z",
+    "EvaluatedFlagSet": null,
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": null,
+    "BillingProductCategory": null,
+    "BillingEventID": null
+  }
 ]`),
 		},
 		{
@@ -118,32 +118,32 @@ func TestToEventLogs(t *testing.T) {
 				},
 			}},
 			expectEventLogs: autogold.Expect(`[
-{
-	"ID": 0,
-	"Name": "VSCODE:CodeSearch.Seach",
-	"URL": "sourcegraph.com/foobar",
-	"UserID": 1234,
-	"AnonymousUserID": "anonymous",
-	"Argument": {
-		"private": "sensitive-data"
-	},
-	"PublicArgument": {
-		"public": 2
-	},
-	"Source": "VSCODE",
-	"Version": "dev",
-	"Timestamp": "2022-11-02T01:00:00Z",
-	"EvaluatedFlagSet": null,
-	"CohortID": null,
-	"FirstSourceURL": null,
-	"LastSourceURL": null,
-	"Referrer": null,
-	"DeviceID": null,
-	"InsertID": null,
-	"Client": "VSCODE:1.2.3",
-	"BillingProductCategory": "category",
-	"BillingEventID": null
-}
+  {
+    "ID": 0,
+    "Name": "VSCODE:CodeSearch.Seach",
+    "URL": "sourcegraph.com/foobar",
+    "UserID": 1234,
+    "AnonymousUserID": "anonymous",
+    "Argument": {
+      "private": "sensitive-data"
+    },
+    "PublicArgument": {
+      "public": 2
+    },
+    "Source": "VSCODE",
+    "Version": "dev",
+    "Timestamp": "2022-11-02T01:00:00Z",
+    "EvaluatedFlagSet": null,
+    "CohortID": null,
+    "FirstSourceURL": null,
+    "LastSourceURL": null,
+    "Referrer": null,
+    "DeviceID": null,
+    "InsertID": null,
+    "Client": "VSCODE:1.2.3",
+    "BillingProductCategory": "category",
+    "BillingEventID": null
+  }
 ]`),
 		},
 	}
@@ -155,7 +155,7 @@ func TestToEventLogs(t *testing.T) {
 				tc.events)
 			require.Len(t, eventLogs, len(tc.events))
 			// Compare JSON for ease of reading
-			data, err := json.MarshalIndent(eventLogs, "", "\t")
+			data, err := json.MarshalIndent(eventLogs, "", "  ")
 			require.NoError(t, err)
 			tc.expectEventLogs.Equal(t, string(data))
 		})

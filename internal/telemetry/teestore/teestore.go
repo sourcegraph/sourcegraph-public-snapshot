@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/conc/pool"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,15 +31,21 @@ func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs da
 }
 
 func (s *store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
-	if err := s.exportQueue.QueueForExport(ctx, events); err != nil {
-		return errors.Wrap(err, "bulk inserting telemetry events")
-	}
-
-	if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
-		return errors.Wrap(err, "bulk inserting events logs")
-	}
-
-	return nil
+	// Write to both stores at the same time.
+	wg := pool.New().WithErrors()
+	wg.Go(func() error {
+		if err := s.exportQueue.QueueForExport(ctx, events); err != nil {
+			return errors.Wrap(err, "bulk inserting telemetry events")
+		}
+		return nil
+	})
+	wg.Go(func() error {
+		if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
+			return errors.Wrap(err, "bulk inserting events logs")
+		}
+		return nil
+	})
+	return wg.Wait()
 }
 
 func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Event) []*database.Event {
