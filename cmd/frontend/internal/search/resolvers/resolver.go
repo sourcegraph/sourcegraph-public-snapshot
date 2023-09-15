@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -134,7 +135,7 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	var value string
 	switch column {
 	case "created_at":
-		value = fmt.Sprintf("'%v'", node.CreatedAt().Format("2006-01-02 15:04:05.999999"))
+		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339))
 	case "state":
 		value = fmt.Sprintf("'%v'", strings.ToLower(node.State()))
 	default:
@@ -162,10 +163,10 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	if err := relay.UnmarshalSpec(graphql.ID(cursor), &spec); err != nil {
 		return nil, err
 	}
+
 	if len(orderBy) == 0 {
 		return nil, errors.New("no OrderBy provided")
 	}
-
 	column := orderBy[0].Field
 	if spec.Column != column {
 		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", column, spec.Column))
@@ -177,6 +178,7 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, spec.Value))
 	}
 
+	// TODO (stefan) handle column "query"
 	switch column {
 	case "created_at":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])

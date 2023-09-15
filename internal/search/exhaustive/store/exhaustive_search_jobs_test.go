@@ -176,20 +176,75 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	}
 
 	// Now list them all
-	haveJobs, err := s.ListExhaustiveSearchJobs(ctx, store.ListArgs{})
-	require.NoError(t, err)
-	require.Equal(t, len(haveJobs), len(jobs))
 
-	haveIDs := make([]int64, len(haveJobs))
-	for i, job := range haveJobs {
-		haveIDs[i] = job.ID
-	}
-	wantIDs := make([]int64, len(jobs))
-	for i, job := range jobs {
-		wantIDs[i] = job.ID
+	tc := []struct {
+		name    string
+		args    store.ListArgs
+		wantIDs []int64
+	}{
+		{
+			name: "query: 1 job",
+			args: store.ListArgs{
+				Query: strptr("job1"),
+			},
+			wantIDs: []int64{jobs[0].ID},
+		},
+		{
+			name: "query: all jobs",
+			args: store.ListArgs{
+				Query: strptr("repo"),
+			},
+			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+		},
+		{
+			name: "states: queued jobs",
+			args: store.ListArgs{
+				States: []string{string(types.JobStateQueued)},
+			},
+			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+		},
+		{
+			name: "query: all jobs but ask for 1 job only",
+			args: store.ListArgs{
+				PaginationArgs: &database.PaginationArgs{First: intptr(1), Ascending: true},
+				Query:          strptr("repo"),
+			},
+			wantIDs: []int64{jobs[0].ID},
+		},
+		// negative test
+		{
+			name: "query: no result",
+			args: store.ListArgs{
+				Query: strptr("foo"),
+			},
+			wantIDs: []int64{},
+		},
+		{
+			name: "state: no result",
+			args: store.ListArgs{
+				States: []string{string(types.JobStateCompleted)},
+			},
+			wantIDs: []int64{},
+		},
 	}
 
-	if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
-		t.Fatalf("List returned wrong jobs: %s", diff)
+	for _, c := range tc {
+		t.Run(c.name, func(t *testing.T) {
+			haveJobs, err := s.ListExhaustiveSearchJobs(ctx, c.args)
+			require.NoError(t, err)
+			require.Equal(t, len(haveJobs), len(c.wantIDs))
+
+			haveIDs := make([]int64, len(haveJobs))
+			for i, job := range haveJobs {
+				haveIDs[i] = job.ID
+			}
+
+			if diff := cmp.Diff(haveIDs, c.wantIDs); diff != "" {
+				t.Fatalf("List returned wrong jobs: %s", diff)
+			}
+		})
 	}
 }
+
+func strptr(s string) *string { return &s }
+func intptr(s int) *int       { return &s }

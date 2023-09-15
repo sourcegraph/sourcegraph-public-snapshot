@@ -208,17 +208,21 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		endObservation(1, opAttrs(attribute.Int("length", len(jobs))))
 	}()
 
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+	a := actor.FromContext(ctx)
+
+	// 🚨 SECURITY: Only authenticated users can list search jobs.
+	if !a.IsAuthenticated() {
 		return nil, errors.New("can only list jobs for an authenticated user")
 	}
 
 	var conds []*sqlf.Query
 
+	// Filter by query.
 	if args.Query != nil && *args.Query != "" {
 		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+*args.Query+"%"))
 	}
 
+	// Filter by state.
 	if len(args.States) > 0 {
 		states := make([]*sqlf.Query, len(args.States))
 		for i, state := range args.States {
@@ -229,7 +233,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 
 	// 🚨 SECURITY: Site admins see any job and may filter based on args.UserIDs.
 	// Other users only see their own jobs.
-	isSiteAdmin := auth.CheckUserIsSiteAdmin(ctx, s.db, actor.UID) == nil
+	isSiteAdmin := auth.CheckUserIsSiteAdmin(ctx, s.db, a.UID) == nil
 	if isSiteAdmin {
 		if len(args.UserIDs) > 0 {
 			ids := make([]*sqlf.Query, len(args.UserIDs))
@@ -242,7 +246,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		if len(args.UserIDs) > 0 {
 			return nil, errors.New("cannot filter by user id if not a site admin")
 		}
-		conds = append(conds, sqlf.Sprintf("initiator_id = %d", actor.UID))
+		conds = append(conds, sqlf.Sprintf("initiator_id = %d", a.UID))
 	}
 
 	var pagination *database.QueryArgs
