@@ -214,6 +214,6 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     if (client.codebase == null) {
       return;
     }
-    client.codebase.handlePotentialCodebaseChange(editor.getProject(), file);
+    client.codebase.onFileOpened(editor.getProject(), file);
   }
 }

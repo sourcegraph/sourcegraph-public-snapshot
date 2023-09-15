@@ -10,8 +10,10 @@
             -> https://plugins.jetbrains.com/docs/intellij/jcef.html
         - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
              -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
+        - Version 2022.1 is the version introducing the Kotlin UI DSL API we are using at the moment
+          - if the need arises, we may try to implement backwards compatibility to 2021.3
     -->
-    <idea-version since-build="212.0"/>
+    <idea-version since-build="221.5080.210"/>
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
@@ -30,7 +32,7 @@
             parentId="tools"
             instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
             id="com.sourcegraph.cody.config.ui.AccountConfigurable"
-            displayName="Sourcegraph"
+            displayName="Sourcegraph &amp; Cody"
             nonDefaultProject="false"
         />
         <projectConfigurable
@@ -57,10 +59,7 @@
         <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
         <notificationGroup id="Sourcegraph Cody + Code Search plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
-        <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.config.CodyAuthNotificationActivity"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.SettingsMigration"/>
-        <postStartupActivity implementation="com.sourcegraph.cody.config.NotifyAboutNoActiveAccount"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
 
         <!-- Cody -->
         <toolWindow
@@ -192,7 +191,6 @@
             icon="/icons/codyLogoSm.svg"/>
 
 
-
         <action
             id="cody.enableCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyEnableAutocompleteAction"
@@ -243,7 +241,7 @@
     </actions>
 
     <projectListeners>
-    <listener topic="com.intellij.openapi.command.CommandListener"
-              class="com.sourcegraph.cody.editor.CodyCommandListener"/>
+        <listener topic="com.intellij.openapi.command.CommandListener"
+                  class="com.sourcegraph.cody.editor.CodyCommandListener"/>
     </projectListeners>
 </idea-plugin>

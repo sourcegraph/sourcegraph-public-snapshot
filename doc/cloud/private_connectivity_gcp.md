@@ -42,13 +42,33 @@ Finally, Sourcegraph will provide the following:
 
 ### Create Private Serivce Connect connection
 
-Customer should publish their services using PSC by follow [GCP documentation](https://cloud.google.com/vpc/docs/configure-private-service-connect-producer). The customer needs to [permit connection](https://cloud.google.com/vpc/docs/manage-private-service-connect-services#access) from the provided GCP Project ID earlier. The customer needs to provide the [Service Attachment] uri to Sourcegraph. The Service Attachment uri is in the format of `projects/:id/regions/:region/serviceAttachments/:name`. 
+Customer should publish their services using PSC by follow [GCP documentation](https://cloud.google.com/vpc/docs/configure-private-service-connect-producer). The customer needs to [permit connection](https://cloud.google.com/vpc/docs/manage-private-service-connect-services#access) from the provided GCP Project ID earlier. The customer needs to provide the [Service Attachment] URI to Sourcegraph. The Service Attachment URI is in the format of `projects/:id/regions/:region/serviceAttachments/:name`. 
 
-Upon receiving the Service Attachment uri, Sourcegraph will create a connection to the customer service using PSC and Sourcegraph will follow up with the customer to confirm the connection is established.
+Upon receiving the Service Attachment URI, Sourcegraph will create a connection to the customer service using PSC, and Sourcegraph will follow up with the customer to confirm the connection is established.
 
 ### Create the code host connection
 
 Once the connection is established, the customer can create the [code host connection](../../admin/external_service/index.md) on their Sourcegraph Cloud instance.
 
+## FAQ
+
+### How can I restrict access to my private code host connection?
+
+The customer has full control over the access to the [Service Attachment] by configuring the [accept and reject lists](https://cloud.google.com/vpc/docs/private-service-connect-security#consumer-lists). Sourcegraph will provide the GCP Project ID to be added to the accept list. 
+
+Additionally, you may terminate the connection at any point. You can do so by running:
+
+```sh
+gcloud compute service-attachments delete [SERVICE_ATTACHMENT_NAME] --region=[REGION] --project=[YOUR_PROJECT_ID]
+```
+
+Learn more from documentation of [gcloud compute service-attachments delete](https://cloud.google.com/sdk/gcloud/reference/compute/service-attachments/delete) and [management of published services](https://cloud.google.com/vpc/docs/manage-private-service-connect-services).
+
+### How secure is the connection?
+
+All traffic between the producer and consumer is encrypted in transit. You may learn more from Google's whitepaper about [encryption in transit] and [Sourcegraph's security practices].
+
 [private service connect]: https://cloud.google.com/vpc/docs/private-service-connect
 [service attachment]: https://cloud.google.com/vpc/docs/private-service-connect#service-attachments
+[encryption in transit]: https://cloud.google.com/docs/security/encryption-in-transit
+[Sourcegraph's security practices]: https://about.sourcegraph.com/security

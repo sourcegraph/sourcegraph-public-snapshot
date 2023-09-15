@@ -42,6 +42,7 @@ go_library(
         "//cmd/gitserver/server/internal/cacert",
         "//cmd/gitserver/server/perforce",
         "//cmd/gitserver/server/sshagent",
+        "//cmd/gitserver/server/urlredactor",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",

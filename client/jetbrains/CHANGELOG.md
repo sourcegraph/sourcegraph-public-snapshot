@@ -11,6 +11,7 @@
 - Add visual hints about Cody status to status bar [#56046](https://github.com/sourcegraph/sourcegraph/pull/56046)
 - Added a status bar toggle for enabling/disabling Cody autocomplete [#56310](https://github.com/sourcegraph/sourcegraph/pull/56310)
 - New settings to enable/disable autocomplete for individual languages [#56411](https://github.com/sourcegraph/sourcegraph/pull/56411)
+- New onboarding panel is being displayed instead of a chat when user don't have any accounts defined [#56633](https://github.com/sourcegraph/sourcegraph/pull/56633)
 
 ### Changed
 
@@ -21,6 +22,7 @@
 - Enabled manually triggering autocomplete even when implicit autocomplete is disabled (globally or for a language) [#56473](https://github.com/sourcegraph/sourcegraph/pull/56473)
 - Onboarding notifications merged into one simple notification to Open Cody [#56610](https://github.com/sourcegraph/sourcegraph/pull/56610)
 - Enabled implicit autocomplete by default [#56617](https://github.com/sourcegraph/sourcegraph/pull/56617)
+- Bumped JetBrains platform plugin compat to `221.5080.210` and higher [#56625](https://github.com/sourcegraph/sourcegraph/pull/56625)
 
 ### Deprecated
 

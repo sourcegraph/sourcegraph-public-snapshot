@@ -80,6 +80,11 @@
           }
         ]
       ]
+    },
+    "makeReposPublicOnDotCom": {
+      "description": "Whether or not these repositories should be marked as public on Sourcegraph.com. Defaults to false.",
+      "type": "boolean",
+      "default": false
     }
   }
 }

@@ -1,11 +1,11 @@
 package com.sourcegraph.cody.auth
 
-import org.jetbrains.annotations.Nls
 import java.util.UUID
+import org.jetbrains.annotations.Nls
 
 /**
- * Base class to represent an account for some external system
- * Properties are abstract to allow marking them with persistence annotations
+ * Base class to represent an account for some external system Properties are abstract to allow
+ * marking them with persistence annotations
  *
  * Generally supposed to be used as means of distinguishing multiple credentials from PSafe
  *
@@ -16,8 +16,7 @@ abstract class Account {
 
   abstract val id: String
 
-  @get:Nls
-  abstract val name: String
+  @get:Nls abstract val name: String
 
   final override fun equals(other: Any?): Boolean {
     if (this === other) return true

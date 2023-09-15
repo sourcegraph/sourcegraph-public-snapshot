@@ -7,7 +7,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.sourcegraph.Icons;
@@ -15,9 +14,10 @@ import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
+import com.sourcegraph.cody.initialization.Activity;
 import org.jetbrains.annotations.NotNull;
 
-public class CodyAuthNotificationActivity implements StartupActivity.DumbAware {
+public class CodyAuthNotificationActivity implements Activity {
 
   @Override
   public void runActivity(@NotNull Project project) {

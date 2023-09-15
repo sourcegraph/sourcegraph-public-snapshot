@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -32,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -139,18 +141,26 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr, &httpapi.Config{
-		RateLimitNotifier:          rateLimitNotifier,
-		AnthropicAccessToken:       config.Anthropic.AccessToken,
-		AnthropicAllowedModels:     config.Anthropic.AllowedModels,
-		AnthropicMaxTokensToSample: config.Anthropic.MaxTokensToSample,
-		OpenAIAccessToken:          config.OpenAI.AccessToken,
-		OpenAIOrgID:                config.OpenAI.OrgID,
-		OpenAIAllowedModels:        config.OpenAI.AllowedModels,
-		FireworksAccessToken:       config.Fireworks.AccessToken,
-		FireworksAllowedModels:     config.Fireworks.AllowedModels,
-		EmbeddingsAllowedModels:    config.AllowedEmbeddingsModels,
-	})
+	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr,
+		&dotcomPromptRecorder{
+			// TODO: Make configurable
+			ttlSeconds: 60 * // minutes
+				60,
+			redis: redispool.Cache,
+		},
+		&httpapi.Config{
+			RateLimitNotifier:              rateLimitNotifier,
+			AnthropicAccessToken:           config.Anthropic.AccessToken,
+			AnthropicAllowedModels:         config.Anthropic.AllowedModels,
+			AnthropicMaxTokensToSample:     config.Anthropic.MaxTokensToSample,
+			AnthropicAllowedPromptPatterns: config.Anthropic.AllowedPromptPatterns,
+			OpenAIAccessToken:              config.OpenAI.AccessToken,
+			OpenAIOrgID:                    config.OpenAI.OrgID,
+			OpenAIAllowedModels:            config.OpenAI.AllowedModels,
+			FireworksAccessToken:           config.Fireworks.AccessToken,
+			FireworksAllowedModels:         config.Fireworks.AllowedModels,
+			EmbeddingsAllowedModels:        config.AllowedEmbeddingsModels,
+		})
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
@@ -280,4 +290,29 @@ func getOpenTelemetryResource(ctx context.Context) (*resource.Resource, error) {
 			semconv.ServiceVersionKey.String(version.Version()),
 		),
 	)
+}
+
+type dotcomPromptRecorder struct {
+	ttlSeconds int
+	redis      redispool.KeyValue
+}
+
+var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
+
+func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
+	// Only log prompts from Sourcegraph.com: https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
+	if actor.FromContext(ctx).ID != "d3d2b638-d0a2-4539-a099-b36860b09819" {
+		return errors.New("attempted to record prompt from non-dotcom actor")
+	}
+	// Must expire entries
+	if p.ttlSeconds == 0 {
+		return errors.New("prompt recorder must have TTL")
+	}
+	// Always use trace ID as traceID - each trace = 1 request, and we always record
+	// it in our entries.
+	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
+	if traceID == "" {
+		return errors.New("prompt recorder requires a trace context")
+	}
+	return p.redis.SetEx(fmt.Sprintf("prompt:%s", traceID), p.ttlSeconds, prompt)
 }
