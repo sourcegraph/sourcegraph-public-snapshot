@@ -31,7 +31,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	logger := observationCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, store)
+	svc := service.New(observationCtx, store, mocks.NewMockStore())
 
 	userID := insertRow(t, store.Store, "users", "username", "alice")
 	insertRow(t, store.Store, "repo", "id", 1, "name", "repoa")
