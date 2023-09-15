@@ -197,7 +197,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, codySearchEnabled, isSearchJobsEnabled])
+    }, [ownEnabled, showSearchContext, codySearchEnabled])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
