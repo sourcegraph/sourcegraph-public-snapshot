@@ -576,30 +576,16 @@ public class CodyToolWindowContent implements UpdatableChat {
 
   @Override
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
-    // Use context
     if (contextMessages.isEmpty()) {
-      AccountType accountType =
-          CodyAuthenticationManager.getInstance().getDefaultAccountType(project);
-
-      String report = "I found no context for your request.";
-      String ask =
-          accountType == AccountType.ENTERPRISE
-              ? "Please ensure this repository is added to your Sourcegraph Enterprise instance and that your access token and custom request headers are set up correctly."
-              : (accountType == AccountType.LOCAL_APP
-                  ? "Please ensure this repository is configured in Cody App."
-                  : (accountType == AccountType.DOTCOM
-                      ? "As your current server setting is Sourcegraph.com, please ensure this repository is public and indexed on Sourcegraph.com and that your access token is valid."
-                      : ""));
-      String resolution = "I will try to answer without context.";
-      this.addMessageToChat(
-          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution));
-    } else {
-
-      ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(contextFilesMessage);
-      this.addComponentToChat(messageContentPanel);
+      // Do nothing when there are no context files. It's normal that some answers have no context
+      // files.
+      return;
     }
+
+    ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
+    var messageContentPanel = new JPanel(new BorderLayout());
+    messageContentPanel.add(contextFilesMessage);
+    this.addComponentToChat(messageContentPanel);
   }
 
   public @NotNull JComponent getContentPanel() {
