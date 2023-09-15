@@ -4,14 +4,12 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginInstaller;
 import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
 import com.sourcegraph.cody.CodyAgentProjectListener;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.notification.AccountSettingChangeListener;
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener;
-import java.util.UUID;
-
 import com.sourcegraph.cody.initialization.Activity;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 
 public class TelemetryInitializerActivity implements Activity {
