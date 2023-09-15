@@ -122,7 +122,44 @@ func TestShebagn(t *testing.T) {
 		language, _ := getLanguage("", testCase.Contents)
 		language = strings.ToLower(language)
 		if language != testCase.Expected {
-			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, testCase.Expected, language)
+			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, language, testCase.Expected)
+		}
+	}
+}
+
+func TestGetLanguageFromContent(t *testing.T) {
+	type testCase struct {
+		Filename string
+		Contents string
+		Expected string
+	}
+
+	cases := []testCase{
+		{
+			Filename: "pog.m",
+			Contents: "",
+			Expected: "matlab",
+		},
+		{
+			Filename: "bruh.m",
+			Contents: `#import "Import.h"
+@interface Interface ()
+@end`,
+			Expected: "objective-c",
+		},
+		{
+			Filename: "slay.m",
+			Contents: `function setupPythonIfNeeded()
+%setupPythonIfNeeded Check if python is installed and configured.  If it's`,
+			Expected: "matlab",
+		},
+	}
+
+	for _, testCase := range cases {
+		language, _ := getLanguage(testCase.Filename, testCase.Contents)
+		language = strings.ToLower(language)
+		if language != testCase.Expected {
+			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, language, testCase.Expected)
 		}
 	}
 }
