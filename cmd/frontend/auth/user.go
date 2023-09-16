@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -169,15 +171,17 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		// NOTE: It is important to propagate the correct context that carries the
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
+		var req *http.Request
+		sessionUrl, _ := cookie.SessionFirstURL(req)
 		err = usagestats.LogEvent(
 			ctx,
 			db,
 			usagestats.Event{
-				EventName: eventName,
-				UserID:    act.UID,
-				Argument:  args,
-				Source:    "BACKEND",
-			},
+				EventName:       eventName,
+				UserID:          act.UID,
+				Argument:        args,
+				Source:          "BACKEND",
+				SessionFirstURL: &sessionUrl},
 		)
 		if err != nil {
 			logger.Error(
