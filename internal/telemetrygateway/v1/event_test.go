@@ -1,4 +1,4 @@
-package v1
+package v1_test
 
 import (
 	context "context"
@@ -12,6 +12,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
 func TestNewEventWithDefaults(t *testing.T) {
@@ -27,7 +29,7 @@ func TestNewEventWithDefaults(t *testing.T) {
 		// is not designed for it to easily be stubbed out for testing.
 		// Since it's used for existing telemetry, we trust it works.
 
-		got := NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
+		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
 		assert.NotNil(t, got.User)
 
 		protodata, err := protojson.Marshal(got)

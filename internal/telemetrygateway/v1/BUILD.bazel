@@ -29,7 +29,7 @@ go_proto_library(
 
 go_library(
     name = "telemetrygateway",
-    srcs = ["util.go"],
+    srcs = ["event.go"],
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1",
     visibility = [
@@ -68,7 +68,7 @@ buf_lint_test(
 
 go_test(
     name = "telemetrygateway_test",
-    srcs = ["util_test.go"],
+    srcs = ["event_test.go"],
     embed = [":telemetrygateway"],
     deps = [
         "//internal/actor",

@@ -8,9 +8,11 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
+        "//internal/featureflag",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//lib/errors",
         "//lib/pointers",
+        "@com_github_sourcegraph_conc//pool",
     ],
 )
 
