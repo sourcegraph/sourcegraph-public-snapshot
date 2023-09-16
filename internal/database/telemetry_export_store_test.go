@@ -32,7 +32,7 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		Id:        "1",
 		Feature:   "Feature",
 		Action:    "View",
-		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 2, 0, 0, 0, time.UTC)),
+		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 1, 0, 0, 0, time.UTC)),
 		Parameters: &telemetrygatewayv1.EventParameters{
 			Metadata: map[string]int64{"public": 1},
 			PrivateMetadata: &structpb.Struct{
@@ -40,13 +40,15 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 			},
 		},
 	}, {
-		Id:      "2",
-		Feature: "Feature",
-		Action:  "Click",
+		Id:        "2",
+		Feature:   "Feature",
+		Action:    "Click",
+		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 2, 0, 0, 0, time.UTC)),
 	}, {
-		Id:      "3",
-		Feature: "Feature",
-		Action:  "Show",
+		Id:        "3",
+		Feature:   "Feature",
+		Action:    "Show",
+		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 3, 0, 0, 0, time.UTC)),
 	}}
 	eventsToExport := []string{"1", "2"}
 

@@ -130,6 +130,7 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 		SELECT id, payload_pb
 		FROM telemetry_events_export_queue
 		WHERE exported_at IS NULL
+		ORDER BY timestamp ASC
 		LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
