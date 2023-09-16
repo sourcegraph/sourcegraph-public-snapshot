@@ -39,7 +39,7 @@ func (r *Resolver) CreateSearchJob(ctx context.Context, args *graphqlbackend.Cre
 	if err != nil {
 		return nil, err
 	}
-	return searchJobResolver{Job: job, db: r.db}, nil
+	return searchJobResolver{Job: job, db: r.db, svc: r.svc}, nil
 }
 
 func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.CancelSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -228,5 +228,5 @@ func (r *Resolver) searchJobByID(ctx context.Context, id graphql.ID) (graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	return searchJobResolver{Job: job, db: r.db}, nil
+	return searchJobResolver{Job: job, db: r.db, svc: r.svc}, nil
 }
