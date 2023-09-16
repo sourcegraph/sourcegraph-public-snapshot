@@ -3,9 +3,11 @@ package service
 import (
 	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -158,6 +160,45 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 	}()
 
 	return s.store.ListExhaustiveSearchJobs(ctx, args)
+}
+
+func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+	jobs, err := s.store.GetRepoRevJobs(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+
+	header := []string{"repo", "rev", "start", "end", "status"}
+	err = cw.Write(header)
+	if err != nil {
+		return err
+	}
+
+	for _, job := range jobs {
+		err = cw.Write([]string{
+			fmt.Sprintf("%d", id),
+			job.Revision,
+			formatOrNULL(job.StartedAt),
+			formatOrNULL(job.FinishedAt),
+			string(job.State),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func formatOrNULL(t time.Time) string {
+	if t.IsZero() {
+		return "NULL"
+	}
+
+	return t.Format(time.RFC3339)
 }
 
 func getPrefix(id int64) string {

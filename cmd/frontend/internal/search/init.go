@@ -39,6 +39,7 @@ func Init(
 
 	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db, svc)
 	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(svc)
+	enterpriseServices.SearchJobsLogsHandler = httpapi.ServeSearchJobLogs(svc)
 
 	return nil
 }

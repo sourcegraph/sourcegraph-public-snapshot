@@ -44,6 +44,7 @@ type SearchJobResolver interface {
 	StartedAt(ctx context.Context) *gqlutil.DateTime
 	FinishedAt(ctx context.Context) *gqlutil.DateTime
 	URL(ctx context.Context) (*string, error)
+	LogURL(ctx context.Context) (*string, error)
 	RepoStats(ctx context.Context) (SearchJobStatsResolver, error)
 }
 

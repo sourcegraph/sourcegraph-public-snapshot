@@ -76,6 +76,7 @@ type Handlers struct {
 
 	// Search jobs
 	SearchJobsDataExportHandler http.Handler
+	SearchJobsLogsHandler       http.Handler
 
 	// Dotcom license check
 	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
@@ -182,6 +183,7 @@ func NewHandler(
 
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 	m.Get(apirouter.SearchJob).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Get(apirouter.SearchJobLogs).Handler(trace.Route(handlers.SearchJobsLogsHandler))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))

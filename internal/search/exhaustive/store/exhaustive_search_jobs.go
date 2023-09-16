@@ -344,6 +344,58 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 	return m, nil
 }
 
+const getRepoRevJobsSpecFmtStr = `
+SELECT
+rjj.id,
+rjj.state,
+rjj.search_repo_job_id,
+rjj.revision,
+rjj.failure_message,
+rjj.started_at,
+rjj.finished_at,
+rjj.process_after,
+rjj.num_resets,
+rjj.num_failures,
+rjj.execution_logs,
+rjj.worker_hostname,
+rjj.cancel,
+rjj.created_at,
+rjj.updated_at
+FROM exhaustive_search_repo_revision_jobs rjj
+JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
+JOIN exhaustive_search_jobs sj ON rj.search_job_id = sj.id
+WHERE sj.id = %s
+`
+
+func (s *Store) GetRepoRevJobs(ctx context.Context, id int64) ([]*types.ExhaustiveSearchRepoRevisionJob, error) {
+	// 🚨 SECURITY: only someone with access to the job may cancel the job
+	_, err := s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.Store.Query(ctx, sqlf.Sprintf(getRepoRevJobsSpecFmtStr, id))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []*types.ExhaustiveSearchRepoRevisionJob
+	for rows.Next() {
+		job, err := scanRevSearchJob(rows)
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}
+
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
 	var job types.ExhaustiveSearchJob
 	// required field for the sync worker, but
