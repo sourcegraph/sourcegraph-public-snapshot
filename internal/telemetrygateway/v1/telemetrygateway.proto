@@ -8,6 +8,11 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1";
 
 service TelemeteryGatewayService {
+  // RecordEvents streams telemetry events in batches to the Telemetry Gateway
+  // service.
+  //
+  // Callers should check the attributes of the Event type to ensure that only
+  // the appropriate fields are exported.
   rpc RecordEvents(stream RecordEventsRequest) returns (RecordEventsResponse) {}
 }
 
@@ -35,7 +40,7 @@ message RecordEventsRequest {
 message RecordEventsResponse {}
 
 message Event {
-  // Generated ID of the event.
+  // Generated ID of the event, currently expected to be UUID v4.
   string id = 1;
   // Timestamp of when the original event was recorded.
   google.protobuf.Timestamp timestamp = 2;
@@ -48,10 +53,16 @@ message Event {
   // Parameters of the event.
   EventParameters parameters = 6;
   // Optional user associated with the event.
+  //
+  // This field should be hydrated by the Sourcegraph server, and not provided
+  // by clients.
   optional EventUser user = 7;
   // Optional feature flags configured in the context of the event.
   optional EventFeatureFlags feature_flags = 8;
   // Optional marketing campaign tracking parameters.
+  //
+  // 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
+  // sensitive data. Currently, only Sourcegraph.com should export this.
   optional EventMarketingTracking marketing_tracking = 9;
 }
 
@@ -77,10 +88,15 @@ message EventParameters {
   // Strictly typed metadata, restricted to integer values.
   map<string, int64> metadata = 2;
   // Additional potentially sensitive metadata - i.e. not restricted to integer
-  // values. By default, this metadata should not be assumed to be unsafe for
-  // export from an instance, and should only be exported on an allowlist basis.
+  // values.
+
+  // 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
+  // arbitrarily-shaped data that may accidentally contain sensitive contents.
+  //
+  // This should only be exported on an allowlist basis based on combinations
+  // of event feature and action, alongside careful audit of callsites.
   optional google.protobuf.Struct private_metadata = 3;
-  // Billing-related metadata.
+  // Optional billing-related metadata.
   optional EventBillingMetadata billing_metadata = 4;
 }
 
@@ -106,6 +122,9 @@ message EventFeatureFlags {
   // Evaluated feature flags. In Soucegraph we currently only support boolean
   // feature flags, but in the API we allow arbitrary string values for future
   // extensibility.
+  //
+  // This field should be hydrated by the Sourcegraph server, and not provided
+  // by clients.
   map<string, string> flags = 1;
 }
 

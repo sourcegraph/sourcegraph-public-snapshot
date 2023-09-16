@@ -26,6 +26,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TelemeteryGatewayServiceClient interface {
+	// RecordEvents streams telemetry events in batches to the Telemetry Gateway
+	// service.
+	//
+	// Callers should check the attributes of the Event type to ensure that only
+	// the appropriate fields are exported.
 	RecordEvents(ctx context.Context, opts ...grpc.CallOption) (TelemeteryGatewayService_RecordEventsClient, error)
 }
 
@@ -75,6 +80,11 @@ func (x *telemeteryGatewayServiceRecordEventsClient) CloseAndRecv() (*RecordEven
 // All implementations must embed UnimplementedTelemeteryGatewayServiceServer
 // for forward compatibility
 type TelemeteryGatewayServiceServer interface {
+	// RecordEvents streams telemetry events in batches to the Telemetry Gateway
+	// service.
+	//
+	// Callers should check the attributes of the Event type to ensure that only
+	// the appropriate fields are exported.
 	RecordEvents(TelemeteryGatewayService_RecordEventsServer) error
 	mustEmbedUnimplementedTelemeteryGatewayServiceServer()
 }

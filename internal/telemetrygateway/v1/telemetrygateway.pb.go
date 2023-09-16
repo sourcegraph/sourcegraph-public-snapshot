@@ -199,7 +199,7 @@ type Event struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Generated ID of the event.
+	// Generated ID of the event, currently expected to be UUID v4.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Timestamp of when the original event was recorded.
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -212,10 +212,16 @@ type Event struct {
 	// Parameters of the event.
 	Parameters *EventParameters `protobuf:"bytes,6,opt,name=parameters,proto3" json:"parameters,omitempty"`
 	// Optional user associated with the event.
+	//
+	// This field should be hydrated by the Sourcegraph server, and not provided
+	// by clients.
 	User *EventUser `protobuf:"bytes,7,opt,name=user,proto3,oneof" json:"user,omitempty"`
 	// Optional feature flags configured in the context of the event.
 	FeatureFlags *EventFeatureFlags `protobuf:"bytes,8,opt,name=feature_flags,json=featureFlags,proto3,oneof" json:"feature_flags,omitempty"`
 	// Optional marketing campaign tracking parameters.
+	//
+	// 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
+	// sensitive data. Currently, only Sourcegraph.com should export this.
 	MarketingTracking *EventMarketingTracking `protobuf:"bytes,9,opt,name=marketing_tracking,json=marketingTracking,proto3,oneof" json:"marketing_tracking,omitempty"`
 }
 
@@ -381,11 +387,13 @@ type EventParameters struct {
 	Version int32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Strictly typed metadata, restricted to integer values.
 	Metadata map[string]int64 `protobuf:"bytes,2,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
-	// Additional potentially sensitive metadata - i.e. not restricted to integer
-	// values. By default, this metadata should not be assumed to be unsafe for
-	// export from an instance, and should only be exported on an allowlist basis.
+	// 🚨 SECURITY: Do NOT export this metadata by default, as it can contain
+	// arbitrarily-shaped data that may accidentally contain sensitive contents.
+	//
+	// This should only be exported on an allowlist basis based on combinations
+	// of event feature and action, alongside careful audit of callsites.
 	PrivateMetadata *structpb.Struct `protobuf:"bytes,3,opt,name=private_metadata,json=privateMetadata,proto3,oneof" json:"private_metadata,omitempty"`
-	// Billing-related metadata.
+	// Optional billing-related metadata.
 	BillingMetadata *EventBillingMetadata `protobuf:"bytes,4,opt,name=billing_metadata,json=billingMetadata,proto3,oneof" json:"billing_metadata,omitempty"`
 }
 
@@ -575,6 +583,9 @@ type EventFeatureFlags struct {
 	// Evaluated feature flags. In Soucegraph we currently only support boolean
 	// feature flags, but in the API we allow arbitrary string values for future
 	// extensibility.
+	//
+	// This field should be hydrated by the Sourcegraph server, and not provided
+	// by clients.
 	Flags map[string]string `protobuf:"bytes,1,rep,name=flags,proto3" json:"flags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -874,11 +885,11 @@ var File_telemetrygateway_proto protoreflect.FileDescriptor
 var file_telemetrygateway_proto_rawDesc = []byte{
 	0x0a, 0x16, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77,
 	0x61, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x13, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65,
-	0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x1a, 0x1f, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74,
-	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c,
-	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f,
-	0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x50, 0x0a, 0x1b,
+	0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x1a, 0x1c, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x73,
+	0x74, 0x72, 0x75, 0x63, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1f, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x74, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x50, 0x0a, 0x1b,
 	0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x31, 0x0a, 0x14, 0x61,
 	0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x5f, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66,
