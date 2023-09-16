@@ -27,6 +27,11 @@ func UnmarshalSearchJobID(id graphql.ID) (int64, error) {
 
 var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
 
+func newSearchJobResolver(db database.DB, svc *service.Service, job *types.ExhaustiveSearchJob) searchJobResolver {
+	return searchJobResolver{Job: job, db: db, svc: svc}
+}
+
+// You should call newSearchJobResolver to construct an instance.
 type searchJobResolver struct {
 	Job *types.ExhaustiveSearchJob
 	db  database.DB
