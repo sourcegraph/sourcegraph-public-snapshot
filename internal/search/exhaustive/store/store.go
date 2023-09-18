@@ -63,10 +63,11 @@ type operations struct {
 	cancelSearchJob           *observation.Operation
 	getExhaustiveSearchJob    *observation.Operation
 	listExhaustiveSearchJobs  *observation.Operation
+	deleteExhaustiveSearchJob *observation.Operation
 
-	createExhaustiveSearchRepoJob *observation.Operation
-
+	createExhaustiveSearchRepoJob         *observation.Operation
 	createExhaustiveSearchRepoRevisionJob *observation.Operation
+	getAggregateRepoRevState              *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -94,9 +95,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 		cancelSearchJob:           op("CancelSearchJob"),
 		getExhaustiveSearchJob:    op("GetExhaustiveSearchJob"),
 		listExhaustiveSearchJobs:  op("ListExhaustiveSearchJobs"),
+		deleteExhaustiveSearchJob: op("DeleteExhaustiveSearchJob"),
 
-		createExhaustiveSearchRepoJob: op("CreateExhaustiveSearchRepoJob"),
-
+		createExhaustiveSearchRepoJob:         op("CreateExhaustiveSearchRepoJob"),
 		createExhaustiveSearchRepoRevisionJob: op("CreateExhaustiveSearchRepoRevisionJob"),
+		getAggregateRepoRevState:              op("GetAggregateRepoRevState"),
 	}
 }

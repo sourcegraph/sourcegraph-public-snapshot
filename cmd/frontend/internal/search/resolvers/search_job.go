@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -24,11 +25,17 @@ func UnmarshalSearchJobID(id graphql.ID) (int64, error) {
 	return v, err
 }
 
-var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
+var _ graphqlbackend.SearchJobResolver = searchJobResolver{}
 
+func newSearchJobResolver(db database.DB, svc *service.Service, job *types.ExhaustiveSearchJob) searchJobResolver {
+	return searchJobResolver{Job: job, db: db, svc: svc}
+}
+
+// You should call newSearchJobResolver to construct an instance.
 type searchJobResolver struct {
 	Job *types.ExhaustiveSearchJob
 	db  database.DB
+	svc *service.Service
 }
 
 func (r searchJobResolver) ID() graphql.ID {
@@ -39,7 +46,7 @@ func (r searchJobResolver) Query() string {
 	return r.Job.Query
 }
 
-func (r searchJobResolver) State(ctx context.Context) string {
+func (r searchJobResolver) State() string {
 	return r.Job.State.ToGraphQL()
 }
 
@@ -73,15 +80,22 @@ func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
 	}
 	return nil, nil
 }
+func (r searchJobResolver) LogURL(ctx context.Context) (*string, error) {
+	if r.Job.State == types.JobStateCompleted {
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d/logs", r.Job.ID))
+		if err != nil {
+			return nil, err
+		}
+		return pointers.Ptr(exportPath), nil
+	}
+	return nil, nil
+}
 
 func (r searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	// TODO: This needs to be implemented properly, this is fake data
-	stats := &searchJobStatsResolver{
-		total:      99,
-		completed:  80,
-		failed:     10,
-		inProgress: 9,
+	repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
+	if err != nil {
+		return nil, err
 	}
 
-	return stats, nil
+	return &searchJobStatsResolver{repoRevStats}, nil
 }

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -193,30 +195,226 @@ WHERE (%s)
 LIMIT 1
 `
 
-func (s *Store) ListExhaustiveSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveSearchJob, err error) {
+type ListArgs struct {
+	*database.PaginationArgs
+	Query   string
+	States  []string
+	UserIDs []int32
+}
+
+func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jobs []*types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.listExhaustiveSearchJobs.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, opAttrs(attribute.Int("length", len(jobs))))
 	}()
 
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+	a := actor.FromContext(ctx)
+
+	// 🚨 SECURITY: Only authenticated users can list search jobs.
+	if !a.IsAuthenticated() {
 		return nil, errors.New("can only list jobs for an authenticated user")
+	}
+
+	var conds []*sqlf.Query
+
+	// Filter by query.
+	if args.Query != "" {
+		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+args.Query+"%"))
+	}
+
+	// Filter by state.
+	if len(args.States) > 0 {
+		states := make([]*sqlf.Query, len(args.States))
+		for i, state := range args.States {
+			states[i] = sqlf.Sprintf("%s", strings.ToLower(state))
+		}
+		conds = append(conds, sqlf.Sprintf("state in (%s)", sqlf.Join(states, ",")))
+	}
+
+	// 🚨 SECURITY: Site admins see any job and may filter based on args.UserIDs.
+	// Other users only see their own jobs.
+	isSiteAdmin := auth.CheckUserIsSiteAdmin(ctx, s.db, a.UID) == nil
+	if isSiteAdmin {
+		if len(args.UserIDs) > 0 {
+			ids := make([]*sqlf.Query, len(args.UserIDs))
+			for i, id := range args.UserIDs {
+				ids[i] = sqlf.Sprintf("%d", id)
+			}
+			conds = append(conds, sqlf.Sprintf("initiator_id in (%s)", sqlf.Join(ids, ",")))
+		}
+	} else {
+		if len(args.UserIDs) > 0 {
+			return nil, errors.New("cannot filter by user id if not a site admin")
+		}
+		conds = append(conds, sqlf.Sprintf("initiator_id = %d", a.UID))
+	}
+
+	var pagination *database.QueryArgs
+	if args.PaginationArgs != nil {
+		pagination = args.PaginationArgs.SQL()
+		if pagination.Where != nil {
+			conds = append(conds, pagination.Where)
+		}
+	}
+
+	var whereClause *sqlf.Query
+	if len(conds) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	} else {
+		whereClause = sqlf.Sprintf("")
 	}
 
 	q := sqlf.Sprintf(
 		listExhaustiveSearchJobsQueryFmtStr,
 		sqlf.Join(exhaustiveSearchJobColumns, ", "),
-		actor.UID,
+		whereClause,
 	)
+
+	if pagination != nil {
+		q = pagination.AppendOrderToQuery(q)
+		q = pagination.AppendLimitToQuery(q)
+	}
 
 	return scanExhaustiveSearchJobs(s.Store.Query(ctx, q))
 }
 
 const listExhaustiveSearchJobsQueryFmtStr = `
 SELECT %s FROM exhaustive_search_jobs
-WHERE initiator_id = %d
+%s -- whereClause
 `
+
+const deleteExhaustiveSearchJobQueryFmtStr = `
+DELETE FROM exhaustive_search_jobs
+WHERE id = %d
+`
+
+func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.deleteExhaustiveSearchJob.With(ctx, &err, opAttrs(
+		attribute.Int64("ID", id),
+	))
+	defer endObservation(1, observation.Args{})
+
+	// 🚨 SECURITY: only someone with access to the job may delete the job
+	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
+}
+
+const getAggregateRepoRevState = `
+SELECT rrj.state, count(rrj.id) as count FROM exhaustive_search_repo_revision_jobs rrj
+JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
+WHERE rj.search_job_id = %s
+GROUP BY rrj.state
+`
+
+func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[string]int, err error) {
+	ctx, _, endObservation := s.operations.getAggregateRepoRevState.With(ctx, &err, opAttrs(
+		attribute.Int64("ID", id),
+	))
+	defer endObservation(1, observation.Args{})
+
+	// 🚨 SECURITY: only someone with access to the job may cancel the job
+	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	q := sqlf.Sprintf(getAggregateRepoRevState, id)
+
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]int)
+	for rows.Next() {
+		var state string
+		var count int
+		if err := rows.Scan(&state, &count); err != nil {
+			return nil, err
+		}
+
+		m[state] = count
+	}
+
+	return m, nil
+}
+
+const getJobLogsFmtStr = `
+SELECT
+rjj.id,
+rj.repo_id,
+rjj.revision,
+rjj.state,
+rjj.failure_message,
+rjj.started_at,
+rjj.finished_at
+FROM exhaustive_search_repo_revision_jobs rjj
+JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
+%s
+`
+
+type GetJobLogsOpts struct {
+	From  int64
+	Limit int
+}
+
+func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) ([]types.SearchJobLog, error) {
+	// 🚨 SECURITY: only someone with access to the job may access the logs
+	_, err := s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("rj.search_job_id = %s", id)}
+	var limit *sqlf.Query
+	if opts != nil {
+		if opts.From != 0 {
+			conds = append(conds, sqlf.Sprintf("rjj.id >= %s", opts.From))
+		}
+
+		if opts.Limit != 0 {
+			limit = sqlf.Sprintf("LIMIT %s", opts.Limit)
+		}
+	}
+
+	q := sqlf.Sprintf(
+		getJobLogsFmtStr,
+		sqlf.Sprintf("WHERE %s ORDER BY id ASC", sqlf.Join(conds, "AND")),
+	)
+	if limit != nil {
+		q = sqlf.Sprintf("%v %v", q, limit)
+	}
+
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []types.SearchJobLog
+	for rows.Next() {
+		job := types.SearchJobLog{}
+		if err := rows.Scan(
+			&job.ID,
+			&job.RepoID,
+			&job.Revision,
+			&job.State,
+			&dbutil.NullString{S: &job.FailureMessage},
+			&dbutil.NullTime{Time: &job.StartedAt},
+			&dbutil.NullTime{Time: &job.FinishedAt},
+		); err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
 
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
 	var job types.ExhaustiveSearchJob

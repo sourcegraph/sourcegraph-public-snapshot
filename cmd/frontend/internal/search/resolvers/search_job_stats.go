@@ -2,29 +2,27 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 )
 
 var _ graphqlbackend.SearchJobStatsResolver = &searchJobStatsResolver{}
 
 type searchJobStatsResolver struct {
-	total      int32
-	completed  int32
-	failed     int32
-	inProgress int32
+	*types.RepoRevJobStats
 }
 
 func (e *searchJobStatsResolver) Total() int32 {
-	return e.total
+	return e.RepoRevJobStats.Total
 }
 
 func (e *searchJobStatsResolver) Completed() int32 {
-	return e.completed
+	return e.RepoRevJobStats.Completed
 }
 
 func (e *searchJobStatsResolver) Failed() int32 {
-	return e.failed
+	return e.RepoRevJobStats.Failed
 }
 
 func (e *searchJobStatsResolver) InProgress() int32 {
-	return e.inProgress
+	return e.RepoRevJobStats.InProgress
 }

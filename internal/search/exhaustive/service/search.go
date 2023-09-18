@@ -241,11 +241,14 @@ func (backendFake) NewSearch(ctx context.Context, q string) (SearchQuery, error)
 	for _, part := range strings.Fields(q) {
 		var r types.RepositoryRevision
 		if n, err := fmt.Sscanf(part, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
-			return nil, errors.Errorf("failed to parse repository revision %q", part)
+			continue
 		}
 		r.RepositoryRevSpec.Repository = r.Repository
 		r.RepositoryRevSpec.RevisionSpecifier = "spec"
 		repoRevs = append(repoRevs, r)
+	}
+	if len(repoRevs) == 0 {
+		return nil, errors.Errorf("no repository revisions found in %q", q)
 	}
 	return searcherFake{repoRevs: repoRevs}, nil
 }

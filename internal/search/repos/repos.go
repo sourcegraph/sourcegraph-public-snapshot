@@ -41,6 +41,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
+// Resolved represents the repository revisions we need to search for a query.
+// This usually involves querying the database and resolving revisions against
+// gitserver.
 type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
@@ -48,10 +51,6 @@ type Resolved struct {
 	// searched. This is due to it being unreachable. The most common reason
 	// for this is during zoekt rollout.
 	BackendsMissing int
-
-	// Next points to the next page of resolved repository revisions. It will
-	// be nil if there are no more pages left.
-	Next types.MultiCursor
 }
 
 // MaybeSendStats is a convenience which will stream a stats event if r
@@ -88,6 +87,11 @@ type Resolver struct {
 	searcher  *endpoint.Map
 }
 
+// Iterator returns an iterator of Resolved for opts.
+//
+// Note: this will collect all MissingRepoRevsErrors per page and only return
+// it at the end of the iteration. For other errors we stop iterating and
+// return straight away.
 func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[Resolved] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
@@ -100,7 +104,7 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 			return nil, errs
 		}
 
-		page, err := r.Resolve(ctx, opts)
+		page, next, err := r.resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			// For missing repo revs, just collect the error and keep paging
@@ -109,16 +113,41 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 			}
 		}
 
-		done = page.Next == nil
-		opts.Cursors = page.Next
+		done = next == nil
+		opts.Cursors = next
 		return []Resolved{page}, nil
 	})
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
+// resolve will take op and return the resolved RepositoryRevisions and any
+// RepoRevSpecs we failed to resolve. Additionally Next is a cursor to the
+// next page.
+func (r *Resolver) resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, _ types.MultiCursor, errs error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", attribute.Stringer("opts", &op))
 	defer tr.EndWithErr(&errs)
 
+	// First we speak to the DB to find the list of repositories.
+	result, next, err := r.doQueryDB(ctx, tr, op)
+	if err != nil {
+		return Resolved{}, nil, err
+	}
+
+	// We then speak to gitserver (and others) to convert revspecs into
+	// revisions to search.
+	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
+	return resolved, next, err
+}
+
+// dbResolved represents the results we can find by speaking to the DB but not
+// yet gitserver.
+type dbResolved struct {
+	Associated []RepoRevSpecs
+	Missing    []RepoRevSpecs
+}
+
+// doQueryDB is the part of searching op which only requires speaking to the
+// DB (before we speak to gitserver).
+func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.RepoOptions) (dbResolved, types.MultiCursor, error) {
 	excludePatterns := op.MinusRepoFilters
 	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
 
@@ -127,9 +156,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
-	searchContext, errs := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
-	if errs != nil {
-		return Resolved{}, errs
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
+	if err != nil {
+		return dbResolved{}, nil, err
 	}
 
 	kvpFilters := make([]database.RepoKVPFilter, 0, len(op.HasKVPs))
@@ -189,15 +218,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}
 
 	tr.AddEvent("Repos.ListMinimalRepos - start")
-	repos, errs := r.db.Repos().ListMinimalRepos(ctx, options)
-	tr.AddEvent("Repos.ListMinimalRepos - done", attribute.Int("numRepos", len(repos)), trace.Error(errs))
+	repos, err := r.db.Repos().ListMinimalRepos(ctx, options)
+	tr.AddEvent("Repos.ListMinimalRepos - done", attribute.Int("numRepos", len(repos)), trace.Error(err))
 
-	if errs != nil {
-		return Resolved{}, errs
+	if err != nil {
+		return dbResolved{}, nil, err
 	}
 
 	if len(repos) == 0 && len(op.Cursors) == 0 { // Is the first page empty?
-		return Resolved{}, ErrNoResolvedRepos
+		return dbResolved{}, nil, ErrNoResolvedRepos
 	}
 
 	var next types.MultiCursor
@@ -228,7 +257,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
 		if err != nil {
-			return Resolved{}, err
+			return dbResolved{}, nil, err
 		}
 
 		searchContextRepositoryRevisions = make(map[api.RepoID]RepoRevSpecs, len(scRepoRevs))
@@ -248,38 +277,62 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, searchContextRepositoryRevisions, includePatternRevs)
 	tr.AddEvent("completed rev association")
 
+	return dbResolved{
+		Associated: associatedRepoRevs,
+		Missing:    missingRepoRevs,
+	}, next, nil
+}
+
+// doFilterDBResolved is what we do after obtaining the list of repos to
+// search from the DB. It will potentially reach out to gitserver to convert
+// those lists of refs into actual revisions to search (and return
+// MissingRepoRevsError for those refs which do not exist).
+//
+// NOTE: This API is not idiomatic and can return non-nil error with a useful
+// Resolved.
+func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trace.Trace, op search.RepoOptions, result dbResolved) (Resolved, error) {
+	// At each step we will discover RepoRevSpecs that do not actually exist.
+	// We keep appending to this.
+	missing := result.Missing
+
+	filteredRepoRevs, filteredMissing, err := r.filterGitserver(ctx, tr, op, result.Associated)
+	if err != nil {
+		return Resolved{}, err
+	}
+	missing = append(missing, filteredMissing...)
+
+	tr.AddEvent("starting contains filtering")
+	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
+	missing = append(missing, missingHasFileContentRevs...)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "filter has file content")
+	}
+	tr.AddEvent("finished contains filtering")
+
+	return Resolved{
+		RepoRevs:        filteredRepoRevs,
+		BackendsMissing: backendsMissing,
+	}, maybeMissingRepoRevsError(missing)
+}
+
+// filterGitserver will take the found associatedRepoRevs and transform them
+// into RepositoryRevisions. IE it will communicate with gitserver.
+func (r *Resolver) filterGitserver(ctx context.Context, tr trace.Trace, op search.RepoOptions, associatedRepoRevs []RepoRevSpecs) (repoRevs []*search.RepositoryRevisions, missing []RepoRevSpecs, _ error) {
 	tr.AddEvent("starting glob expansion")
 	normalized, normalizedMissingRepoRevs, err := r.normalizeRefs(ctx, associatedRepoRevs)
-	missingRepoRevs = append(missingRepoRevs, normalizedMissingRepoRevs...)
 	if err != nil {
-		return Resolved{}, errors.Wrap(err, "normalize refs")
+		return nil, nil, errors.Wrap(err, "normalize refs")
 	}
 	tr.AddEvent("finished glob expansion")
 
 	tr.AddEvent("starting rev filtering")
 	filteredRepoRevs, err := r.filterHasCommitAfter(ctx, normalized, op)
 	if err != nil {
-		return Resolved{}, errors.Wrap(err, "filter has commit after")
+		return nil, nil, errors.Wrap(err, "filter has commit after")
 	}
 	tr.AddEvent("completed rev filtering")
 
-	tr.AddEvent("starting contains filtering")
-	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
-	missingRepoRevs = append(missingRepoRevs, missingHasFileContentRevs...)
-	if err != nil {
-		return Resolved{}, errors.Wrap(err, "filter has file content")
-	}
-	tr.AddEvent("finished contains filtering")
-
-	if len(missingRepoRevs) > 0 {
-		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
-	}
-
-	return Resolved{
-		RepoRevs:        filteredRepoRevs,
-		BackendsMissing: backendsMissing,
-		Next:            next,
-	}, err
+	return filteredRepoRevs, normalizedMissingRepoRevs, nil
 }
 
 // associateReposWithRevs re-associates revisions with the repositories fetched from the db
@@ -967,6 +1020,15 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 }
 
 var ErrNoResolvedRepos = errors.New("no resolved repositories")
+
+func maybeMissingRepoRevsError(missing []RepoRevSpecs) error {
+	if len(missing) > 0 {
+		return &MissingRepoRevsError{
+			Missing: missing,
+		}
+	}
+	return nil
+}
 
 type MissingRepoRevsError struct {
 	Missing []RepoRevSpecs

@@ -3,9 +3,11 @@ package service
 import (
 	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -45,11 +47,13 @@ func opAttrs(attrs ...attribute.KeyValue) observation.Args {
 }
 
 type operations struct {
-	createSearchJob   *observation.Operation
-	getSearchJob      *observation.Operation
-	listSearchJobs    *observation.Operation
-	cancelSearchJob   *observation.Operation
-	writeSearchJobCSV *observation.Operation
+	createSearchJob          *observation.Operation
+	getSearchJob             *observation.Operation
+	deleteSearchJob          *observation.Operation
+	listSearchJobs           *observation.Operation
+	cancelSearchJob          *observation.Operation
+	writeSearchJobCSV        *observation.Operation
+	getAggregateRepoRevState *observation.Operation
 }
 
 var (
@@ -79,11 +83,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		}
 
 		singletonOperations = &operations{
-			createSearchJob:   op("CreateSearchJob"),
-			getSearchJob:      op("GetSearchJob"),
-			listSearchJobs:    op("ListSearchJobs"),
-			cancelSearchJob:   op("CancelSearchJob"),
-			writeSearchJobCSV: op("WriteSearchJobCSV"),
+			createSearchJob:          op("CreateSearchJob"),
+			getSearchJob:             op("GetSearchJob"),
+			deleteSearchJob:          op("DeleteSearchJob"),
+			listSearchJobs:           op("ListSearchJobs"),
+			cancelSearchJob:          op("CancelSearchJob"),
+			writeSearchJobCSV:        op("WriteSearchJobCSV"),
+			getAggregateRepoRevState: op("GetAggregateRepoRevState"),
 		}
 	})
 	return singletonOperations
@@ -145,7 +151,7 @@ func (s *Service) GetSearchJob(ctx context.Context, id int64) (_ *types.Exhausti
 	return s.store.GetExhaustiveSearchJob(ctx, id)
 }
 
-func (s *Service) ListSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveSearchJob, err error) {
+func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs []*types.ExhaustiveSearchJob, err error) {
 	ctx, _, endObservation := s.operations.listSearchJobs.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, opAttrs(
@@ -153,11 +159,125 @@ func (s *Service) ListSearchJobs(ctx context.Context) (jobs []*types.ExhaustiveS
 		))
 	}()
 
-	return s.store.ListExhaustiveSearchJobs(ctx)
+	return s.store.ListExhaustiveSearchJobs(ctx, args)
+}
+
+func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+	iter := s.getJobLogsIter(ctx, id)
+
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+
+	header := []string{
+		"repo",
+		"rev",
+		"start",
+		"end",
+		"status",
+		"failure_message",
+	}
+	err = cw.Write(header)
+	if err != nil {
+		return err
+	}
+
+	for iter.Next() {
+		job := iter.Current()
+		err = cw.Write([]string{
+			fmt.Sprintf("%d", job.RepoID),
+			job.Revision,
+			formatOrNULL(job.StartedAt),
+			formatOrNULL(job.FinishedAt),
+			string(job.State),
+			job.FailureMessage,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return iter.Err()
+}
+
+// JobLogsIterLimit is the number of lines the iterator will read from the
+// database per page. Assuming 100 bytes per line, this will be ~1MB of memory
+// per 10k repo-rev jobs.
+var JobLogsIterLimit = 10_000
+
+func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterator.Iterator[types.SearchJobLog] {
+	var cursor int64
+	limit := JobLogsIterLimit
+
+	return iterator.New(func() ([]types.SearchJobLog, error) {
+		if cursor == -1 {
+			return nil, nil
+		}
+
+		opts := &store.GetJobLogsOpts{
+			From:  cursor,
+			Limit: limit + 1,
+		}
+
+		logs, err := s.store.GetJobLogs(ctx, id, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(logs) > limit {
+			cursor = logs[len(logs)-1].ID
+			logs = logs[:len(logs)-1]
+		} else {
+			cursor = -1
+		}
+
+		return logs, nil
+	})
+}
+
+func formatOrNULL(t time.Time) string {
+	if t.IsZero() {
+		return "NULL"
+	}
+
+	return t.Format(time.RFC3339)
 }
 
 func getPrefix(id int64) string {
 	return fmt.Sprintf("%d-", id)
+}
+
+func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.deleteSearchJob.With(ctx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer func() {
+		endObservation(1, observation.Args{})
+	}()
+
+	// 🚨 SECURITY: only someone with access to the job may delete data and the db entries
+	_, err = s.GetSearchJob(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	iter, err := s.uploadStore.List(ctx, getPrefix(id))
+	if err != nil {
+		return err
+	}
+	for iter.Next() {
+		key := iter.Current()
+		err := s.uploadStore.Delete(ctx, key)
+		// If we continued, we might end up with data in the upload store without
+		// entries in the db to reference it.
+		if err != nil {
+			return errors.Wrapf(err, "deleting key %q", key)
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return err
+	}
+
+	return s.store.DeleteExhaustiveSearchJob(ctx, id)
 }
 
 // WriteSearchJobCSV copies all CSVs associated with a search job to the given
@@ -183,6 +303,37 @@ func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) 
 		return errors.Wrapf(err, "writing csv for job %d", id)
 	}
 	return nil
+}
+
+// GetAggregateRepoRevState returns the map of state -> count for all repo
+// revision jobs for the given job.
+func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *types.RepoRevJobStats, err error) {
+	ctx, _, endObservation := s.operations.getAggregateRepoRevState.With(ctx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer endObservation(1, observation.Args{})
+
+	m, err := s.store.GetAggregateRepoRevState(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := types.RepoRevJobStats{}
+	for state, count := range m {
+		switch types.JobState(state) {
+		case types.JobStateCompleted:
+			stats.Completed += int32(count)
+		case types.JobStateFailed:
+			stats.Failed += int32(count)
+		case types.JobStateProcessing, types.JobStateErrored, types.JobStateQueued:
+			stats.InProgress += int32(count)
+		default:
+			return nil, errors.Newf("unknown job state %q", state)
+		}
+	}
+
+	stats.Total = stats.Completed + stats.Failed + stats.InProgress
+
+	return &stats, nil
 }
 
 // discards output from br up until delim is read. If an error is encountered
