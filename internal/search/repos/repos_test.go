@@ -148,7 +148,7 @@ func TestRevisionValidation(t *testing.T) {
 			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
-			resolved, err := repositoryResolver.Resolve(context.Background(), op)
+			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
 				t.Error(diff)
 			}
@@ -297,12 +297,29 @@ func TestResolverIterator(t *testing.T) {
 	})
 
 	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
-	all, err := resolver.Resolve(ctx, search.RepoOptions{})
+	all, _, err := resolver.resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: toParsedRepoFilters("foo/bar[0-4]@rev")})
+	// Assertation that we get the cursor we expect
+	{
+		want := types.MultiCursor{
+			{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
+			{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+		}
+		_, next, err := resolver.resolve(ctx, search.RepoOptions{
+			Limit: 3,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(next, want); diff != "" {
+			t.Errorf("unexpected cursor (-have, +want):\n%s", diff)
+		}
+	}
+
+	allAtRev, _, err := resolver.resolve(ctx, search.RepoOptions{RepoFilters: toParsedRepoFilters("foo/bar[0-4]@rev")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,10 +343,6 @@ func TestResolverIterator(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[:3],
-					Next: types.MultiCursor{
-						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
-						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
-					},
 				},
 				{
 					RepoRevs: all.RepoRevs[3:],
@@ -364,10 +377,6 @@ func TestResolverIterator(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: allAtRev.RepoRevs[:2],
-					Next: types.MultiCursor{
-						{Column: "stars", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.Stars)},
-						{Column: "id", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.ID)},
-					},
 				},
 				{
 					RepoRevs: allAtRev.RepoRevs[2:],
@@ -457,7 +466,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		SearchContextSpec: "searchcontext",
 	}
 	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
-	resolved, err := repositoryResolver.Resolve(context.Background(), op)
+	resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -629,7 +638,7 @@ func TestRepoHasFileContent(t *testing.T) {
 			}, nil)
 
 			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
-			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
 			})
@@ -733,7 +742,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
 			res.gitserver = mockGitserver
-			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters: toParsedRepoFilters(tc.nameFilter),
 				CommitAfter: tc.commitAfter,
 			})
