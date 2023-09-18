@@ -2837,7 +2837,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH", "CLOSE"}
+			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
