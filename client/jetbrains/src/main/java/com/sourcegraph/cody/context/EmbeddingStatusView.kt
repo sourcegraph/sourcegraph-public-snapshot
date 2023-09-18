@@ -2,34 +2,38 @@ package com.sourcegraph.cody.context
 
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
-import com.intellij.ui.SimpleColoredComponent
-import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentServer
-import com.sourcegraph.cody.agent.protocol.EmbeddingExistsParams
+import com.sourcegraph.cody.agent.protocol.GetRepoID
+import com.sourcegraph.cody.auth.ui.EditCodebaseContextAction
 import com.sourcegraph.cody.chat.ChatUIConstants
+import java.awt.Dimension
 import java.awt.FlowLayout
 import javax.swing.Box
+import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
-import org.apache.commons.lang.StringUtils
 
 class EmbeddingStatusView(private val project: Project) : JPanel() {
-  private val embeddingStatusContent: SimpleColoredComponent
+  private val embeddingStatusContent: JButton
+  private val codebaseSelector: JButton
   private val openedFileContent: JBLabel
   private var embeddingStatus: EmbeddingStatus
 
   init {
     setLayout(FlowLayout(FlowLayout.LEFT))
     val innerPanel = Box.createHorizontalBox()
-    embeddingStatusContent = SimpleColoredComponent()
+    embeddingStatusContent = JButton()
+    codebaseSelector = JButton(EditCodebaseContextAction(project))
+
     openedFileContent = JBLabel()
-    openedFileContent.setText("No file selected")
+    openedFileContent.text = "No file selected"
     embeddingStatus = EmbeddingStatusNotAvailableYet()
     updateViewBasedOnStatus()
     innerPanel.add(embeddingStatusContent)
+    innerPanel.add(codebaseSelector)
     innerPanel.add(Box.createHorizontalStrut(5))
     innerPanel.add(openedFileContent)
     innerPanel.setBorder(
@@ -49,14 +53,14 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
 
   fun updateEmbeddingStatus() {
     val client = CodyAgent.getClient(project)
-    val repoName = client.codebase?.currentCodebase ?: null
+    val repoName = client.codebase?.currentCodebase()
     if (repoName == null) {
       setEmbeddingStatus(NoGitRepositoryEmbeddingStatus())
     } else {
       setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
       CodyAgent.getInitializedServer(project)
           .thenCompose { server: CodyAgentServer ->
-            server.getRepoIdIfEmbeddingExists(EmbeddingExistsParams(repoName))
+            server.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
           }
           .thenAccept { id: String? ->
             if (id != null) {
@@ -67,15 +71,16 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
   }
 
   private fun updateViewBasedOnStatus() {
-    embeddingStatusContent.clear()
-    embeddingStatusContent.append(
-        embeddingStatus.getMainText(), SimpleTextAttributes.REGULAR_ATTRIBUTES)
+    val codebaseName = embeddingStatus.getMainText()
+    codebaseSelector.text = codebaseName.ifEmpty { "No repository" }
     val icon = embeddingStatus.getIcon()
     if (icon != null) {
       embeddingStatusContent.icon = icon
+      embeddingStatusContent.preferredSize =
+          Dimension(icon.iconWidth + 10, embeddingStatusContent.height)
     }
     val tooltip = embeddingStatus.getTooltip(project)
-    if (StringUtils.isNotEmpty(tooltip)) {
+    if (tooltip.isNotEmpty()) {
       embeddingStatusContent.setToolTipText(tooltip)
     }
   }

@@ -39,7 +39,7 @@
             parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
             instance="com.sourcegraph.cody.config.ui.CodyConfigurable"
             id="com.sourcegraph.cody.config.ui.CodyConfigurable"
-            displayName="Cody AI"
+            displayName="Cody"
             nonDefaultProject="false"
         />
         <projectConfigurable

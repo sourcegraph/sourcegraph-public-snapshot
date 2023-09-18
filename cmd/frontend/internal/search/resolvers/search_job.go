@@ -39,7 +39,7 @@ func (r searchJobResolver) Query() string {
 	return r.Job.Query
 }
 
-func (r searchJobResolver) State(ctx context.Context) string {
+func (r searchJobResolver) State() string {
 	return r.Job.State.ToGraphQL()
 }
 

@@ -30,12 +30,12 @@ func TestExhaustiveSearch(t *testing.T) {
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, store, mocks.NewMockStore())
+	s := store.New(db, observation.TestContextTB(t))
+	svc := service.New(observationCtx, s, mocks.NewMockStore())
 
-	userID := insertRow(t, store.Store, "users", "username", "alice")
-	insertRow(t, store.Store, "repo", "id", 1, "name", "repoa")
-	insertRow(t, store.Store, "repo", "id", 2, "name", "repob")
+	userID := insertRow(t, s.Store, "users", "username", "alice")
+	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
+	insertRow(t, s.Store, "repo", "id", 2, "name", "repob")
 
 	workerCtx, cancel1 := context.WithCancel(actor.WithInternalActor(context.Background()))
 	defer cancel1()
@@ -63,7 +63,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	// TODO these sort of tests need to live somewhere that makes more sense.
 	// But for now we have a fully functioning setup here lets test List.
 	{
-		jobs, err := svc.ListSearchJobs(userCtx)
+		jobs, err := svc.ListSearchJobs(userCtx, store.ListArgs{})
 		require.NoError(err)
 		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
 	}
@@ -133,7 +133,7 @@ func TestExhaustiveSearch(t *testing.T) {
 	// However, cancellation affects the rows independently of the job state.
 	{
 		wantCount := 6
-		gotCount, err := store.CancelSearchJob(userCtx, job.ID)
+		gotCount, err := s.CancelSearchJob(userCtx, job.ID)
 		require.NoError(err)
 		require.Equal(wantCount, gotCount)
 	}

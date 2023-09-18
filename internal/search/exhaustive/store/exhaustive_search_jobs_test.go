@@ -143,7 +143,11 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	userID, err := createUser(bs, "alice")
 	require.NoError(t, err)
 
+	adminID, err := createUser(bs, "admin")
+	require.NoError(t, err)
+
 	ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(adminID))
 
 	s := store.New(db, &observation.TestContext)
 
@@ -176,20 +180,104 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	}
 
 	// Now list them all
-	haveJobs, err := s.ListExhaustiveSearchJobs(ctx)
-	require.NoError(t, err)
-	require.Equal(t, len(haveJobs), len(jobs))
 
-	haveIDs := make([]int64, len(haveJobs))
-	for i, job := range haveJobs {
-		haveIDs[i] = job.ID
-	}
-	wantIDs := make([]int64, len(jobs))
-	for i, job := range jobs {
-		wantIDs[i] = job.ID
+	tc := []struct {
+		name    string
+		ctx     context.Context
+		args    store.ListArgs
+		wantIDs []int64
+		wantErr bool
+	}{
+		{
+			name: "query: 1 job",
+			ctx:  ctx,
+			args: store.ListArgs{
+				Query: "job1",
+			},
+			wantIDs: []int64{jobs[0].ID},
+		},
+		{
+			name: "query: all jobs",
+			ctx:  ctx,
+			args: store.ListArgs{
+				Query: "repo",
+			},
+			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+		},
+		{
+			name: "states: queued jobs",
+			ctx:  ctx,
+			args: store.ListArgs{
+				States: []string{string(types.JobStateQueued)},
+			},
+			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+		},
+		{
+			name: "query: all jobs but ask for 1 job only",
+			ctx:  ctx,
+			args: store.ListArgs{
+				PaginationArgs: &database.PaginationArgs{First: intptr(1), Ascending: true},
+				Query:          "repo",
+			},
+			wantIDs: []int64{jobs[0].ID},
+		},
+		// negative test
+		{
+			name: "query: no result",
+			ctx:  ctx,
+			args: store.ListArgs{
+				Query: "foo",
+			},
+			wantIDs: []int64{},
+		},
+		{
+			name: "states: no result",
+			ctx:  ctx,
+			args: store.ListArgs{
+				States: []string{string(types.JobStateCompleted)},
+			},
+			wantIDs: []int64{},
+		},
+		// Security tests
+		{
+			name: "userIDs: Admins can ask for userIDs",
+			ctx:  adminCtx,
+			args: store.ListArgs{
+				UserIDs: []int32{userID},
+			},
+			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+		},
+		{
+			name: "userIDs: Non-admins CANNOT ask for userIDs",
+			ctx:  ctx,
+			args: store.ListArgs{
+				UserIDs: []int32{userID + 1},
+			},
+			wantIDs: []int64{},
+			wantErr: true,
+		},
 	}
 
-	if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
-		t.Fatalf("List returned wrong jobs: %s", diff)
+	for _, c := range tc {
+		t.Run(c.name, func(t *testing.T) {
+			haveJobs, err := s.ListExhaustiveSearchJobs(c.ctx, c.args)
+			if c.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, len(haveJobs), len(c.wantIDs))
+
+			haveIDs := make([]int64, len(haveJobs))
+			for i, job := range haveJobs {
+				haveIDs[i] = job.ID
+			}
+
+			if diff := cmp.Diff(haveIDs, c.wantIDs); diff != "" {
+				t.Fatalf("List returned wrong jobs: %s", diff)
+			}
+		})
 	}
 }
+
+func intptr(s int) *int { return &s }

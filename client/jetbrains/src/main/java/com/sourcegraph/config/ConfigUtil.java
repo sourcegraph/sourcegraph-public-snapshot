@@ -46,7 +46,7 @@ public class ConfigUtil {
             .setAutocompleteAdvancedEmbeddings(UserLevelConfig.getAutocompleteAdvancedEmbeddings())
             .setDebug(isCodyDebugEnabled())
             .setVerboseDebug(isCodyVerboseDebugEnabled())
-            .setCodebase(codebase != null ? codebase.getCurrentCodebase() : null);
+            .setCodebase(codebase != null ? codebase.currentCodebase() : null);
 
     if (UserLevelConfig.getAutocompleteProviderType() != null) {
       config.setAutocompleteAdvancedProvider(

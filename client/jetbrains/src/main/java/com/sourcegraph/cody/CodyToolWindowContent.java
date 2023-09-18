@@ -570,6 +570,12 @@ public class CodyToolWindowContent implements UpdatableChat {
                 }
               } else {
                 logger.warn("Agent is disabled, can't use chat.");
+                this.addMessageToChat(
+                    ChatMessage.createAssistantMessage(
+                        "Cody is not able to reply at the moment. "
+                            + "This is a bug, please report an issue to the sourcegraph/sourcegraph "
+                            + "repository and try to include relevant context from idea.log if possible."));
+                this.finishMessageProcessing();
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
             });
