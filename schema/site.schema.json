@@ -2607,11 +2607,12 @@
           "type": "integer"
         },
         "completionModel": {
-          "description": "DEPRECATED. use autocomplete.Model The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
-          "type": "string"
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
+          "deprecationMessage": "DEPRECATED because completion model should now be configured using autocomplete.model"
         },
         "completionModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
+          "deprecationMessage": "DEPRECATED because completionModelMaxTokens should now be configured using autocomplete.modelMaxTokens",
           "type": "integer"
         },
         "accessToken": {
@@ -2634,7 +2635,8 @@
           "default": 0
         },
         "perUserCodeCompletionsDailyLimit": {
-          "description": "DEPRECATED. use autocomplete.perUserDailyLimit  If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "deprecationMessage": "DEPRECATED because limits should be configured using autocomplete.perUserDailyLimit",
           "type": "integer",
           "default": 0
         }
