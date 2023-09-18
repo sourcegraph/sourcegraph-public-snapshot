@@ -3,9 +3,11 @@ package service
 import (
 	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -158,6 +160,86 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 	}()
 
 	return s.store.ListExhaustiveSearchJobs(ctx, args)
+}
+
+func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+	iter := s.getJobLogsIter(ctx, id)
+
+	cw := csv.NewWriter(w)
+	defer cw.Flush()
+
+	header := []string{
+		"repo",
+		"rev",
+		"start",
+		"end",
+		"status",
+		"failure_message",
+	}
+	err = cw.Write(header)
+	if err != nil {
+		return err
+	}
+
+	for iter.Next() {
+		job := iter.Current()
+		err = cw.Write([]string{
+			fmt.Sprintf("%d", job.RepoID),
+			job.Revision,
+			formatOrNULL(job.StartedAt),
+			formatOrNULL(job.FinishedAt),
+			string(job.State),
+			job.FailureMessage,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return iter.Err()
+}
+
+// JobLogsIterLimit is the number of lines the iterator will read from the
+// database per page. Assuming 100 bytes per line, this will be ~1MB of memory
+// per 10k repo-rev jobs.
+var JobLogsIterLimit = 10_000
+
+func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterator.Iterator[types.SearchJobLog] {
+	var cursor int64
+	limit := JobLogsIterLimit
+
+	return iterator.New(func() ([]types.SearchJobLog, error) {
+		if cursor == -1 {
+			return nil, nil
+		}
+
+		opts := &store.GetJobLogsOpts{
+			From:  cursor,
+			Limit: limit + 1,
+		}
+
+		logs, err := s.store.GetJobLogs(ctx, id, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(logs) > limit {
+			cursor = logs[len(logs)-1].ID
+			logs = logs[:len(logs)-1]
+		} else {
+			cursor = -1
+		}
+
+		return logs, nil
+	})
+}
+
+func formatOrNULL(t time.Time) string {
+	if t.IsZero() {
+		return "NULL"
+	}
+
+	return t.Format(time.RFC3339)
 }
 
 func getPrefix(id int64) string {

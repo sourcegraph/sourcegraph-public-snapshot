@@ -344,6 +344,78 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 	return m, nil
 }
 
+const getJobLogsFmtStr = `
+SELECT
+rjj.id,
+rj.repo_id,
+rjj.revision,
+rjj.state,
+rjj.failure_message,
+rjj.started_at,
+rjj.finished_at
+FROM exhaustive_search_repo_revision_jobs rjj
+JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
+%s
+`
+
+type GetJobLogsOpts struct {
+	From  int64
+	Limit int
+}
+
+func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) ([]types.SearchJobLog, error) {
+	// 🚨 SECURITY: only someone with access to the job may access the logs
+	_, err := s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("rj.search_job_id = %s", id)}
+	var limit *sqlf.Query
+	if opts != nil {
+		if opts.From != 0 {
+			conds = append(conds, sqlf.Sprintf("rjj.id >= %s", opts.From))
+		}
+
+		if opts.Limit != 0 {
+			limit = sqlf.Sprintf("LIMIT %s", opts.Limit)
+		}
+	}
+
+	q := sqlf.Sprintf(
+		getJobLogsFmtStr,
+		sqlf.Sprintf("WHERE %s ORDER BY id ASC", sqlf.Join(conds, "AND")),
+	)
+	if limit != nil {
+		q = sqlf.Sprintf("%v %v", q, limit)
+	}
+
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []types.SearchJobLog
+	for rows.Next() {
+		job := types.SearchJobLog{}
+		if err := rows.Scan(
+			&job.ID,
+			&job.RepoID,
+			&job.Revision,
+			&job.State,
+			&dbutil.NullString{S: &job.FailureMessage},
+			&dbutil.NullTime{Time: &job.StartedAt},
+			&dbutil.NullTime{Time: &job.FinishedAt},
+		); err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
 	var job types.ExhaustiveSearchJob
 	// required field for the sync worker, but

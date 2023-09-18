@@ -160,6 +160,10 @@ type SearchJob implements Node {
     """
     URL: String
     """
+    The url to download search job logs.
+    """
+    logURL: String
+    """
     The repository stats for the search job.
     """
     repoStats: SearchJobStats!

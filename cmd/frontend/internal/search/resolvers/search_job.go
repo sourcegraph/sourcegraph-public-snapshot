@@ -80,6 +80,16 @@ func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
 	}
 	return nil, nil
 }
+func (r searchJobResolver) LogURL(ctx context.Context) (*string, error) {
+	if r.Job.State == types.JobStateCompleted {
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d/logs", r.Job.ID))
+		if err != nil {
+			return nil, err
+		}
+		return pointers.Ptr(exportPath), nil
+	}
+	return nil, nil
+}
 
 func (r searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
 	repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
