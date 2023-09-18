@@ -143,8 +143,10 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339))
 	case "state":
 		value = fmt.Sprintf("'%v'", strings.ToLower(node.State()))
+	case "query":
+		value = fmt.Sprintf("'%v'", node.Query())
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expeced one of (created_at, state). Actual: %s", column))
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, state, query). Actual: %s", column))
 	}
 
 	id, err := UnmarshalSearchJobID(node.ID())
@@ -177,17 +179,20 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", column, spec.Column))
 	}
 
-	csv := ""
-	values := strings.Split(spec.Value, "@")
-	if len(values) != 2 {
+	i := strings.LastIndex(spec.Value, "@")
+	if i == -1 {
 		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, spec.Value))
 	}
 
-	// TODO (stefan) handle column "query"
+	values := []string{spec.Value[0:i], spec.Value[i+1:]}
+
+	csv := ""
 	switch column {
 	case "created_at":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
 	case "state":
+		csv = fmt.Sprintf("%v, %v", values[0], values[1])
+	case "query":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
 	default:
 		return nil, errors.New("Invalid OrderBy Field.")
