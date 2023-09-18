@@ -27,7 +27,7 @@ func newCompletionsHandler(
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
-	config conftypes.ProviderConfig,
+	getConfig func() conftypes.ProviderConfig,
 	getModel func(types.CodyCompletionRequestParameters) (string, error),
 ) http.Handler {
 	responseHandler := newSwitchingResponseHandler(logger, feature)
@@ -45,7 +45,7 @@ func newCompletionsHandler(
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
-
+		config := getConfig()
 		if config == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		}

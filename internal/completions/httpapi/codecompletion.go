@@ -14,17 +14,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var autocompleteConfig *conftypes.AutocompleteConfig
-
 // NewCodeCompletionsHandler is an http handler which sends back code completion results.
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	logger = logger.Scoped("code", "code completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
-	autocompleteConfig = conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+	autocompleteConfig := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 	go conf.Watch(func() {
-		oldProvider := autocompleteConfig.ProviderName()
+		var oldProvider conftypes.CompletionsProviderName
+		if autocompleteConfig != nil {
+			oldProvider = autocompleteConfig.ProviderName()
+		}
 		autocompleteConfig = conf.GetAutocompleteConfig(conf.Get().SiteConfig())
-		logger.Info("Updating autocomplete config", log.String("Old Provider", string(oldProvider)), log.String("New Provider", string(autocompleteConfig.ProviderName())))
+		if autocompleteConfig != nil {
+			logger.Info("Updating autocomplete config", log.String("Old Provider", string(oldProvider)), log.String("New Provider", string(autocompleteConfig.ProviderName())))
+		} else {
+			logger.Warn("Invalid autocomplete config")
+		}
 	})
 
 	return newCompletionsHandler(
@@ -32,7 +37,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 		types.CompletionsFeatureCode,
 		rl,
 		"code",
-		autocompleteConfig,
+		func() conftypes.ProviderConfig { return autocompleteConfig },
 		func(requestParams types.CodyCompletionRequestParameters) (string, error) {
 			if autocompleteConfig == nil {
 				return "", errors.New("autocomplete not configured or disabled")
