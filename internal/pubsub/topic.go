@@ -16,6 +16,8 @@ type TopicClient interface {
 	// Ping checks if the connection to the topic is valid.
 	Ping(ctx context.Context) error
 	// Publish publishes messages and waits for all the results synchronously.
+	// It returns the first error encountered or nil if all succeeded. To collect
+	// individual errors, call Publish with only 1 message.
 	Publish(ctx context.Context, messages ...[]byte) error
 	// Stop stops the topic publishing channel. The client should not be used after
 	// calling Stop.

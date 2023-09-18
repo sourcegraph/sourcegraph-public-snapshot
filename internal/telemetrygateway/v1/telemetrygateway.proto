@@ -168,14 +168,3 @@ message EventMarketingTracking {
   optional string session_referrer = 7;
   optional string session_first_url = 8;
 }
-
-message InternalEvent {
-  Event event = 1;
-
-  InternalActorIdentifiers identifiers = 2;
-}
-
-message InternalActorIdentifiers {
-  string subscription_id = 1;
-  string site_id = 2;
-}

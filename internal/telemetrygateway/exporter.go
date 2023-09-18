@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
 
@@ -17,7 +18,7 @@ import (
 )
 
 type Exporter interface {
-	ExportEvents(context.Context, []*telemetrygatewayv1.Event) error
+	ExportEvents(context.Context, []*telemetrygatewayv1.Event) ([]string, error)
 }
 
 // exportAddress currently has no default value, as the feature is not enabled
@@ -60,17 +61,19 @@ func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQ
 
 type noopExporter struct{}
 
-func (e noopExporter) ExportEvents(context.Context, []*telemetrygatewayv1.Event) error { return nil }
+func (e noopExporter) ExportEvents(context.Context, []*telemetrygatewayv1.Event) ([]string, error) {
+	return nil, nil
+}
 
 type exporter struct {
 	client telemetrygatewayv1.TelemeteryGatewayServiceClient
 	conf   conftypes.SiteConfigQuerier
 }
 
-func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
+func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv1.Event) ([]string, error) {
 	stream, err := e.client.RecordEvents(ctx)
 	if err != nil {
-		return errors.Wrap(err, "start export")
+		return nil, errors.Wrap(err, "start export")
 	}
 
 	// Send initial metadata
@@ -81,26 +84,56 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 			},
 		},
 	}); err != nil {
-		return errors.Wrap(err, "send initial metadata")
+		return nil, errors.Wrap(err, "send initial metadata")
 	}
 
 	// Start streaming our set of events, chunking them based on message size
-	// as determined internally by chunk.Chunker
+	// as determined internally by chunk.Chunker. Keep track of the events we
+	// submit.
+	succeededEvents := make([]string, 0, len(events))
 	chunker := chunk.New(func(chunkedEvents []*telemetrygatewayv1.Event) error {
-		return stream.Send(&telemetrygatewayv1.RecordEventsRequest{
-			Payload: &telemetrygatewayv1.RecordEventsRequest_Events_{
-				Events: &telemetrygatewayv1.RecordEventsRequest_Events{
+		err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
+			Payload: &telemetrygatewayv1.RecordEventsRequest_Events{
+				Events: &telemetrygatewayv1.RecordEventsRequest_EventsPayload{
 					Events: chunkedEvents,
 				},
 			},
 		})
+		failedEvents := make(map[string]struct{})
+		if err != nil {
+			if details := extractErrorDetails(err); details != nil {
+				for _, ev := range details.FailedEvents {
+					failedEvents[ev.EventId] = struct{}{}
+				}
+			}
+		}
+		for _, ev := range chunkedEvents {
+			if _, failed := failedEvents[ev.GetId()]; !failed {
+				succeededEvents = append(succeededEvents, ev.Id)
+			}
+		}
+		return err
 	})
+
 	if err := chunker.Send(events...); err != nil {
-		return errors.Wrap(err, "chunk and send events")
+		return succeededEvents, errors.Wrap(err, "chunk and send events")
 	}
 	if err := chunker.Flush(); err != nil {
-		return errors.Wrap(err, "flush events")
+		return succeededEvents, errors.Wrap(err, "flush events")
 	}
 
+	return succeededEvents, nil
+}
+
+func extractErrorDetails(err error) *telemetrygatewayv1.RecordEventsErrorDetails {
+	st, ok := status.FromError(err)
+	if ok {
+		for _, detail := range st.Details() {
+			switch d := detail.(type) {
+			case *telemetrygatewayv1.RecordEventsErrorDetails:
+				return d
+			}
+		}
+	}
 	return nil
 }

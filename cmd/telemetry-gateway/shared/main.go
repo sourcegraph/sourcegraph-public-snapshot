@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -40,14 +38,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		return errors.Errorf("create Events Pub/Sub client: %v", err)
 	}
 
-	// Initialize our server
-	grpcServer := defaults.NewServer(obctx.Logger,
-		grpc.ChainStreamInterceptor(grpcauth.StreamServerInterceptor(nil)), // TODO
-		grpc.ChainUnaryInterceptor(grpcauth.UnaryServerInterceptor(nil)))   // TODO
-	telemetrygatewayv1.RegisterTelemeteryGatewayServiceServer(grpcServer, &server.Server{
-		EventsTopic: eventsPubSubClient,
-	})
+	// Initialize our gRPC server
+	grpcServer := defaults.NewServer(obctx.Logger) // TODO
+	telemetrygatewayv1.RegisterTelemeteryGatewayServiceServer(grpcServer,
+		server.New(obctx.Logger, eventsPubSubClient))
 
+	// Start up the service
 	addr := config.GetListenAdress()
 	server := httpserver.NewFromAddr(
 		addr,
@@ -60,9 +56,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 					obctx.Logger,
 					config.DiagnosticsSecret,
 					func(ctx context.Context) error {
-						if err := eventsPubSubClient.Ping(ctx); err != nil {
-							return errors.Wrap(err, "eventsPubSubClient.Ping")
-						}
+						// TODO: Enable this healtcheck after deploying the
+						// service in MSP.
+						// if err := eventsPubSubClient.Ping(ctx); err != nil {
+						// 	return errors.Wrap(err, "eventsPubSubClient.Ping")
+						// }
 						return nil
 					},
 				),
