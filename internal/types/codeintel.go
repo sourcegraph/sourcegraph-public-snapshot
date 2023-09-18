@@ -31,26 +31,29 @@ type CodeIntelAggregatedInvestigationEvent struct {
 // This is sent from private instances to the cloud frontends, where it is further
 // massaged and inserted into a BigQuery.
 type NewCodeIntelUsageStatistics struct {
-	StartOfWeek                                      time.Time
-	WAUs                                             *int32
-	PreciseWAUs                                      *int32
-	SearchBasedWAUs                                  *int32
-	CrossRepositoryWAUs                              *int32
-	PreciseCrossRepositoryWAUs                       *int32
-	SearchBasedCrossRepositoryWAUs                   *int32
-	EventSummaries                                   []CodeIntelEventSummary
-	NumRepositories                                  *int32
-	NumRepositoriesWithUploadRecords                 *int32
-	NumRepositoriesWithoutUploadRecords              *int32 // Deprecated, no longer sent
-	NumRepositoriesWithFreshUploadRecords            *int32
-	NumRepositoriesWithIndexRecords                  *int32
-	NumRepositoriesWithFreshIndexRecords             *int32
-	NumRepositoriesWithAutoIndexConfigurationRecords *int32
-	CountsByLanguage                                 map[string]CodeIntelRepositoryCountsByLanguage
-	SettingsPageViewCount                            *int32
-	UsersWithRefPanelRedesignEnabled                 *int32
-	LanguageRequests                                 []LanguageRequest
-	InvestigationEvents                              []CodeIntelInvestigationEvent
+	StartOfWeek                                               time.Time
+	WAUs                                                      *int32
+	PreciseWAUs                                               *int32
+	SearchBasedWAUs                                           *int32
+	CrossRepositoryWAUs                                       *int32
+	PreciseCrossRepositoryWAUs                                *int32
+	SearchBasedCrossRepositoryWAUs                            *int32
+	EventSummaries                                            []CodeIntelEventSummary
+	NumRepositories                                           *int32
+	NumRepositoriesWithUploadRecords                          *int32
+	NumRepositoriesWithoutUploadRecords                       *int32 // Deprecated, no longer sent
+	NumRepositoriesWithFreshUploadRecords                     *int32
+	NumRepositoriesWithIndexRecords                           *int32
+	NumRepositoriesWithFreshIndexRecords                      *int32
+	NumRepositoriesWithAutoIndexConfigurationRecords          *int32
+	CountsByLanguage                                          map[string]CodeIntelRepositoryCountsByLanguage
+	SettingsPageViewCount                                     *int32
+	UsersWithRefPanelRedesignEnabled                          *int32
+	LanguageRequests                                          []LanguageRequest
+	InvestigationEvents                                       []CodeIntelInvestigationEvent
+	CommitDistanceMean, CommitDistanceStddev                  *float64
+	CommitDistanceCount, CommitDistanceMax, CommitDistanceMin *int32
+	CommitDistanceP10, CommitDistanceP75, CommitDistanceP90   *int32
 }
 
 type CodeIntelRepositoryCountsByLanguage struct {
@@ -67,6 +70,17 @@ type CodeIntelEventSummary struct {
 	CrossRepository bool
 	WAUs            int32
 	TotalActions    int32
+}
+
+type CodeIntelAggregatedCommitDistance struct {
+	Mean,
+	StdDeviation float64
+	Count,
+	Max,
+	Min,
+	P10,
+	P75,
+	P90 int
 }
 
 type CodeIntelAction int
