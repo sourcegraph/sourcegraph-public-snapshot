@@ -7,7 +7,7 @@ import type {
     OnboardingTourConfigVariables,
 } from 'src/graphql-operations'
 
-import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Text, Container, BeforeUnloadPrompt, LoadingSpinner, H3 } from '@sourcegraph/wildcard'
@@ -16,34 +16,17 @@ import onboardingSchemaJSON from '../../../../schema/onboardingtour.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { MonacoSettingsEditor } from '../settings/MonacoSettingsEditor'
+import { ONBOARDING_TOUR_MUTATION, ONBOARDING_TOUR_QUERY, authenticatedTasks, defaultSnippets } from '../tour/data'
 
 interface Props extends TelemetryProps {}
 
-const ONBOARDING_TOUR_QUERY = gql`
-    query OnboardingTourConfig {
-        onboardingTourContent {
-            current {
-                id
-                value
-            }
-        }
-    }
-`
-
-const ONBOARDING_TOUR_MUTATION = gql`
-    mutation OnboardingTourConfigMutation($json: String!) {
-        updateOnboardingTourContent(input: $json) {
-            alwaysNil
-        }
-    }
-`
-
 const DEFAULT_VALUE = JSON.stringify(
     {
-        tasks: [],
+        tasks: authenticatedTasks,
+        defaultSnippets,
     },
     null,
-    4
+    2
 )
 
 export const SiteAdminOnboardingTourPage: FC<PropsWithChildren<Props>> = () => {

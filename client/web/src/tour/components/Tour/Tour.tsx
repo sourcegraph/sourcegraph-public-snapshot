@@ -12,10 +12,11 @@ export type TourProps = TelemetryProps & {
     id: string
     tasks: TourTaskType[]
     extraTask?: TourTaskType
+    defaultSnippets: Record<string, string[]>
 } & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
-    ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
+    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, ...props }) => {
         const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
@@ -62,10 +63,25 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         const extendedTasks: TourTaskType[] = useMemo(
             () =>
                 tasks.map(task => {
-                    const extendedSteps = task.steps.map(step => ({
-                        ...step,
-                        isCompleted: completedStepIds.includes(step.id),
-                    }))
+                    const extendedSteps = task.steps.map(step => {
+                        const extendedStep = {
+                            ...step,
+                            isCompleted: completedStepIds.includes(step.id),
+                        }
+
+                        switch (extendedStep.action.type) {
+                            case 'search-query':
+                                if (!extendedStep.action.snippets) {
+                                    extendedStep.action = {
+                                        ...extendedStep.action,
+                                        snippets: defaultSnippets
+                                    }
+                                }
+                                break;
+                        }
+
+                        return extendedStep
+                    })
 
                     return {
                         ...task,
@@ -76,7 +92,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                         ),
                     }
                 }),
-            [tasks, completedStepIds]
+            [tasks, completedStepIds, defaultSnippets]
         )
 
         useEffect(() => {
