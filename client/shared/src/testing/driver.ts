@@ -449,6 +449,13 @@ export class Driver {
                 variables: {},
             })
         )
+
+        await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
+            visible: true,
+            timeout: 300000,
+        })
+        await this.page.click('[data-testid="license-dismiss-button"]')
+
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
@@ -479,19 +486,6 @@ export class Driver {
             selector: '#test-external-service-form-display-name',
             newText: displayName,
         })
-
-        // await this.page.evaluate((selector: string) => {
-        //     const modalElement = document.querySelector<HTMLElement>(selector)
-        //     if (!modalElement) {
-        //         throw new Error(`Could not find modalElement to click on for modalElement ${modalElement}`)
-        //     }
-        //     modalElement.click()
-        // }, '[data-testid="license-dismiss-button"]')
-        await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
-            visible: true,
-            timeout: 300000,
-        })
-        await this.page.click('[data-testid="license-dismiss-button"]')
 
         await this.page.waitForSelector('.test-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
