@@ -31,45 +31,10 @@ func TestExhaustiveSearch(t *testing.T) {
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
 
-	// Each entry in bucket corresponds to one 1 uploaded csv file.
-	mu := sync.Mutex{}
-	bucket := make(map[string]string)
-
-	mockStore := mocks.NewMockStore()
-	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			return 0, err
-		}
-
-		mu.Lock()
-		bucket[key] = string(b)
-		mu.Unlock()
-
-		return int64(len(b)), nil
-	})
-
-	mockStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, key string) error {
-		mu.Lock()
-		delete(bucket, key)
-		mu.Unlock()
-
-		return nil
-	})
-
-	mockStore.ListFunc.SetDefaultHook(func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
-		var keys []string
-		mu.Lock()
-		for k := range bucket {
-			keys = append(keys, k)
-		}
-		mu.Unlock()
-		return iterator.From(keys), nil
-	})
-
+	mockUploadStore, bucket := newMockUploadStore(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, s, mockStore)
+	svc := service.New(observationCtx, s, mockUploadStore)
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
 	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
@@ -115,7 +80,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockStore)
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -205,4 +170,46 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
+}
+
+func newMockUploadStore(t *testing.T) (*mocks.MockStore, map[string]string) {
+	t.Helper()
+
+	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	mu := sync.Mutex{}
+	bucket := make(map[string]string)
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		mu.Lock()
+		bucket[key] = string(b)
+		mu.Unlock()
+
+		return int64(len(b)), nil
+	})
+
+	mockStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, key string) error {
+		mu.Lock()
+		delete(bucket, key)
+		mu.Unlock()
+
+		return nil
+	})
+
+	mockStore.ListFunc.SetDefaultHook(func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+		var keys []string
+		mu.Lock()
+		for k := range bucket {
+			keys = append(keys, k)
+		}
+		mu.Unlock()
+		return iterator.From(keys), nil
+	})
+
+	return mockStore, bucket
 }
