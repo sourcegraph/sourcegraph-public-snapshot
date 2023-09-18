@@ -7412,14 +7412,32 @@ type CodyLLMConfiguration {
     Name of the model being used for code completions.
     """
     completionModel: String!
+        @deprecated(
+            reason: "Use autocompleteModel instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
     """
     Maximum number of tokens client should use when talking to the completionModel.
     """
     completionModelMaxTokens: Int
     """
-    Name of the provider being used for LLM interactions.
+    Name of the provider being used for LLM autocomplete interactions.
     """
     provider: String!
+        @deprecated(
+            reason: "Use autocompleteProvider or chatProvider instead. This field is a deprecated alias for it and will be removed in a future release."
+        )
+    """
+    Name of the provider being used for LLM autocomplete interactions.
+    """
+    autocompleteProvider: String!
+    """
+    Name of the model being used for code completions.
+    """
+    autocompleteModel: String!
+    """
+    Name of the provider being used for LLM chat interactions.
+    """
+    chatProvider: String!
 }
 
 """

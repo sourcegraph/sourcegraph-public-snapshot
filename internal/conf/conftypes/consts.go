@@ -8,9 +8,9 @@ type ProviderConfig interface {
 	ProviderAccessToken() string
 }
 
-// CompletionsConfig contains configuration for use with Cody Chat
+// CompletionsChatConfig contains configuration for use with Cody Chat
 // for autocomplete configuration use AutocompleteConfig
-type CompletionsConfig struct {
+type CompletionsChatConfig struct {
 	ChatModel          string
 	ChatModelMaxTokens int
 
@@ -23,15 +23,15 @@ type CompletionsConfig struct {
 	PerUserDailyLimit int
 }
 
-func (c *CompletionsConfig) ProviderName() CompletionsProviderName {
+func (c *CompletionsChatConfig) ProviderName() CompletionsProviderName {
 	return c.Provider
 }
 
-func (c *CompletionsConfig) ProviderEndpoint() string {
+func (c *CompletionsChatConfig) ProviderEndpoint() string {
 	return c.Endpoint
 }
 
-func (c *CompletionsConfig) ProviderAccessToken() string {
+func (c *CompletionsChatConfig) ProviderAccessToken() string {
 	return c.AccessToken
 }
 

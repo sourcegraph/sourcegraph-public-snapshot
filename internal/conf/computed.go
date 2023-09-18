@@ -574,7 +574,7 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 
 // GetChatCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
-func GetChatCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
+func GetChatCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsChatConfig) {
 	// If cody is disabled, don't use completions.
 	if !codyEnabled(siteConfig) {
 		return nil
@@ -757,7 +757,7 @@ func GetChatCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes
 		completionsConfig.FastChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.FastChatModel)
 	}
 
-	computedConfig := &conftypes.CompletionsConfig{
+	computedConfig := &conftypes.CompletionsChatConfig{
 		Provider:               conftypes.CompletionsProviderName(completionsConfig.Provider),
 		AccessToken:            completionsConfig.AccessToken,
 		ChatModel:              completionsConfig.ChatModel,

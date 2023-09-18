@@ -603,34 +603,43 @@ func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigu
 		return nil
 	}
 
-	return &codyLLMConfigurationResolver{config: c, autoCompleteConfig: a}
+	return &codyLLMConfigurationResolver{chatConfig: c, autoCompleteConfig: a}
 }
 
 type codyLLMConfigurationResolver struct {
-	config             *conftypes.CompletionsConfig
+	chatConfig         *conftypes.CompletionsChatConfig
 	autoCompleteConfig *conftypes.AutocompleteConfig
 }
 
-func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
+func (c *codyLLMConfigurationResolver) ChatModel() string { return c.chatConfig.ChatModel }
 func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
-	if c.config.ChatModelMaxTokens != 0 {
-		max := int32(c.config.ChatModelMaxTokens)
+	if c.chatConfig.ChatModelMaxTokens != 0 {
+		max := int32(c.chatConfig.ChatModelMaxTokens)
 		return &max
 	}
 	return nil
 }
 
-func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.chatConfig.FastChatModel }
 func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
-	if c.config.FastChatModelMaxTokens != 0 {
-		max := int32(c.config.FastChatModelMaxTokens)
+	if c.chatConfig.FastChatModelMaxTokens != 0 {
+		max := int32(c.chatConfig.FastChatModelMaxTokens)
 		return &max
 	}
 	return nil
 }
 
-func (c *codyLLMConfigurationResolver) Provider() string        { return string(c.config.Provider) }
-func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) Provider() string {
+	return string(c.autoCompleteConfig.Provider)
+}
+func (c *codyLLMConfigurationResolver) AutocompleteProvider() string {
+	return string(c.autoCompleteConfig.Provider)
+}
+func (c *codyLLMConfigurationResolver) ChatProvider() string {
+	return string(c.chatConfig.Provider)
+}
+func (c *codyLLMConfigurationResolver) CompletionModel() string   { return c.autoCompleteConfig.Model }
+func (c *codyLLMConfigurationResolver) AutocompleteModel() string { return c.autoCompleteConfig.Model }
 func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
 	if c.autoCompleteConfig.ModelMaxTokens != 0 {
 		max := int32(c.autoCompleteConfig.ModelMaxTokens)

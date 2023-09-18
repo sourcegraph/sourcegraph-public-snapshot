@@ -316,7 +316,7 @@ func TestCodyEnabled(t *testing.T) {
 func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
-	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
+	zeroConfigDefaultWithLicense := &conftypes.CompletionsChatConfig{
 		ChatModel:              "anthropic/claude-2",
 		ChatModelMaxTokens:     12000,
 		FastChatModel:          "anthropic/claude-instant-1",
@@ -330,7 +330,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		name         string
 		siteConfig   schema.SiteConfiguration
 		deployType   string
-		wantConfig   *conftypes.CompletionsConfig
+		wantConfig   *conftypes.CompletionsChatConfig
 		wantDisabled bool
 	}{
 		{
@@ -403,7 +403,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					AccessToken: "asdf",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "claude-2",
 				ChatModelMaxTokens:     12000,
 				FastChatModel:          "claude-instant-1",
@@ -426,7 +426,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					CompletionModel: "claude-instant-1",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "claude-v1",
 				ChatModelMaxTokens:     9000,
 				FastChatModel:          "claude-instant-1",
@@ -457,7 +457,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					AccessToken: "asdf",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "gpt-4",
 				ChatModelMaxTokens:     8000,
 				FastChatModel:          "gpt-3.5-turbo",
@@ -481,7 +481,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					CompletionModel: "gpt35-turbo-deployment",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "gpt4-deployment",
 				ChatModelMaxTokens:     8000,
 				FastChatModel:          "gpt35-turbo-deployment",
@@ -501,7 +501,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					AccessToken: "asdf",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "accounts/fireworks/models/llama-v2-7b",
 				ChatModelMaxTokens:     3000,
 				FastChatModel:          "accounts/fireworks/models/llama-v2-7b",
@@ -521,7 +521,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					Endpoint: "us-west-2",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "anthropic.claude-v2",
 				ChatModelMaxTokens:     12000,
 				FastChatModel:          "anthropic.claude-instant-v1",
@@ -558,7 +558,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					CompletionModel: "anthropic/claude-instant-1.3",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				ChatModel:              "anthropic/claude-v1.3",
 				ChatModelMaxTokens:     9000,
 				FastChatModel:          "anthropic/claude-instant-1.3",
@@ -598,7 +598,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					DotcomAuthToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				AccessToken:            "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
 				ChatModel:              "anthropic/claude-2",
 				ChatModelMaxTokens:     12000,
@@ -624,7 +624,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 					DotcomAuthToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wantConfig: &conftypes.CompletionsChatConfig{
 				AccessToken:            "CUSTOM_TOKEN",
 				ChatModel:              "claude-v1",
 				ChatModelMaxTokens:     9000,
