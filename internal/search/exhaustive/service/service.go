@@ -171,7 +171,14 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	cw := csv.NewWriter(w)
 	defer cw.Flush()
 
-	header := []string{"repo", "rev", "start", "end", "status"}
+	header := []string{
+		"repo",
+		"rev",
+		"start",
+		"end",
+		"status",
+		"failure_message",
+	}
 	err = cw.Write(header)
 	if err != nil {
 		return err
@@ -184,6 +191,7 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 			formatOrNULL(job.StartedAt),
 			formatOrNULL(job.FinishedAt),
 			string(job.State),
+			job.FailureMessage,
 		})
 		if err != nil {
 			return err

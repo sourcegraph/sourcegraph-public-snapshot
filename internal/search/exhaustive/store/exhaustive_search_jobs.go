@@ -346,28 +346,17 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 
 const getRepoRevJobsSpecFmtStr = `
 SELECT
-rjj.id,
-rjj.state,
-rjj.search_repo_job_id,
 rjj.revision,
+rjj.state,
 rjj.failure_message,
 rjj.started_at,
-rjj.finished_at,
-rjj.process_after,
-rjj.num_resets,
-rjj.num_failures,
-rjj.execution_logs,
-rjj.worker_hostname,
-rjj.cancel,
-rjj.created_at,
-rjj.updated_at
+rjj.finished_at
 FROM exhaustive_search_repo_revision_jobs rjj
 JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
-JOIN exhaustive_search_jobs sj ON rj.search_job_id = sj.id
-WHERE sj.id = %s
+WHERE rj.search_repo_job_id = %s
 `
 
-func (s *Store) GetRepoRevJobs(ctx context.Context, id int64) ([]*types.ExhaustiveSearchRepoRevisionJob, error) {
+func (s *Store) GetRepoRevJobs(ctx context.Context, id int64) ([]*types.SearchJobLog, error) {
 	// 🚨 SECURITY: only someone with access to the job may cancel the job
 	_, err := s.GetExhaustiveSearchJob(ctx, id)
 	if err != nil {
@@ -380,17 +369,19 @@ func (s *Store) GetRepoRevJobs(ctx context.Context, id int64) ([]*types.Exhausti
 	}
 	defer rows.Close()
 
-	var jobs []*types.ExhaustiveSearchRepoRevisionJob
+	var jobs []*types.SearchJobLog
 	for rows.Next() {
-		job, err := scanRevSearchJob(rows)
-		if err != nil {
+		job := types.SearchJobLog{}
+		if err := rows.Scan(
+			&job.Revision,
+			&job.State,
+			&dbutil.NullString{S: &job.FailureMessage},
+			&dbutil.NullTime{Time: &job.StartedAt},
+			&dbutil.NullTime{Time: &job.FinishedAt},
+		); err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, job)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
+		jobs = append(jobs, &job)
 	}
 
 	return jobs, nil

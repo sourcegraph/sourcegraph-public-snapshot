@@ -1,9 +1,12 @@
 package search
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -126,6 +129,16 @@ func TestExhaustiveSearch(t *testing.T) {
 			Failed:     0,
 			InProgress: 0,
 		}, stats)
+	}
+
+	{
+		buf := bytes.Buffer{}
+		err = svc.WriteSearchJobLogs(userCtx, &buf, job.ID)
+		require.NoError(err)
+		lines := strings.Split(buf.String(), "\n")
+		// 1 header + 3 rows + 1 newline
+		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
+		require.Equal("repo,rev,start,end,status,failure_message", lines[0])
 	}
 
 	// Assert that cancellation affects the number of rows we expect. This is a bit

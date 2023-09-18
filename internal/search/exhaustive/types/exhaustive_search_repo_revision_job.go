@@ -26,3 +26,12 @@ func (j *ExhaustiveSearchRepoRevisionJob) RecordID() int {
 func (j *ExhaustiveSearchRepoRevisionJob) RecordUID() string {
 	return strconv.FormatInt(j.ID, 10)
 }
+
+type SearchJobLog struct {
+	Revision string
+
+	State          JobState
+	FailureMessage string
+	StartedAt      time.Time
+	FinishedAt     time.Time
+}
