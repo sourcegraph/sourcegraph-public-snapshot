@@ -46,12 +46,9 @@ func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQ
 
 	var opts []grpc.DialOption
 	if insecureTarget {
-		opts = defaults.DialOptions(logger, grpc.WithPerRPCCredentials(&perRPCCredentials{
-			conf:     c,
-			insecure: true,
-		}))
+		opts = defaults.DialOptions(logger)
 	} else {
-		opts = defaults.ExternalDialOptions(logger, grpc.WithPerRPCCredentials(&perRPCCredentials{conf: c}))
+		opts = defaults.ExternalDialOptions(logger)
 	}
 	conn, err := grpc.DialContext(ctx, u.String(), opts...)
 	if err != nil {
@@ -80,8 +77,8 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	if err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
 		Payload: &telemetrygatewayv1.RecordEventsRequest_Metadata{
 			Metadata: &telemetrygatewayv1.RecordEventsRequestMetadata{
-				AnalyticsIdentifier: e.conf.SiteConfig().LicenseKey,
-			}, // TODO
+				LicenseKey: e.conf.SiteConfig().LicenseKey,
+			},
 		},
 	}); err != nil {
 		return errors.Wrap(err, "send initial metadata")
