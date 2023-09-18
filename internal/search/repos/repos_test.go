@@ -14,6 +14,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 func TestMain(m *testing.M) {
@@ -417,6 +419,128 @@ func TestResolverIterator(t *testing.T) {
 
 			if diff := cmp.Diff(pages, tc.pages); diff != "" {
 				t.Errorf("%s unexpected pages (-have, +want):\n%s", tc.name, diff)
+			}
+		})
+	}
+}
+
+func TestResolverIterateRepoRevs(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	// intentionally nil so it panics if we call it
+	var gsClient gitserver.Client = nil
+
+	var all []RepoRevSpecs
+	for i := 1; i <= 5; i++ {
+		r := types.MinimalRepo{
+			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
+			Stars: i * 100,
+		}
+
+		repo := r.ToRepo()
+		if err := db.Repos().Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+		r.ID = repo.ID
+
+		all = append(all, RepoRevSpecs{Repo: r})
+	}
+
+	withRevSpecs := func(rrs []RepoRevSpecs, revs ...query.RevisionSpecifier) []RepoRevSpecs {
+		var with []RepoRevSpecs
+		for _, r := range rrs {
+			with = append(with, RepoRevSpecs{
+				Repo: r.Repo,
+				Revs: revs,
+			})
+		}
+		return with
+	}
+
+	for _, tc := range []struct {
+		name    string
+		opts    search.RepoOptions
+		want    []RepoRevSpecs
+		wantErr string
+	}{
+		{
+			name: "default",
+			opts: search.RepoOptions{},
+			want: withRevSpecs(all, query.RevisionSpecifier{}),
+		},
+		{
+			name: "specific repo",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar1"),
+			},
+			want: withRevSpecs(all[:1], query.RevisionSpecifier{}),
+		},
+		{
+			name: "no repos",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("horsegraph"),
+			},
+			wantErr: ErrNoResolvedRepos.Error(),
+		},
+
+		// The next block of test cases would normally reach out to gitserver
+		// and fail. But because we haven't reached out we should still get
+		// back a list. See the corresponding cases in TestResolverIterator.
+		{
+			name: "no gitserver revspec",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@bad_commit"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{RevSpec: "bad_commit"}),
+		},
+		{
+			name: "no gitserver refglob",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@*refs/heads/foo*"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{RefGlob: "refs/heads/foo*"}),
+		},
+		{
+			name: "no gitserver excluderefglob",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@*!refs/heads/foo*"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{ExcludeRefGlob: "refs/heads/foo*"}),
+		},
+		{
+			name: "no gitserver multiref",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@foo:bar"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{RevSpec: "foo"}, query.RevisionSpecifier{RevSpec: "bar"}),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := NewResolver(logger, db, gsClient, nil, nil)
+			got, err := iterator.Collect(r.IterateRepoRevs(ctx, tc.opts))
+
+			var gotErr string
+			if err != nil {
+				gotErr = err.Error()
+			}
+			if diff := cmp.Diff(gotErr, tc.wantErr); diff != "" {
+				t.Errorf("unexpected error (-have, +want):\n%s", diff)
+			}
+
+			// copy want because we will mutate it when sorting
+			var want []RepoRevSpecs
+			want = append(want, tc.want...)
+
+			less := func(a, b RepoRevSpecs) bool {
+				return a.Repo.ID < b.Repo.ID
+			}
+			slices.SortFunc(got, less)
+			slices.SortFunc(want, less)
+
+			if diff := cmp.Diff(got, want); diff != "" {
+				t.Errorf("unexpected (-have, +want):\n%s", diff)
 			}
 		})
 	}
