@@ -179,14 +179,6 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         setNote(REQUESTERS[requestFrom].name)
     }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, port, destination])
 
-    // Add referrer policy to the page to prevent passing it on after the redirect.
-    // JetBrains needs this.
-    useEffect(() => {
-        document
-            .querySelector('head')
-            ?.insertAdjacentHTML('beforeend', '<meta name="referrer" content="strict-origin-when-cross-origin">')
-    }, [])
-
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
