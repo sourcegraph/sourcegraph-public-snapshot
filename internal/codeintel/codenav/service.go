@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -1393,6 +1394,10 @@ func (s *Service) logClosestUploadDistanceEvent(ctx context.Context, visibleUplo
 	jsond, _ := json.Marshal(map[string]any{
 		"distance": closestDistance,
 		"opName":   operationName,
+		"algorithm": map[bool]string{
+			true:  "fifo",
+			false: "window",
+		}[autoindexing.AutoIndexingUseFifoAlgorithm],
 	})
 	distanceEvent.Argument = jsond
 	_ = s.eventlogStore.Insert(ctx, distanceEvent)
