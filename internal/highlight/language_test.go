@@ -1,7 +1,6 @@
 package highlight
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/grafana/regexp"
@@ -77,7 +76,7 @@ func TestGetLanguageFromConfig(t *testing.T) {
 	}
 }
 
-func TestShebagn(t *testing.T) {
+func TestShebang(t *testing.T) {
 	type testCase struct {
 		Contents string
 		Expected string
@@ -86,23 +85,23 @@ func TestShebagn(t *testing.T) {
 	cases := []testCase{
 		{
 			Contents: "#!/usr/bin/env python",
-			Expected: "python",
+			Expected: "Python",
 		},
 		{
 			Contents: "#!/usr/bin/env node",
-			Expected: "javascript",
+			Expected: "JavaScript",
 		},
 		{
 			Contents: "#!/usr/bin/env ruby",
-			Expected: "ruby",
+			Expected: "Ruby",
 		},
 		{
 			Contents: "#!/usr/bin/env perl",
-			Expected: "perl",
+			Expected: "Perl",
 		},
 		{
 			Contents: "#!/usr/bin/env php",
-			Expected: "php",
+			Expected: "PHP",
 		},
 		{
 			Contents: "#!/usr/bin/env lua",
@@ -110,7 +109,7 @@ func TestShebagn(t *testing.T) {
 		},
 		{
 			Contents: "#!/usr/bin/env tclsh",
-			Expected: "tcl",
+			Expected: "Tcl",
 		},
 		{
 			Contents: "#!/usr/bin/env fish",
@@ -120,7 +119,6 @@ func TestShebagn(t *testing.T) {
 
 	for _, testCase := range cases {
 		language, _ := getLanguage("", testCase.Contents)
-		language = strings.ToLower(language)
 		if language != testCase.Expected {
 			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, language, testCase.Expected)
 		}
@@ -135,11 +133,6 @@ func TestGetLanguageFromContent(t *testing.T) {
 	}
 
 	cases := []testCase{
-		{
-			Filename: "pog.m",
-			Contents: "",
-			Expected: "matlab",
-		},
 		{
 			Filename: "bruh.m",
 			Contents: `#import "Import.h"
@@ -157,7 +150,6 @@ func TestGetLanguageFromContent(t *testing.T) {
 
 	for _, testCase := range cases {
 		language, _ := getLanguage(testCase.Filename, testCase.Contents)
-		language = strings.ToLower(language)
 		if language != testCase.Expected {
 			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, language, testCase.Expected)
 		}

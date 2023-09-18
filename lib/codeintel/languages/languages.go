@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/exp/slices"
 )
 
@@ -36,21 +37,21 @@ func GetLanguage(path, contents string) (lang string, found bool) {
 		c = c[:2048]
 	}
 
-	lang = firstLanguage(enry.GetLanguages(path, []byte(c)))
-	if lang != "" {
+	lang, err := firstLanguage(enry.GetLanguages(path, []byte(c)))
+	if err == nil {
 		return NormalizeLanguage(lang), true
 	}
 
 	return NormalizeLanguage(lang), false
 }
 
-func firstLanguage(languages []string) string {
+func firstLanguage(languages []string) (string, error) {
 	for _, l := range languages {
 		if l != "" {
-			return l
+			return l, nil
 		}
 	}
-	return ""
+	return "", errors.New("UnrecognizedLanguage")
 }
 
 // overrideViaShebang handles explicitly using the shebang whenever possible.
