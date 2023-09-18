@@ -303,6 +303,47 @@ func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err er
 	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
 }
 
+const getAggregateRepoRevState = `
+SELECT rrj.state, count(rrj.id) as count FROM exhaustive_search_repo_revision_jobs rrj
+JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
+WHERE rj.search_job_id = %s
+GROUP BY rrj.state
+`
+
+func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[string]int, err error) {
+	ctx, _, endObservation := s.operations.getAggregateRepoRevState.With(ctx, &err, opAttrs(
+		attribute.Int64("ID", id),
+	))
+	defer endObservation(1, observation.Args{})
+
+	// 🚨 SECURITY: only someone with access to the job may cancel the job
+	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	q := sqlf.Sprintf(getAggregateRepoRevState, id)
+
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]int)
+	for rows.Next() {
+		var state string
+		var count int
+		if err := rows.Scan(&state, &count); err != nil {
+			return nil, err
+		}
+
+		m[state] = count
+	}
+
+	return m, nil
+}
+
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
 	var job types.ExhaustiveSearchJob
 	// required field for the sync worker, but

@@ -45,12 +45,13 @@ func opAttrs(attrs ...attribute.KeyValue) observation.Args {
 }
 
 type operations struct {
-	createSearchJob   *observation.Operation
-	getSearchJob      *observation.Operation
-	listSearchJobs    *observation.Operation
-	cancelSearchJob   *observation.Operation
-	writeSearchJobCSV *observation.Operation
-	deleteSearchJob   *observation.Operation
+	createSearchJob          *observation.Operation
+	getSearchJob             *observation.Operation
+	deleteSearchJob          *observation.Operation
+	listSearchJobs           *observation.Operation
+	cancelSearchJob          *observation.Operation
+	writeSearchJobCSV        *observation.Operation
+	getAggregateRepoRevState *observation.Operation
 }
 
 var (
@@ -80,12 +81,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		}
 
 		singletonOperations = &operations{
-			createSearchJob:   op("CreateSearchJob"),
-			getSearchJob:      op("GetSearchJob"),
-			listSearchJobs:    op("ListSearchJobs"),
-			cancelSearchJob:   op("CancelSearchJob"),
-			writeSearchJobCSV: op("WriteSearchJobCSV"),
-			deleteSearchJob:   op("DeleteSearchJob"),
+			createSearchJob:          op("CreateSearchJob"),
+			getSearchJob:             op("GetSearchJob"),
+			deleteSearchJob:          op("DeleteSearchJob"),
+			listSearchJobs:           op("ListSearchJobs"),
+			cancelSearchJob:          op("CancelSearchJob"),
+			writeSearchJobCSV:        op("WriteSearchJobCSV"),
+			getAggregateRepoRevState: op("GetAggregateRepoRevState"),
 		}
 	})
 	return singletonOperations
@@ -219,6 +221,37 @@ func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) 
 		return errors.Wrapf(err, "writing csv for job %d", id)
 	}
 	return nil
+}
+
+// GetAggregateRepoRevState returns the map of state -> count for all repo
+// revision jobs for the given job.
+func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *types.RepoRevJobStats, err error) {
+	ctx, _, endObservation := s.operations.getAggregateRepoRevState.With(ctx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer endObservation(1, observation.Args{})
+
+	m, err := s.store.GetAggregateRepoRevState(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := types.RepoRevJobStats{}
+	for state, count := range m {
+		switch types.JobState(state) {
+		case types.JobStateCompleted:
+			stats.Completed += int32(count)
+		case types.JobStateFailed:
+			stats.Failed += int32(count)
+		case types.JobStateProcessing, types.JobStateErrored, types.JobStateQueued:
+			stats.InProgress += int32(count)
+		default:
+			return nil, errors.Newf("unknown job state %q", state)
+		}
+	}
+
+	stats.Total = stats.Completed + stats.Failed + stats.InProgress
+
+	return &stats, nil
 }
 
 // discards output from br up until delim is read. If an error is encountered

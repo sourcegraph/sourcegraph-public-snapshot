@@ -39,7 +39,7 @@ func (r *Resolver) CreateSearchJob(ctx context.Context, args *graphqlbackend.Cre
 	if err != nil {
 		return nil, err
 	}
-	return searchJobResolver{Job: job, db: r.db}, nil
+	return newSearchJobResolver(r.db, r.svc, job), nil
 }
 
 func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.CancelSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -125,10 +125,7 @@ func (s *searchJobsConnectionStore) ComputeNodes(ctx context.Context, args *data
 
 	resolvers := make([]graphqlbackend.SearchJobResolver, 0, len(jobs))
 	for _, job := range jobs {
-		resolvers = append(resolvers, &searchJobResolver{
-			db:  s.db,
-			Job: job,
-		})
+		resolvers = append(resolvers, newSearchJobResolver(s.db, s.service, job))
 	}
 
 	return resolvers, nil
@@ -228,5 +225,5 @@ func (r *Resolver) searchJobByID(ctx context.Context, id graphql.ID) (graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	return searchJobResolver{Job: job, db: r.db}, nil
+	return newSearchJobResolver(r.db, r.svc, job), nil
 }

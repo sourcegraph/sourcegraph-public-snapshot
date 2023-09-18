@@ -117,6 +117,17 @@ func TestExhaustiveSearch(t *testing.T) {
 		require.Equal(job, job2)
 	}
 
+	{
+		stats, err := svc.GetAggregateRepoRevState(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(&types.RepoRevJobStats{
+			Total:      3,
+			Completed:  3,
+			Failed:     0,
+			InProgress: 0,
+		}, stats)
+	}
+
 	// Assert that cancellation affects the number of rows we expect. This is a bit
 	// counterintuitive at this point because we have already completed the job.
 	// However, cancellation affects the rows independently of the job state.

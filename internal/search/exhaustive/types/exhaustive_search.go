@@ -46,3 +46,10 @@ type RepositoryRevision struct {
 func (r RepositoryRevision) String() string {
 	return fmt.Sprintf("RepositoryRevision{%d@%s}", r.Repository, r.Revision)
 }
+
+type RepoRevJobStats struct {
+	Total      int32
+	Completed  int32
+	Failed     int32
+	InProgress int32
+}
