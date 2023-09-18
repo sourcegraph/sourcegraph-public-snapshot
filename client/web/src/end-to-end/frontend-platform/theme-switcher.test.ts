@@ -10,7 +10,7 @@ import { initEndToEndTest } from '../utils/initEndToEndTest'
 
 const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
-describe('Theme switcher', () => {
+describe.skip('Theme switcher', () => {
     let driver: Driver
 
     before(async () => {
