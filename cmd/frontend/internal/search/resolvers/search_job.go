@@ -25,7 +25,7 @@ func UnmarshalSearchJobID(id graphql.ID) (int64, error) {
 	return v, err
 }
 
-var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
+var _ graphqlbackend.SearchJobResolver = searchJobResolver{}
 
 func newSearchJobResolver(db database.DB, svc *service.Service, job *types.ExhaustiveSearchJob) searchJobResolver {
 	return searchJobResolver{Job: job, db: db, svc: svc}
