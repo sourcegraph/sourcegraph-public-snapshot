@@ -201,7 +201,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Otherwise, fall back to the global limit.
-		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		cfg := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 		autoCompleteCfg := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 		switch scope {
 		case types.CompletionsFeatureChat:

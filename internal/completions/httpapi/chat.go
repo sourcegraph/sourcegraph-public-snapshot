@@ -18,7 +18,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 	logger = logger.Scoped("chat", "chat completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
 	getConfig := func() conftypes.ProviderConfig {
-		return conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		return conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 	}
 
 	return newCompletionsHandler(
@@ -28,7 +28,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		"chat",
 		getConfig,
 		func(requestParams types.CodyCompletionRequestParameters) (string, error) {
-			config := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+			config := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 			if config == nil {
 				return "", errors.New("completions are not configured or disabled")
 			}

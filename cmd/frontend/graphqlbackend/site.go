@@ -558,7 +558,7 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 }
 
 func (r *siteResolver) PerUserCompletionsQuota() *int32 {
-	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	c := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 	if c != nil && c.PerUserDailyLimit > 0 {
 		i := int32(c.PerUserDailyLimit)
 		return &i
@@ -578,7 +578,7 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	// This section can be removed if dotcom stops requiring verified emails
 	if deploy.IsApp() {
-		c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		c := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 		// App users can specify their own keys using one of the regular providers.
 		// If they use their own keys requests are not going through Cody Gateway
 		// which means a verified email is not needed.
@@ -597,7 +597,7 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
 
 func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
-	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	c := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 	a := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 	if c == nil || a == nil {
 		return nil

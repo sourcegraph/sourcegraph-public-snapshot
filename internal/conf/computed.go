@@ -572,9 +572,9 @@ func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
 	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
-// GetCompletionsConfig evaluates a complete completions configuration based on
+// GetChatCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
-func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
+func GetChatCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
 	// If cody is disabled, don't use completions.
 	if !codyEnabled(siteConfig) {
 		return nil
@@ -780,7 +780,7 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 	}
 
 	// computedCompletionsConfig contains the fallback values for the provider and access token
-	computedCompletionsConfig := GetCompletionsConfig(siteConfig)
+	computedCompletionsConfig := GetChatCompletionsConfig(siteConfig)
 
 	// Additionally, autocomplete in App are disabled if there is no dotcom auth token
 	// and the user hasn't provided their own token for autocomplete either via completions or autocomplete

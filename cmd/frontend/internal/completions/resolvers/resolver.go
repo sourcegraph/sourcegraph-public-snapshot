@@ -40,7 +40,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
-	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	completionsConfig := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 	if completionsConfig == nil {
 		return "", errors.New("completions are not configured")
 	}

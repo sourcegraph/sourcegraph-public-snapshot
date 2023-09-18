@@ -656,7 +656,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			t.Cleanup(func() {
 				deploy.Mock(defaultDeploy)
 			})
-			conf := GetCompletionsConfig(tc.siteConfig)
+			conf := GetChatCompletionsConfig(tc.siteConfig)
 			if tc.wantDisabled {
 				if conf != nil {
 					t.Fatalf("expected nil config but got non-nil: %+v", conf)

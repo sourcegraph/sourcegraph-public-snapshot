@@ -178,7 +178,7 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope types.Complet
 	}
 
 	// Otherwise, fall back to the global limit.
-	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	cfg := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 	autoCompleteCfg := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 	switch scope {
 	case types.CompletionsFeatureChat:

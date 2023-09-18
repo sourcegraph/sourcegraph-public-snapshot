@@ -39,7 +39,7 @@ type Client interface {
 
 func NewClientFromSiteConfig(cli httpcli.Doer) (_ Client, ok bool) {
 	config := conf.Get().SiteConfig()
-	cc := conf.GetCompletionsConfig(config)
+	cc := conf.GetChatCompletionsConfig(config)
 	ec := conf.GetEmbeddingsConfig(config)
 
 	// If neither completions nor embeddings are configured, return empty.
