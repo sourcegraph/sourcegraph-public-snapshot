@@ -47,7 +47,7 @@ func opAttrs(attrs ...attribute.KeyValue) observation.Args {
 type operations struct {
 	createSearchJob          *observation.Operation
 	getSearchJob             *observation.Operation
-	deleteSearchJob   *observation.Operation
+	deleteSearchJob          *observation.Operation
 	listSearchJobs           *observation.Operation
 	cancelSearchJob          *observation.Operation
 	writeSearchJobCSV        *observation.Operation
@@ -83,7 +83,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		singletonOperations = &operations{
 			createSearchJob:          op("CreateSearchJob"),
 			getSearchJob:             op("GetSearchJob"),
-			deleteSearchJob:   op("DeleteSearchJob"),
+			deleteSearchJob:          op("DeleteSearchJob"),
 			listSearchJobs:           op("ListSearchJobs"),
 			cancelSearchJob:          op("CancelSearchJob"),
 			writeSearchJobCSV:        op("WriteSearchJobCSV"),
