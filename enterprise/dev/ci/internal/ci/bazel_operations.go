@@ -21,7 +21,7 @@ func BazelOperations(buildOpts bk.BuildOptions, isMain bool) []operations.Operat
 	if isMain {
 		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
 	} else {
-		ops = append(ops, bazelTest("//...")) //, "//client/web:test"))
+		ops = append(ops, bazelTest("//...", "//client/web:test"))
 	}
 
 	ops = append(ops, triggerBackCompatTest(buildOpts))
@@ -154,7 +154,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.AllowDependencyFailure(),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
-		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "/root/.cache/bazel/_bazel_root/*/command.profile.gz"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "*.command.profile.gz"),
 		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
@@ -167,11 +167,11 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	// so we run it first to avoid failing builds midway.
 	cmds = append(cmds,
 		bazelAnnouncef("bazel build //client/web:bundle-enterprise"),
-		bk.Cmd(bazelCmd("build //client/web:bundle-enterprise")),
+		bk.Cmd(bazelCmd("build --profile=./web_bundle.command.profile.gz //client/web:bundle-enterprise")),
 	)
 
 	for _, target := range targets {
-		cmd := bazelCmd(fmt.Sprintf("test %s", target))
+		cmd := bazelCmd(fmt.Sprintf("test --profile=%s %s", targetToProfileName(target), target))
 		bazelTestCmds = append(bazelTestCmds,
 			bazelAnnouncef("bazel test %s", target),
 			bk.Cmd(cmd))
@@ -183,6 +183,16 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 			cmds...,
 		)
 	}
+}
+
+func targetToProfileName(target string) string {
+	if target == "//..." {
+		return "./all.command.profile.gz"
+	}
+
+	out := strings.ReplaceAll(target, "/", "_")
+	out = strings.ReplaceAll(out, ":", "-")
+	return "./" + out + ".command.profile.gz"
 }
 
 func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
