@@ -5,9 +5,9 @@ import classNames from 'classnames'
 import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import styles from '../../site-admin/WebhookInformation.module.scss'
-
 import { RateLimiterState } from './backend'
+
+import styles from '../../site-admin/WebhookInformation.module.scss'
 
 interface ExternalServiceInformationProps {
     /**
@@ -16,7 +16,7 @@ interface ExternalServiceInformationProps {
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     kind: ExternalServiceKind
     displayName: string
-    rateLimiterState?: RateLimiterState,
+    rateLimiterState?: RateLimiterState
     codeHostID: string
     reposNumber: number
     syncInProgress: boolean
@@ -27,9 +27,11 @@ interface ExternalServiceInformationProps {
 }
 
 export const RateLimiterStateInfo: FC<{ rateLimiterState: RateLimiterState }> = props => {
-    const { rateLimiterState } = props;
+    const { rateLimiterState } = props
     const rateLimiterDebug = Object.entries(rateLimiterState).map(([k, v]) => (
-        <div>{k}: {v.toString()}</div>
+        <div>
+            {k}: {v.toString()}
+        </div>
     ))
 
     return (

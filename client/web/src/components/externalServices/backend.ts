@@ -361,11 +361,10 @@ export type RateLimiterState = {
     infinite: boolean
 }
 
-
 export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
     parsedConfig?: {
         gitHubAppDetails?: GitHubAppDetails
         url: string
     }
-    rateLimiterState?: RateLimiterState,
+    rateLimiterState?: RateLimiterState
 }
