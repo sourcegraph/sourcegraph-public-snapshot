@@ -53,6 +53,8 @@ var (
 		// Allow service to emit observability
 		{ID: "role_cloudtrace_agent", Role: "roles/cloudtrace.agent"},
 		{ID: "role_monitoring_metricwriter", Role: "roles/monitoring.metricWriter"},
+		// Allow service to publish Cloud Profiler profiles
+		{ID: "role_cloudprofiler_agent", Role: "roles/cloudprofiler.agent"},
 	}
 	// servicePort is provided to the container as $PORT in Cloud Run:
 	// https://cloud.google.com/run/docs/configuring/services/containers#configure-port
