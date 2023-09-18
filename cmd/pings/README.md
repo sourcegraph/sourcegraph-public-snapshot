@@ -1,6 +1,6 @@
 # Pings service
 
-This directory contains source code for the [Pings service](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/#pings-service). This document describes details for local development of the service.
+This directory contains source code for the [Pings service](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/pings/). This document describes details for local development of the service.
 
 The following command should boot up a running service:
 
