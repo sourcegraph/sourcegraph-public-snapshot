@@ -69,7 +69,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - User access to Perforce depots is sometimes denied unintentionally when using `"authorization"/"subRepoPermissions": true` in the code host config and the protects file contains exclusionary entries with the Host field filled out. Ignoring those rules (that use anything other than the wildcard (`*`) in the Host field) is now toggle-able by adding `"authorization"/"ignoreRulesWithHost"` to the code host config and setting the value to `true`. [#56450](https://github.com/sourcegraph/sourcegraph/pull/56450)
-- Sourcegraph will now sync user permissions for internal repositories. This could lead to slower user permission syncs on organizations with a very large number of internal repositories. In those cases, it is recommended to enable [teams and organizations permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching) [#56677](https://github.com/sourcegraph/sourcegraph/pull/56677)
+- Sourcegraph will now sync user permissions for internal repositories on GitHub. This could lead to slower user permission syncs on organizations with a very large number of internal repositories. In those cases, it is recommended to enable [teams and organizations permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching) [#56677](https://github.com/sourcegraph/sourcegraph/pull/56677)
 
 ### Fixed
 
