@@ -163,6 +163,11 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) ([]*github.Org, error) {
 	var orgs []*github.Org
 	for page := 1; true; page++ {
+		select {
+		case <-ctx.Done():
+			return orgs, ctx.Err()
+		default:
+		}
 		pageOrgs, hasNextPage, _, err := cli.GetAuthenticatedUserOrgs(ctx, page)
 		if err != nil {
 			// We return partial results
@@ -182,6 +187,11 @@ func getAllAuthenticatedUserOrgs(ctx context.Context, cli client) ([]*github.Org
 func getAllInternalRepositoriesForOrg(ctx context.Context, cli client, orgLogin string) ([]*github.Repository, error) {
 	var repos []*github.Repository
 	for page := 1; true; page++ {
+		select {
+		case <-ctx.Done():
+			return repos, ctx.Err()
+		default:
+		}
 		reposPage, hasNextPage, _, err := cli.ListOrgRepositories(ctx, orgLogin, page, "internal")
 		if err != nil {
 			// We return partial results
@@ -206,6 +216,11 @@ func getAllAuthenticatedUserInternalRepositories(ctx context.Context, cli client
 		return nil, err
 	}
 	for _, org := range orgs {
+		select {
+		case <-ctx.Done():
+			return repos, ctx.Err()
+		default:
+		}
 		orgRepos, err := getAllInternalRepositoriesForOrg(ctx, cli, org.Login)
 		if err != nil {
 			return repos, err
@@ -219,6 +234,11 @@ func getAllAuthenticatedUserAffiliatedRepositories(ctx context.Context, cli clie
 	var repos []*github.Repository
 	// Sync direct affiliations
 	for page := 1; true; page++ {
+		select {
+		case <-ctx.Done():
+			return repos, ctx.Err()
+		default:
+		}
 		reposPage, hasNextPage, _, err := cli.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
 		if err != nil {
 			return repos, errors.Wrap(err, "list affiliated repos for user")
