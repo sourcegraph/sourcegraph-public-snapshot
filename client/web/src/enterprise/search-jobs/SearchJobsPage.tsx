@@ -89,7 +89,15 @@ export const SEARCH_JOBS_QUERY = gql`
         $states: [SearchJobState!]
         $orderBy: SearchJobsOrderBy
     ) {
-        searchJobs(first: $first, after: $after, query: $query, userIDs: $userIDs, states: $states, orderBy: $orderBy) {
+        searchJobs(
+            first: $first
+            after: $after
+            query: $query
+            userIDs: $userIDs
+            states: $states
+            orderBy: $orderBy
+            descending: true
+        ) {
             nodes {
                 ...SearchJobNode
             }
