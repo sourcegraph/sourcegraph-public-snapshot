@@ -22,6 +22,7 @@ A "200 OK" status code is expected.
 
 > [!NOTE]
 > To test a more realistic request:
+>
 > 1. Grab the ping request from `/site-admin/pings` of any Sourcegraph instance and save to a file named `ping.json`
 > 1. Do `curl -X POST -H "Content-Type: application/json" -d @ping.json http://localhost:10086/updates`
 
