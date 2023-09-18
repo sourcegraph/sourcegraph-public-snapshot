@@ -67,6 +67,7 @@ func (e noopExporter) ExportEvents(context.Context, []*telemetrygatewayv1.Event)
 
 type exporter struct {
 	client telemetrygatewayv1.TelemeteryGatewayServiceClient
+	conf   conftypes.SiteConfigQuerier
 }
 
 func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
@@ -78,7 +79,9 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	// Send initial metadata
 	if err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
 		Payload: &telemetrygatewayv1.RecordEventsRequest_Metadata{
-			Metadata: &telemetrygatewayv1.RecordEventsRequestMetadata{}, // TODO
+			Metadata: &telemetrygatewayv1.RecordEventsRequestMetadata{
+				AnalyticsIdentifier: e.conf.SiteConfig().LicenseKey,
+			}, // TODO
 		},
 	}); err != nil {
 		return errors.Wrap(err, "send initial metadata")

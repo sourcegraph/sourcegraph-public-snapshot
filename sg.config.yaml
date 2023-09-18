@@ -312,6 +312,31 @@ commands:
       - internal
       - cmd/cody-gateway
 
+  telemetry-gateway:
+    cmd: |
+      .bin/telemetry-gateway
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
+    checkBinary: .bin/telemetry-gateway
+    env:
+      DIAGNOSTICS_SECRET: sekret
+      # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
+      TELEMETRY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
+      TELEMETRY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      TELEMETRY_GATEWAY_ALLOW_ANONYMOUS: true
+      SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: "127.0.0.1:6098"
+      GRPC_WEB_UI_ENABLED: true
+    watch:
+      - lib
+      - internal
+      - cmd/telemetry-gateway
+
   pings:
     cmd: |
       .bin/pings

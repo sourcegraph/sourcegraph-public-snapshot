@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "server",
+    srcs = ["server.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server",
+    visibility = ["//cmd/telemetry-gateway:__subpackages__"],
+    deps = [
+        "//internal/pubsub",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+    ],
+)

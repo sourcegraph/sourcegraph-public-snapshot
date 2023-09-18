@@ -1,0 +1,19 @@
+fragment ProductSubscriptionTelemetryIdentifiers on ProductLicense {
+    siteID
+    licenseKey
+    subscription {
+        uuid
+    }
+}
+
+# CheckAccessToken returns traits of the product subscription associated with
+# the given license key.
+query GetSubscriptionFromLicenseKey($keyPartial: String!) {
+    dotcom {
+        productLicenses(licenseKeySubstring: $keyPartial) {
+            nodes {
+                ...ProductSubscriptionTelemetryIdentifiers
+            }
+        }
+    }
+}

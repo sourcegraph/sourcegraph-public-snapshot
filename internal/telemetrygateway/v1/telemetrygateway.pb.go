@@ -829,6 +829,116 @@ func (x *EventMarketingTracking) GetSessionFirstUrl() string {
 	return ""
 }
 
+type InternalEvent struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Event       *Event                    `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
+	Identifiers *InternalActorIdentifiers `protobuf:"bytes,2,opt,name=identifiers,proto3" json:"identifiers,omitempty"`
+}
+
+func (x *InternalEvent) Reset() {
+	*x = InternalEvent{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_telemetrygateway_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *InternalEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InternalEvent) ProtoMessage() {}
+
+func (x *InternalEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_telemetrygateway_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InternalEvent.ProtoReflect.Descriptor instead.
+func (*InternalEvent) Descriptor() ([]byte, []int) {
+	return file_telemetrygateway_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *InternalEvent) GetEvent() *Event {
+	if x != nil {
+		return x.Event
+	}
+	return nil
+}
+
+func (x *InternalEvent) GetIdentifiers() *InternalActorIdentifiers {
+	if x != nil {
+		return x.Identifiers
+	}
+	return nil
+}
+
+type InternalActorIdentifiers struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	SubscriptionId string `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
+	SiteId         string `protobuf:"bytes,2,opt,name=site_id,json=siteId,proto3" json:"site_id,omitempty"`
+}
+
+func (x *InternalActorIdentifiers) Reset() {
+	*x = InternalActorIdentifiers{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_telemetrygateway_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *InternalActorIdentifiers) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InternalActorIdentifiers) ProtoMessage() {}
+
+func (x *InternalActorIdentifiers) ProtoReflect() protoreflect.Message {
+	mi := &file_telemetrygateway_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InternalActorIdentifiers.ProtoReflect.Descriptor instead.
+func (*InternalActorIdentifiers) Descriptor() ([]byte, []int) {
+	return file_telemetrygateway_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *InternalActorIdentifiers) GetSubscriptionId() string {
+	if x != nil {
+		return x.SubscriptionId
+	}
+	return ""
+}
+
+func (x *InternalActorIdentifiers) GetSiteId() string {
+	if x != nil {
+		return x.SiteId
+	}
+	return ""
+}
+
 type Identifier_LicensedInstanceIdentifier struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -841,7 +951,7 @@ type Identifier_LicensedInstanceIdentifier struct {
 func (x *Identifier_LicensedInstanceIdentifier) Reset() {
 	*x = Identifier_LicensedInstanceIdentifier{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_telemetrygateway_proto_msgTypes[11]
+		mi := &file_telemetrygateway_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -854,7 +964,7 @@ func (x *Identifier_LicensedInstanceIdentifier) String() string {
 func (*Identifier_LicensedInstanceIdentifier) ProtoMessage() {}
 
 func (x *Identifier_LicensedInstanceIdentifier) ProtoReflect() protoreflect.Message {
-	mi := &file_telemetrygateway_proto_msgTypes[11]
+	mi := &file_telemetrygateway_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +998,7 @@ type RecordEventsRequest_EventsPayload struct {
 func (x *RecordEventsRequest_EventsPayload) Reset() {
 	*x = RecordEventsRequest_EventsPayload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_telemetrygateway_proto_msgTypes[12]
+		mi := &file_telemetrygateway_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -901,7 +1011,7 @@ func (x *RecordEventsRequest_EventsPayload) String() string {
 func (*RecordEventsRequest_EventsPayload) ProtoMessage() {}
 
 func (x *RecordEventsRequest_EventsPayload) ProtoReflect() protoreflect.Message {
-	mi := &file_telemetrygateway_proto_msgTypes[12]
+	mi := &file_telemetrygateway_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -935,7 +1045,7 @@ type EventSource_Server struct {
 func (x *EventSource_Server) Reset() {
 	*x = EventSource_Server{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_telemetrygateway_proto_msgTypes[13]
+		mi := &file_telemetrygateway_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -948,7 +1058,7 @@ func (x *EventSource_Server) String() string {
 func (*EventSource_Server) ProtoMessage() {}
 
 func (x *EventSource_Server) ProtoReflect() protoreflect.Message {
-	mi := &file_telemetrygateway_proto_msgTypes[13]
+	mi := &file_telemetrygateway_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -983,7 +1093,7 @@ type EventSource_Client struct {
 func (x *EventSource_Client) Reset() {
 	*x = EventSource_Client{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_telemetrygateway_proto_msgTypes[14]
+		mi := &file_telemetrygateway_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -996,7 +1106,7 @@ func (x *EventSource_Client) String() string {
 func (*EventSource_Client) ProtoMessage() {}
 
 func (x *EventSource_Client) ProtoReflect() protoreflect.Message {
-	mi := &file_telemetrygateway_proto_msgTypes[14]
+	mi := &file_telemetrygateway_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,20 +1316,35 @@ var file_telemetrygateway_proto_rawDesc = []byte{
 	0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x42, 0x13, 0x0a, 0x11, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
 	0x6e, 0x5f, 0x72, 0x65, 0x66, 0x65, 0x72, 0x72, 0x65, 0x72, 0x42, 0x14, 0x0a, 0x12, 0x5f, 0x73,
 	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x69, 0x72, 0x73, 0x74, 0x5f, 0x75, 0x72, 0x6c,
-	0x32, 0x85, 0x01, 0x0a, 0x18, 0x54, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x79, 0x47,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x69, 0x0a,
-	0x0c, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x12, 0x28, 0x2e,
-	0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
-	0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65,
-	0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65,
-	0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x41, 0x5a, 0x3f, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61,
-	0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69,
-	0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72,
-	0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x22, 0x92, 0x01, 0x0a, 0x0d, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x12, 0x30, 0x0a, 0x05, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1a, 0x2e, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74,
+	0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x05, 0x65,
+	0x76, 0x65, 0x6e, 0x74, 0x12, 0x4f, 0x0a, 0x0b, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69,
+	0x65, 0x72, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x74, 0x65, 0x6c, 0x65,
+	0x6d, 0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x2e,
+	0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x49, 0x64, 0x65,
+	0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72, 0x73, 0x52, 0x0b, 0x69, 0x64, 0x65, 0x6e, 0x74, 0x69,
+	0x66, 0x69, 0x65, 0x72, 0x73, 0x22, 0x5c, 0x0a, 0x18, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61,
+	0x6c, 0x41, 0x63, 0x74, 0x6f, 0x72, 0x49, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x66, 0x69, 0x65, 0x72,
+	0x73, 0x12, 0x27, 0x0a, 0x0f, 0x73, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x73, 0x75, 0x62, 0x73,
+	0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x17, 0x0a, 0x07, 0x73, 0x69,
+	0x74, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x69, 0x74,
+	0x65, 0x49, 0x64, 0x32, 0x85, 0x01, 0x0a, 0x18, 0x54, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x65,
+	0x72, 0x79, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x69, 0x0a, 0x0c, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73,
+	0x12, 0x28, 0x2e, 0x74, 0x65, 0x6c, 0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x74, 0x65, 0x6c,
+	0x65, 0x6d, 0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28, 0x01, 0x30, 0x01, 0x42, 0x41, 0x5a, 0x3f, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70,
+	0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x74, 0x65, 0x6c, 0x65, 0x6d,
+	0x65, 0x74, 0x72, 0x79, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x76, 0x31, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1234,7 +1359,7 @@ func file_telemetrygateway_proto_rawDescGZIP() []byte {
 	return file_telemetrygateway_proto_rawDescData
 }
 
-var file_telemetrygateway_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_telemetrygateway_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_telemetrygateway_proto_goTypes = []interface{}{
 	(*Identifier)(nil),                            // 0: telemetrygateway.v1.Identifier
 	(*RecordEventsRequestMetadata)(nil),           // 1: telemetrygateway.v1.RecordEventsRequestMetadata
@@ -1247,40 +1372,44 @@ var file_telemetrygateway_proto_goTypes = []interface{}{
 	(*EventUser)(nil),                             // 8: telemetrygateway.v1.EventUser
 	(*EventFeatureFlags)(nil),                     // 9: telemetrygateway.v1.EventFeatureFlags
 	(*EventMarketingTracking)(nil),                // 10: telemetrygateway.v1.EventMarketingTracking
-	(*Identifier_LicensedInstanceIdentifier)(nil), // 11: telemetrygateway.v1.Identifier.LicensedInstanceIdentifier
-	(*RecordEventsRequest_EventsPayload)(nil),     // 12: telemetrygateway.v1.RecordEventsRequest.EventsPayload
-	(*EventSource_Server)(nil),                    // 13: telemetrygateway.v1.EventSource.Server
-	(*EventSource_Client)(nil),                    // 14: telemetrygateway.v1.EventSource.Client
-	nil,                                           // 15: telemetrygateway.v1.EventParameters.MetadataEntry
-	nil,                                           // 16: telemetrygateway.v1.EventFeatureFlags.FlagsEntry
-	(*timestamppb.Timestamp)(nil),                 // 17: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),                       // 18: google.protobuf.Struct
+	(*InternalEvent)(nil),                         // 11: telemetrygateway.v1.InternalEvent
+	(*InternalActorIdentifiers)(nil),              // 12: telemetrygateway.v1.InternalActorIdentifiers
+	(*Identifier_LicensedInstanceIdentifier)(nil), // 13: telemetrygateway.v1.Identifier.LicensedInstanceIdentifier
+	(*RecordEventsRequest_EventsPayload)(nil),     // 14: telemetrygateway.v1.RecordEventsRequest.EventsPayload
+	(*EventSource_Server)(nil),                    // 15: telemetrygateway.v1.EventSource.Server
+	(*EventSource_Client)(nil),                    // 16: telemetrygateway.v1.EventSource.Client
+	nil,                                           // 17: telemetrygateway.v1.EventParameters.MetadataEntry
+	nil,                                           // 18: telemetrygateway.v1.EventFeatureFlags.FlagsEntry
+	(*timestamppb.Timestamp)(nil),                 // 19: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),                       // 20: google.protobuf.Struct
 }
 var file_telemetrygateway_proto_depIdxs = []int32{
-	11, // 0: telemetrygateway.v1.Identifier.licensed_instance:type_name -> telemetrygateway.v1.Identifier.LicensedInstanceIdentifier
+	13, // 0: telemetrygateway.v1.Identifier.licensed_instance:type_name -> telemetrygateway.v1.Identifier.LicensedInstanceIdentifier
 	0,  // 1: telemetrygateway.v1.RecordEventsRequestMetadata.identifier:type_name -> telemetrygateway.v1.Identifier
 	1,  // 2: telemetrygateway.v1.RecordEventsRequest.metadata:type_name -> telemetrygateway.v1.RecordEventsRequestMetadata
-	12, // 3: telemetrygateway.v1.RecordEventsRequest.events:type_name -> telemetrygateway.v1.RecordEventsRequest.EventsPayload
-	17, // 4: telemetrygateway.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
+	14, // 3: telemetrygateway.v1.RecordEventsRequest.events:type_name -> telemetrygateway.v1.RecordEventsRequest.EventsPayload
+	19, // 4: telemetrygateway.v1.Event.timestamp:type_name -> google.protobuf.Timestamp
 	5,  // 5: telemetrygateway.v1.Event.source:type_name -> telemetrygateway.v1.EventSource
 	6,  // 6: telemetrygateway.v1.Event.parameters:type_name -> telemetrygateway.v1.EventParameters
 	8,  // 7: telemetrygateway.v1.Event.user:type_name -> telemetrygateway.v1.EventUser
 	9,  // 8: telemetrygateway.v1.Event.feature_flags:type_name -> telemetrygateway.v1.EventFeatureFlags
 	10, // 9: telemetrygateway.v1.Event.marketing_tracking:type_name -> telemetrygateway.v1.EventMarketingTracking
-	13, // 10: telemetrygateway.v1.EventSource.server:type_name -> telemetrygateway.v1.EventSource.Server
-	14, // 11: telemetrygateway.v1.EventSource.client:type_name -> telemetrygateway.v1.EventSource.Client
-	15, // 12: telemetrygateway.v1.EventParameters.metadata:type_name -> telemetrygateway.v1.EventParameters.MetadataEntry
-	18, // 13: telemetrygateway.v1.EventParameters.private_metadata:type_name -> google.protobuf.Struct
+	15, // 10: telemetrygateway.v1.EventSource.server:type_name -> telemetrygateway.v1.EventSource.Server
+	16, // 11: telemetrygateway.v1.EventSource.client:type_name -> telemetrygateway.v1.EventSource.Client
+	17, // 12: telemetrygateway.v1.EventParameters.metadata:type_name -> telemetrygateway.v1.EventParameters.MetadataEntry
+	20, // 13: telemetrygateway.v1.EventParameters.private_metadata:type_name -> google.protobuf.Struct
 	7,  // 14: telemetrygateway.v1.EventParameters.billing_metadata:type_name -> telemetrygateway.v1.EventBillingMetadata
-	16, // 15: telemetrygateway.v1.EventFeatureFlags.flags:type_name -> telemetrygateway.v1.EventFeatureFlags.FlagsEntry
-	4,  // 16: telemetrygateway.v1.RecordEventsRequest.EventsPayload.events:type_name -> telemetrygateway.v1.Event
-	2,  // 17: telemetrygateway.v1.TelemeteryGatewayService.RecordEvents:input_type -> telemetrygateway.v1.RecordEventsRequest
-	3,  // 18: telemetrygateway.v1.TelemeteryGatewayService.RecordEvents:output_type -> telemetrygateway.v1.RecordEventsResponse
-	18, // [18:19] is the sub-list for method output_type
-	17, // [17:18] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	18, // 15: telemetrygateway.v1.EventFeatureFlags.flags:type_name -> telemetrygateway.v1.EventFeatureFlags.FlagsEntry
+	4,  // 16: telemetrygateway.v1.InternalEvent.event:type_name -> telemetrygateway.v1.Event
+	12, // 17: telemetrygateway.v1.InternalEvent.identifiers:type_name -> telemetrygateway.v1.InternalActorIdentifiers
+	4,  // 18: telemetrygateway.v1.RecordEventsRequest.EventsPayload.events:type_name -> telemetrygateway.v1.Event
+	2,  // 19: telemetrygateway.v1.TelemeteryGatewayService.RecordEvents:input_type -> telemetrygateway.v1.RecordEventsRequest
+	3,  // 20: telemetrygateway.v1.TelemeteryGatewayService.RecordEvents:output_type -> telemetrygateway.v1.RecordEventsResponse
+	20, // [20:21] is the sub-list for method output_type
+	19, // [19:20] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_telemetrygateway_proto_init() }
@@ -1422,7 +1551,7 @@ func file_telemetrygateway_proto_init() {
 			}
 		}
 		file_telemetrygateway_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Identifier_LicensedInstanceIdentifier); i {
+			switch v := v.(*InternalEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1434,7 +1563,7 @@ func file_telemetrygateway_proto_init() {
 			}
 		}
 		file_telemetrygateway_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RecordEventsRequest_EventsPayload); i {
+			switch v := v.(*InternalActorIdentifiers); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1446,7 +1575,7 @@ func file_telemetrygateway_proto_init() {
 			}
 		}
 		file_telemetrygateway_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventSource_Server); i {
+			switch v := v.(*Identifier_LicensedInstanceIdentifier); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1458,6 +1587,30 @@ func file_telemetrygateway_proto_init() {
 			}
 		}
 		file_telemetrygateway_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RecordEventsRequest_EventsPayload); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_telemetrygateway_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventSource_Server); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_telemetrygateway_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventSource_Client); i {
 			case 0:
 				return &v.state
@@ -1482,14 +1635,14 @@ func file_telemetrygateway_proto_init() {
 	file_telemetrygateway_proto_msgTypes[6].OneofWrappers = []interface{}{}
 	file_telemetrygateway_proto_msgTypes[8].OneofWrappers = []interface{}{}
 	file_telemetrygateway_proto_msgTypes[10].OneofWrappers = []interface{}{}
-	file_telemetrygateway_proto_msgTypes[14].OneofWrappers = []interface{}{}
+	file_telemetrygateway_proto_msgTypes[16].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_telemetrygateway_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
