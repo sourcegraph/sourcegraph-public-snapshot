@@ -491,7 +491,7 @@ export class Driver {
             visible: true,
             timeout: 300000,
         })
-        await this.page.click(`[data-testid="license-dismiss-button"]`)
+        await this.page.click('[data-testid="license-dismiss-button"]')
 
         await this.page.waitForSelector('.test-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
