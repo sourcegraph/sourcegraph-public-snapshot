@@ -8,7 +8,7 @@ import (
 	"context"
 	"sync"
 
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
@@ -55,7 +55,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
-			grpc_prometheus.StreamClientInterceptor(metrics),
+			metrics.StreamClientInterceptor(),
 			messagesize.StreamClientInterceptor,
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
@@ -66,7 +66,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
-			grpc_prometheus.UnaryClientInterceptor(metrics),
+			metrics.UnaryClientInterceptor(),
 			messagesize.UnaryClientInterceptor,
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
@@ -114,7 +114,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			internalerrs.LoggingStreamServerInterceptor(logger),
-			grpc_prometheus.StreamServerInterceptor(metrics),
+			metrics.StreamServerInterceptor(),
 			messagesize.StreamServerInterceptor,
 			propagator.StreamServerPropagator(requestclient.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
@@ -125,7 +125,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 		grpc.ChainUnaryInterceptor(
 			internalgrpc.NewUnaryPanicCatcher(logger),
 			internalerrs.LoggingUnaryServerInterceptor(logger),
-			grpc_prometheus.UnaryServerInterceptor(metrics),
+			metrics.UnaryServerInterceptor(),
 			messagesize.UnaryServerInterceptor,
 			propagator.UnaryServerPropagator(requestclient.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
@@ -150,10 +150,10 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 
 var (
 	clientMetricsOnce sync.Once
-	clientMetrics     *grpc_prometheus.ClientMetrics
+	clientMetrics     *grpcprom.ClientMetrics
 
 	serverMetricsOnce sync.Once
-	serverMetrics     *grpc_prometheus.ServerMetrics
+	serverMetrics     *grpcprom.ServerMetrics
 )
 
 // mustGetClientMetrics returns a singleton instance of the client metrics
@@ -161,14 +161,15 @@ var (
 //
 // This function panics if the metrics cannot be registered with the default
 // Prometheus registry.
-func mustGetClientMetrics() *grpc_prometheus.ClientMetrics {
+func mustGetClientMetrics() *grpcprom.ClientMetrics {
 	clientMetricsOnce.Do(func() {
-		clientMetrics = grpc_prometheus.NewRegisteredClientMetrics(prometheus.DefaultRegisterer,
-			grpc_prometheus.WithClientCounterOptions(),
-			grpc_prometheus.WithClientHandlingTimeHistogram(), // record the overall request latency for a gRPC request
-			grpc_prometheus.WithClientStreamRecvHistogram(),   // record how long it takes for a client to receive a message during a streaming RPC
-			grpc_prometheus.WithClientStreamSendHistogram(),   // record how long it takes for a client to send a message during a streaming RPC
+		clientMetrics = grpcprom.NewClientMetrics(
+			grpcprom.WithClientCounterOptions(),
+			grpcprom.WithClientHandlingTimeHistogram(), // record the overall request latency for a gRPC request
+			grpcprom.WithClientStreamRecvHistogram(),   // record how long it takes for a client to receive a message during a streaming RPC
+			grpcprom.WithClientStreamSendHistogram(),   // record how long it takes for a client to send a message during a streaming RPC
 		)
+		prometheus.MustRegister(clientMetrics)
 	})
 
 	return clientMetrics
@@ -179,12 +180,13 @@ func mustGetClientMetrics() *grpc_prometheus.ClientMetrics {
 //
 // This function panics if the metrics cannot be registered with the default
 // Prometheus registry.
-func mustGetServerMetrics() *grpc_prometheus.ServerMetrics {
+func mustGetServerMetrics() *grpcprom.ServerMetrics {
 	serverMetricsOnce.Do(func() {
-		serverMetrics = grpc_prometheus.NewRegisteredServerMetrics(prometheus.DefaultRegisterer,
-			grpc_prometheus.WithServerCounterOptions(),
-			grpc_prometheus.WithServerHandlingTimeHistogram(), // record the overall response latency for a gRPC request)
+		serverMetrics = grpcprom.NewServerMetrics(
+			grpcprom.WithServerCounterOptions(),
+			grpcprom.WithServerHandlingTimeHistogram(), // record the overall response latency for a gRPC request)
 		)
+		prometheus.MustRegister(serverMetrics)
 	})
 
 	return serverMetrics
