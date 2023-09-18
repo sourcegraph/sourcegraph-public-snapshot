@@ -480,11 +480,13 @@ export class Driver {
             newText: displayName,
         })
 
-        const modalElement = document.querySelector<HTMLElement>('data-testid="license-dismiss-button"')
-        if (!modalElement) {
-            throw new Error(`Could not find modalElement to click on for modalElement ${modalElement}`)
-        }
-        modalElement.click()
+        await this.page.evaluate((selector: string) => {
+            const modalElement = document.querySelector<HTMLElement>(selector)
+            if (!modalElement) {
+                throw new Error(`Could not find modalElement to click on for modalElement ${modalElement}`)
+            }
+            modalElement.click()
+        }, 'data-testid="license-dismiss-button"')
 
         await this.page.waitForSelector('.test-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
