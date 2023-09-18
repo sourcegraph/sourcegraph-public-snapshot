@@ -178,14 +178,14 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope types.Complet
 	}
 
 	// Otherwise, fall back to the global limit.
-	cfg := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
-	autoCompleteCfg := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 	switch scope {
 	case types.CompletionsFeatureChat:
+		cfg := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 		if cfg != nil && cfg.PerUserDailyLimit > 0 {
 			return cfg.PerUserDailyLimit, nil
 		}
 	case types.CompletionsFeatureCode:
+		autoCompleteCfg := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 		if autoCompleteCfg != nil && autoCompleteCfg.PerUserDailyLimit > 0 {
 			return autoCompleteCfg.PerUserDailyLimit, nil
 		}

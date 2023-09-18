@@ -27,7 +27,7 @@ func newCompletionsHandler(
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
-	getConfig func() conftypes.ProviderConfig,
+	config conftypes.ProviderConfig,
 	getModel func(types.CodyCompletionRequestParameters) (string, error),
 ) http.Handler {
 	responseHandler := newSwitchingResponseHandler(logger, feature)
@@ -45,9 +45,8 @@ func newCompletionsHandler(
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
-		completionsConfig := getConfig()
 
-		if completionsConfig == nil {
+		if config == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		}
 
@@ -72,9 +71,9 @@ func newCompletionsHandler(
 		defer done()
 
 		completionClient, err := client.Get(
-			completionsConfig.ProviderEndpoint(),
-			completionsConfig.ProviderName(),
-			completionsConfig.ProviderAccessToken(),
+			config.ProviderEndpoint(),
+			config.ProviderName(),
+			config.ProviderAccessToken(),
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

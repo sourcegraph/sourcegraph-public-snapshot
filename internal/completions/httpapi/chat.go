@@ -13,30 +13,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var chatConfig *conftypes.CompletionsConfig
+
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.
 func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
 	logger = logger.Scoped("chat", "chat completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
-	getConfig := func() conftypes.ProviderConfig {
-		return conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
-	}
+	chatConfig = conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
+	go conf.Watch(func() {
+		oldProvider := chatConfig.ProviderName()
+		chatConfig = conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
+		logger.Info("Updating chat config", log.String("Old Provider", string(oldProvider)), log.String("New Provider", string(chatConfig.ProviderName())))
+	})
 
 	return newCompletionsHandler(
 		logger,
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
-		getConfig,
+		chatConfig,
 		func(requestParams types.CodyCompletionRequestParameters) (string, error) {
-			config := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
-			if config == nil {
+			if chatConfig == nil {
 				return "", errors.New("completions are not configured or disabled")
 			}
 			// No user defined models for now.
 			if requestParams.Fast {
-				return config.FastChatModel, nil
+				return chatConfig.FastChatModel, nil
 			}
-			return config.ChatModel, nil
+			return chatConfig.ChatModel, nil
 		},
 	)
 }

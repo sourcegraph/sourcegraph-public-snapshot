@@ -14,24 +14,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var autocompleteConfig *conftypes.AutocompleteConfig
+
 // NewCodeCompletionsHandler is an http handler which sends back code completion results.
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	logger = logger.Scoped("code", "code completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
-	getConfig := func() conftypes.ProviderConfig {
-		return conf.GetAutocompleteConfig(conf.Get().SiteConfig())
-	}
+	autocompleteConfig = conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+	go conf.Watch(func() {
+		oldProvider := autocompleteConfig.ProviderName()
+		autocompleteConfig = conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+		logger.Info("Updating autocomplete config", log.String("Old Provider", string(oldProvider)), log.String("New Provider", string(autocompleteConfig.ProviderName())))
+	})
 
 	return newCompletionsHandler(
 		logger,
 		types.CompletionsFeatureCode,
 		rl,
 		"code",
-		getConfig,
+		autocompleteConfig,
 		func(requestParams types.CodyCompletionRequestParameters) (string, error) {
-			config := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
-			if config == nil {
-				return "", errors.New("completions are not configured or disabled")
+			if autocompleteConfig == nil {
+				return "", errors.New("autocomplete not configured or disabled")
 			}
 			if isAllowedCustomModel(requestParams.Model) {
 				return requestParams.Model, nil
@@ -39,7 +43,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 			if requestParams.Model != "" {
 				return "", errors.New("Unsupported custom model")
 			}
-			return config.Model, nil
+			return autocompleteConfig.Model, nil
 		},
 	)
 }

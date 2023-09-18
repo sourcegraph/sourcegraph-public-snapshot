@@ -201,15 +201,15 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Otherwise, fall back to the global limit.
-		cfg := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
-		autoCompleteCfg := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
 		switch scope {
 		case types.CompletionsFeatureChat:
+			cfg := conf.GetChatCompletionsConfig(conf.Get().SiteConfig())
 			if cfg != nil && cfg.PerUserDailyLimit > 0 {
 				limit = pointers.Ptr(cfg.PerUserDailyLimit)
 			}
 		case types.CompletionsFeatureCode:
-			if cfg != nil && autoCompleteCfg.PerUserDailyLimit > 0 {
+			autoCompleteCfg := conf.GetAutocompleteConfig(conf.Get().SiteConfig())
+			if autoCompleteCfg != nil && autoCompleteCfg.PerUserDailyLimit > 0 {
 				limit = pointers.Ptr(autoCompleteCfg.PerUserDailyLimit)
 			}
 		default:
