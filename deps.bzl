@@ -3445,6 +3445,14 @@ def go_dependencies():
         version = "v2.0.0-rc.3",
     )
     go_repository(
+        name = "com_github_grpc_ecosystem_go_grpc_middleware_providers_prometheus",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus",
+        sum = "h1:mdLirNAJBxnGgyB6pjZLcs6ue/6eZGBui6gXspfq4ks=",
+        version = "v1.0.0-rc.0",
+    )
+
+    go_repository(
         name = "com_github_grpc_ecosystem_go_grpc_middleware_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/go-grpc-middleware/v2",
@@ -6380,8 +6388,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:3kfH34XVB2XOwTzngxNTxmIFAzSZ1BHlcg1quePg3TU=",
-        version = "v0.0.0-20230915165638-19f03eed7c10",
+        sum = "h1:Waj9loU8En+l6WYdGglt3hkStMWiZz9Lzirx+MyHk4I=",
+        version = "v0.0.0-20230914181446-ef83eef560f6",
     )
 
     go_repository(
