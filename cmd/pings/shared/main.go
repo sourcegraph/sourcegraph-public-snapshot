@@ -34,7 +34,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		addr,
 		&http.Server{
 			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 10 * time.Minute,
+			WriteTimeout: 2 * time.Minute,
 			Handler:      serverHandler,
 		},
 	)
