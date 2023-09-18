@@ -151,6 +151,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             return
         }
 
+        // SECURITY: If the request is coming from JetBrains, verify if the port is valid
         if (requestFrom === 'JETBRAINS' && (!port || !Number.isInteger(Number(port)))) {
             navigate('../..', { relative: 'path' })
             return
