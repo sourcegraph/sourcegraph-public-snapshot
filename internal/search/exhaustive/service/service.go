@@ -50,6 +50,7 @@ type operations struct {
 	listSearchJobs    *observation.Operation
 	cancelSearchJob   *observation.Operation
 	writeSearchJobCSV *observation.Operation
+	deleteSearchJob   *observation.Operation
 }
 
 var (
@@ -84,6 +85,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			listSearchJobs:    op("ListSearchJobs"),
 			cancelSearchJob:   op("CancelSearchJob"),
 			writeSearchJobCSV: op("WriteSearchJobCSV"),
+			deleteSearchJob:   op("DeleteSearchJob"),
 		}
 	})
 	return singletonOperations
@@ -158,6 +160,40 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 
 func getPrefix(id int64) string {
 	return fmt.Sprintf("%d-", id)
+}
+
+func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.deleteSearchJob.With(ctx, &err, opAttrs(
+		attribute.Int64("id", id)))
+	defer func() {
+		endObservation(1, observation.Args{})
+	}()
+
+	// 🚨 SECURITY: only someone with access to the job may delete data and the db entries
+	_, err = s.GetSearchJob(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	iter, err := s.uploadStore.List(ctx, getPrefix(id))
+	if err != nil {
+		return err
+	}
+	for iter.Next() {
+		key := iter.Current()
+		err := s.uploadStore.Delete(ctx, key)
+		// If we continued, we might end up with data in the upload store without
+		// entries in the db to reference it.
+		if err != nil {
+			return errors.Wrapf(err, "deleting key %q", key)
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		return err
+	}
+
+	return s.store.DeleteExhaustiveSearchJob(ctx, id)
 }
 
 // WriteSearchJobCSV copies all CSVs associated with a search job to the given

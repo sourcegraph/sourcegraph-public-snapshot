@@ -283,6 +283,26 @@ SELECT %s FROM exhaustive_search_jobs
 %s -- whereClause
 `
 
+const deleteExhaustiveSearchJobQueryFmtStr = `
+DELETE FROM exhaustive_search_jobs
+WHERE id = %d
+`
+
+func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.deleteExhaustiveSearchJob.With(ctx, &err, opAttrs(
+		attribute.Int64("ID", id),
+	))
+	defer endObservation(1, observation.Args{})
+
+	// 🚨 SECURITY: only someone with access to the job may delete the job
+	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
+}
+
 func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
 	var job types.ExhaustiveSearchJob
 	// required field for the sync worker, but

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 func TestExhaustiveSearch(t *testing.T) {
@@ -29,9 +30,11 @@ func TestExhaustiveSearch(t *testing.T) {
 	require := require.New(t)
 	observationCtx := observation.TestContextTB(t)
 	logger := observationCtx.Logger
+
+	mockUploadStore, bucket := newMockUploadStore(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	s := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, s, mocks.NewMockStore())
+	svc := service.New(observationCtx, s, mockUploadStore)
 
 	userID := insertRow(t, s.Store, "users", "username", "alice")
 	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
@@ -77,25 +80,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	// Each entry in bucket corresponds to one 1 uploaded csv file.
-	mu := sync.Mutex{}
-	var bucket []string
-
-	mockStore := mocks.NewMockStore()
-	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			return 0, err
-		}
-
-		mu.Lock()
-		bucket = append(bucket, string(b))
-		mu.Unlock()
-
-		return int64(len(b)), nil
-	})
-
-	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockStore)
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -109,12 +94,16 @@ func TestExhaustiveSearch(t *testing.T) {
 	// that somehow the work happened (but doesn't dive into the guts of how
 	// we co-ordinate our workers)
 	{
-		sort.Strings(bucket)
+		var vals []string
+		for _, v := range bucket {
+			vals = append(vals, v)
+		}
+		sort.Strings(vals)
 		require.Equal([]string{
 			"repo,revspec,revision\n1,spec,rev1\n",
 			"repo,revspec,revision\n1,spec,rev2\n",
 			"repo,revspec,revision\n2,spec,rev3\n",
-		}, bucket)
+		}, vals)
 	}
 
 	// Minor assertion that the job is regarded as finished.
@@ -136,6 +125,16 @@ func TestExhaustiveSearch(t *testing.T) {
 		gotCount, err := s.CancelSearchJob(userCtx, job.ID)
 		require.NoError(err)
 		require.Equal(wantCount, gotCount)
+	}
+
+	// Delete should remove the job from the database and the uploadstore.
+	{
+		require.Equal(3, len(bucket))
+		err = svc.DeleteSearchJob(userCtx, job.ID)
+		require.NoError(err)
+		require.Equal(0, len(bucket))
+		_, err = svc.GetSearchJob(userCtx, job.ID)
+		require.Error(err)
 	}
 }
 
@@ -171,4 +170,46 @@ func tTimeout(t *testing.T, max time.Duration) time.Duration {
 		return max
 	}
 	return timeout
+}
+
+func newMockUploadStore(t *testing.T) (*mocks.MockStore, map[string]string) {
+	t.Helper()
+
+	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	mu := sync.Mutex{}
+	bucket := make(map[string]string)
+
+	mockStore := mocks.NewMockStore()
+	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return 0, err
+		}
+
+		mu.Lock()
+		bucket[key] = string(b)
+		mu.Unlock()
+
+		return int64(len(b)), nil
+	})
+
+	mockStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, key string) error {
+		mu.Lock()
+		delete(bucket, key)
+		mu.Unlock()
+
+		return nil
+	})
+
+	mockStore.ListFunc.SetDefaultHook(func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+		var keys []string
+		mu.Lock()
+		for k := range bucket {
+			keys = append(keys, k)
+		}
+		mu.Unlock()
+		return iterator.From(keys), nil
+	})
+
+	return mockStore, bucket
 }
