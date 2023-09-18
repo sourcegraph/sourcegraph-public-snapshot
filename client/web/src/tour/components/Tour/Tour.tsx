@@ -59,7 +59,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             [onLogEvent, restart]
         )
 
-        let extendedTasks: TourTaskType[] = useMemo(
+        const extendedTasks: TourTaskType[] = useMemo(
             () =>
                 tasks.map(task => {
                     const extendedSteps = task.steps.map(step => ({
@@ -81,8 +81,9 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         useEffect(() => {
             if (
-                !['completed', 'closed'].includes(status as string) &&
-                extendedTasks.filter(step => step.completed === 100).length === extendedTasks.length
+                status !== 'closed' &&
+                status !== 'completed' &&
+                extendedTasks.filter(task => task.completed === 100).length === extendedTasks.length
             ) {
                 onLogEvent('Completed')
                 setStatus('completed')
@@ -93,14 +94,15 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             return null
         }
 
+        const finalTasks = [...extendedTasks]
         if (status === 'completed' && extraTask) {
-            extendedTasks = [extraTask, ...extendedTasks]
+            finalTasks.unshift(extraTask)
         }
 
         return (
             <TourContext.Provider value={{ onStepClick, onRestart }}>
                 <TourContent {...props} onClose={onClose} tasks={extendedTasks} />
-                <TourAgent tasks={extendedTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
+                <TourAgent tasks={finalTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
             </TourContext.Provider>
         )
     }

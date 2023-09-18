@@ -2,18 +2,18 @@ import { type FC, useState, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { noop, memoize } from 'lodash'
-import { Subscriber, Subscription, fromEvent, of } from 'rxjs'
+import { type Subscriber, type Subscription, fromEvent, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import {
     LATEST_VERSION,
-    MessageHandlers,
-    SearchMatch,
+    type MessageHandlers,
+    type SearchMatch,
     messageHandlers,
     search,
     switchAggregateSearchResults,
     observeMessages,
-    SearchEvent,
+    type SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Link } from '@sourcegraph/wildcard'
@@ -31,6 +31,7 @@ interface SearchTaskProps {
 export const SearchTask: FC<SearchTaskProps> = ({ template, snippets, label, handleLinkClick }) => {
     const [selectedQuery, setSelectedQuery] = useState<string>('')
 
+    // TODO: Read these values from user config
     const [org] = useState<string>('sourcegraph')
     const [repo] = useState<string>('sourcegraph')
     const [lang] = useState<string>('go')
@@ -40,30 +41,36 @@ export const SearchTask: FC<SearchTaskProps> = ({ template, snippets, label, han
         () =>
             org && repo && lang
                 ? buildQuery(template, {
-                      [QueryPlacholder.Org]: org,
-                      [QueryPlacholder.Repo]: repo,
-                      [QueryPlacholder.Lang]: lang,
+                      [QueryPlaceholder.Org]: org,
+                      [QueryPlaceholder.Repo]: repo,
+                      [QueryPlaceholder.Lang]: lang,
                   })
                 : null,
-        [org, repo, lang]
+        [org, repo, lang, template]
     )
 
     useEffect(() => {
         if (baseQuery && hasSnippet && lang) {
+            // We have multiple snippets available:
+            // - Specific snippets defined in the step (snippets prop)
+            // - Language specific default snippets
+            // - Generic default snippets
+            // We try each set (from specific to generic) and use the first one that is successful.
+
             const snippetsQueue = [
-                // Configures snippets (if any)
+                // Configured snippets (if any)
                 snippets ? (Array.isArray(snippets) ? snippets : getLanguageSnippets(snippets, lang)) : null,
-                // Hardcoded default language snippets
+                // Default language snippets
                 getLanguageSnippets(defaultSnippets, lang),
-                // Hardcoded default snippets for all languages
+                // Default generic snippets
                 defaultSnippets['*'],
             ].filter((snippets): snippets is string[] => snippets !== null)
 
             findQueryFromQueue(baseQuery, snippetsQueue).then(setSelectedQuery, () =>
-                setSelectedQuery(buildQuery(baseQuery, { [QueryPlacholder.Snippet]: '' }))
+                setSelectedQuery(buildQuery(baseQuery, { [QueryPlaceholder.Snippet]: '' }))
             )
         } else if (baseQuery) {
-            setSelectedQuery(buildQuery(baseQuery, { [QueryPlacholder.Snippet]: '' }))
+            setSelectedQuery(buildQuery(baseQuery, { [QueryPlaceholder.Snippet]: '' }))
         }
     }, [baseQuery, hasSnippet, snippets, lang])
 
@@ -89,10 +96,16 @@ function getLanguageSnippets(snippets: Record<string, string[]>, language: strin
 }
 
 function findQuery(baseQuery: string, snippets: string[]): Promise<string> {
-    let promises = []
+    const promises = []
     for (const snippet of snippets) {
-        const query = buildQuery(baseQuery, { [QueryPlacholder.Snippet]: snippet })
-        promises.push(isQuerySuccessful(query).then(isSuccessful => (isSuccessful ? query : Promise.reject())))
+        const query = buildQuery(baseQuery, { [QueryPlaceholder.Snippet]: snippet })
+        promises.push(
+            isQuerySuccessful(query).then(
+                // The rejection reason isn not relevant because we use Promise.any below to get the first
+                // resolved promise.
+                isSuccessful => (isSuccessful ? query : Promise.reject(new Error('not successful')))
+            )
+        )
     }
 
     return Promise.any(promises)
@@ -102,12 +115,14 @@ async function findQueryFromQueue(query: string, queue: string[][]): Promise<str
     for (const next of queue) {
         try {
             return await findQuery(query, next)
-        } catch {}
+        } catch {
+            // try next in queue
+        }
     }
     throw new Error('Unable to determine query that produces results')
 }
 
-enum QueryPlacholder {
+enum QueryPlaceholder {
     Snippet = '$$snippet',
     Org = '$$userorg',
     Repo = '$$userrepo',
@@ -115,7 +130,7 @@ enum QueryPlacholder {
 }
 
 function hasSnippetPlaceholder(queryTemplate: string): boolean {
-    return queryTemplate.includes(QueryPlacholder.Snippet)
+    return queryTemplate.includes(QueryPlaceholder.Snippet)
 }
 
 /**
@@ -123,9 +138,7 @@ function hasSnippetPlaceholder(queryTemplate: string): boolean {
  * `variables` map.
  */
 function buildQuery(template: string, variables: Record<string, string>): string {
-    return template.replaceAll(/\$\$\w+/g, match => {
-        return variables[match] ?? match
-    })
+    return template.replaceAll(/\$\$\w+/g, match => variables[match] ?? match)
 }
 
 /**
@@ -168,8 +181,8 @@ const firstMatchMessageHandlers: MessageHandlers = {
  * Initiates a streaming search, stop at the first `matches` event, and aggregate the results.
  */
 const fetchStreamSuggestions = memoize(
-    (query: string, sourcegraphURL?: string): Promise<SearchMatch[]> => {
-        return search(
+    (query: string, sourcegraphURL?: string): Promise<SearchMatch[]> =>
+        search(
             of(query),
             {
                 version: LATEST_VERSION,
@@ -184,7 +197,6 @@ const fetchStreamSuggestions = memoize(
                 switchAggregateSearchResults,
                 map(suggestions => suggestions.results)
             )
-            .toPromise()
-    },
+            .toPromise(),
     (query, sourcegraphURL) => `${query} + ${sourcegraphURL}`
 )
