@@ -29,11 +29,24 @@ type GRPCServerMetricsOptions struct {
 	//
 	// Example: (gitserver-0 | gitserver-1)
 	InstanceFilterRegex string
+
+	// MessageSizeNamespace is the Prometheus namespace that total message size metrics will be placed under.
+	//
+	// Example: "src"
+	MessageSizeNamespace string
 }
 
 // NewGRPCServerMetricsGroup creates a group containing statistics (request rate, request duration, etc.) for the grpc service
 // specified in the given opts.
 func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.ObservableOwner) monitoring.Group {
+	namespaced := func(base, namespace string) string {
+		if namespace != "" {
+			return namespace + "_" + base
+		}
+
+		return base
+	}
+
 	metric := func(base string, labelFilters ...string) string {
 		metric := base
 
@@ -167,7 +180,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_9_response_size_per_method", opts.HumanServiceName),
 					Description: "99.9th percentile total response size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -178,7 +191,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p90_response_size_per_method", opts.HumanServiceName),
 					Description: "90th percentile total response size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -189,7 +202,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p75_response_size_per_method", opts.HumanServiceName),
 					Description: "75th percentile total response size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -205,7 +218,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_9_invididual_sent_message_size_per_method", opts.HumanServiceName),
 					Description: "99.9th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -216,7 +229,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p90_invididual_sent_message_size_per_method", opts.HumanServiceName),
 					Description: "90th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -227,7 +240,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p75_invididual_sent_message_size_per_method", opts.HumanServiceName),
 					Description: "75th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
