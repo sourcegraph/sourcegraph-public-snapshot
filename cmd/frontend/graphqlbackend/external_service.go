@@ -140,14 +140,10 @@ func (r *externalServiceResolver) RateLimiterState(ctx context.Context) (JSONVal
 		return JSONValue{}, errors.Errorf("no rate limiter state for %s", r.externalService.URN())
 	}
 
-	return JSONValue{Value: &types.ExternalServiceRateLimiterState{
-		CurrentCapacity:   state.CurrentCapacity,
-		Burst:             state.Burst,
-		Limit:             state.Limit,
-		Interval:          state.Interval/time.Second,
-		LastReplenishment: state.LastReplenishment,
-		Infinite:          state.Infinite,
-	}}, nil
+	// Convert to per hour
+	state.Interval = state.Interval / time.Hour
+
+	return JSONValue{Value: state}, nil
 }
 
 func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, error) {
