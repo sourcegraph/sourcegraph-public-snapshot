@@ -487,7 +487,7 @@ export class Driver {
         //     }
         //     modalElement.click()
         // }, '[data-testid="license-dismiss-button"]')
-        await this.page.waitForSelector(`[data-testid="license-dismiss-button"]`, {
+        await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
             visible: true,
             timeout: 300000,
         })
