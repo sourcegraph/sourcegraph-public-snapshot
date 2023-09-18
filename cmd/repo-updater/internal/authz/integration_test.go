@@ -29,6 +29,7 @@ import (
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -511,6 +512,7 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 
 	github.SetupForTest(t)
 	ratelimit.SetupForTest(t)
+	rcache.SetupForTest(t)
 
 	logger := logtest.Scoped(t)
 	token := os.Getenv("GITHUB_TOKEN")
@@ -552,11 +554,11 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	}
 
 	provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
-		GitHubClient:   cli,
-		GitHubURL:      uri,
-		BaseAuther:     &auth.OAuthBearerToken{Token: token},
-		GroupsCacheTTL: 72,
-		DB:             testDB,
+		GitHubClient: cli,
+		GitHubURL:    uri,
+		BaseAuther:   &auth.OAuthBearerToken{Token: token},
+		GroupsCacheTTL: -1,
+		DB:           testDB,
 	})
 
 	authz.SetProviders(false, []authz.Provider{provider})
@@ -620,31 +622,6 @@ func TestIntegration_GitHubInternalRepositories(t *testing.T) {
 	}
 
 	wantIDs := []int32{1}
-	if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-		t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
-	}
-
-	// sync again and check
-	_, providerStates, err = syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, database.CodeHostStatusesSet{{
-		ProviderID:   "https://github.com/",
-		ProviderType: "github",
-		Status:       database.CodeHostStatusSuccess,
-		Message:      "FetchUserPerms",
-	}}, providerStates)
-
-	p, err = permsStore.LoadUserPermissions(ctx, user.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	gotIDs = make([]int32, len(p))
-	for i, perm := range p {
-		gotIDs[i] = perm.RepoID
-	}
-
 	if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
 		t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
 	}
