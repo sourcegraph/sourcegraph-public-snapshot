@@ -133,7 +133,7 @@ var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineTreeSitter,
 	Overrides: map[string]EngineType{
 		// Languages enabled for advanced syntax features
-		"perl": EngineScipSyntax,
+		"perl":   EngineScipSyntax,
 		"matlab": EngineTreeSitter,
 	},
 }
