@@ -112,7 +112,14 @@ export const LicenseKeyModal: FC<LicenseKeyModalProps> = ({
                 />
                 <LicenseKey isValid={isValid} licenseInfo={licenseKey} />
                 <div className="d-flex justify-content-end">
-                    <Button className="mr-2" onClick={onDismiss} outline={true} variant="secondary" disabled={isValid}>
+                    <Button
+                        data-testid="license-dismiss-button"
+                        className="mr-2"
+                        onClick={onDismiss}
+                        outline={true}
+                        variant="secondary"
+                        disabled={isValid}
+                    >
                         Skip for now
                     </Button>
                     <Button className={styles.submit} type="submit" disabled={!isValid} variant="primary">
