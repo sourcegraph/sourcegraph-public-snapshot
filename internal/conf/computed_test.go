@@ -522,15 +522,13 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "anthropic.claude-v2",
-				ChatModelMaxTokens:       12000,
-				FastChatModel:            "anthropic.claude-instant-v1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic.claude-instant-v1",
-				CompletionModelMaxTokens: 9000,
-				AccessToken:              "",
-				Provider:                 "aws-bedrock",
-				Endpoint:                 "us-west-2",
+				ChatModel:              "anthropic.claude-v2",
+				ChatModelMaxTokens:     12000,
+				FastChatModel:          "anthropic.claude-instant-v1",
+				FastChatModelMaxTokens: 9000,
+				AccessToken:            "",
+				Provider:               "aws-bedrock",
+				Endpoint:               "us-west-2",
 			},
 		},
 		{
@@ -1457,6 +1455,23 @@ func TestGetAutocompleteConfig(t *testing.T) {
 				Autocomplete: nil,
 			},
 			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "AWS Bedrock completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Autocomplete: &schema.Autocomplete{
+					Provider: "aws-bedrock",
+					Endpoint: "us-west-2",
+				},
+			},
+			wantConfig: &conftypes.AutocompleteConfig{
+				Model:          "anthropic.claude-instant-v1",
+				ModelMaxTokens: 9000,
+				Provider:       "aws-bedrock",
+				Endpoint:       "us-west-2",
+			},
 		},
 	}
 

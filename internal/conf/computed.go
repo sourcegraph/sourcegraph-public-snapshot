@@ -721,10 +721,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 			completionsConfig.FastChatModel = "accounts/fireworks/models/llama-v2-7b"
 		}
 
-		// Set a default completions model.
-		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
-		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
 		// If no endpoint is configured, no default available.
 		if completionsConfig.Endpoint == "" {
@@ -739,11 +735,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
 			completionsConfig.FastChatModel = "anthropic.claude-instant-v1"
-		}
-
-		// Set a default completions model.
-		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
 		}
 	}
 
@@ -908,6 +899,15 @@ func GetAutocompleteConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Au
 		// Set a default completions model.
 		if autocompleteConfig.Model == "" {
 			autocompleteConfig.Model = "accounts/fireworks/models/starcoder-7b-w8a16"
+		}
+	} else if autocompleteConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
+		// If no endpoint is configured, no default available.
+		if autocompleteConfig.Endpoint == "" {
+			return nil
+		}
+		// Set a default completions model.
+		if autocompleteConfig.Model == "" {
+			autocompleteConfig.Model = "anthropic.claude-instant-v1"
 		}
 	}
 
