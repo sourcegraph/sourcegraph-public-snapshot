@@ -48,6 +48,7 @@ func main() {
 }
 
 var (
+	// BuildCommit always has "dev" as a placeholder.
 	BuildCommit = "dev"
 
 	NoDevPrivateCheck = false
