@@ -83,10 +83,11 @@ export const SEARCH_JOBS_QUERY = gql`
         $first: Int!
         $after: String
         $query: String!
+        $userIDs: [ID!]
         $states: [SearchJobState!]
         $orderBy: SearchJobsOrderBy
     ) {
-        searchJobs(first: $first, after: $after, query: $query, states: $states, orderBy: $orderBy) {
+        searchJobs(first: $first, after: $after, query: $query, userIDs: $userIDs, states: $states, orderBy: $orderBy) {
             nodes {
                 ...SearchJobNode
             }
@@ -128,6 +129,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
             first: 20,
             after: null,
             query: debouncedSearchTerm,
+            userIDs: selectedUsers.map(user => user.id),
             states: selectedStates,
             orderBy: sortBy,
         },
