@@ -3,6 +3,8 @@ package types
 import (
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // ExhaustiveSearchRepoRevisionJob is a job that runs the exhaustive search on a revision of a repository.
@@ -28,6 +30,8 @@ func (j *ExhaustiveSearchRepoRevisionJob) RecordUID() string {
 }
 
 type SearchJobLog struct {
+	ID       int64
+	RepoID   api.RepoID
 	Revision string
 
 	State          JobState

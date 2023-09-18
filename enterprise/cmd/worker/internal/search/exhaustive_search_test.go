@@ -131,7 +131,10 @@ func TestExhaustiveSearch(t *testing.T) {
 		}, stats)
 	}
 
+	// Assert that we can write the job logs to a writer and that the number of
+	// lines and columns matches our expectation.
 	{
+		service.JobLogsIterLimit = 2
 		buf := bytes.Buffer{}
 		err = svc.WriteSearchJobLogs(userCtx, &buf, job.ID)
 		require.NoError(err)
@@ -139,6 +142,9 @@ func TestExhaustiveSearch(t *testing.T) {
 		// 1 header + 3 rows + 1 newline
 		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
 		require.Equal("repo,rev,start,end,status,failure_message", lines[0])
+		// We should use the CSV reader to parse this but since we know none of the
+		// columns have a "," in the context of this test, this is fine.
+		require.Equal(6, len(strings.Split(lines[1], ",")))
 	}
 
 	// Assert that cancellation affects the number of rows we expect. This is a bit

@@ -163,10 +163,7 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 }
 
 func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
-	jobs, err := s.store.GetRepoRevJobs(ctx, id)
-	if err != nil {
-		return err
-	}
+	iter := s.getJobLogsIter(ctx, id)
 
 	cw := csv.NewWriter(w)
 	defer cw.Flush()
@@ -184,9 +181,10 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 		return err
 	}
 
-	for _, job := range jobs {
+	for iter.Next() {
+		job := iter.Current()
 		err = cw.Write([]string{
-			fmt.Sprintf("%d", id),
+			fmt.Sprintf("%d", job.RepoID),
 			job.Revision,
 			formatOrNULL(job.StartedAt),
 			formatOrNULL(job.FinishedAt),
@@ -198,7 +196,39 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 		}
 	}
 
-	return nil
+	return iter.Err()
+}
+
+var JobLogsIterLimit = 1000
+
+func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterator.Iterator[types.SearchJobLog] {
+	var cursor int64
+	limit := JobLogsIterLimit
+
+	return iterator.New(func() ([]types.SearchJobLog, error) {
+		if cursor == -1 {
+			return nil, nil
+		}
+
+		opts := &store.GetJobLogsOpts{
+			From:  cursor,
+			Limit: limit + 1,
+		}
+
+		logs, err := s.store.GetJobLogs(ctx, id, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(logs) > limit {
+			cursor = logs[len(logs)-1].ID
+			logs = logs[:len(logs)-1]
+		} else {
+			cursor = -1
+		}
+
+		return logs, nil
+	})
 }
 
 func formatOrNULL(t time.Time) string {

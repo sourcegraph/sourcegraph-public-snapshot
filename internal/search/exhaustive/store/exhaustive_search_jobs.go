@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -346,6 +347,8 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 
 const getRepoRevJobsSpecFmtStr = `
 SELECT
+rjj.id,
+rj.repo_id,
 rjj.revision,
 rjj.state,
 rjj.failure_message,
@@ -353,26 +356,55 @@ rjj.started_at,
 rjj.finished_at
 FROM exhaustive_search_repo_revision_jobs rjj
 JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
-WHERE rj.search_repo_job_id = %s
+%s
 `
 
-func (s *Store) GetRepoRevJobs(ctx context.Context, id int64) ([]*types.SearchJobLog, error) {
+type GetJobLogsOpts struct {
+	From  int64
+	Limit int
+}
+
+func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) ([]types.SearchJobLog, error) {
 	// 🚨 SECURITY: only someone with access to the job may cancel the job
 	_, err := s.GetExhaustiveSearchJob(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := s.Store.Query(ctx, sqlf.Sprintf(getRepoRevJobsSpecFmtStr, id))
+	conds := []*sqlf.Query{sqlf.Sprintf("rj.search_job_id = %s", id)}
+	var limit *sqlf.Query
+	if opts != nil {
+		if opts.From != 0 {
+			conds = append(conds, sqlf.Sprintf("rjj.id >= %s", opts.From))
+		}
+
+		if opts.Limit != 0 {
+			limit = sqlf.Sprintf("LIMIT %s", opts.Limit)
+		}
+	}
+
+	q := sqlf.Sprintf(
+		getRepoRevJobsSpecFmtStr,
+		sqlf.Sprintf("WHERE %s ORDER BY id ASC", sqlf.Join(conds, "AND")),
+	)
+	if limit != nil {
+		q = sqlf.Sprintf("%v %v", q, limit)
+	}
+
+	fmt.Printf("q=%v args=%v\n", q.Query(sqlf.PostgresBindVar), q.Args())
+
+	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var jobs []*types.SearchJobLog
+	var jobs []types.SearchJobLog
 	for rows.Next() {
 		job := types.SearchJobLog{}
 		if err := rows.Scan(
+			&job.ID,
+			&job.RepoID,
 			&job.Revision,
 			&job.State,
 			&dbutil.NullString{S: &job.FailureMessage},
@@ -381,7 +413,7 @@ func (s *Store) GetRepoRevJobs(ctx context.Context, id int64) ([]*types.SearchJo
 		); err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, &job)
+		jobs = append(jobs, job)
 	}
 
 	return jobs, nil
