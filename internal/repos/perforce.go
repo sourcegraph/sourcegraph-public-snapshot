@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -52,7 +53,10 @@ func (s PerforceSource) CheckConnection(ctx context.Context) error {
 	// currently the only tool to use for connecting to the Perforce server
 	// is the syncer because connecting requires the `p4` CLI binary, which is on `gitserver`
 	syncer := server.PerforceDepotSyncer{}
-	if err := syncer.CanConnect(ctx, s.config.P4Port, s.config.P4User, s.config.P4Passwd); err != nil {
+	// ensure that the connection check won't go longer than 10 seconds, which should be plenty of time
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := syncer.CanConnect(timeoutCtx, s.config.P4Port, s.config.P4User, s.config.P4Passwd); err != nil {
 		return errors.Wrap(err, "Unable to connect to the Perforce server")
 	}
 	return nil
