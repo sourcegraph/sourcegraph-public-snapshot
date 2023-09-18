@@ -497,6 +497,159 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 	})
 }
 
+// TestIntegration_GitHubInternalRepositories asserts that internal repositories of
+// organizations that a user belongs to are fetched alongside user permission
+// syncs.
+//
+// The test setup requires a user that belongs to an organization with internal repos.
+// It is kept separate from the other integration test since it connects to
+// ghe.sgdev.org instead of github.com
+func TestIntegration_GitHubInternalRepositories(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	github.SetupForTest(t)
+	ratelimit.SetupForTest(t)
+
+	logger := logtest.Scoped(t)
+	token := os.Getenv("GITHUB_TOKEN")
+
+	spec := extsvc.AccountSpec{
+		ServiceType: extsvc.TypeGitHub,
+		ServiceID:   "https://ghe.sgdev.org/",
+		AccountID:   "3",
+	}
+	svc := types.ExternalService{
+		Kind:      extsvc.KindGitHub,
+		CreatedAt: timeutil.Now(),
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://ghe.sgdev.org/", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
+	}
+	uri, err := url.Parse("https://ghe.sgdev.org")
+	if err != nil {
+		t.Fatal(err)
+	}
+	apiURI, _ := github.APIRoot(uri)
+
+	name := t.Name()
+
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+	defer save()
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), apiURI, &auth.OAuthBearerToken{Token: token}, doer)
+
+	testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	reposStore := repos.NewStore(logtest.Scoped(t), testDB)
+
+	err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+		GitHubClient:   cli,
+		GitHubURL:      uri,
+		BaseAuther:     &auth.OAuthBearerToken{Token: token},
+		GroupsCacheTTL: 72,
+		DB:             testDB,
+	})
+
+	authz.SetProviders(false, []authz.Provider{provider})
+	defer authz.SetProviders(true, nil)
+
+	repo := types.Repo{
+		Name:    "ghe.sgdev.org/sourcegraph/sourcegraph_internal_repo",
+		Private: true,
+		URI:     "ghe.sgdev.org/sourcegraph/sourcegraph_internal_repo",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "MDEwOlJlcG9zaXRvcnkxMDU3MDMy",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://ghe.sgdev.org/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			svc.URN(): {
+				ID: svc.URN(),
+			},
+		},
+	}
+	err = reposStore.RepoStore().Create(ctx, &repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newUser := database.NewUser{
+		Email:           "sourcegraph-vcr@sourcegraph.com",
+		Username:        "sourcegraph-vcr",
+		EmailIsVerified: true,
+	}
+
+	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
+	user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+		AuthData: extsvc.NewUnencryptedData(authData),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	permsStore := database.Perms(logger, testDB, timeutil.Now)
+	syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
+
+	_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, database.CodeHostStatusesSet{{
+		ProviderID:   "https://ghe.sgdev.org/",
+		ProviderType: "github",
+		Status:       database.CodeHostStatusSuccess,
+		Message:      "FetchUserPerms",
+	}}, providerStates)
+
+	p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotIDs := make([]int32, len(p))
+	for i, perm := range p {
+		gotIDs[i] = perm.RepoID
+	}
+
+	wantIDs := []int32{1}
+	if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
+		t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+	}
+
+	// sync again and check
+	_, providerStates, err = syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, database.CodeHostStatusesSet{{
+		ProviderID:   "https://github.com/",
+		ProviderType: "github",
+		Status:       database.CodeHostStatusSuccess,
+		Message:      "FetchUserPerms",
+	}}, providerStates)
+
+	p, err = permsStore.LoadUserPermissions(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotIDs = make([]int32, len(p))
+	for i, perm := range p {
+		gotIDs[i] = perm.RepoID
+	}
+
+	if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
+		t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestIntegration_GitLabPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
