@@ -121,6 +121,23 @@ def back_compat_defs():
     )
 
     go_repository(
+        name = "com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2",
+        sum = "h1:kKuOg7gEBO7otn5QpZ4FnlbZBz1p5EZ7sX6RDbE36Bc=",
+        version = "v2.0.0-rc.3",
+    )
+
+    go_repository(
+        name = "com_github_grpc_ecosystem_go_grpc_middleware_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/grpc-ecosystem/go-grpc-middleware/v2",
+        replace = "github.com/grpc-ecosystem/go-grpc-middleware/v2",
+        sum = "h1:o95KDiV/b1xdkumY5YbLR0/n2+wBxUpgf3HgfKgTyLI=",
+        version = "v2.0.0-rc.3",
+    )
+
+    go_repository(
         name = "back_compat_com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
