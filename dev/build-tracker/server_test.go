@@ -276,7 +276,7 @@ func TestProcessEvent(t *testing.T) {
 		require.Equal(t, "passed", *builds[0].State)
 	})
 
-	t.Run("passed build sends notification", func(t *testing.T) {
+	t.Run("failed build, then passed build sends fixed notification", func(t *testing.T) {
 		server := NewServer(logger, config.Config{})
 		mockNotifyClient := &MockNotificationClient{}
 		server.notifyClient = mockNotifyClient
