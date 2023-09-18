@@ -132,28 +132,10 @@ func (r *Resolver) resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		return Resolved{}, nil, err
 	}
 
-	// At each step we will discover RepoRevSpecs that do not actually exist.
-	// We keep appending to this.
-	missing := result.Missing
-
-	filteredRepoRevs, filteredMissing, err := r.filterGitserver(ctx, tr, op, result.Associated)
-	if err != nil {
-		return Resolved{}, nil, err
-	}
-	missing = append(missing, filteredMissing...)
-
-	tr.AddEvent("starting contains filtering")
-	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
-	missing = append(missing, missingHasFileContentRevs...)
-	if err != nil {
-		return Resolved{}, nil, errors.Wrap(err, "filter has file content")
-	}
-	tr.AddEvent("finished contains filtering")
-
-	return Resolved{
-		RepoRevs:        filteredRepoRevs,
-		BackendsMissing: backendsMissing,
-	}, next, maybeMissingRepoRevsError(missing)
+	// We then speak to gitserver (and others) to convert revspecs into
+	// revisions to search.
+	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
+	return resolved, next, err
 }
 
 // dbResolved represents the results we can find by speaking to the DB but not
@@ -299,6 +281,38 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 		Associated: associatedRepoRevs,
 		Missing:    missingRepoRevs,
 	}, next, nil
+}
+
+// doFilterDBResolved is what we do after obtaining the list of repos to
+// search from the DB. It will potentially reach out to gitserver to convert
+// those lists of refs into actual revisions to search (and return
+// MissingRepoRevsError for those refs which do not exist).
+//
+// NOTE: This API is not idiomatic and can return non-nil error with a useful
+// Resolved.
+func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trace.Trace, op search.RepoOptions, result dbResolved) (Resolved, error) {
+	// At each step we will discover RepoRevSpecs that do not actually exist.
+	// We keep appending to this.
+	missing := result.Missing
+
+	filteredRepoRevs, filteredMissing, err := r.filterGitserver(ctx, tr, op, result.Associated)
+	if err != nil {
+		return Resolved{}, err
+	}
+	missing = append(missing, filteredMissing...)
+
+	tr.AddEvent("starting contains filtering")
+	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
+	missing = append(missing, missingHasFileContentRevs...)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "filter has file content")
+	}
+	tr.AddEvent("finished contains filtering")
+
+	return Resolved{
+		RepoRevs:        filteredRepoRevs,
+		BackendsMissing: backendsMissing,
+	}, maybeMissingRepoRevsError(missing)
 }
 
 // filterGitserver will take the found associatedRepoRevs and transform them
