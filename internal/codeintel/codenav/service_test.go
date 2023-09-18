@@ -22,6 +22,12 @@ func defaultMockRepoStore() *dbmocks.MockRepoStore {
 
 		return m, nil
 	})
+	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
+		return &internaltypes.Repo{
+			ID:   id,
+			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+		}, nil
+	})
 
 	return repoStore
 }

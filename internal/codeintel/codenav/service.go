@@ -3,11 +3,11 @@ package codenav
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"code.gitea.io/gitea/modules/json"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -1395,7 +1395,7 @@ func (s *Service) logClosestUploadDistanceEvent(ctx context.Context, visibleUplo
 		"opName":   operationName,
 	})
 	distanceEvent.Argument = jsond
-	fmt.Println(s.eventlogStore.Insert(ctx, distanceEvent))
+	_ = s.eventlogStore.Insert(ctx, distanceEvent)
 }
 
 // getVisibleUpload returns the current target path and the given position for the given upload. If
