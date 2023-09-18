@@ -36,12 +36,21 @@ func GetLanguage(path, contents string) (lang string, found bool) {
 		c = c[:2048]
 	}
 
-	lang = enry.GetLanguage(path, []byte(c))
+	lang = firstLanguage(enry.GetLanguages(path, []byte(c)))
 	if lang != "" {
 		return NormalizeLanguage(lang), true
 	}
 
 	return NormalizeLanguage(lang), false
+}
+
+func firstLanguage(languages []string) string {
+	for _, l := range languages {
+		if l != "" {
+			return l
+		}
+	}
+	return ""
 }
 
 // overrideViaShebang handles explicitly using the shebang whenever possible.
