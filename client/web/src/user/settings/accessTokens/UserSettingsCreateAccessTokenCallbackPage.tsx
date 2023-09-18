@@ -84,7 +84,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
     },
     JETBRAINS: {
         name: 'JetBrains IDE',
-        redirectURL: 'http://localhost:11111/api/sourcegraph/token?token=$TOKEN',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
         successMessage: 'Now opening your IDE...',
         infoMessage:
             'Please make sure you still have your IDE (IntelliJ, GoLand, PyCharm, etc.) running on your machine when clicking this link.',
@@ -204,9 +204,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                 if (requester) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
-                                    let uri = replaceToken(requester?.redirectURL, result.token)
-                                    if (requestFrom === 'JETBRAINS') {
-                                        uri = uri.replace('11111', port ?? '11111')
+                                    let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
+                                    if (requestFrom === 'JETBRAINS' && port) {
+                                        uri = replacePlaceholder(uri, 'PORT', port)
                                     }
 
                                     // If we're in App, override the callbackType
@@ -305,7 +305,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     )
 }
 
-function replaceToken(url: string, token: string): string {
+function replacePlaceholder(subject: string, search: string, replace: string): string {
     // %24 is the URL encoded version of $
-    return url.replace('$TOKEN', token).replace('%24TOKEN', token)
+    return subject.replace('$' + search, replace).replace('%24' + search, replace)
 }
