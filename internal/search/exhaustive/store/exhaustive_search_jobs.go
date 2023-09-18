@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -345,7 +344,7 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 	return m, nil
 }
 
-const getRepoRevJobsSpecFmtStr = `
+const getJobLogsFmtStr = `
 SELECT
 rjj.id,
 rj.repo_id,
@@ -365,7 +364,7 @@ type GetJobLogsOpts struct {
 }
 
 func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) ([]types.SearchJobLog, error) {
-	// 🚨 SECURITY: only someone with access to the job may cancel the job
+	// 🚨 SECURITY: only someone with access to the job may access the logs
 	_, err := s.GetExhaustiveSearchJob(ctx, id)
 	if err != nil {
 		return nil, err
@@ -384,14 +383,12 @@ func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) 
 	}
 
 	q := sqlf.Sprintf(
-		getRepoRevJobsSpecFmtStr,
+		getJobLogsFmtStr,
 		sqlf.Sprintf("WHERE %s ORDER BY id ASC", sqlf.Join(conds, "AND")),
 	)
 	if limit != nil {
 		q = sqlf.Sprintf("%v %v", q, limit)
 	}
-
-	fmt.Printf("q=%v args=%v\n", q.Query(sqlf.PostgresBindVar), q.Args())
 
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {

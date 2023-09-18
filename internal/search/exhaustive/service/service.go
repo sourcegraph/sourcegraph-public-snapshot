@@ -199,7 +199,10 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	return iter.Err()
 }
 
-var JobLogsIterLimit = 1000
+// JobLogsIterLimit is the number of lines the iterator will read from the
+// database per page. Assuming 100 bytes per line, this will be ~1MB of memory
+// per 10k repo-rev jobs.
+var JobLogsIterLimit = 10_000
 
 func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterator.Iterator[types.SearchJobLog] {
 	var cursor int64

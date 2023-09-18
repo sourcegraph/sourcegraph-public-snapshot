@@ -42,7 +42,6 @@ func ServeSearchJobLogs(svc *service.Service) http.HandlerFunc {
 		jobIDStr := mux.Vars(r)["id"]
 		jobID, err := strconv.Atoi(jobIDStr)
 		if err != nil {
-			fmt.Sprintf("error parsing job id: %s", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -50,7 +49,6 @@ func ServeSearchJobLogs(svc *service.Service) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/csv")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.log\"", jobID))
 
-		fmt.Println("writing search job logs")
 		err = svc.WriteSearchJobLogs(r.Context(), w, int64(jobID))
 		if err != nil {
 			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
