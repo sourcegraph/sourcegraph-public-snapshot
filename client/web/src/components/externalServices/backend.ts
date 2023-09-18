@@ -352,7 +352,7 @@ export interface GitHubAppDetails {
     installationID: number
 }
 
-export type RateLimiterState = {
+export interface RateLimiterState {
     currentCapacity: number
     burst: number
     limit: number
