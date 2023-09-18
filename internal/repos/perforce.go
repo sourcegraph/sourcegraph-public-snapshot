@@ -45,9 +45,9 @@ func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection)
 	}, nil
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
+// CheckConnection tests the code host connection to make sure it works.
+// For Perforce, it uses the host (p4.port), username (p4.user) and password (p4.passwd)
+// from the code host configuration.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
 	// currently the only tool to use for connecting to the Perforce server
 	// is the syncer because connecting requires the `p4` CLI binary, which is on `gitserver`
