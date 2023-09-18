@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER, type Observable } from 'rxjs'
@@ -82,6 +82,14 @@ const REQUESTERS: Record<string, TokenRequester> = {
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
     },
+    JETBRAINS: {
+        name: 'JetBrains IDE',
+        redirectURL: 'http://localhost:$PORT/api/sourcegraph/token?token=$TOKEN',
+        successMessage: 'Now opening your IDE...',
+        infoMessage:
+            'Please make sure you still have your IDE (IntelliJ, GoLand, PyCharm, etc.) running on your machine when clicking this link.',
+        callbackType: 'open',
+    },
 }
 
 export function isAccessTokenCallbackPage(): boolean {
@@ -110,8 +118,13 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
-    /** Get the requester from the url parameters if any */
-    const requestFrom = new URLSearchParams(location.search).get('requestFrom')
+
+    /** Get the requester, port, and destination from the url parameters */
+    const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+    const requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
+    const port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
+    const destination = useMemo(() => urlSearchParams.get('destination'), [urlSearchParams])
+
     /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
     /** The contents of the note input field. */
@@ -138,10 +151,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             return
         }
 
+        // SECURITY: If the request is coming from JetBrains, verify if the port is valid
+        if (requestFrom === 'JETBRAINS' && (!port || !Number.isInteger(Number(port)))) {
+            navigate('../..', { relative: 'path' })
+            return
+        }
+
         const nextRequester = { ...REQUESTERS[requestFrom] }
 
         if (nextRequester.forwardDestination) {
-            const destination = new URLSearchParams(location.search).get('destination')
             // SECURITY: only destinations starting with a "/" are allowed to prevent an open redirect vulnerability.
             if (destination?.startsWith('/')) {
                 const redirectURL = new URL(nextRequester.redirectURL)
@@ -159,7 +177,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester])
+    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, port, destination])
+
+    // Add referrer policy to the page to prevent passing it on after the redirect.
+    // JetBrains needs this.
+    useEffect(() => {
+        document
+            .querySelector('head')
+            ?.insertAdjacentHTML('beforeend', '<meta name="referrer" content="strict-origin-when-cross-origin">')
+    }, [])
 
     /**
      * We use this to handle token creation request from redirections.
@@ -173,12 +199,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                     switchMap(() =>
                         (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
                             tap(result => {
-                                // SECURITY: If the request was from a valid requestor, redirect to the allowlisted redirect URL.
+                                // SECURITY: If the request was from a valid requester, redirect to the allowlisted redirect URL.
                                 // SECURITY: Local context ONLY
                                 if (requester) {
                                     onDidCreateAccessToken(result)
                                     setNewToken(result.token)
-                                    const uri = replaceToken(requester?.redirectURL, result.token)
+                                    let uri = replacePlaceholder(requester?.redirectURL, 'TOKEN', result.token)
+                                    if (requestFrom === 'JETBRAINS' && port) {
+                                        uri = replacePlaceholder(uri, 'PORT', port)
+                                    }
 
                                     // If we're in App, override the callbackType
                                     // because we need to use tauriShellOpen to open the
@@ -194,6 +223,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     switch (requester.callbackType) {
                                         case 'new-tab':
                                             window.open(uri, '_blank')
+
+                                        // falls through
                                         default:
                                             // open the redirect link in the same tab
                                             window.location.replace(uri)
@@ -205,7 +236,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp, navigate]
+            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isSourcegraphApp, navigate]
         )
     )
 
@@ -274,7 +305,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     )
 }
 
-function replaceToken(url: string, token: string): string {
+function replacePlaceholder(subject: string, search: string, replace: string): string {
     // %24 is the URL encoded version of $
-    return url.replace('$TOKEN', token).replace('%24TOKEN', token)
+    return subject.replace('$' + search, replace).replace('%24' + search, replace)
 }

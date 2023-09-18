@@ -27,6 +27,7 @@
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
+        <httpRequestHandler implementation="com.sourcegraph.cody.SaveAccessTokenHttpService"/>
 
         <projectConfigurable
             parentId="tools"
