@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/distribution/distribution/v3/reference"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -1387,13 +1388,23 @@ func (s *Service) logClosestUploadDistanceEvent(ctx context.Context, visibleUplo
 			continue
 		}
 		if distance < closestDistance {
+			closestUpload = upload
 			closestDistance = distance
 		}
 	}
 
+	ref, _ := reference.ParseDockerRef(closestUpload.Upload.Indexer)
 	jsond, _ := json.Marshal(map[string]any{
 		"distance": closestDistance,
 		"opName":   operationName,
+		"indexer": func() string {
+			if ref != nil {
+				// if the customer is using a mirror, this correctly strips any internal domain stuff
+				// and just returns the image name.
+				return reference.Path(ref)
+			}
+			return ""
+		},
 		"algorithm": map[bool]string{
 			true:  "fifo",
 			false: "window",

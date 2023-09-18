@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
@@ -21,12 +22,16 @@ func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.Ne
 	if err != nil {
 		return nil, err
 	}
+	codeIntelCommitDistanceEvents, err := eventLogs.AggregateCodeIntelCommitDistanceEvents(ctx)
+	if err != nil {
+		return nil, err
+	}
 	if len(codeIntelEvents) == 0 && len(codeIntelInvestigationEvents) == 0 {
 		return nil, nil
 	}
 
 	// NOTE: this requires at least one of these to be non-empty (to get an initial date)
-	stats := groupAggregatedCodeIntelStats(codeIntelEvents, codeIntelInvestigationEvents)
+	stats := groupAggregatedCodeIntelStats(codeIntelEvents, codeIntelInvestigationEvents, codeIntelCommitDistanceEvents)
 
 	pairs := []struct {
 		fetch  func(ctx context.Context) (int, error)
@@ -135,6 +140,7 @@ var investigationTypeMap = map[string]types.CodeIntelInvestigationType{
 func groupAggregatedCodeIntelStats(
 	rawEvents []types.CodeIntelAggregatedEvent,
 	rawInvestigationEvents []types.CodeIntelAggregatedInvestigationEvent,
+	rawDistanceEvents []types.CodeIntelAggregatedCommitDistance,
 ) *types.NewCodeIntelUsageStatistics {
 	var eventSummaries []types.CodeIntelEventSummary
 	for _, event := range rawEvents {
@@ -162,16 +168,34 @@ func groupAggregatedCodeIntelStats(
 		})
 	}
 
+	var commitDistanceSummary []types.CodeIntelCommitDistanceSummary
+	for _, event := range rawDistanceEvents {
+		commitDistanceSummary = append(commitDistanceSummary, types.CodeIntelCommitDistanceSummary{
+			Indexer:              event.Indexer,
+			CommitDistanceMean:   pointers.Ptr(event.Mean),
+			CommitDistanceStddev: pointers.Ptr(event.StdDeviation),
+			CommitDistanceCount:  pointers.Int32(event.Count),
+			CommitDistanceMax:    pointers.Int32(event.Max),
+			CommitDistanceMin:    pointers.Int32(event.Min),
+			CommitDistanceP10:    pointers.Int32(event.P10),
+			CommitDistanceP75:    pointers.Int32(event.P75),
+			CommitDistanceP90:    pointers.Int32(event.P90),
+		})
+	}
+
 	var startOfWeek time.Time
 	if len(rawEvents) > 0 {
 		startOfWeek = rawEvents[0].Week
 	} else if len(rawInvestigationEvents) > 0 {
 		startOfWeek = rawInvestigationEvents[0].Week
+	} else if len(rawDistanceEvents) > 0 {
+		startOfWeek = rawDistanceEvents[0].Week
 	}
 
 	return &types.NewCodeIntelUsageStatistics{
-		StartOfWeek:         startOfWeek,
-		EventSummaries:      eventSummaries,
-		InvestigationEvents: investigationEvents,
+		StartOfWeek:          startOfWeek,
+		EventSummaries:       eventSummaries,
+		InvestigationEvents:  investigationEvents,
+		CommitDistanceEvents: commitDistanceSummary,
 	}
 }

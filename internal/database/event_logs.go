@@ -1252,18 +1252,13 @@ func (l *eventLogStore) AggregateCodeIntelCommitDistanceEvents(ctx context.Conte
 	return l.aggregateCodeIntelCommitDistanceEvents(ctx, time.Now().UTC())
 }
 
-func (l *eventLogStore) aggregateCodeIntelCommitDistanceEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedCommitDistance, err error) {
+func (l *eventLogStore) aggregateCodeIntelCommitDistanceEvents(ctx context.Context, now time.Time) ([]types.CodeIntelAggregatedCommitDistance, error) {
 	query := sqlf.Sprintf(aggregateCodeIntelCommitDistanceEventsQuery, now, now)
 
-	rows, err := l.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var event types.CodeIntelAggregatedCommitDistance
-		err := rows.Scan(
+	return basestore.NewSliceScanner[types.CodeIntelAggregatedCommitDistance](func(s dbutil.Scanner) (event types.CodeIntelAggregatedCommitDistance, _ error) {
+		return event, s.Scan(
+			&event.Week,
+			&event.Indexer,
 			&event.StdDeviation,
 			&event.Mean,
 			&event.Count,
@@ -1273,14 +1268,7 @@ func (l *eventLogStore) aggregateCodeIntelCommitDistanceEvents(ctx context.Conte
 			&event.P75,
 			&event.P90,
 		)
-		if err != nil {
-			return nil, err
-		}
-
-		events = append(events, event)
-	}
-
-	return events, nil
+	})(l.Query(ctx, query))
 }
 
 var aggregateCodeIntelCommitDistanceEventsQuery = `
@@ -1288,6 +1276,7 @@ WITH events AS (
 	SELECT
 		(argument->>'algorithm')::text AS algorithm,
 		(argument->>'distance')::integer AS distance,
+		(argument->>'indexer')::text AS indexer,
 		` + makeDateTruncExpression("week", "%s::timestamp") + ` AS current_week
   FROM event_logs
   WHERE
@@ -1295,6 +1284,8 @@ WITH events AS (
     AND name = 'codeintel.commitDistance'
 )
 SELECT
+	current_week,
+	indexer,
 	stddev_pop(distance) AS stddev,
 	avg(distance) AS mean,
 	count(*) AS count,
@@ -1304,7 +1295,7 @@ SELECT
 	percentile_disc(0.75) WITHIN GROUP (ORDER BY distance) AS p75,
 	percentile_disc(0.90) WITHIN GROUP (ORDER BY distance) AS p90
 FROM events
-GROUP BY current_week
+GROUP BY current_week, indexer
 `
 
 func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {

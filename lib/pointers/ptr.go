@@ -35,3 +35,7 @@ type numberType interface {
 func Float64[T numberType](v T) *float64 {
 	return Ptr(float64(v))
 }
+
+func Int32[T numberType](v T) *int32 {
+	return Ptr(int32(v))
+}
