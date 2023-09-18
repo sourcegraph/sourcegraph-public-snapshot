@@ -286,7 +286,6 @@ type BatchChangesResolver interface {
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
-	ExportChangesets(ctx context.Context, args *ExportChangesetsArgs) (BulkOperationResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 
@@ -309,6 +308,8 @@ type BatchChangesResolver interface {
 
 	MaxUnlicensedChangesets(ctx context.Context) int32
 
+	ExportChangesets(ctx context.Context, args *ExportChangesetsArgs) (ExportChangesetsResolver, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -328,6 +329,11 @@ type BulkOperationResolver interface {
 	ChangesetCount() int32
 	CreatedAt() gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime
+}
+
+type ExportChangesetsResolver interface {
+	BatchChange() string
+	Data() string
 }
 
 type ChangesetJobErrorResolver interface {

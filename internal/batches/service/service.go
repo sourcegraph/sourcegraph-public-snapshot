@@ -3,7 +3,6 @@ package service
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/csv"
 	"fmt"
 	"strings"
@@ -149,6 +148,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			applyBatchChange:                     op("ApplyBatchChange"),
 			reconcileBatchChange:                 op("ReconcileBatchChange"),
 			validateChangesetSpecs:               op("ValidateChangesetSpecs"),
+			exportChangesets:                     op("ExportChangesets"),
 		}
 	})
 
@@ -1385,20 +1385,20 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	return bulkGroupID, nil
 }
 
-func (s *Service) ExportChangesets(ctx context.Context, batchChangeID int64, ids []int64) (out string, err error) {
+func (s *Service) ExportChangesets(ctx context.Context, batchChangeID int64, ids []int64) (batchChange *btypes.BatchChange, csvData string, err error) {
 	ctx, _, endObservation := s.operations.exportChangesets.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	// Load the BatchChange to check for write permissions.
-	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
 	if err != nil {
-		return out, errors.Wrap(err, "loading batch change")
+		return batchChange, csvData, errors.Wrap(err, "loading batch change")
 	}
 
 	// If the batch change belongs to an org namespace, org members will be able to access it if
 	// the `orgs.allMembersBatchChangesAdmin` setting is true.
 	if err := s.checkViewerCanAdminister(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID, false); err != nil {
-		return out, err
+		return batchChange, csvData, err
 	}
 
 	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
@@ -1408,7 +1408,7 @@ func (s *Service) ExportChangesets(ctx context.Context, batchChangeID int64, ids
 		EnforceAuthz: true,
 	})
 	if err != nil {
-		return out, errors.Wrap(err, "listing changesets")
+		return batchChange, csvData, errors.Wrap(err, "listing changesets")
 	}
 
 	var b bytes.Buffer
@@ -1416,19 +1416,18 @@ func (s *Service) ExportChangesets(ctx context.Context, batchChangeID int64, ids
 
 	data, err := s.generateChangesetExportData(ctx, cs)
 	if err != nil {
-		return out, err
+		return batchChange, csvData, err
 	}
 
 	if err = writer.WriteAll(data); err != nil {
-		return out, nil
+		return batchChange, csvData, nil
 	}
 
-	out = base64.StdEncoding.EncodeToString(b.Bytes())
-	return out, nil
+	return batchChange, b.String(), nil
 }
 
 func (s *Service) generateChangesetExportData(ctx context.Context, changesets btypes.Changesets) ([][]string, error) {
-	var header = []string{"Title", "ReviewState", "State", "ExternalURL", "Verfied", "CheckState"}
+	var header = []string{"Title", "Review State", "State", "External URL", "Verfied", "Check State"}
 	var rows = make([][]string, 0, len(changesets)+1)
 
 	rows = append(rows, header)

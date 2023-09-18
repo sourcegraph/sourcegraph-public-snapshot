@@ -1478,7 +1478,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) ExportChangesets(ctx context.Context, args *graphqlbackend.ExportChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+func (r *Resolver) ExportChangesets(ctx context.Context, args *graphqlbackend.ExportChangesetsArgs) (_ graphqlbackend.ExportChangesetsResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.ExportChangesets",
 		attribute.String("batchChange", string(args.BatchChange)),
 		attribute.Int("changesets.len", len(args.Changesets)))
@@ -1498,14 +1498,15 @@ func (r *Resolver) ExportChangesets(ctx context.Context, args *graphqlbackend.Ex
 	}
 
 	svc := service.New(r.store)
-	out, err := svc.ExportChangesets(ctx, batchChangeID, changesetIDs)
+	batchChange, csvData, err := svc.ExportChangesets(ctx, batchChangeID, changesetIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	// encoded := base64.StdEncoding.EncodeToString(data)
-	// return &encoded, nil
-	return nil, nil
+	return &exportChangesetsResolver{
+		batchChange: batchChange,
+		csvData:     csvData,
+	}, nil
 }
 
 func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.CloseChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {

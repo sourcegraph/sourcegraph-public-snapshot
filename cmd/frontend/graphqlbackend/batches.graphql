@@ -1778,11 +1778,6 @@ extend type Mutation {
     mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
 
     """
-    Export multiple changesets from a batch change to a CSV file.
-    """
-    exportChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
-
-    """
     Close multiple changesets.
 
     Experimental: This API is likely to change in the future.
@@ -1959,6 +1954,27 @@ extend type Query {
     Returns the max number of changesets are allowed for License that does not have the batch change feature.
     """
     maxUnlicensedChangesets: Int!
+
+    """
+    Export multiple changesets from a batch change to a CSV file.
+    """
+    exportChangesets(batchChange: ID!, changesets: [ID!]!): ExportChangesetsResult!
+}
+
+"""
+ExportChangesetsResult contains:
+    data: The exported data for the selected changesets.
+    batchChange: The name of the batch change the changesets belong to.
+"""
+type ExportChangesetsResult {
+    """
+    Exported data for selected changesets
+    """
+    data: String!
+    """
+    The name of the batch change.
+    """
+    batchChange: String!
 }
 
 """

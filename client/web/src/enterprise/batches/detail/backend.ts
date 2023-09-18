@@ -1,8 +1,8 @@
-import type { QueryResult } from '@apollo/client'
+import type { QueryResult, QueryTuple } from '@apollo/client'
 import { EMPTY, type Observable } from 'rxjs'
 import { expand, map, reduce } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -44,10 +44,11 @@ import type {
     CloseChangesetsVariables,
     PublishChangesetsResult,
     PublishChangesetsVariables,
-    ExportChangesetsVariables,
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
     BulkOperationType,
+    ExportChangesetQueryResult,
+    ExportChangesetQueryVariables,
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
@@ -828,91 +829,22 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
-export async function exportChangesets(
+export const EXPORT_CHANGESETS_QUERY = gql`
+    query ExportChangesetQuery($batchChange: ID!, $changesets: [ID!]!) {
+        exportChangesets(batchChange: $batchChange, changesets: $changesets) {
+            data
+            batchChange
+        }
+    }
+`
+
+export const useExportChangesets = (
     batchChange: Scalars['ID'],
-    changesets: Scalars['ID'][],
-    draft: boolean
-): Promise<void> {
-    await requestGraphQL<BatchChangeChangesetsResult, ExportChangesetsVariables>(
-        gql`
-            query ExportChangesets($batchChange: ID!) {
-                node(id: $batchChange) {
-                    ... on BatchChange {
-                        name
-                        __typename
-                        changesets {
-                            nodes {
-                                ... on ExternalChangeset {
-                                    __typename
-                                    id
-                                    title
-                                    state
-                                    reviewState
-                                    externalURL {
-                                        url
-                                    }
-                                    repository {
-                                        name
-                                        url
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        `,
-        { batchChange }
-    )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ node }) => {
-                if (!node) {
-                    throw new Error(`Batch change with ID ${batchChange} does not exist`)
-                }
-                if (node.__typename !== 'BatchChange') {
-                    throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
-                }
-                let changesetNodes = node?.changesets.nodes
-
-                changesetNodes = changesetNodes.filter(c => {
-                    if (c.__typename === 'ExternalChangeset' && changesets.includes(c.id)) {
-                        return c
-                    } else {
-                        return null
-                    }
-                })
-
-                if (node && changesetNodes) {
-                    const csvData = [['Title', 'State', 'ReviewState', 'External URL', 'Repo Name']]
-                    changesetNodes.forEach(c => {
-                        if (c.__typename === 'ExternalChangeset' && c.title && c.reviewState) {
-                            csvData.push([
-                                c.title,
-                                c.state,
-                                c.reviewState,
-                                c.externalURL?.url || '',
-                                c.repository.name || '',
-                            ])
-                        }
-                    })
-
-                    const csvString = csvData.map(row => row.join(',')).join('\n')
-                    const blob = new Blob([csvString], { type: 'text/csv' })
-                    const url = URL.createObjectURL(blob)
-
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = `changesets.csv`
-                    a.click()
-
-                    URL.revokeObjectURL(url)
-                    a.remove()
-                }
-            })
-        )
-        .toPromise()
-}
+    changesets: Scalars['ID'][]
+): QueryTuple<ExportChangesetQueryResult, ExportChangesetQueryVariables> =>
+    useLazyQuery(EXPORT_CHANGESETS_QUERY, {
+        variables: { batchChange, changesets },
+    })
 
 export const BULK_OPERATIONS = gql`
     query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {

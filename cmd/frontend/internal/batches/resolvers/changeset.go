@@ -608,3 +608,18 @@ func (r *gitHubCommitVerificationResolver) Signature() string {
 func (r *gitHubCommitVerificationResolver) Payload() string {
 	return r.commitVerification.Payload
 }
+
+var _ graphqlbackend.ExportChangesetsResolver = &exportChangesetsResolver{}
+
+type exportChangesetsResolver struct {
+	batchChange *btypes.BatchChange
+	csvData     string
+}
+
+func (r *exportChangesetsResolver) BatchChange() string {
+	return r.batchChange.Name
+}
+
+func (r *exportChangesetsResolver) Data() string {
+	return r.csvData
+}

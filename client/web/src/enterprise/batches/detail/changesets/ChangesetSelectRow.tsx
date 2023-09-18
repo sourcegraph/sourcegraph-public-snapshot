@@ -97,6 +97,23 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
             />
         ),
     },
+    [BulkOperationType.EXPORT]: {
+        type: 'export',
+        buttonLabel: 'Export Changeset(s)',
+        dropdownTitle: 'Export Changeset(s)',
+        dropdownDescription: 'Export selected changesets',
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
+            eventLogger.log('batch_change_details:bulk_action_export:clicked')
+            return (
+                <ExportChangesetsModal
+                    batchChangeID={batchChangeID}
+                    changesetIDs={changesetIDs}
+                    afterCreate={onDone}
+                    onCancel={onCancel}
+                />
+            )
+        },
+    },
     [BulkOperationType.MERGE]: {
         type: 'merge',
         experimental: true,
@@ -142,23 +159,6 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
             eventLogger.log('batch_change_details:bulk_action_retry:clicked')
             return (
                 <ReenqueueChangesetsModal
-                    batchChangeID={batchChangeID}
-                    changesetIDs={changesetIDs}
-                    afterCreate={onDone}
-                    onCancel={onCancel}
-                />
-            )
-        },
-    },
-    [BulkOperationType.EXPORT]: {
-        type: 'export',
-        buttonLabel: 'Export Changeset(s)',
-        dropdownTitle: 'Export Changeset(s)',
-        dropdownDescription: 'Export all or selected changesets',
-        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => {
-            eventLogger.log('batch_change_details:bulk_action_retry:clicked')
-            return (
-                <ExportChangesetsModal
                     batchChangeID={batchChangeID}
                     changesetIDs={changesetIDs}
                     afterCreate={onDone}
