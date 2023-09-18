@@ -6,12 +6,15 @@ import (
 
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2serviceiammember"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflare"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflareorigincert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/managedcert"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
@@ -114,13 +117,15 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// Set up configuration for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
-		ServiceAccount: serviceaccount.New(stack, resourceid.New("cloudrun"), serviceaccount.Config{
-			ProjectID: vars.ProjectID,
-			AccountID: vars.Service.ID,
-			DisplayName: fmt.Sprintf("%s Service Account",
-				pointers.Deref(vars.Service.Name, vars.Service.ID)),
-			Roles: serviceAccountRoles,
-		}),
+		ServiceAccount: serviceaccount.New(stack,
+			resourceid.New("cloudrun"),
+			serviceaccount.Config{
+				ProjectID: vars.ProjectID,
+				AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
+				DisplayName: fmt.Sprintf("%s Service Account",
+					pointers.Deref(vars.Service.Name, vars.Service.ID)),
+				Roles: serviceAccountRoles,
+			}),
 
 		DiagnosticsSecret: diagnosticsSecret,
 		// Set up some base env vars
@@ -226,16 +231,64 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		return nil, err
 	}
 
-	// Now we add a load balancer
-	lb := loadbalancer.New(stack, resourceid.New("lb-backend"), loadbalancer.Config{
-		ProjectID:     vars.ProjectID,
-		Region:        gcpRegion,
-		TargetService: service,
+	// Allow IAM-free access to the service - auth should be handled generally
+	// by the service itself.
+	//
+	// TODO: Parameterize this so internal services can choose to auth only via
+	// GCP IAM?
+	_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-allusers-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
+		Name:     service.Name(),
+		Location: service.Location(),
+		Project:  &vars.ProjectID,
+		Member:   pointers.Ptr("allUsers"),
+		Role:     pointers.Ptr("roles/run.invoker"),
 	})
 
 	// Then whatever the user requested to expose the service publicly
-	switch vars.Environment.Domain.Type {
-	case "cloudflare":
+	switch domain := vars.Environment.Domain; domain.Type {
+	case "", spec.EnvironmentDomainTypeNone:
+		// do nothing
+
+	case spec.EnvironmentDomainTypeCloudflare:
+		// set zero value for convenience
+		if domain.Cloudflare == nil {
+			return nil, errors.Newf("domain type %q specified but Cloudflare configuration is nil",
+				domain.Type)
+		}
+		if domain.Cloudflare.Subdomain == "" || domain.Cloudflare.Zone == "" {
+			return nil, errors.Newf("domain type %q requires 'cloudflare.subdomain' and 'cloudflare.zone' to be set",
+				domain.Type)
+		}
+
+		// Provision SSL cert
+		var sslCertificate loadbalancer.SSLCertificate
+		if domain.Cloudflare.Proxied {
+			sslCertificate = cloudflareorigincert.New(stack,
+				resourceid.New("cf-origin-cert"),
+				cloudflareorigincert.Config{
+					ProjectID: vars.ProjectID,
+				}).Certificate
+		} else {
+			sslCertificate = managedcert.New(stack,
+				resourceid.New("managed-cert"),
+				managedcert.Config{
+					ProjectID: vars.ProjectID,
+					Domain:    fmt.Sprintf("%s.%s", domain.Cloudflare.Subdomain, domain.Cloudflare.Zone),
+				}).Certificate
+		}
+
+		// Create load-balancer pointing to Cloud Run service
+		lb, err := loadbalancer.New(stack, resourceid.New("loadbalancer"), loadbalancer.Config{
+			ProjectID:      vars.ProjectID,
+			Region:         gcpRegion,
+			TargetService:  service,
+			SSLCertificate: sslCertificate,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "loadbalancer.New")
+		}
+
+		// Now set up a DNS record in Cloudflare to route to the load balancer
 		if _, err := cloudflare.New(stack, resourceid.New("cf"), cloudflare.Config{
 			Spec:   *vars.Environment.Domain.Cloudflare,
 			Target: *lb,
@@ -359,8 +412,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
 							Path: pointers.Ptr(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Bearer"),
-								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+								Name:  pointers.Ptr("Authorization"),
+								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
 						InitialDelaySeconds: pointers.Float64(0),
@@ -378,8 +431,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGet{
 							Path: pointers.Ptr(healthCheckEndpoint),
 							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Bearer"),
-								Value: pointers.Ptr(fmt.Sprintf("Authorization %s", c.DiagnosticsSecret.HexValue)),
+								Name:  pointers.Ptr("Authorization"),
+								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
 							}},
 						},
 						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),

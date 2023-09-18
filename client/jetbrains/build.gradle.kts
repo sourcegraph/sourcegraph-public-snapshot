@@ -1,8 +1,10 @@
 import com.jetbrains.plugin.structure.base.utils.isDirectory
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.EnumSet
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun properties(key: String) = project.findProperty(key).toString()
@@ -69,7 +71,7 @@ java {
     // Always compile the codebase with Java 11 regardless of what Java
     // version is installed on the computer. Gradle will download Java 11
     // even if you already have it installed on your computer.
-    languageVersion.set(JavaLanguageVersion.of(11))
+    languageVersion.set(JavaLanguageVersion.of(properties("javaVersion").toInt()))
   }
 }
 
@@ -184,6 +186,18 @@ tasks {
     systemProperty("cody-agent.directory", agentTargetDirectory.parent.toString())
     systemProperty("cody-agent.enabled", isAgentEnabled.toString())
     systemProperty("sourcegraph.verbose-logging", "true")
+  }
+
+  runPluginVerifier {
+    ideVersions.set(listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2"))
+    val skippedFailureLevels =
+        EnumSet.of(
+            FailureLevel.DEPRECATED_API_USAGES, // TODO: remove deprecated API calls
+            FailureLevel.EXPERIMENTAL_API_USAGES,
+            FailureLevel.INTERNAL_API_USAGES, // TODO: remove internal API calls
+            FailureLevel.NOT_DYNAMIC,
+            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES) // TODO: remove to-be-removed API calls
+    failureLevel.set(EnumSet.complementOf(skippedFailureLevels))
   }
 
   // Configure UI tests plugin

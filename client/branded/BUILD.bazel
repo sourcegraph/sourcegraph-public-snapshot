@@ -173,6 +173,7 @@ ts_project(
         ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",
+        ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",

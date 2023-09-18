@@ -182,7 +182,7 @@ var bufGenerate = &linter{
 			return errors.Wrap(err, "installing buf dependencies")
 		}
 
-		report := proto.Generate(ctx, false)
+		report := proto.Generate(ctx, nil, false)
 		if report.Err != nil {
 			return report.Err
 		}
@@ -230,7 +230,7 @@ var bufGenerate = &linter{
 	},
 
 	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
-		report := proto.Generate(ctx, false)
+		report := proto.Generate(ctx, nil, false)
 		return report.Err
 	},
 }

@@ -22,14 +22,6 @@
             "pointer": true
           }
         },
-        "searchJobs": {
-          "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchContextsQuery": {
           "description": "DEPRECATED: This feature is now permanently enabled. Enables query based search contexts",
           "type": "boolean",

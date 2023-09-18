@@ -13,11 +13,12 @@ import styles from './StreamingProgressSkippedButton.module.scss'
 interface StreamingProgressSkippedButtonProps {
     query: string
     progress: Progress
+    isSearchJobsEnabled?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
 }
 
 export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonProps> = props => {
-    const { query, progress, onSearchAgain } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain } = props
     const [isOpen, setIsOpen] = useState(false)
 
     const skippedWithWarningOrError = useMemo(
@@ -63,6 +64,7 @@ export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonPr
                 <StreamingProgressSkippedPopover
                     query={query}
                     progress={progress}
+                    isSearchJobsEnabled={isSearchJobsEnabled}
                     onSearchAgain={onSearchAgainWithPopupClose}
                 />
             </PopoverContent>

@@ -4,7 +4,6 @@ import com.intellij.collaboration.util.ProgressIndicatorsProvider
 import com.intellij.ide.DataManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.BoundConfigurable
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.util.Disposer
@@ -58,17 +57,6 @@ class AccountConfigurable(val project: Project) :
                 }
               }
         }
-        row {
-          link("Open ${ConfigUtil.CODY_DISPLAY_NAME} settings...") {
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable::class.java)
-          }
-        }
-        row {
-          link("Open ${ConfigUtil.CODE_SEARCH_DISPLAY_NAME} settings...") {
-            ShowSettingsUtil.getInstance()
-                .showSettingsDialog(project, CodeSearchConfigurable::class.java)
-          }
-        }
       }
     }
     return dialogPanel
@@ -82,16 +70,17 @@ class AccountConfigurable(val project: Project) :
     val bus = project.messageBus
     val publisher = bus.syncPublisher(AccountSettingChangeActionNotifier.TOPIC)
 
-    val oldDefaultAccount = activeAccountHolder.account
-    val oldUrl = oldDefaultAccount?.server?.url ?: ""
+    val oldActiveAccount = activeAccountHolder.account
+    val oldUrl = oldActiveAccount?.server?.url ?: ""
 
     var activeAccount = accountsModel.activeAccount
-    val newAccessToken = activeAccount?.let { accountsModel.newCredentials[it] }
     val activeAccountRemoved = !accountsModel.accounts.contains(activeAccount)
-    if (activeAccountRemoved) {
+    if (activeAccountRemoved || activeAccount == null) {
       activeAccount = accountsModel.accounts.getFirstAccountOrNull()
     }
-    val activeAccountChanged = oldDefaultAccount != activeAccount
+    val newAccessToken = activeAccount?.let { accountsModel.newCredentials[it] }
+
+    val activeAccountChanged = oldActiveAccount != activeAccount
     val accessTokenChanged = newAccessToken != null || activeAccountRemoved || activeAccountChanged
 
     val newUrl = activeAccount?.server?.url ?: ""

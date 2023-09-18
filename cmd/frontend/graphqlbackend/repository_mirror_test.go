@@ -70,50 +70,6 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			t.Error("!calledIsRepoCloneable")
 		}
 	})
-
-	t.Run("name arg", func(t *testing.T) {
-		backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-			t.Fatal("want GetByName to not be called")
-			return nil, nil
-		}
-
-		calledIsRepoCloneable := false
-		gitserver.MockIsRepoCloneable = func(repo api.RepoName) error {
-			calledIsRepoCloneable = true
-			if want := repoName; !reflect.DeepEqual(repo, want) {
-				t.Errorf("got %+v, want %+v", repo, want)
-			}
-			return nil
-		}
-		t.Cleanup(func() {
-			backend.Mocks = backend.MockServices{}
-			gitserver.MockIsRepoCloneable = nil
-		})
-
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				mutation {
-					checkMirrorRepositoryConnection(name: "my/repo") {
-					    error
-					}
-				}
-			`,
-				ExpectedResult: `
-				{
-					"checkMirrorRepositoryConnection": {
-						"error": null
-					}
-				}
-			`,
-			},
-		})
-
-		if !calledIsRepoCloneable {
-			t.Error("!calledIsRepoCloneable")
-		}
-	})
 }
 
 func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {

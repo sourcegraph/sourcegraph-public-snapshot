@@ -25,18 +25,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type usageStats struct {
+	// characters is the number of characters in the input or response.
+	characters int
+	// tokens is the number of tokens consumed in the input or response.
+	tokens int
+}
+
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required, and called
 // in the order they are defined here.
+//
+// Methods do not need to be concurrency-safe, as they are only called sequentially.
 type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
 	// Returning a non-nil error will stop further processing and return the given error
 	// code, or a 400.
-	validateRequest func(codygateway.Feature, ReqT) (int, error)
+	//
+	// The provided logger already contains actor context.
+	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
 	transformBody func(*ReqT, *actor.Actor)
@@ -44,11 +56,17 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// upstream. To manipulate the body, use transformBody.
 	transformRequest func(*http.Request)
 	// getRequestMetadata should extract details about the request we are sending
-	// upstream for validation and tracking purposes.
-	getRequestMetadata func(ReqT) (promptCharacterCount int, model string, additionalMetadata map[string]any)
-	// parseResponse should extract details from the response we get back from
-	// upstream for tracking purposes.
-	parseResponse func(ReqT, io.Reader) (completionCharacterCount int)
+	// upstream for validation and tracking purposes. Usage data does not need
+	// to be reported here - instead, use parseResponseAndUsage to extract usage,
+	// which for some providers we can only know after the fact based on what
+	// upstream tells us.
+	getRequestMetadata func(ReqT) (model string, additionalMetadata map[string]any)
+	// parseResponseAndUsage should extract details from the response we get back from
+	// upstream as well as overall usage for tracking purposes.
+	//
+	// If data is unavailable, implementations should set relevant usage fields
+	// to -1 as a sentinel value.
+	parseResponseAndUsage func(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
 }
 
 type UpstreamRequest interface{}
@@ -91,7 +109,16 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		rateLimitNotifier,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
-			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+
+			// Build logger for lifecycle of this request with lots of details.
+			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger)).With(
+				append(
+					requestclient.FromContext(r.Context()).LogFields(),
+					// Sourcegraph actor details
+					log.String("sg.actorID", r.Header.Get("X-Sourcegraph-Actor-UID")),
+					log.String("sg.anonymousID", r.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")),
+				)...,
+			)
 
 			feature := featurelimiter.GetFeature(r.Context())
 			if feature == "" {
@@ -126,7 +153,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
-			if status, err := methods.validateRequest(feature, body); err != nil {
+			if status, err := methods.validateRequest(r.Context(), logger, feature, body); err != nil {
 				if status == 0 {
 					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
 				}
@@ -155,7 +182,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			promptCharacterCount, model, requestMetadata := methods.getRequestMetadata(body)
+			model, requestMetadata := methods.getRequestMetadata(body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -177,8 +204,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				// client - in most case it is the same as upstreamStatusCode,
 				// but sometimes we write something different.
 				resolvedStatusCode int = -1
-				// completionCharacterCount is extracted from parseResponse.
-				completionCharacterCount int = -1
+				// promptUsage and completionUsage are extracted from parseResponseAndUsage.
+				promptUsage, completionUsage usageStats
 			)
 			defer func() {
 				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
@@ -186,13 +213,27 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("upstreamStatusCode", upstreamStatusCode),
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
+				usageData := map[string]any{
+					"prompt_character_count":     promptUsage.characters,
+					"prompt_token_count":         promptUsage.tokens,
+					"completion_character_count": completionUsage.characters,
+					"completion_token_count":     completionUsage.tokens,
+				}
+				for k, v := range usageData {
+					// Drop usage fields that are invalid/unimplemented. All
+					// usageData fields are ints - we use map[string]any for
+					// convenience with mergeMaps utility.
+					if n, _ := v.(int); n < 0 {
+						delete(usageData, k)
+					}
+				}
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameCompletionsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: mergeMaps(requestMetadata, map[string]any{
+						Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
 							codygateway.CompletionsEventFeatureMetadataField: feature,
 							"model":    gatewayModel,
 							"provider": upstreamName,
@@ -201,10 +242,6 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
 							"upstream_status_code":         upstreamStatusCode,
 							"resolved_status_code":         resolvedStatusCode,
-
-							// Usage details
-							"prompt_character_count":     promptCharacterCount,
-							"completion_character_count": completionCharacterCount,
 						}),
 					},
 				)
@@ -281,8 +318,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 
 			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 				// Pass reader to response transformer to capture token counts.
-				completionCharacterCount = methods.parseResponse(body, &responseBuf)
-
+				promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
 			} else if upstreamStatusCode >= 500 {
 				logger.Error("error from upstream",
 					log.Int("status_code", upstreamStatusCode))
@@ -308,9 +344,11 @@ func intersection(a, b []string) (c []string) {
 	return c
 }
 
-func mergeMaps(dst, src map[string]any) map[string]any {
-	for k, v := range src {
-		dst[k] = v
+func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
+	for _, src := range srcs {
+		for k, v := range src {
+			dst[k] = v
+		}
 	}
 	return dst
 }

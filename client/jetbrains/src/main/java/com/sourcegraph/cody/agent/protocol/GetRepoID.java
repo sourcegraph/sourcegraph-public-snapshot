@@ -1,9 +1,9 @@
 package com.sourcegraph.cody.agent.protocol;
 
-public class EmbeddingExistsParams {
+public class GetRepoID {
   public final String repoName;
 
-  public EmbeddingExistsParams(String repoName) {
+  public GetRepoID(String repoName) {
     this.repoName = repoName;
   }
 }

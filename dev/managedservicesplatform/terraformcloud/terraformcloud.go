@@ -275,6 +275,14 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 				Name: existingWorkspace.Name,
 			})
 
+			// VCSRepo must be removed by explicitly using the API - update
+			// doesn't remove it - if we want to remove the connection.
+			if existingWorkspace.VCSRepo != nil && wantWorkspaceOptions.VCSRepo == nil {
+				if _, err := c.client.Workspaces.RemoveVCSConnection(ctx, c.org, workspaceName); err != nil {
+					return nil, errors.Wrap(err, "failed to remove VCS connection")
+				}
+			}
+
 			// Forcibly update the workspace to match our expected configuration
 			if _, err := c.client.Workspaces.Update(ctx, c.org, workspaceName,
 				wantWorkspaceOptions.AsUpdate()); err != nil {
@@ -306,11 +314,12 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 	return workspaces, nil
 }
 
-func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) error {
+func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env spec.EnvironmentSpec, stacks []string) []error {
+	var errs []error
 	for _, s := range stacks {
 		workspaceName := WorkspaceName(svc, env, s)
 		if err := c.client.Workspaces.Delete(ctx, c.org, workspaceName); err != nil {
-			return errors.Wrapf(err, "workspaces.Delete %q", workspaceName)
+			errs = append(errs, errors.Wrapf(err, "workspaces.Delete %q", workspaceName))
 		}
 	}
 
@@ -319,15 +328,16 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 		Name: projectName,
 	})
 	if err != nil {
-		return errors.Wrap(err, "Project.List")
+		errs = append(errs, errors.Wrap(err, "Project.List"))
+		return errs
 	}
 	for _, p := range projects.Items {
 		if p.Name == projectName {
-			if err := c.client.Projects.Delete(ctx, projectName); err != nil {
-				return errors.Wrapf(err, "projects.Delete %q", projectName)
+			if err := c.client.Projects.Delete(ctx, p.ID); err != nil {
+				errs = append(errs, errors.Wrapf(err, "projects.Delete %q (%s)", projectName, p.ID))
 			}
 		}
 	}
 
-	return nil
+	return errs
 }

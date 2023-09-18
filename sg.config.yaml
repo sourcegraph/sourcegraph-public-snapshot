@@ -324,6 +324,7 @@ commands:
     checkBinary: .bin/pings
     env:
       SRC_LOG_LEVEL: info
+      DIAGNOSTICS_SECRET: 'lifeisgood'
       PINGS_PUBSUB_PROJECT_ID: ''
       PINGS_PUBSUB_TOPIC_ID: ''
       HUBSPOT_ACCESS_TOKEN: ''

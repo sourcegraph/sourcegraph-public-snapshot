@@ -292,7 +292,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = ctxerr
+			err = errors.Wrap(ctxerr, "p4 login context error")
 		}
 		if len(out) > 0 {
 			err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
@@ -324,7 +324,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = ctxerr
+			err = errors.Wrap(ctxerr, "p4 depots context error")
 		}
 		if len(out) > 0 {
 			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))

@@ -1269,6 +1269,9 @@ importers:
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
+      '@sourcegraph/http-client':
+        specifier: workspace:*
+        version: link:../http-client
       '@sourcegraph/observability-client':
         specifier: workspace:*
         version: link:../observability-client

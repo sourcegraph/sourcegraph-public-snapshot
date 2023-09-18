@@ -462,9 +462,10 @@ type Client interface {
 }
 
 type SystemInfo struct {
-	Address    string
-	FreeSpace  uint64
-	TotalSpace uint64
+	Address     string
+	FreeSpace   uint64
+	TotalSpace  uint64
+	PercentUsed float32
 }
 
 func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, error) {
@@ -481,9 +482,10 @@ func (c *clientImplementor) SystemsInfo(ctx context.Context) ([]SystemInfo, erro
 				return
 			}
 			infos = append(infos, SystemInfo{
-				Address:    addr.Address(),
-				FreeSpace:  response.FreeSpace,
-				TotalSpace: response.TotalSpace,
+				Address:     addr.Address(),
+				FreeSpace:   response.GetFreeSpace(),
+				TotalSpace:  response.GetTotalSpace(),
+				PercentUsed: response.GetPercentUsed(),
 			})
 		})
 	}

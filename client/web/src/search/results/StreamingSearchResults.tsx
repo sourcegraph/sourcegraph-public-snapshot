@@ -33,6 +33,7 @@ import type { CodeInsightsProps } from '../../insights/types'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
@@ -443,6 +444,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 state={results?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
+                                isSearchJobsEnabled={isSearchJobsEnabled()}
                             />
                         }
                     />
