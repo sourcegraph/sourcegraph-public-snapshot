@@ -306,8 +306,7 @@ func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err er
 const getAggregateRepoRevState = `
 SELECT rrj.state, count(rrj.id) as count FROM exhaustive_search_repo_revision_jobs rrj
 JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
-JOIN exhaustive_search_jobs sj ON rj.search_job_id = sj.id
-WHERE sj.id = %s
+WHERE rj.search_job_id = %s
 GROUP BY rrj.state
 `
 
