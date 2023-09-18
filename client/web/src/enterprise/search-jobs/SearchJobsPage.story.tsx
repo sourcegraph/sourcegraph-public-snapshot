@@ -55,6 +55,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.QUEUED,
                         query: 'repo:sourcegraph/* insights rev:asdf',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 200,
@@ -78,6 +79,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.PROCESSING,
                         query: 'repo:sourcegraph/* batch-changes rev:asdf',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 145,
@@ -101,6 +103,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.FAILED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -124,6 +127,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.ERRORED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -147,6 +151,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.COMPLETED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,

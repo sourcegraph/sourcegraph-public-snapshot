@@ -3,7 +3,7 @@ import { FC, useMemo, useState } from 'react'
 import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
-import { upperFirst } from 'lodash'
+import { escapeRegExp, upperFirst } from 'lodash'
 import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
@@ -33,6 +33,7 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
+import { DownloadFileButton } from '../../components/DownloadFileButton'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
@@ -63,6 +64,7 @@ export const SEARCH_JOBS_QUERY = gql`
         query
         state
         URL
+        logURL
         startedAt
         finishedAt
         repoStats {
@@ -318,9 +320,17 @@ const SearchJob: FC<SearchJobProps> = props => {
             )}
 
             <span className={styles.jobActions}>
-                <Button variant="link" className={styles.jobViewLogs}>
-                    View logs
-                </Button>
+                <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
+                    <DownloadFileButton
+                        variant="link"
+                        disabled={!job.logURL}
+                        fileUrl={job.logURL ?? ''}
+                        fileName={`search-logs-${startDate}-${escapeRegExp(job.query)}`}
+                        className={styles.jobViewLogs}
+                    >
+                        View logs
+                    </DownloadFileButton>
+                </Tooltip>
 
                 <Tooltip content="Rerun search job">
                     <Button
@@ -360,10 +370,18 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Tooltip>
             </span>
 
-            <Button variant="secondary" className={styles.jobDownload}>
-                <Icon svgPath={mdiDownload} aria-hidden={true} />
-                Download
-            </Button>
+            {job.URL && (
+                <DownloadFileButton
+                    fileName={`search-results-${startDate}-${escapeRegExp(job.query)}`}
+                    fileUrl={job.URL}
+                    variant="secondary"
+                    withLoading={false}
+                    className={styles.jobDownload}
+                >
+                    <Icon svgPath={mdiDownload} aria-hidden={true} />
+                    Download
+                </DownloadFileButton>
+            )}
         </li>
     )
 }
