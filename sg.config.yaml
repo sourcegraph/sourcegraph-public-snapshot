@@ -325,8 +325,8 @@ commands:
     env:
       SRC_LOG_LEVEL: info
       DIAGNOSTICS_SECRET: 'lifeisgood'
-      PINGS_PUBSUB_PROJECT_ID: ''
-      PINGS_PUBSUB_TOPIC_ID: ''
+      PINGS_PUBSUB_PROJECT_ID: 'telligentsourcegraph'
+      PINGS_PUBSUB_TOPIC_ID: 'server-update-checks-test'
       HUBSPOT_ACCESS_TOKEN: ''
     watch:
       - lib
