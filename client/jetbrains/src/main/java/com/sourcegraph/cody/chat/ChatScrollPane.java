@@ -5,11 +5,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 
 public class ChatScrollPane extends JBScrollPane {
   AtomicBoolean wasMouseWheelScrolled = new AtomicBoolean(false);
   AtomicBoolean wasScrollBarDragged = new AtomicBoolean(false);
+  AtomicInteger lastManualValue = new AtomicInteger(-1);
 
   public ChatScrollPane(JPanel messagesPanel) {
     super(
@@ -29,11 +31,21 @@ public class ChatScrollPane extends JBScrollPane {
           @Override
           public void mousePressed(MouseEvent e) {
             wasScrollBarDragged.set(true);
+            Optional.ofNullable(e.getSource())
+                .filter(source -> source instanceof JScrollBar)
+                .map(source -> (JScrollBar) source)
+                .flatMap(scrollBar -> Optional.ofNullable(scrollBar.getModel()))
+                .ifPresent(brm -> lastManualValue.set(brm.getValue()));
           }
 
           @Override
           public void mouseReleased(MouseEvent e) {
             wasScrollBarDragged.set(false);
+            Optional.ofNullable(e.getSource())
+                .filter(source -> source instanceof JScrollBar)
+                .map(source -> (JScrollBar) source)
+                .flatMap(scrollBar -> Optional.ofNullable(scrollBar.getModel()))
+                .ifPresent(brm -> lastManualValue.set(brm.getValue()));
           }
         });
     chatPanelVerticalScrollBar.addAdjustmentListener(
@@ -46,9 +58,18 @@ public class ChatScrollPane extends JBScrollPane {
                 .filter(brm -> !brm.getValueIsAdjusting())
                 .filter(source -> !wasMouseWheelScrolled.getAndSet(false))
                 .filter(source -> !wasScrollBarDragged.getAndSet(false))
+                .filter(brm -> lastManualValue.get() < brm.getMaximum())
                 // only adjust if the scroll isn't at the bottom already
                 .filter(brm -> brm.getValue() + brm.getExtent() != brm.getMaximum())
                 // if all the above conditions are met, adjust the scroll to the bottom
-                .ifPresent(brm -> brm.setValue(brm.getMaximum())));
+                .ifPresent(
+                    brm -> {
+                      if (lastManualValue.get() > -1 && lastManualValue.get() < brm.getMaximum())
+                        brm.setValue(lastManualValue.get());
+                      else {
+                        brm.setValue(brm.getMaximum());
+                        lastManualValue.set(-1);
+                      }
+                    }));
   }
 }
