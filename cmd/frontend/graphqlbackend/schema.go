@@ -90,7 +90,7 @@ var rbacSchema string
 //go:embed own.graphql
 var ownSchema string
 
-// appSchema is the Sourcegraph App local raw graqhql schema.
+// appSchema is the Cody App local raw graqhql schema.
 //
 //go:embed app.graphql
 var appSchema string

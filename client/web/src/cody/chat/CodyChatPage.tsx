@@ -54,7 +54,7 @@ import styles from './CodyChatPage.module.scss'
 interface CodyChatPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -93,7 +93,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     authenticatedUser,
     context,
     isSourcegraphDotCom,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
@@ -102,7 +102,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         userID: authenticatedUser?.id,
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
-        autoLoadScopeWithRepositories: isSourcegraphApp,
+        autoLoadScopeWithRepositories: isCodyApp,
     })
     const {
         initializeNewChat,
@@ -160,7 +160,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
-            {!isSourcegraphDotCom && !isCTADismissed && !isSourcegraphApp && (
+            {!isSourcegraphDotCom && !isCTADismissed && !isCodyApp && (
                 <MarketingBlock
                     wrapperClassName="mb-5"
                     contentClassName={classNames(styles.ctaWrapper, styles.ctaContent)}
@@ -200,7 +200,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <>
                         Cody answers code questions and writes code for you by leveraging your entire codebase and the
                         code graph.
-                        {!isSourcegraphDotCom && !isSourcegraphApp && isCTADismissed && (
+                        {!isSourcegraphDotCom && !isCodyApp && isCTADismissed && (
                             <>
                                 {' '}
                                 <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
@@ -214,7 +214,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className="d-inline-flex align-items-center">
                             Cody Chat
-                            {!isSourcegraphApp && (
+                            {!isCodyApp && (
                                 <Badge variant="info" className="ml-2">
                                     Beta
                                 </Badge>
@@ -246,13 +246,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 )}
                                 <MenuLink
                                     as={Link}
-                                    to={isSourcegraphApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
+                                    to={isCodyApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
                                     target="_blank"
                                     rel="noopener"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
-                                {!isSourcegraphApp && authenticatedUser?.siteAdmin && (
+                                {!isCodyApp && authenticatedUser?.siteAdmin && (
                                     <MenuLink as={Link} to="/site-admin/cody">
                                         <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Cody Settings
                                     </MenuLink>
@@ -350,7 +350,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         ))}
                 </div>
 
-                {isSourcegraphApp ? (
+                {isCodyApp ? (
                     <>
                         <div
                             className={classNames(
@@ -380,7 +380,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             </div>
                             <ChatUI
                                 codyChatStore={codyChatStore}
-                                isSourcegraphApp={true}
+                                isCodyApp={true}
                                 isCodyChatPage={true}
                                 authenticatedUser={authenticatedUser}
                             />

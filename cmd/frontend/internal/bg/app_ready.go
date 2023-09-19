@@ -16,7 +16,7 @@ import (
 )
 
 // AppReady is called once the frontend has reported it is ready to serve
-// requests. It contains tasks related to Sourcegraph App (single binary).
+// requests. It contains tasks related to Cody App (single binary).
 func AppReady(db database.DB, logger log.Logger) {
 	if !deploy.IsApp() {
 		return

@@ -60,7 +60,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
-    const isSourcegraphApp: boolean = window.context?.sourcegraphAppMode || false
+    const isCodyApp: boolean = window.context?.codyAppMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -72,7 +72,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     const isLightTheme = useIsLightTheme()
 
     const wrapOutboundLink = (url: string): string => {
-        if (isSourcegraphApp) {
+        if (isCodyApp) {
             return addSourcegraphAppOutboundUrlParameters(url)
         }
         return url

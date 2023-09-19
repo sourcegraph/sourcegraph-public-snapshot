@@ -151,7 +151,8 @@ type JSContext struct {
 	DeployType        string                   `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
-	SourcegraphAppMode    bool `json:"sourcegraphAppMode"`
+
+	CodyAppMode bool `json:"codyAppMode"`
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
@@ -347,7 +348,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		SourcegraphAppMode:    deploy.IsApp(),
+		CodyAppMode:           deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 

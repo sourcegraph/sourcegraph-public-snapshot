@@ -94,10 +94,10 @@ func IsValidDeployType(deployType string) bool {
 		IsDeployTypeApp(deployType)
 }
 
-// IsApp tells if the running deployment is a Sourcegraph App deployment.
+// IsApp tells if the running deployment is a Cody App deployment.
 //
-// Sourcegraph App is always a single-binary, but not all single-binary deployments are
-// a Sourcegraph app.
+// Cody App is always a single-binary, but not all single-binary deployments are
+// a Cody app.
 //
 // In the future, all Sourcegraph deployments will be a single-binary. For example gitserver will
 // be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always
@@ -118,8 +118,8 @@ var appFullSourcegraph, _ = strconv.ParseBool(os.Getenv("APP_FULL_SOURCEGRAPH"))
 
 // IsSingleBinary tells if the running deployment is a single-binary or not.
 //
-// Sourcegraph App is always a single-binary, but not all single-binary deployments are
-// a Sourcegraph app.
+// Cody App is always a single-binary, but not all single-binary deployments are
+// a Cody app.
 //
 // In the future, all Sourcegraph deployments will be a single-binary. For example gitserver will
 // be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always

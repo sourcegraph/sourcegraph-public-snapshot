@@ -216,7 +216,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                            isSourcegraphApp={window.context.sourcegraphAppMode}
+                            isCodyApp={window.context.codyAppMode}
                             isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             searchContextsEnabled={this.props.searchContextsEnabled}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}

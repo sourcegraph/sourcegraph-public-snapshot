@@ -110,7 +110,7 @@ __Note__: if you're wondering why the bucket names are different even though we 
 
 ### Automatically updating the manifest
 
-`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Sourcegraph App Release Bucket access` bundle in Entitle.
+`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Cody App Release Bucket access` bundle in Entitle.
 
 Below is an example command:
 

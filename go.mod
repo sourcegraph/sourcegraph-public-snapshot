@@ -8,7 +8,7 @@ go 1.19
 // or intentional forks.
 replace (
 	// We maintain a potentially long-term fork of embedded-postgres for
-	// Sourcegraph App. We add features like unix sockets. If this replace
+	// Cody App. We add features like unix sockets. If this replace
 	// directive still exists in 2024, lets consider hard forking.
 	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230624001757-345a8df15ded
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.

@@ -775,7 +775,7 @@ type OtherRepoMetadata struct {
 
 	// AbsFilePath is an optional field which is the absolute path to the
 	// repository on the src git-serve server. Notably this is only
-	// implemented for Sourcegraph App's implementation of src git-serve.
+	// implemented for Cody App's implementation of src git-serve.
 	AbsFilePath string
 }
 
