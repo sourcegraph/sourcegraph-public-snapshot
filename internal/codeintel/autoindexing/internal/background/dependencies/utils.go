@@ -27,8 +27,8 @@ const indexMaxNumResets = 3
 
 var (
 	AutoIndexingUseFifoAlgorithm = env.MustGetBool("CODEINTEL_AUTOINDEXING_DEQUEUE_FIFO_ALGORITHM", false, "Use the original FIFO dequeueing algorithm instead of the newer moving-window algorithm.")
-	indexLookbackWindow          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_CANDIDATE_JOB_WINDOW", "1d", "The window from the latest enqueued job to consider when finding candidate jobs to run.")
-	repoDequeueCooldown          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_COOLDOWN_DEBUFF", "6h", "How soon a repository should be on cooldown after a successful index before it can be a candidate when the most recently queued job is outside the lookback window.")
+	indexLookbackWindow          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_CANDIDATE_JOB_WINDOW", "1d", "The maximum age of index records prioritized for dequeue. Records older than this age will be visible for processing after the configured cooldown debuff.")
+	repoDequeueCooldown          = env.Get("CODEINTEL_AUTOINDEXING_DEQUEUE_COOLDOWN_DEBUFF", "6h", "The minimum time since the last dequeue for a repository before records outside of the lookback window are made visible for processing. This allows older records of a repo to be processed, but with lower priority than records within the lookback window for other repositories.")
 )
 
 var IndexWorkerStoreOptions = func() dbworkerstore.Options[uploadsshared.Index] {

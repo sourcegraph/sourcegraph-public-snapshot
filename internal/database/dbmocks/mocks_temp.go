@@ -22562,6 +22562,10 @@ func (c DBZoektReposFuncCall) Results() []interface{} {
 // (from the package github.com/sourcegraph/sourcegraph/internal/database)
 // used for unit testing.
 type MockEventLogStore struct {
+	// AggregateCodeIntelCommitDistanceEventsFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// AggregateCodeIntelCommitDistanceEvents.
+	AggregateCodeIntelCommitDistanceEventsFunc *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc
 	// AggregatedCodeIntelEventsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// AggregatedCodeIntelEvents.
@@ -22703,6 +22707,11 @@ type MockEventLogStore struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockEventLogStore() *MockEventLogStore {
 	return &MockEventLogStore{
+		AggregateCodeIntelCommitDistanceEventsFunc: &EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc{
+			defaultHook: func(context.Context) (r0 []types.CodeIntelAggregatedCommitDistance, r1 error) {
+				return
+			},
+		},
 		AggregatedCodeIntelEventsFunc: &EventLogStoreAggregatedCodeIntelEventsFunc{
 			defaultHook: func(context.Context) (r0 []types.CodeIntelAggregatedEvent, r1 error) {
 				return
@@ -22905,6 +22914,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockEventLogStore() *MockEventLogStore {
 	return &MockEventLogStore{
+		AggregateCodeIntelCommitDistanceEventsFunc: &EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc{
+			defaultHook: func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregateCodeIntelCommitDistanceEvents")
+			},
+		},
 		AggregatedCodeIntelEventsFunc: &EventLogStoreAggregatedCodeIntelEventsFunc{
 			defaultHook: func(context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 				panic("unexpected invocation of MockEventLogStore.AggregatedCodeIntelEvents")
@@ -23108,6 +23122,9 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 // overwritten.
 func NewMockEventLogStoreFrom(i database.EventLogStore) *MockEventLogStore {
 	return &MockEventLogStore{
+		AggregateCodeIntelCommitDistanceEventsFunc: &EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc{
+			defaultHook: i.AggregateCodeIntelCommitDistanceEvents,
+		},
 		AggregatedCodeIntelEventsFunc: &EventLogStoreAggregatedCodeIntelEventsFunc{
 			defaultHook: i.AggregatedCodeIntelEvents,
 		},
@@ -23226,6 +23243,117 @@ func NewMockEventLogStoreFrom(i database.EventLogStore) *MockEventLogStore {
 			defaultHook: i.WithTransact,
 		},
 	}
+}
+
+// EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc describes the
+// behavior when the AggregateCodeIntelCommitDistanceEvents method of the
+// parent MockEventLogStore instance is invoked.
+type EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc struct {
+	defaultHook func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error)
+	hooks       []func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error)
+	history     []EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// AggregateCodeIntelCommitDistanceEvents delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockEventLogStore) AggregateCodeIntelCommitDistanceEvents(v0 context.Context) ([]types.CodeIntelAggregatedCommitDistance, error) {
+	r0, r1 := m.AggregateCodeIntelCommitDistanceEventsFunc.nextHook()(v0)
+	m.AggregateCodeIntelCommitDistanceEventsFunc.appendCall(EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// AggregateCodeIntelCommitDistanceEvents method of the parent
+// MockEventLogStore instance is invoked and the hook queue is empty.
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) SetDefaultHook(hook func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AggregateCodeIntelCommitDistanceEvents method of the parent
+// MockEventLogStore instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) PushHook(hook func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) SetDefaultReturn(r0 []types.CodeIntelAggregatedCommitDistance, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) PushReturn(r0 []types.CodeIntelAggregatedCommitDistance, r1 error) {
+	f.PushHook(func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) nextHook() func(context.Context) ([]types.CodeIntelAggregatedCommitDistance, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) appendCall(r0 EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall objects
+// describing the invocations of this function.
+func (f *EventLogStoreAggregateCodeIntelCommitDistanceEventsFunc) History() []EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall is an object
+// that describes an invocation of method
+// AggregateCodeIntelCommitDistanceEvents on an instance of
+// MockEventLogStore.
+type EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.CodeIntelAggregatedCommitDistance
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreAggregateCodeIntelCommitDistanceEventsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // EventLogStoreAggregatedCodeIntelEventsFunc describes the behavior when
