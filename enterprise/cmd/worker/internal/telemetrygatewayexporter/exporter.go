@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -73,6 +74,11 @@ func (j *exporterJob) OnShutdown() { _ = j.exporter.Close() }
 func (j *exporterJob) Handle(ctx context.Context) error {
 	logger := trace.Logger(ctx, j.logger).
 		With(log.Int("maxBatchSize", j.maxBatchSize))
+
+	if conf.Get().LicenseKey == "" {
+		logger.Debug("license key not set, skipping export")
+		return nil
+	}
 
 	// Get events from the queue
 	batch, err := j.store.ListForExport(ctx, j.maxBatchSize)
