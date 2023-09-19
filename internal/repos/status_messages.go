@@ -16,7 +16,7 @@ import (
 var MockStatusMessages func(context.Context) ([]StatusMessage, error)
 
 // FetchStatusMessages fetches repo related status messages.
-func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, error) {
+func FetchStatusMessages(ctx context.Context, db database.DB, gitserverClient gitserver.Client) ([]StatusMessage, error) {
 	if MockStatusMessages != nil {
 		return MockStatusMessages(ctx)
 	}
@@ -107,8 +107,6 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 			})
 		}
 	}
-
-	gitserverClient := gitserver.NewClient()
 
 	diskUsageThreshold := conf.Get().SiteConfig().GitserverDiskUsageWarningThreshold
 	if diskUsageThreshold == nil {

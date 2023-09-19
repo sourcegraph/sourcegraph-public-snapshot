@@ -17,7 +17,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 		return nil, err
 	}
 
-	messages, err := repos.FetchStatusMessages(ctx, r.db)
+	messages, err := repos.FetchStatusMessages(ctx, r.db, r.gitserverClient)
 	if err != nil {
 		return nil, err
 	}
