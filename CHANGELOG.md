@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental support for AWS Bedrock Claude for the completions provider has been added. [#56321](https://github.com/sourcegraph/sourcegraph/pull/56321)
+- Ability to use a different providers for Cody Autocomplete and Cody Chat. [#56436](https://github.com/sourcegraph/sourcegraph/pull/56436)
 
 ### Changed
 
