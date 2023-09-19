@@ -8,6 +8,15 @@ import (
 
 var castFailure error
 
+//TODO(burmudar): The store needs to be reworked entirely. Initially it was thought of that the
+// store would be populated by what the actions return. This didn't pan out as some actions require
+// the output of other actions and need use their output. A classic example is the CreateOrg action.
+// All child actions need to refer to the org and the org needs to have been created.
+//
+// The store currently knows far to much about what it is storing and then the key management is also
+// just a nightmare. We'd be far better off declaring the exact variable we want instead of wondering
+// under what key something is.
+
 type ScenarioStore struct {
 	T     *testing.T
 	store map[string]any

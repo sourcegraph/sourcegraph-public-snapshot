@@ -128,6 +128,9 @@ func (m *actionRunner) Apply(ctx context.Context, store *ScenarioStore, actions 
 
 		var err error
 		if !action.Complete() {
+			// TODO(burmudar): ActionsFn currently returns a result and error and we currently ignore the result, since
+			// it is inserted into the store by the action instead. Should we rework this so that we actually use the
+			// action result? Or should we just let actions return an err and manage the store?
 			_, err = action.Do(ctx, m.T, store)
 		} else {
 			m.Reporter.Writeln("[SKIPPED]")
