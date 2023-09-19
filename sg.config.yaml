@@ -922,8 +922,8 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
-  sourcegraph:
-    description: Single program (Go static binary) distribution
+  sourcegraph: &sourcegraph_command
+    description: Single-program distribution
     cmd: |
       unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
@@ -937,7 +937,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
       ENTERPRISE: 1
@@ -950,6 +950,15 @@ commands:
       - internal
       - lib
       - schema
+
+  cody-app:
+    <<: *sourcegraph_command
+    description: Cody App
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
 
   tauri:
     description: App shell (Tauri)
@@ -1475,12 +1484,26 @@ commandsets:
       - otel-collector
       - jaeger
 
-  app:
+  single-program:
     requiresDevPrivate: true
     checks:
       - git
     commands:
       - sourcegraph
+      - web
+      - caddy
+    env:
+      DISABLE_CODE_INSIGHTS: false
+      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      USE_EMBEDDED_POSTGRESQL: false
+
+  app:
+    requiresDevPrivate: true
+    checks:
+      - git
+    commands:
+      - cody-app
       - docsite
       - web
       - caddy
