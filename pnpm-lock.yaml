@@ -1584,8 +1584,8 @@ importers:
         specifier: workspace:*
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
-        specifier: ^0.0.8
-        version: 0.0.8
+        specifier: ^0.0.9
+        version: 0.0.9
       '@sourcegraph/cody-ui':
         specifier: ^0.0.7
         version: 0.0.7
@@ -9361,8 +9361,8 @@ packages:
       - encoding
     dev: false
 
-  /@sourcegraph/cody-shared@0.0.8:
-    resolution: {integrity: sha512-kNKSC5JfzWMtgDv3AQF8POvgmsTZXsrKxfk6LOmBpS+0VMku8AIIyF9nzYLKWOw2LFqowzvlSzwDA3H7ubmhUw==}
+  /@sourcegraph/cody-shared@0.0.9:
+    resolution: {integrity: sha512-8FIHCi8nzn+scqGJmZsgIoo08RJGV5Q2uhznIQb4RwHdw914mzYqAkmc/xrBQ+l9kMDJbMS7pnzKwBlu378EFA==}
     dependencies:
       '@microsoft/fetch-event-source': 2.0.1
       dompurify: 3.0.4
