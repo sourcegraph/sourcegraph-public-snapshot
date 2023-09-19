@@ -264,16 +264,6 @@ export class Driver {
          */
         await this.page.goto(this.sourcegraphBaseUrl)
 
-        try {
-            const licenseModal = await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
-                visible: true,
-                timeout: 300000,
-            })
-            await licenseModal?.click()
-        } catch (error) {
-            logger.log('Modal has been dismissed...', error)
-        }
-
         // Skip setup wizard
         await this.page.evaluate(() => {
             localStorage.setItem('setup.skipped', 'true')
@@ -293,6 +283,7 @@ export class Driver {
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 300000 })
         } catch (error) {
+            logger.log('Current error...', error)
             /**
              * In case a user is not authenticated, and site-init is required, two redirects happen:
              * 1. Redirect to /sign-in?returnTo=%2F
@@ -300,6 +291,16 @@ export class Driver {
              */
             if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
+
+                try {
+                    const licenseModal = await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
+                        visible: true,
+                        timeout: 300000,
+                    })
+                    await licenseModal?.click()
+                } catch (error) {
+                    logger.log('Modal has been dismissed...', error)
+                }
 
                 await this.page.waitForSelector('.test-signup-form')
                 if (email) {
@@ -316,6 +317,7 @@ export class Driver {
                 await this.page.click('button[type=submit]')
                 await this.page.waitForNavigation({ timeout: 300000 })
             } else {
+                logger.log('Thrown error...', error)
                 throw error
             }
         }
