@@ -12,9 +12,9 @@ build --repository_cache=/home/buildkite/repocache-sourcegraph
 build --test_env=PATH
 
 # Needed for DB in CI
-build --test_env=PGUSER
+build --test_env=PGUSER=postgres
 build --test_env=PGSSLMODE
-build --test_env=PGDATABASE
+build --test_env=PGDATABASE=postgres
 
 # Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
 # TODO(JH) we should instead wipe all templates after a job finishes.
