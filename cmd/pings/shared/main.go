@@ -85,7 +85,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		// serving requests (in Cloud Run).
 		failed := false
 		status := make(map[string]string)
-		if err := pubsubClient.Ping(context.Background()); err != nil {
+		if err := pubsubClient.Ping(r.Context()); err != nil {
 			failed = true
 			status["pubsubClient"] = err.Error()
 			logger.Error("failed to ping Pub/Sub client", log.Error(err))
@@ -94,7 +94,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		}
 
 		if hubspotutil.HasAPIKey() {
-			if err := hubspotutil.Client().Ping(30 * time.Second); err != nil {
+			if err := hubspotutil.Client().Ping(r.Context(), 30*time.Second); err != nil {
 				status["hubspotClient"] = err.Error()
 				logger.Error("failed to ping HubSpot client", log.Error(err))
 			} else {
