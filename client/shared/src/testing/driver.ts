@@ -19,7 +19,6 @@ import puppeteer, {
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
-import { cat } from 'shelljs'
 import { Key } from 'ts-key-enum'
 
 import { isDefined, logger } from '@sourcegraph/common'
