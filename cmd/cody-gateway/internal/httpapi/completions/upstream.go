@@ -231,25 +231,23 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						delete(usageData, k)
 					}
 				}
-
-				x := events.Event{
-					Name:       codygateway.EventNameCompletionsFinished,
-					Source:     act.Source.Name(),
-					Identifier: act.ID,
-					Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
-						codygateway.CompletionsEventFeatureMetadataField: feature,
-						"model":    gatewayModel,
-						"provider": upstreamName,
-
-						"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
-						"upstream_status_code":         upstreamStatusCode,
-						"resolved_status_code":         resolvedStatusCode,
-					}),
-				}
-				fmt.Println(x)
 				err := eventLogger.LogEvent(
 					r.Context(),
-					x,
+					events.Event{
+						Name:       codygateway.EventNameCompletionsFinished,
+						Source:     act.Source.Name(),
+						Identifier: act.ID,
+						Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
+							codygateway.CompletionsEventFeatureMetadataField: feature,
+							"model":    gatewayModel,
+							"provider": upstreamName,
+
+							// Request details
+							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+							"upstream_status_code":         upstreamStatusCode,
+							"resolved_status_code":         resolvedStatusCode,
+						}),
+					},
 				)
 				if err != nil {
 					logger.Error("failed to log event", log.Error(err))
