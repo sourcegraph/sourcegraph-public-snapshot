@@ -15,8 +15,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -162,14 +164,24 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 // personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
 // is to make it easier to identify that a given string (in a file, document, etc.) is a secret
 // Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
-const personalAccessTokenPrefix = "sgp_"
+const personalAccessTokenPrefix = "sgph_"
 
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return 0, "", err
 	}
-	token = personalAccessTokenPrefix + hex.EncodeToString(b[:])
+
+	// Include part of the hashed license key in the token, to allow us to tie tokens back to an instance
+	config := conf.Get().SiteConfig()
+	var licenseKeyHash string
+	if config.LicenseKey != "" {
+		licenseKeyHash = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(config.LicenseKey)))[:6]
+	} else {
+		licenseKeyHash = "localx" // TODO: This string must be 6 characters
+	}
+
+	token = fmt.Sprintf("%s%s_%s", personalAccessTokenPrefix, licenseKeyHash, hex.EncodeToString(b[:]))
 
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
@@ -444,10 +456,19 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 }
 
 // tokenSHA256Hash returns the 32-byte long SHA-256 hash of its hex-encoded value
-// (after stripping the "sgp_" token prefix, if present).
+// (after stripping the "sgph_" token prefix, if present).
 func tokenSHA256Hash(token string) ([]byte, error) {
 	token = strings.TrimPrefix(token, personalAccessTokenPrefix)
-	value, err := hex.DecodeString(token)
+
+	// TODO: Make this backwards compatible with tokens like sgp_asdfasdfasdfasdfsadfasdf
+	tokenRegex := lazyregexp.New("[a-zA-Z0-9]{6}_([a-zA-Z0-9]{40})")
+	tokenMatches := tokenRegex.FindStringSubmatch(token)
+	if len(tokenMatches) <= 1 {
+		return nil, errors.New("invalid token format")
+	}
+	tokenValue := tokenMatches[1]
+
+	value, err := hex.DecodeString(tokenValue)
 	if err != nil {
 		return nil, InvalidTokenError{err}
 	}
