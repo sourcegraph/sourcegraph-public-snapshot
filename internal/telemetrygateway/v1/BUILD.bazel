@@ -33,11 +33,13 @@ go_library(
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1",
     visibility = [
+        "//cmd/frontend/internal/telemetry/resolvers:__pkg__",
         "//cmd/telemetrygateway/server:__pkg__",
         "//cmd/telemetrygateway/shared:__pkg__",
         "//internal/api:__pkg__",
         "//internal/database:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
+        "//internal/telemetry/teestore:__pkg__",
         "//internal/telemetrygateway:__pkg__",
         "//internal/telemetrygateway/gitdomain:__pkg__",
         "//internal/telemetrygateway/integration_tests:__pkg__",
