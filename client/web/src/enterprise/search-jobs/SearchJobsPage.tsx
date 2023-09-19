@@ -3,7 +3,7 @@ import { FC, useMemo, useState } from 'react'
 import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
-import { escapeRegExp, upperFirst } from 'lodash'
+import { upperFirst } from 'lodash'
 import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
@@ -233,9 +233,9 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                 {error && !loading && <ErrorAlert error={error} className="mt-4 mb-0" />}
 
                 {!error && loading && !connection && (
-                    <Text>
+                    <div>
                         <LoadingSpinner /> Fetching search jobs list
-                    </Text>
+                    </div>
                 )}
 
                 {!error && connection && (
@@ -333,7 +333,8 @@ const SearchJob: FC<SearchJobProps> = props => {
                         variant="link"
                         disabled={!job.logURL}
                         fileUrl={job.logURL ?? ''}
-                        fileName={`search-logs-${startDate}-${escapeRegExp(job.query)}`}
+                        fileName={`search-job-logs-${getFileNameFromURL(job.logURL)}`}
+                        withLoading={false}
                         className={styles.jobViewLogs}
                     >
                         View logs
@@ -380,8 +381,8 @@ const SearchJob: FC<SearchJobProps> = props => {
 
             {job.URL && (
                 <DownloadFileButton
-                    fileName={`search-results-${startDate}-${escapeRegExp(job.query)}`}
                     fileUrl={job.URL}
+                    fileName={`search-job-results-${getFileNameFromURL(job.URL)}`}
                     variant="secondary"
                     withLoading={false}
                     className={styles.jobDownload}
@@ -458,3 +459,12 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
 const hasFiltersValues = (states: SearchJobState[], users: User[], searchTerm: string): boolean =>
     states.length > 0 || users.length > 0 || searchTerm.trim().length > 0
+
+const getFileNameFromURL = (url: string | null): string => {
+    if (url === null) {
+        return ''
+    }
+
+    const parts = url.split('/')
+    return parts[parts.length - 1]
+}
