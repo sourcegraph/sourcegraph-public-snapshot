@@ -41,13 +41,13 @@ func NewFireworksHandler(
 		fireworksAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[fireworksRequest]{
-			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, fr fireworksRequest) (int, error) {
+			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, fr fireworksRequest) (int, bool, error) {
 				if feature != codygateway.FeatureCodeCompletions {
-					return http.StatusNotImplemented,
+					return http.StatusNotImplemented, false,
 						errors.Newf("feature %q is currently not supported for Fireworks",
 							feature)
 				}
-				return 0, nil
+				return 0, false, nil
 			},
 			transformBody: func(body *fireworksRequest, act *actor.Actor) {
 				// We don't want to let users generate multiple responses, as this would
