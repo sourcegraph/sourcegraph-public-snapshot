@@ -1,5 +1,6 @@
-import { TourIcon, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { TourIcon, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+
 import type { OnboardingTourConfigResult, OnboardingTourConfigVariables } from '../../graphql-operations'
 
 export const ONBOARDING_TOUR_QUERY = gql`
@@ -21,7 +22,7 @@ export const ONBOARDING_TOUR_MUTATION = gql`
     }
 `
 
-interface TourConfig {
+export interface TourConfig {
     tasks: TourTaskType[]
     defaultSnippets: Record<string, string[]>
 }
@@ -33,13 +34,13 @@ export function parseTourConfig(json: string): TourConfig {
 /**
  * Returns the configured or default tasks and snippets for the user onboarding tour.
  */
-export const useOnboardingTasks = (): {loading: boolean, error?: Error, data?: TourConfig } => {
+export const useOnboardingTasks = (): { loading: boolean; error?: Error; data?: TourConfig } => {
     const { data, loading, error } = useQuery<OnboardingTourConfigResult, OnboardingTourConfigVariables>(
         ONBOARDING_TOUR_QUERY,
         {}
     )
 
-    let config: TourConfig|undefined
+    let config: TourConfig | undefined
     if (!loading && !error) {
         if (data?.onboardingTourContent.current?.value) {
             try {

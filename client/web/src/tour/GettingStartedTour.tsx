@@ -1,4 +1,4 @@
-import { FC, memo } from 'react'
+import { type FC, memo } from 'react'
 
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 
@@ -11,13 +11,21 @@ const GatedTour = withFeatureFlag('end-user-onboarding', Tour)
 
 type TourWrapperProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id' | 'defaultSnippets'>
 
-const TourWrapper: FC<TourWrapperProps> = (props) => {
-        const {loading, error, data} = useOnboardingTasks()
-        if (loading || error || !data) {
-            return null
-        }
+const TourWrapper: FC<TourWrapperProps> = props => {
+    const { loading, error, data } = useOnboardingTasks()
+    if (loading || error || !data) {
+        return null
+    }
 
-        return  <GatedTour {...props} id="TourAuthenticated" tasks={data.tasks} defaultSnippets={data.defaultSnippets} extraTask={authenticatedExtraTask} />
+    return (
+        <GatedTour
+            {...props}
+            id="TourAuthenticated"
+            tasks={data.tasks}
+            defaultSnippets={data.defaultSnippets}
+            extraTask={authenticatedExtraTask}
+        />
+    )
 }
 
 // This needed to be split up into two compontent definitions because

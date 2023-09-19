@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -7,6 +7,7 @@ import { TourContext } from './context'
 import { TourAgent } from './TourAgent'
 import { TourContent } from './TourContent'
 import { useTour } from './useTour'
+import { isQuerySuccessful } from './utils'
 
 export type TourProps = TelemetryProps & {
     id: string
@@ -24,6 +25,11 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             },
             [telemetryService, tourId]
         )
+
+        // TODO: Read these values from user config
+        const [userorg] = useState<string>('sourcegraph')
+        const [userrepo] = useState<string>('sourcegraph')
+        const [userlang] = useState<string>('go')
 
         useEffect(() => {
             onLogEvent('Shown')
@@ -74,10 +80,10 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
                                 if (!extendedStep.action.snippets) {
                                     extendedStep.action = {
                                         ...extendedStep.action,
-                                        snippets: defaultSnippets
+                                        snippets: defaultSnippets,
                                     }
                                 }
-                                break;
+                                break
                         }
 
                         return extendedStep
@@ -116,7 +122,9 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         }
 
         return (
-            <TourContext.Provider value={{ onStepClick, onRestart }}>
+            <TourContext.Provider
+                value={{ onStepClick, onRestart, userConfig: { userlang, userorg, userrepo }, isQuerySuccessful }}
+            >
                 <TourContent {...props} onClose={onClose} tasks={extendedTasks} />
                 <TourAgent tasks={finalTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
             </TourContext.Provider>
