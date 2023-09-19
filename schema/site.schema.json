@@ -1948,9 +1948,12 @@
       ]
     },
     "gitserver.diskUsageWarningThreshold": {
-      "description": "Disk usage threshold at which to emit a warning log message. Value is a percentage. Set to 0 to disable warnings.",
+      "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
       "type": "integer",
-      "default": 90
+      "default": 90,
+      "!go": {
+        "pointer": true
+      }
     },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",

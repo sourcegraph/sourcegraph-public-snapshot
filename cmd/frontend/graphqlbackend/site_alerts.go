@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -480,12 +481,15 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 	return alerts
 }
 
-const gitserverDiskAlertThreshold = 90
-
 func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
 	// We only show this alert to site admins.
 	if !args.IsSiteAdmin {
 		return nil
+	}
+
+	diskUsageThreshold := conf.Get().SiteConfig().GitserverDiskUsageWarningThreshold
+	if diskUsageThreshold == nil {
+		diskUsageThreshold = pointers.Ptr(90)
 	}
 
 	si, err := args.gitserverClient.SystemsInfo(context.Background())
@@ -496,10 +500,10 @@ func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
 
 	var alerts []*Alert
 	for _, s := range si {
-		if s.PercentUsed >= gitserverDiskAlertThreshold {
+		if s.PercentUsed >= float32(*diskUsageThreshold) {
 			alerts = append(alerts, &Alert{
 				TypeValue:    AlertTypeWarning,
-				MessageValue: fmt.Sprintf("The disk usage on gitserver **%q** is over %d%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, gitserverDiskAlertThreshold, s.PercentUsed),
+				MessageValue: fmt.Sprintf("The disk usage on gitserver **%q** is over %d%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, diskUsageThreshold, s.PercentUsed),
 			})
 		}
 	}
