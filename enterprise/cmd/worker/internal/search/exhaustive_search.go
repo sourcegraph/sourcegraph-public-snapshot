@@ -73,7 +73,7 @@ func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger,
 	for _, repoRevSpec := range repoRevSpecs {
 		_, err := tx.CreateExhaustiveSearchRepoJob(ctx, types.ExhaustiveSearchRepoJob{
 			RepoID:      repoRevSpec.Repository,
-			RefSpec:     repoRevSpec.RevisionSpecifier,
+			RefSpec:     repoRevSpec.RevisionSpecifiers.String(),
 			SearchJobID: record.ID,
 		})
 		if err != nil {
