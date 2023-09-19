@@ -458,10 +458,16 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 // tokenSHA256Hash returns the 32-byte long SHA-256 hash of its hex-encoded value
 // (after stripping the "sgph_" token prefix, if present).
 func tokenSHA256Hash(token string) ([]byte, error) {
-	token = strings.TrimPrefix(token, personalAccessTokenPrefix)
+	// TODO: Tidy this up
+	oldPersonalAccessTokenPrefixes := []string{"sgp_"}
+	for _, prefix := range append(oldPersonalAccessTokenPrefixes, personalAccessTokenPrefix) {
+		token = strings.TrimPrefix(token, prefix)
+	}
 
-	// TODO: Make this backwards compatible with tokens like sgp_asdfasdfasdfasdfsadfasdf
-	tokenRegex := lazyregexp.New("[a-zA-Z0-9]{6}_([a-zA-Z0-9]{40})")
+	// TODO: Consider swapping order of operations here to allow us to validate token formats more precisely
+	// e.g. Only allow sgp_{40} or sgph_{6}_{40}
+
+	tokenRegex := lazyregexp.New("^[a-zA-Z0-9]{0,6}_?([a-zA-Z0-9]{40})$")
 	tokenMatches := tokenRegex.FindStringSubmatch(token)
 	if len(tokenMatches) <= 1 {
 		return nil, errors.New("invalid token format")
