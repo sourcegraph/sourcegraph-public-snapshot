@@ -119,10 +119,20 @@ func (s *ScenarioStore) GetTeam(t *GitHubScenarioTeam) (*github.Team, error) {
 
 func (s *ScenarioStore) SetRepo(r *GitHubScenarioRepo, repo *github.Repository) {
 	s.T.Helper()
+	s.store[r.Key()] = repo
 }
 
 func (s *ScenarioStore) GetRepo(r *GitHubScenarioRepo) (*github.Repository, error) {
 	s.T.Helper()
-	// stub
-	return nil, nil
+	var result *github.Repository
+	if v, ok := s.store[r.Key()]; ok {
+		if t, ok := v.(*github.Repository); ok {
+			result = t
+		} else {
+			return result, castFailure
+		}
+	} else {
+		return result, errors.Newf("%s not found - it might not have been loaded yet", r.Key())
+	}
+	return result, nil
 }

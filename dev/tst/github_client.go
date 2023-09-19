@@ -140,3 +140,79 @@ func (gh *GitHubClient) AssignTeamMembership(ctx context.Context, org *github.Or
 	}
 	return team, nil
 }
+
+func (gh *GitHubClient) GetRepo(ctx context.Context, owner, repoName string) (*github.Repository, error) {
+	repo, resp, err := gh.c.Repositories.Get(ctx, owner, repoName)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode >= 400 {
+		return nil, errors.Newf("failed to get repo %q - GitHub response code %d: err", repoName, resp.StatusCode, err)
+	}
+
+	return repo, nil
+}
+
+func (gh *GitHubClient) NewRepo(ctx context.Context, org *github.Organization, repoName string, private bool) (*github.Repository, error) {
+	repo, resp, err := gh.c.Repositories.Create(ctx, org.GetLogin(), &github.Repository{
+		Name:    &repoName,
+		Private: &private,
+	})
+
+	if resp.StatusCode >= 400 {
+		return nil, errors.Newf("failed to create repo %q - GitHub response code %d: err", repoName, resp.StatusCode, err)
+	}
+
+	return repo, err
+}
+
+func (gh *GitHubClient) ForkRepo(ctx context.Context, org *github.Organization, owner, repoName string) error {
+	_, resp, err := gh.c.Repositories.CreateFork(ctx, owner, repoName, &github.RepositoryCreateForkOptions{
+		Organization:      org.GetLogin(),
+		Name:              repoName,
+		DefaultBranchOnly: true,
+	})
+	if resp.StatusCode == 202 {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gh *GitHubClient) UpdateRepo(ctx context.Context, org *github.Organization, repo *github.Repository) (*github.Repository, error) {
+	result, resp, err := gh.c.Repositories.Edit(ctx, org.GetLogin(), repo.GetName(), repo)
+
+	if resp.StatusCode >= 400 {
+		return nil, errors.Newf("failed to edit repository %q - github response status code %d: %v", repo.GetName(), resp.StatusCode, err)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (gh *GitHubClient) DeleteRepo(ctx context.Context, org *github.Organization, repo *github.Repository) error {
+	resp, err := gh.c.Repositories.Delete(ctx, org.GetLogin(), repo.GetName())
+
+	if resp.StatusCode >= 400 {
+		return errors.Newf("failed to edit repository %q - github response status code %d: %v", repo.GetName(), resp.StatusCode, err)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gh *GitHubClient) UpdateTeamRepoPermissions(ctx context.Context, org *github.Organization, team *github.Team, repo *github.Repository) error {
+	resp, err := gh.c.Teams.AddTeamRepoByID(ctx, org.GetID(), team.GetID(), org.GetLogin(), repo.GetName(), &github.TeamAddTeamRepoOptions{})
+	if resp.StatusCode != 204 {
+		return errors.Newf("failed to update repo %q permissions for team %q: %v", repo.GetName(), team.GetSlug(), err)
+	}
+	return nil
+}

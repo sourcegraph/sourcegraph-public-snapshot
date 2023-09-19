@@ -10,9 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/tst/config"
 )
 
-// stub types
-type GitHubScenarioRepo struct{}
-
 type GitHubScenarioBuilder struct {
 	test     *testing.T
 	client   *GitHubClient
