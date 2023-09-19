@@ -3,7 +3,6 @@ package server
 import (
 	"io"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc/codes"
@@ -14,22 +13,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
-var meter = otel.GetMeterProvider().Meter("cmd/telemetry-gateway/internal/server")
-
 type Server struct {
 	logger      log.Logger
 	eventsTopic pubsub.TopicClient
 
-	// Record event lengths of individual payloads
-	histogramRecordEventPayloads metric.Int64Histogram
-	// Record total event lengths of requests
-	histogramRecordEventTotals metric.Int64Histogram
+	recordEventsMetrics recordEventsMetrics
 
 	// Fallback unimplemented handler
 	telemetrygatewayv1.UnimplementedTelemeteryGatewayServiceServer
@@ -38,13 +32,7 @@ type Server struct {
 var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
 func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
-	recordEventPayloadsHistogram, err := meter.Int64Histogram(
-		"telemetry-gateway.record_events.payload_length")
-	if err != nil {
-		return nil, err
-	}
-	recordEventTotalsHistogram, err := meter.Int64Histogram(
-		"telemetry-gateway.record_events.total_length")
+	m, err := newRecordEventsMetrics()
 	if err != nil {
 		return nil, err
 	}
@@ -53,26 +41,23 @@ func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
 		logger:      logger.Scoped("server", "grpc server"),
 		eventsTopic: eventsTopic,
 
-		histogramRecordEventPayloads: recordEventPayloadsHistogram,
-		histogramRecordEventTotals:   recordEventTotalsHistogram,
+		recordEventsMetrics: m,
 	}, nil
 }
 
-func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService_RecordEventsServer) error {
+func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService_RecordEventsServer) (err error) {
 	var (
-		logger = trace.Logger(stream.Context(), s.logger)
+		logger = sgtrace.Logger(stream.Context(), s.logger)
 		// publisher is initialized once for RecordEventsRequestMetadata.
 		publisher *events.Publisher
-		// count of all processed events
-		totalSucceededEvents int64
-		totalFailedEvents    int64
+		// count of all processed events, collected at the end of a request
+		totalProcessedEvents int64
 	)
 
 	defer func() {
-		s.histogramRecordEventTotals.Record(stream.Context(), totalSucceededEvents,
-			metric.WithAttributes(attribute.Bool("succeeded", true)))
-		s.histogramRecordEventTotals.Record(stream.Context(), totalFailedEvents,
-			metric.WithAttributes(attribute.Bool("succeeded", false)))
+		s.recordEventsMetrics.totalLength.Record(stream.Context(),
+			totalProcessedEvents,
+			metric.WithAttributes(attribute.Bool("error", err != nil)))
 	}()
 
 	for {
@@ -113,43 +98,23 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 
 		case *telemetrygatewayv1.RecordEventsRequest_Events:
 			events := msg.GetEvents().GetEvents()
-			if len(events) == 0 {
-				continue
-			}
 			if publisher == nil {
-				return status.Error(codes.InvalidArgument, "metadata not yet received")
+				return status.Error(codes.InvalidArgument, "got events when metadata not yet received")
 			}
 
-			// Send off our events
-			results := publisher.Publish(stream.Context(), events)
+			// Publish events
+			resp := handlePublishEvents(
+				stream.Context(),
+				logger,
+				&s.recordEventsMetrics.payload,
+				publisher,
+				events)
 
-			// Aggregate failure details
-			message, errFields, succeeded, failed := summarizeResults(results)
-
-			// Record succeeded and failed separately
-			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(succeeded)),
-				metric.WithAttributes(attribute.Bool("succeeded", true)))
-			totalSucceededEvents += int64(len(succeeded))
-			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failed)),
-				metric.WithAttributes(attribute.Bool("succeeded", false)))
-			totalFailedEvents += int64(len(failed))
-
-			// Generate a log message for diagnostics
-			summaryFields := []log.Field{
-				log.Int("submitted", len(events)),
-				log.Int("succeeded", len(succeeded)),
-				log.Int("failed", len(failed)),
-			}
-			if len(failed) > 0 {
-				logger.Error(message, append(summaryFields, errFields...)...)
-			} else {
-				logger.Info(message, summaryFields...)
-			}
+			// Update total count
+			totalProcessedEvents += int64(len(events))
 
 			// Let the client know what happened
-			if err := stream.Send(&telemetrygatewayv1.RecordEventsResponse{
-				SucceededEvents: succeeded,
-			}); err != nil {
+			if err := stream.Send(resp); err != nil {
 				return err
 			}
 
