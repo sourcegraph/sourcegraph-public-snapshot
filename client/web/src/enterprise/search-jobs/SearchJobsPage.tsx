@@ -27,6 +27,7 @@ import {
     MultiComboboxOption,
     MultiComboboxPopover,
     PageHeader,
+    PageSwitcher,
     Select,
     Text,
     Tooltip,
@@ -34,7 +35,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { DownloadFileButton } from '../../components/DownloadFileButton'
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
@@ -82,8 +83,10 @@ export const SEARCH_JOBS_QUERY = gql`
     }
 
     query SearchJobs(
-        $first: Int!
+        $first: Int
         $after: String
+        $last: Int
+        $before: String
         $query: String!
         $userIDs: [ID!]
         $states: [SearchJobState!]
@@ -92,6 +95,8 @@ export const SEARCH_JOBS_QUERY = gql`
         searchJobs(
             first: $first
             after: $after
+            last: $last
+            before: $before
             query: $query
             userIDs: $userIDs
             states: $states
@@ -103,8 +108,10 @@ export const SEARCH_JOBS_QUERY = gql`
             }
             totalCount
             pageInfo {
+                startCursor
                 endCursor
                 hasNextPage
+                hasPreviousPage
             }
         }
     }
@@ -129,15 +136,13 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
     const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
+    const { connection, error, loading, ...paginationProps } = usePageSwitcherPagination<
         SearchJobsResult,
         SearchJobsVariables,
         SearchJobNode
     >({
         query: SEARCH_JOBS_QUERY,
         variables: {
-            first: 20,
-            after: null,
             query: debouncedSearchTerm,
             userIDs: selectedUsers.map(user => user.id),
             states: selectedStates,
@@ -146,6 +151,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
         options: {
             pollInterval: 5000,
             fetchPolicy: 'cache-and-network',
+            pageSize: 15,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -158,8 +164,6 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
     const suggestions = SEARCH_JOB_STATES.filter(
         filter => !selectedStates.includes(filter) && filter.toLowerCase().includes(searchStateTerm.toLowerCase())
     )
-
-    const searchJobs = connection?.nodes ?? []
 
     return (
         <Page>
@@ -263,15 +267,12 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
                 {!error && connection && connection.nodes.length > 0 && (
                     <footer className={styles.footer}>
-                        {hasNextPage && (
-                            <Button variant="secondary" outline={true} disabled={loading} onClick={fetchMore}>
-                                Show more
-                            </Button>
-                        )}
-                        <span className={styles.paginationInfo}>
-                            {connection?.totalCount ?? 0} <b>search jobs</b> total{' '}
-                            {hasNextPage && <>(showing first {searchJobs.length})</>}
-                        </span>
+                        <PageSwitcher
+                            {...paginationProps}
+                            className="mt-3"
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel="search jobs"
+                        />
                     </footer>
                 )}
             </Container>
