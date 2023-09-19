@@ -14,6 +14,7 @@ import javax.swing.*
 
 class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Context Selection") {
   val logger = logger<EditCodebaseContextAction>()
+
   private inner class EditCodebaseDialog : DialogWrapper(null, true) {
     val gitURL =
         ExtendableTextField(CodyAgent.getClient(project).codebase?.currentCodebase() ?: "", 40)
