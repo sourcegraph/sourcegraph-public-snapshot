@@ -59,7 +59,9 @@ func (sb *GitHubScenarioBuilder) Quiet() {
 
 func (sb *GitHubScenarioBuilder) Org(name string) *GitHubScenarioBuilder {
 	sb.test.Helper()
-	// stub
+	org := NewGitHubScenarioOrg(name)
+	sb.actions.AddSetup(org.CreateOrgAction(sb.client), org.UpdateOrgPermissionsAction(sb.client))
+	sb.actions.AddTeardown(org.DeleteOrgAction(sb.client))
 	return sb
 }
 
