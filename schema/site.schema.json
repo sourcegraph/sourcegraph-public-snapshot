@@ -2579,7 +2579,7 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "description": "Toggles whether chat service is enabled.",
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
           "type": "boolean",
           "!go": {
             "pointer": true
