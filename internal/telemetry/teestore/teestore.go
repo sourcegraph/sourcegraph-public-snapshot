@@ -38,12 +38,14 @@ func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 		}
 		return nil
 	})
-	wg.Go(func() error {
-		if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
-			return errors.Wrap(err, "bulk inserting events logs")
-		}
-		return nil
-	})
+	if !shouldDisableV1(ctx) {
+		wg.Go(func() error {
+			if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
+				return errors.Wrap(err, "bulk inserting events logs")
+			}
+			return nil
+		})
+	}
 	return wg.Wait()
 }
 
