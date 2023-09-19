@@ -8,13 +8,10 @@ tasks:
     # Checks that BUILD file content is up-to-date with sources
     # gazelle:
     # Checks that all tests are passing
-    bazel:
-        rcfiles:
-            - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
     test:
       bazel:
-        flags:
-          - --test_env=PGUSER=postgres
+        rcfiles:
+            - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
         env:
             CI: "true"
             PGUSER: postgres
