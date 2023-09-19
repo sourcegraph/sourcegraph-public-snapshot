@@ -11,7 +11,6 @@ import (
 )
 
 // stub types
-type GitHubScenarioUser struct{}
 type GitHubScenarioTeam struct{}
 type GitHubScenarioRepo struct{}
 

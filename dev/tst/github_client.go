@@ -68,3 +68,28 @@ func (gh *GitHubClient) orgUsers(ctx context.Context, org *github.Organization) 
 	}
 	return users, nil
 }
+
+func (gh *GitHubClient) CreateUser(ctx context.Context, name, email string) (*github.User, error) {
+	user, resp, err := gh.c.Admin.CreateUser(ctx, name, email)
+	if resp.StatusCode >= 400 {
+		return nil, errors.Newf("failed to create user %q - GitHub status code %d: %v", name, resp.StatusCode, err)
+	}
+	return user, nil
+}
+
+func (gh *GitHubClient) GetUser(ctx context.Context, name string) (*github.User, error) {
+	user, resp, err := gh.c.Users.Get(ctx, name)
+	if resp.StatusCode >= 400 {
+		return nil, errors.Newf("failed to get user %q - GitHub status code %d: %v", name, resp.StatusCode, err)
+	}
+	return user, nil
+}
+
+func (gh *GitHubClient) DeleteUser(ctx context.Context, username string) error {
+	resp, err := gh.c.Admin.DeleteUser(ctx, username)
+	if resp.StatusCode >= 400 {
+		return errors.Newf("failed to delete user %q - GitHub status code %d: %v", username, resp.StatusCode, err)
+	}
+
+	return nil
+}
