@@ -36,7 +36,7 @@ func TestSources_ListRepos(t *testing.T) {
 			GitServers: []string{"127.0.0.1:3178"},
 		}, SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: false,
+				EnableGRPC: boolPointer(false),
 			},
 		},
 	})
@@ -694,4 +694,8 @@ func getAWSEnv(envVar string) string {
 		s = fmt.Sprintf("BOGUS-%s", envVar)
 	}
 	return s
+}
+
+func boolPointer(b bool) *bool {
+	return &b
 }

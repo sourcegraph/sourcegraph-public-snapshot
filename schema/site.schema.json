@@ -394,9 +394,9 @@
         "enableGRPC": {
           "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
-            "pointer": false
+            "pointer": true
           }
         },
         "enablePermissionsWebhooks": {

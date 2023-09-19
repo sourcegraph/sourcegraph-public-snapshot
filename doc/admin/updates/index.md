@@ -115,3 +115,4 @@ If your instance has schema drift or unfinished oob migrations you may need to a
 - [Upgrading Early Versions](./migrator/upgrading-early-versions.md)
 - [Troubleshooting upgrades](./migrator/troubleshooting-upgrades.md)
 - [Downgrading](./migrator/downgrading.md)
+- [Sourcegraph 5.2 gRPC Configuration Guide](./grpc/index.md)

@@ -16,6 +16,7 @@ go_library(
         "//internal/goroutine",
         "//internal/httpserver",
         "//internal/observation",
+        "//internal/profiler",
         "//internal/pubsub",
         "//internal/service",
         "//internal/updatecheck",

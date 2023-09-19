@@ -27,13 +27,15 @@ import {
     MultiComboboxOption,
     MultiComboboxPopover,
     PageHeader,
+    PageSwitcher,
     Select,
     Text,
     Tooltip,
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { DownloadFileButton } from '../../components/DownloadFileButton'
+import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
@@ -63,6 +65,7 @@ export const SEARCH_JOBS_QUERY = gql`
         query
         state
         URL
+        logURL
         startedAt
         finishedAt
         repoStats {
@@ -80,21 +83,35 @@ export const SEARCH_JOBS_QUERY = gql`
     }
 
     query SearchJobs(
-        $first: Int!
+        $first: Int
         $after: String
+        $last: Int
+        $before: String
         $query: String!
         $userIDs: [ID!]
         $states: [SearchJobState!]
         $orderBy: SearchJobsOrderBy
     ) {
-        searchJobs(first: $first, after: $after, query: $query, userIDs: $userIDs, states: $states, orderBy: $orderBy) {
+        searchJobs(
+            first: $first
+            after: $after
+            last: $last
+            before: $before
+            query: $query
+            userIDs: $userIDs
+            states: $states
+            orderBy: $orderBy
+            descending: true
+        ) {
             nodes {
                 ...SearchJobNode
             }
             totalCount
             pageInfo {
+                startCursor
                 endCursor
                 hasNextPage
+                hasPreviousPage
             }
         }
     }
@@ -119,15 +136,13 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
     const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
+    const { connection, error, loading, ...paginationProps } = usePageSwitcherPagination<
         SearchJobsResult,
         SearchJobsVariables,
         SearchJobNode
     >({
         query: SEARCH_JOBS_QUERY,
         variables: {
-            first: 20,
-            after: null,
             query: debouncedSearchTerm,
             userIDs: selectedUsers.map(user => user.id),
             states: selectedStates,
@@ -136,6 +151,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
         options: {
             pollInterval: 5000,
             fetchPolicy: 'cache-and-network',
+            pageSize: 15,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -148,8 +164,6 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
     const suggestions = SEARCH_JOB_STATES.filter(
         filter => !selectedStates.includes(filter) && filter.toLowerCase().includes(searchStateTerm.toLowerCase())
     )
-
-    const searchJobs = connection?.nodes ?? []
 
     return (
         <Page>
@@ -223,9 +237,9 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                 {error && !loading && <ErrorAlert error={error} className="mt-4 mb-0" />}
 
                 {!error && loading && !connection && (
-                    <Text>
+                    <div>
                         <LoadingSpinner /> Fetching search jobs list
-                    </Text>
+                    </div>
                 )}
 
                 {!error && connection && (
@@ -253,15 +267,12 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
                 {!error && connection && connection.nodes.length > 0 && (
                     <footer className={styles.footer}>
-                        {hasNextPage && (
-                            <Button variant="secondary" outline={true} disabled={loading} onClick={fetchMore}>
-                                Show more
-                            </Button>
-                        )}
-                        <span className={styles.paginationInfo}>
-                            {connection?.totalCount ?? 0} <b>search jobs</b> total{' '}
-                            {hasNextPage && <>(showing first {searchJobs.length})</>}
-                        </span>
+                        <PageSwitcher
+                            {...paginationProps}
+                            className="mt-3"
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel="search jobs"
+                        />
                     </footer>
                 )}
             </Container>
@@ -318,9 +329,18 @@ const SearchJob: FC<SearchJobProps> = props => {
             )}
 
             <span className={styles.jobActions}>
-                <Button variant="link" className={styles.jobViewLogs}>
-                    View logs
-                </Button>
+                <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
+                    <DownloadFileButton
+                        variant="link"
+                        disabled={!job.logURL}
+                        fileUrl={job.logURL ?? ''}
+                        fileName={`search-job-logs-${getFileNameFromURL(job.logURL)}`}
+                        withLoading={false}
+                        className={styles.jobViewLogs}
+                    >
+                        View logs
+                    </DownloadFileButton>
+                </Tooltip>
 
                 <Tooltip content="Rerun search job">
                     <Button
@@ -360,10 +380,18 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Tooltip>
             </span>
 
-            <Button variant="secondary" className={styles.jobDownload}>
-                <Icon svgPath={mdiDownload} aria-hidden={true} />
-                Download
-            </Button>
+            {job.URL && (
+                <DownloadFileButton
+                    fileUrl={job.URL}
+                    fileName={`search-job-results-${getFileNameFromURL(job.URL)}`}
+                    variant="secondary"
+                    withLoading={false}
+                    className={styles.jobDownload}
+                >
+                    <Icon svgPath={mdiDownload} aria-hidden={true} />
+                    Download
+                </DownloadFileButton>
+            )}
         </li>
     )
 }
@@ -432,3 +460,12 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
 const hasFiltersValues = (states: SearchJobState[], users: User[], searchTerm: string): boolean =>
     states.length > 0 || users.length > 0 || searchTerm.trim().length > 0
+
+const getFileNameFromURL = (url: string | null): string => {
+    if (url === null) {
+        return ''
+    }
+
+    const parts = url.split('/')
+    return parts[parts.length - 1]
+}

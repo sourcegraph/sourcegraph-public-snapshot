@@ -83,7 +83,11 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore)
+	newSearcherFactory := func(_ *observation.Context, _ database.DB) service.NewSearcher {
+		return service.NewSearcherFake()
+	}
+
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore, newSearcherFactory)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()

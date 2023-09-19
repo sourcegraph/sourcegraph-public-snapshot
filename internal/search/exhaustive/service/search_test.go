@@ -17,7 +17,7 @@ import (
 )
 
 func TestBackendFake(t *testing.T) {
-	testNewSearcher(t, NewSearcherFake(), newSearcherTestCase{
+	testNewSearcher(t, context.Background(), NewSearcherFake(), newSearcherTestCase{
 		Query:        "1@rev1 1@rev2 2@rev3",
 		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
 		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
@@ -36,10 +36,9 @@ type newSearcherTestCase struct {
 	WantCSV      string
 }
 
-func testNewSearcher(t *testing.T, newSearcher NewSearcher, tc newSearcherTestCase) {
+func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher, tc newSearcherTestCase) {
 	assert := require.New(t)
 
-	ctx := context.Background()
 	searcher, err := newSearcher.NewSearch(ctx, tc.Query)
 	assert.NoError(err)
 

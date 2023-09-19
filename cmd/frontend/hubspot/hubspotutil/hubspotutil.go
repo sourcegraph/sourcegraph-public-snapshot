@@ -1,6 +1,7 @@
 package hubspotutil
 
 import (
+	"context"
 	"log"
 
 	"github.com/inconshreveable/log15"
@@ -75,14 +76,15 @@ func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
 		return
 	}
 
-	// Update or create user contact information in HubSpot
-	err := syncHubSpotContact(email, eventID, contactParams)
+	// Update or create user contact information in HubSpot, and we want to sync the
+	// contact independent of the request lifecycle.
+	err := syncHubSpotContact(context.Background(), email, eventID, contactParams)
 	if err != nil {
 		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
 	}
 }
 
-func syncHubSpotContact(email, eventID string, contactParams *hubspot.ContactProperties) error {
+func syncHubSpotContact(ctx context.Context, email, eventID string, contactParams *hubspot.ContactProperties) error {
 	if email == "" {
 		return errors.New("user must have a valid email address")
 	}
@@ -103,7 +105,7 @@ func syncHubSpotContact(email, eventID string, contactParams *hubspot.ContactPro
 
 	// Log the user event
 	if eventID != "" {
-		err = c.LogEvent(email, eventID, map[string]string{})
+		err = c.LogEvent(ctx, email, eventID, map[string]string{})
 		if err != nil {
 			return errors.Wrap(err, "LogEvent")
 		}

@@ -3,6 +3,7 @@ package com.sourcegraph.utils
 import com.intellij.application.options.CodeStyle
 import com.intellij.injected.editor.EditorWindow
 import com.intellij.lang.Language
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
@@ -95,6 +96,16 @@ object CodyEditorUtil {
         .filter { fileEditor: FileEditor? -> fileEditor is TextEditor }
         .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
         .collect(Collectors.toSet())
+  }
+
+  @JvmStatic
+  fun getFocusedEditorForAnActionEvent(e: AnActionEvent): Editor? {
+    return FileEditorManager.getInstance(e.project!!).selectedTextEditor
+  }
+
+  @JvmStatic
+  fun getLanguageForFocusedEditor(e: AnActionEvent): Language? {
+    return getFocusedEditorForAnActionEvent(e)?.let { getLanguage(it) }
   }
 
   @JvmStatic
