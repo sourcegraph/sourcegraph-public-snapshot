@@ -10,6 +10,7 @@ go_library(
         "reporter.go",
         "scenario_resource.go",
         "store.go",
+        "team.go",
         "users.go",
         "util.go",
     ],

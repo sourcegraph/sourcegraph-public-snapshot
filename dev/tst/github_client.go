@@ -93,3 +93,50 @@ func (gh *GitHubClient) DeleteUser(ctx context.Context, username string) error {
 
 	return nil
 }
+
+func (gh *GitHubClient) GetOrCreateTeam(ctx context.Context, org *github.Organization, name string) (*github.Team, error) {
+	team, resp, err := gh.c.Teams.GetTeamBySlug(ctx, org.GetLogin(), name)
+
+	switch resp.StatusCode {
+	case 200:
+		return team, nil
+	case 404:
+		newTeam := github.NewTeam{
+			Name:        name,
+			Description: strp("auto created team"),
+			Privacy:     strp("closed"),
+		}
+		team, _, err = gh.c.Teams.CreateTeam(ctx, org.GetLogin(), newTeam)
+	}
+	return team, err
+}
+
+func (gh *GitHubClient) DeleteTeam(ctx context.Context, org *github.Organization, name string) error {
+	resp, err := gh.c.Teams.DeleteTeamBySlug(ctx, org.GetLogin(), name)
+	if resp.StatusCode >= 400 {
+		return errors.Newf("failed to delete team %q - GitHub status code %d: %v", name, resp.StatusCode, err)
+	}
+	return err
+}
+
+func (gh *GitHubClient) AssignTeamMembership(ctx context.Context, org *github.Organization, team *github.Team, users ...*github.User) (*github.Team, error) {
+	for _, u := range users {
+		_, resp, err := gh.c.Teams.GetTeamMembershipByID(ctx, org.GetID(), team.GetID(), u.GetLogin())
+		if resp.StatusCode == 200 {
+			// user is already part of this team
+			return team, nil
+		} else if resp.StatusCode >= 500 {
+			return nil, errors.Newf("server error[%d]: %v", resp.StatusCode, err)
+		}
+
+		_, _, err = gh.c.Teams.AddTeamMembershipByID(ctx, org.GetID(), team.GetID(), u.GetLogin(), &github.TeamAddTeamMembershipOptions{
+			Role: "member",
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+	}
+	return team, nil
+}
