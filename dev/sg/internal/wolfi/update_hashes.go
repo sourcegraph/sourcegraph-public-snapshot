@@ -99,6 +99,7 @@ func getImageManifest(image string, tag string) (string, error) {
 
 func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	if updateImageName != "" {
+		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
 		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)
 	}
 
