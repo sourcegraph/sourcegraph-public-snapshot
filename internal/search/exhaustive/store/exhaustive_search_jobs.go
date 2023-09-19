@@ -304,10 +304,18 @@ func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err er
 }
 
 const getAggregateRepoRevState = `
-SELECT rrj.state, count(rrj.id) as count FROM exhaustive_search_repo_revision_jobs rrj
-JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
-WHERE rj.search_job_id = %s
-GROUP BY rrj.state
+SELECT state, COUNT(*) as count
+FROM
+  (
+    SELECT state FROM exhaustive_search_jobs WHERE id = %s
+    UNION ALL
+    SELECT state FROM exhaustive_search_repo_jobs WHERE search_job_id = %s
+    UNION ALL
+    SELECT rrj.state FROM exhaustive_search_repo_revision_jobs rrj
+    JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
+    WHERE rj.search_job_id = %s
+  ) AS sub
+GROUP BY state;
 `
 
 func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[string]int, err error) {
@@ -322,7 +330,7 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 		return nil, err
 	}
 
-	q := sqlf.Sprintf(getAggregateRepoRevState, id)
+	q := sqlf.Sprintf(getAggregateRepoRevState, id, id, id)
 
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
