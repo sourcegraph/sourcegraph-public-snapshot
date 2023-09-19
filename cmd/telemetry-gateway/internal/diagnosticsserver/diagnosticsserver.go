@@ -23,7 +23,7 @@ func NewDiagnosticsHandler(
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
-	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
+	hasValidSecret := func(w http.ResponseWriter, r *http.Request) (yes bool) {
 		token, err := authbearer.ExtractBearer(r.Header)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -51,7 +51,7 @@ func NewDiagnosticsHandler(
 
 	mux.HandleFunc("/-/healthz", func(w http.ResponseWriter, r *http.Request) {
 		logger := trace.Logger(r.Context(), baseLogger)
-		if !hasValidSecret(logger, w, r) {
+		if !hasValidSecret(w, r) {
 			return
 		}
 

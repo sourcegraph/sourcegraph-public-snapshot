@@ -34,6 +34,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1",
     visibility = [
         "//cmd/frontend/internal/telemetry/resolvers:__pkg__",
+        "//cmd/telemetry-gateway/internal/events:__pkg__",
+        "//cmd/telemetry-gateway/internal/server:__pkg__",
+        "//cmd/telemetry-gateway/shared:__pkg__",
         "//cmd/telemetrygateway/server:__pkg__",
         "//cmd/telemetrygateway/shared:__pkg__",
         "//internal/api:__pkg__",
