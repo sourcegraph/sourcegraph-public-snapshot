@@ -1,7 +1,9 @@
 package com.sourcegraph.cody
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.ui.Messages
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
@@ -76,7 +78,9 @@ class SaveAccessTokenHttpService : RestService() {
               ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
         }) {
           val validationInfo = CodyTokenCredentialsUi.handleError(it)
-          // TODO what to do in case of an error?
+          ApplicationManager.getApplication().invokeLater {
+            Messages.showErrorDialog(project, validationInfo.message, "Failed to sign in")
+          }
         }
   }
 
