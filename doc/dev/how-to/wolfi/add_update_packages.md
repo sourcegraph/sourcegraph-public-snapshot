@@ -36,10 +36,15 @@ It's common to need to update a package to the most recent release in order to p
 2. Update the [`package.version`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@321e0e9d01fa23b83bef57c1e69076866094af20/-/blob/wolfi-packages/comby.yaml?L3) field to the latest version. This is usually substituted in a URL within the pipeline's [`fetch` step](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@321e0e9d01fa23b83bef57c1e69076866094af20/-/blob/wolfi-packages/comby.yaml?L30) as `${{package.version}}`. You will also need to update the [`expected-sha256`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@321e0e9d01fa23b83bef57c1e69076866094af20/-/blob/wolfi-packages/comby.yaml?L31), which can be found by downloading the release and running `sha256sum <file_name>`.
 
 - Depending on the package, this step may download a binary or source code. Projects release code in different ways, so the pipeline may check out a Git repository on a specific branch or download a `.tar.gz` file containing source code.
+- You should also reset the `package.epoch` field to 0 when updating the version.
 
-3. Optionally, build the package locally with `sg wolfi package <package-name>`. This will create an `.apk` file under `wolfi-packages/local-repo/packages/x86_64` which you can [inspect](#testing-packages).
+3. Optionally, build the package locally with `sg wolfi package <package-name>`.
 
-4. Push your branch and create a PR. Buildkite will build the new version of the package, which you can [test](#testing-packages). Once merged to `main`, it will be added to the [Sourcegraph package repository](#sourcegraph-package-repository).
+4. Push your branch and create a PR. Open the Buildkite page for your build (`sg ci status --web`) - the pipeline will automatically rebuild any base images that use this package and show instructions for how to pull these locally for testing.
+
+5. After validating the new package and base images, merge to `main`. This will add the updated packages to the [Sourcegraph package repository](#sourcegraph-package-repository) and push the updated base images to Dockerhub.
+
+6. Check out main, create a new branch, and run `sg wolfi update-hashes <image-name>` locally to update the base images digests in `dev/oci_deps.bzl`. Create another PR and merge to main. This ensures that the updated base images are used when building final images.
 
 ### Create a new package
 
@@ -70,7 +75,7 @@ When creating a new package, the rough workflow is:
 
 ### Testing packages
 
-- `.apk` files are just `.tar.gz` files, so can be extracted with `tar zxvf package.apk`. This is useful for checking their contents.
+- `.apk` files can be extracted with `tar zxvf package.apk`. This is useful for checking their contents.
   - After building locally with `sg wolfi package <package-name>`, packages can be found under `wolfi-packages/local-repo/packages/x86_64/`.
 - Always try installing the package in a container, as this ensures that all runtime dependencies can be satisfied.
 - After building a package locally with `sg wolfi package`, you can test it out in a specific base image by modifying that image's manifest (under `wolfi-images/`) from `package@sourcegraph` to `package@local` and run `sg wolfi image <image-name>`. This will build the base image using the package from your local repository.
@@ -81,10 +86,12 @@ We maintain our own package repository for custom dependencies that aren't in th
 
 This is implemented as a GCP bucket. Buildkite is used to build and upload packages, as well as to [build and sign](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/scripts/wolfi/build-repo-index.sh) the repository index.
 
-Currently, all packages are uploaded directly to the main Sourcegraph package repo. To provide an isolated development environment, in the future we plan to separate our dev and production repos:
+The package repository is segmented by production and development:
 
-- The `main/` directory only contains packages built from the main branch.
-- Each branch which updates package manifests will have its own `branch-name` repository.
+- The `main/` directory is our production repository and only contains packages built from `main`.
+- Every branch that updates packages has a separate repository under `branches/<branch-name>`.
+
+When updating a package on a branch, any base images that depend on it will be automatically rebuild using the updated package from the branch-specific repo. Instructions are for pulling the updated base images and packages are shown at the top of the Buildkite build page.
 
 ### Local package repository
 
