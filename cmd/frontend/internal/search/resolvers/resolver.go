@@ -145,7 +145,7 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	var value string
 	switch column {
 	case "created_at":
-		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339))
+		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339Nano))
 	case "state":
 		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
 	case "query":
