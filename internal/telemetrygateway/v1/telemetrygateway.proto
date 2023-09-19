@@ -41,9 +41,10 @@ message RecordEventsRequest {
   oneof payload {
     // Metadata about the events being recorded.
     RecordEventsRequestMetadata metadata = 1;
-    // Events to record in a single request. Clients should aim to batch large
-    // event backlogs into a series of smaller requests each <1MB in size in the
-    // RecordEvents stream, e.g. using (google.golang.org/protobuf/proto).Size(...).
+    // Batch of events to record in a single request. Clients should aim to
+    // batch large event backlogs into a series of smaller requests in the
+    // RecordEvents stream, being mindful of common limits in individual message
+    // sizes: https://protobuf.dev/programming-guides/api/#bound-req-res-sizes
     EventsPayload events = 2;
   }
 }

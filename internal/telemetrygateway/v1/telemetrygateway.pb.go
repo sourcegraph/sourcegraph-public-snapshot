@@ -162,9 +162,10 @@ type RecordEventsRequest_Metadata struct {
 }
 
 type RecordEventsRequest_Events struct {
-	// Events to record in a single request. Clients should aim to batch large
-	// event backlogs into a series of smaller requests each <1MB in size in the
-	// RecordEvents stream, e.g. using (google.golang.org/protobuf/proto).Size(...).
+	// Batch of events to record in a single request. Clients should aim to
+	// batch large event backlogs into a series of smaller requests in the
+	// RecordEvents stream, being mindful of common limits in individual message
+	// sizes: https://protobuf.dev/programming-guides/api/#bound-req-res-sizes
 	Events *RecordEventsRequest_EventsPayload `protobuf:"bytes,2,opt,name=events,proto3,oneof"`
 }
 
