@@ -28,9 +28,9 @@ interface ExternalServiceInformationProps {
 
 export const RateLimiterStateInfo: FC<{ rateLimiterState: RateLimiterState }> = props => {
     const { rateLimiterState } = props
-    const rateLimiterDebug = Object.entries(rateLimiterState).map(([k, v]) => (
+    const rateLimiterDebug = Object.entries(rateLimiterState).map(([key, value]) => (
         <div>
-            {k}: {v.toString()}
+            {key}: {value.toString()}
         </div>
     ))
 
