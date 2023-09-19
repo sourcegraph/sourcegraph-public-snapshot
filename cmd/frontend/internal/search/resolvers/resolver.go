@@ -60,7 +60,7 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, r.svc.DeleteSearchJob(ctx, jobID)
 }
 
-func newSearchJobConnectionResolver(db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
 	var states []string
 	if args.States != nil {
 		states = *args.States
@@ -83,6 +83,7 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 	}
 
 	s := &searchJobsConnectionStore{
+		ctx:     ctx,
 		db:      db,
 		service: service,
 		states:  states,
@@ -99,6 +100,7 @@ func newSearchJobConnectionResolver(db database.DB, service *service.Service, ar
 }
 
 type searchJobsConnectionStore struct {
+	ctx     context.Context
 	db      database.DB
 	service *service.Service
 	states  []string
@@ -143,9 +145,9 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	var value string
 	switch column {
 	case "created_at":
-		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339))
+		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339Nano))
 	case "state":
-		value = fmt.Sprintf("'%v'", strings.ToLower(node.State()))
+		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
 	case "query":
 		value = fmt.Sprintf("'%v'", node.Query())
 	default:
@@ -204,8 +206,8 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	return &csv, nil
 }
 
-func (r *Resolver) SearchJobs(_ context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
-	return newSearchJobConnectionResolver(r.db, r.svc, args)
+func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
+	return newSearchJobConnectionResolver(ctx, r.db, r.svc, args)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {

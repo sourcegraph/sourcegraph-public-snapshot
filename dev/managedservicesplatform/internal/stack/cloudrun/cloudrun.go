@@ -388,6 +388,8 @@ func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables
 				Ports: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersPorts{{
 					// ContainerPort is provided to the container as $PORT in Cloud Run
 					ContainerPort: pointers.Float64(servicePort),
+					// Name is protocol, supporting 'h2c', 'http1', or nil (http1)
+					Name: (*string)(vars.Service.Protocol),
 				}},
 
 				Env: append(
