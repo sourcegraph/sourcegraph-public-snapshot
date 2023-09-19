@@ -14,7 +14,6 @@ import (
 type GitHubScenarioUser struct{}
 type GitHubScenarioTeam struct{}
 type GitHubScenarioRepo struct{}
-type GitHubClient struct{}
 
 type GitHubScenarioBuilder struct {
 	test     *testing.T

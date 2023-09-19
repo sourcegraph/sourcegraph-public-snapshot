@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v53/github"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var castFailure error
@@ -35,8 +37,17 @@ func (s *ScenarioStore) SetOrg(org *github.Organization) {
 }
 func (s *ScenarioStore) GetOrg() (*github.Organization, error) {
 	s.T.Helper()
-	//stub
-	return nil, nil
+	var result *github.Organization
+	if v, ok := s.store["org"]; ok {
+		if t, ok := v.(*github.Organization); ok {
+			result = t
+		} else {
+			return result, castFailure
+		}
+	} else {
+		return result, errors.Newf("%s not found - it might not have been loaded yet", "org")
+	}
+	return result, nil
 }
 
 func (s *ScenarioStore) SetScenarioUserMapping(u *GitHubScenarioUser, user *github.User) {
