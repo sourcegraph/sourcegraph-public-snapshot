@@ -8,7 +8,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/log"
 
@@ -54,6 +53,9 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		logger = trace.Logger(stream.Context(), s.logger)
 		// publisher is initialized once for RecordEventsRequestMetadata.
 		publisher *events.Publisher
+
+		recordingSuccess = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingSuccess, 0)
+		recordingErrors  = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingError, 0)
 	)
 
 	for {
@@ -102,38 +104,29 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 
 			results := publisher.Publish(stream.Context(), events)
-			if failedEvents := results.FailedEvents(); len(failedEvents) == 0 {
-				// Record suceeded
-				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(events)),
-					metric.WithAttributes(attribute.Bool("succeeded", true)))
-			} else {
-				// Record succeeded and failed separately
-				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(events)-len(failedEvents)),
-					metric.WithAttributes(attribute.Bool("succeeded", true)))
-				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failedEvents)),
-					metric.WithAttributes(attribute.Bool("succeeded", false)))
 
-				// Aggregate failure details
-				message, errFields, details := summarizeFailedEvents(len(events), failedEvents)
+			// Aggregate failure details
+			message, errFields, succeeded, failed := summarizeResults(results)
 
-				// Generate a log message for diagnostics
-				logger.With(errFields...).Error(message,
-					log.Int("submitted", len(events)),
-					log.Int("failed", len(failedEvents)),
-					// Monitor if we run into https://github.com/grpc/grpc-go/issues/4265
-					log.Int("details.protoSizeBytes", proto.Size(details)))
-
-				// Attach error set to the error response
-				st, err := status.New(codes.Internal, message).WithDetails(details)
-				if err != nil {
-					logger.Error("failed to marshal error status",
-						log.Error(err))
-					// Just return a failure message to the client without
-					// details if we can't marshal the error status
-					return status.Error(codes.Internal, message)
-				}
-				return st.Err()
+			// Collect results
+			if len(succeeded) > 0 {
+				recordingSuccess = append(recordingSuccess, succeeded...)
 			}
+			if len(failed) > 0 {
+				recordingErrors = append(recordingErrors, failed...)
+			}
+
+			// Generate a log message for diagnostics
+			logger.With(errFields...).Error(message,
+				log.Int("submitted", len(events)),
+				log.Int("succeeded", len(succeeded)),
+				log.Int("failed", len(failed)))
+
+			// Record succeeded and failed separately
+			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(succeeded)),
+				metric.WithAttributes(attribute.Bool("succeeded", true)))
+			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failed)),
+				metric.WithAttributes(attribute.Bool("succeeded", false)))
 
 		case nil:
 			continue
@@ -143,5 +136,8 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		}
 	}
 
-	return stream.SendAndClose(&telemetrygatewayv1.RecordEventsResponse{})
+	return stream.SendAndClose(&telemetrygatewayv1.RecordEventsResponse{
+		SucceededEvents: recordingSuccess,
+		FailedEvents:    recordingErrors,
+	})
 }

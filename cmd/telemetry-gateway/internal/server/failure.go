@@ -9,27 +9,42 @@ import (
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
-func summarizeFailedEvents(submittedEvents int, failedEvents []events.PublishEventResult) (string, []log.Field, *telemetrygatewayv1.RecordEventsErrorDetails) {
-	// Generate failure message
-	var message string
-	if len(failedEvents) == submittedEvents {
-		message = "all events in batch failed to submit"
-	} else {
-		message = "some events in batch failed to submit"
-	}
-
+func summarizeResults(results []events.PublishEventResult) (
+	string,
+	[]log.Field,
+	[]*telemetrygatewayv1.RecordEventsResponse_RecordingSuccess,
+	[]*telemetrygatewayv1.RecordEventsResponse_RecordingError,
+) {
 	// Collect details about the events that failed to submit.
-	failedEventsDetails := make([]*telemetrygatewayv1.RecordEventsErrorDetails_EventError, len(failedEvents))
-	errFields := make([]log.Field, len(failedEvents))
-	for i, failure := range failedEvents {
-		failedEventsDetails[i] = &telemetrygatewayv1.RecordEventsErrorDetails_EventError{
-			EventId: failure.EventID,
-			Error:   failure.PublishError.Error(),
+	var (
+		errFields = make([]log.Field, 0)
+		succeeded = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingSuccess, 0, len(results))
+		failed    = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingError, 0)
+	)
+
+	for i, result := range results {
+		if result.PublishError != nil {
+			failed = append(failed, &telemetrygatewayv1.RecordEventsResponse_RecordingError{
+				EventId: result.EventID,
+				Error:   result.PublishError.Error(),
+			})
+			errFields[i] = log.NamedError(fmt.Sprintf("error.%d", i), result.PublishError)
+		} else {
+			succeeded = append(succeeded, &telemetrygatewayv1.RecordEventsResponse_RecordingSuccess{
+				EventId: result.EventID,
+			})
 		}
-		errFields[i] = log.NamedError(fmt.Sprintf("error.%d", i), failure.PublishError)
 	}
 
-	return message, errFields, &telemetrygatewayv1.RecordEventsErrorDetails{
-		FailedEvents: failedEventsDetails,
+	var message string
+	switch {
+	case len(failed) == len(results):
+		message = "all events in batch failed to submit"
+	case len(failed) > 0 && len(failed) < len(results):
+		message = "some events in batch failed to submit"
+	case len(failed) == 0:
+		message = "all events in batch submitted successfully"
 	}
+
+	return message, errFields, succeeded, failed
 }

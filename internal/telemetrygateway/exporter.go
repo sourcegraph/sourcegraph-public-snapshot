@@ -80,30 +80,14 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	// submit.
 	allSucceededEvents := make([]string, 0, len(events))
 	chunker := chunk.New(func(chunkedEvents []*telemetrygatewayv1.Event) error {
-		err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
+		return stream.Send(&telemetrygatewayv1.RecordEventsRequest{
 			Payload: &telemetrygatewayv1.RecordEventsRequest_Events{
 				Events: &telemetrygatewayv1.RecordEventsRequest_EventsPayload{
 					Events: chunkedEvents,
 				},
 			},
 		})
-
-		if err != nil {
-			// If the batch failed, check if we got details about the failure, which
-			// we can use to check if our failure is partial or total.
-			if chunkSucceeded := getSucceededEventsInError(chunkedEvents, err); len(chunkSucceeded) > 0 {
-				allSucceededEvents = append(allSucceededEvents, chunkSucceeded...)
-			}
-		} else {
-			// Otherwise, all events succeeded!
-			for _, event := range chunkedEvents {
-				allSucceededEvents = append(allSucceededEvents, event.GetId())
-			}
-		}
-
-		return err
 	})
-
 	if err := chunker.Send(events...); err != nil {
 		return allSucceededEvents, errors.Wrap(err, "chunk and send events")
 	}
@@ -111,11 +95,24 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 		return allSucceededEvents, errors.Wrap(err, "flush events")
 	}
 
-	if _, err := stream.CloseAndRecv(); err != nil {
-		return allSucceededEvents, errors.Wrap(err, "close request")
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, errors.Wrap(err, "close request")
 	}
 
-	return allSucceededEvents, nil
+	succeededEventIDs := make([]string, len(resp.GetSucceededEvents()))
+	for i, e := range resp.GetSucceededEvents() {
+		succeededEventIDs[i] = e.GetEventId()
+	}
+	if len(resp.GetFailedEvents()) > 0 {
+		var errs error
+		for _, e := range resp.GetFailedEvents() {
+			errs = errors.Append(errs, errors.Newf("%s (event %s)",
+				e.GetError(), e.GetEventId()))
+		}
+		return succeededEventIDs, errs
+	}
+	return succeededEventIDs, nil
 }
 
 func (e *exporter) Close() error { return e.conn.Close() }

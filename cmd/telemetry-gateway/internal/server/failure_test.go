@@ -13,29 +13,45 @@ import (
 
 func TestSummarizeFailedEvents(t *testing.T) {
 	t.Run("all failed", func(t *testing.T) {
-		submitted := 5
-		failed := make([]events.PublishEventResult, submitted)
-		for i := range failed {
-			failed[i].EventID = "id_" + strconv.Itoa(i)
-			failed[i].PublishError = errors.New("failed")
+		results := make([]events.PublishEventResult, 0)
+		for i := range results {
+			results[i].EventID = "id_" + strconv.Itoa(i)
+			results[i].PublishError = errors.New("failed")
 		}
 
-		message, logFields, details := summarizeFailedEvents(submitted, failed)
-		assert.Len(t, logFields, submitted)
-		assert.Len(t, details.FailedEvents, submitted)
+		message, logFields, succeeded, failed := summarizeResults(results)
 		autogold.Expect("all events in batch failed to submit").Equal(t, message)
+		assert.Len(t, logFields, len(results))
+		assert.Len(t, succeeded, 0)
+		assert.Len(t, failed, len(results))
 	})
 
 	t.Run("some failed", func(t *testing.T) {
-		submitted := 5
-		failed := []events.PublishEventResult{{
+		results := []events.PublishEventResult{{
 			EventID:      "asdf",
 			PublishError: errors.New("oh no"),
+		}, {
+			EventID: "asdfasdf",
 		}}
 
-		message, logFields, details := summarizeFailedEvents(submitted, failed)
+		message, logFields, succeeded, failed := summarizeResults(results)
+		autogold.Expect("all events in batch failed to submit").Equal(t, message)
 		assert.Len(t, logFields, 1)
-		assert.Len(t, details.FailedEvents, 1)
-		autogold.Expect("some events in batch failed to submit").Equal(t, message)
+		assert.Len(t, succeeded, 1)
+		assert.Len(t, failed, 1)
+	})
+
+	t.Run("all succeeded", func(t *testing.T) {
+		results := []events.PublishEventResult{{
+			EventID: "asdf",
+		}, {
+			EventID: "asdfasdf",
+		}}
+
+		message, logFields, succeeded, failed := summarizeResults(results)
+		autogold.Expect("all events in batch failed to submit").Equal(t, message)
+		assert.Len(t, logFields, 0)
+		assert.Len(t, succeeded, 2)
+		assert.Len(t, failed, 0)
 	})
 }

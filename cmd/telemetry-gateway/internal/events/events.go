@@ -37,21 +37,9 @@ type PublishEventResult struct {
 	PublishError error
 }
 
-type PublishResult []PublishEventResult
-
-func (r PublishResult) FailedEvents() []PublishEventResult {
-	var failed []PublishEventResult
-	for _, result := range r {
-		if result.PublishError != nil {
-			failed = append(failed, result)
-		}
-	}
-	return failed
-}
-
-func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Event) PublishResult {
+func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Event) []PublishEventResult {
 	wg := pool.NewWithResults[PublishEventResult]().
-		WithMaxGoroutines(10) // limit each batch to 10 goroutines
+		WithMaxGoroutines(100) // limit each batch to some degree
 
 	for _, event := range events {
 		doPublish := func(event *telemetrygatewayv1.Event) error {
