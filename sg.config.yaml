@@ -316,12 +316,13 @@ commands:
 
   telemetry-gateway:
     cmd: |
+      # Telemetry Gateway needs this to parse and validate incoming license keys.
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/telemetry-gateway
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-
       go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
     checkBinary: .bin/telemetry-gateway
     env:
@@ -336,6 +337,7 @@ commands:
       - lib
       - internal
       - cmd/telemetry-gateway
+      - internal/telemetrygateway
 
   pings:
     cmd: |

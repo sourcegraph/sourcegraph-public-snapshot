@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -78,7 +79,17 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			if metadata.GetLicenseKey() == "" {
 				return status.Error(codes.InvalidArgument, "metadata missing license key")
 			}
+			// TODO: Should we include this on events? Should we really validate
+			// the key, or just get the metadata?
+			licenseInfo, _, err := licensing.ParseProductLicenseKeyWithBuiltinOrGenerationKey(metadata.GetLicenseKey())
+			if err != nil {
+				return status.Errorf(codes.InvalidArgument, "invalid license key: %s", err)
+			}
+			logger.Info("handling events submission stream",
+				log.Stringp("salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
+				log.Stringp("salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
 
+			// Set up a publisher with the provided metadata
 			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata)
 			if err != nil {
 				return status.Errorf(codes.Internal, "failed to create publisher: %v", err)

@@ -106,7 +106,6 @@ func (j *exporterJob) Handle(ctx context.Context) error {
 
 	// Report export status
 	if exportErr != nil {
-		logger.Error(exportErr.Error())
 		return exportErr
 	}
 

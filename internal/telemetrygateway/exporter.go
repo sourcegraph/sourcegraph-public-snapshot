@@ -63,6 +63,7 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	if err != nil {
 		return nil, errors.Wrap(err, "start export")
 	}
+	defer func() { _ = stream.CloseSend() }()
 
 	// Send initial metadata
 	if err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
@@ -108,6 +109,10 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	}
 	if err := chunker.Flush(); err != nil {
 		return succeededEvents, errors.Wrap(err, "flush events")
+	}
+
+	if _, err := stream.CloseAndRecv(); err != nil {
+		return succeededEvents, errors.Wrap(err, "close request")
 	}
 
 	return succeededEvents, nil

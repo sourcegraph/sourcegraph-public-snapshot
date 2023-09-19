@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -74,6 +76,9 @@ func (t *telemetryGatewayExporter) Routines(initCtx context.Context, observation
 	if err != nil {
 		return nil, errors.Wrap(err, "initializing export client")
 	}
+
+	observationCtx.Logger.Info("connected to Telemetry Gateway",
+		log.String("address", ConfigInst.ExportAddress))
 
 	return []goroutine.BackgroundRoutine{
 		newExporterJob(
