@@ -70,7 +70,14 @@ func (sb *GitHubScenarioBuilder) Org(name string) *GitHubScenarioBuilder {
 
 func (sb *GitHubScenarioBuilder) Users(users ...GitHubScenarioUser) *GitHubScenarioBuilder {
 	sb.test.Helper()
-	// stub
+	for _, u := range users {
+		if u == Admin {
+			sb.actions.AddSetup(u.GetUserAction(sb.client))
+		} else {
+			sb.actions.AddSetup(u.CreateUserAction(sb.client))
+			sb.actions.AddTeardown(u.DeleteUserAction(sb.client))
+		}
+	}
 	return sb
 }
 
