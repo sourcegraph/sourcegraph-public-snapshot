@@ -20,6 +20,14 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
         nextSyncAt: null,
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
+        rateLimiterState: {
+            currentCapacity: 10,
+            burst: 10,
+            limit: 5000,
+            interval: 1,
+            lastReplenishment: new Date(),
+            infinite: false
+        },
         webhookURL: null,
         hasConnectionCheck: true,
         syncJobs: {
