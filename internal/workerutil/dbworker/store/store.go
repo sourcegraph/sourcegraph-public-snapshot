@@ -238,7 +238,7 @@ type Options[T workerutil.Record] struct {
 	// Setting this value to zero will disable retries entirely.
 	MaxNumRetries int
 
-	// Clock is used to mock out the wall Clock used for heartbeat updates.
+	// Clock is used to mock out the wall clock used for heartbeat updates.
 	Clock glock.Clock
 }
 
@@ -1139,30 +1139,31 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 // reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for
 // a bare column reference.
 func makeColumnPrefixes(name string) []string {
-	parts := strings.Split(name, " ")
+	switch i := strings.IndexRune(name, '('); i {
+	case -1:
+		parts := strings.Split(name, " ")
 
-	switch len(parts) {
-	case 0:
-		return []string{""}
-	case 1:
-		// name = TableName
-		// prefixes = <empty> and `TableName.`
-		return []string{"", parts[0] + "."}
-	case 2:
-		switch i := strings.IndexRune(parts[0], '('); i {
-		case -1:
-			// name = TableName alias
-			// prefixes = <empty>, `TableName.`, and `alias.`
-			return []string{"", parts[0] + ".", parts[1] + "."}
+		switch len(parts) {
+		case 1:
+			// name = TableName
+			// prefixes = <empty> and `TableName.`
+			return []string{"", parts[0] + "."}
 		default:
-			// name = FuncCall(one_param) alias
-			// prefixes = <empty>, `FuncCall.`, and `alias.`
-			return []string{"", parts[0][:i] + ".", parts[len(parts)-1] + "."}
+			// name = TableName [as] alias
+			// prefixes = <empty>, `TableName.`, and `alias.`
+			return []string{"", parts[0] + ".", parts[len(parts)-1] + "."}
 		}
 	default:
-		// name = FuncCall(one_param, two_param, ...) alias
-		// prefixes = <empty>, `FuncCall.`, and `alias.`
-		return []string{"", parts[0][:strings.IndexRune(parts[0], '(')] + ".", parts[len(parts)-1] + "."}
+		switch j, k := strings.LastIndex(name, ")"), strings.LastIndex(name, " "); j < len(name)-1 {
+		case true:
+			// name = FuncCall(param, ...) [as] alias
+			// prefixes = <empty>, `FuncCall.`, and `alias.`
+			return []string{"", name[:i] + ".", name[k+1:] + "."}
+		default:
+			// name = FuncCall(param, ...)
+			// prefixes = <empty> and `FuncCall.`
+			return []string{"", name[:i] + "."}
+		}
 	}
 }
 
