@@ -838,7 +838,7 @@ type ExperimentalFeatures struct {
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// EnableGRPC description: Enables gRPC for communication between internal services
-	EnableGRPC bool `json:"enableGRPC,omitempty"`
+	EnableGRPC *bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
@@ -887,6 +887,8 @@ type ExperimentalFeatures struct {
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
 	// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
 	SearchSanitization *SearchSanitization `json:"search.sanitization,omitempty"`
+	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
+	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
@@ -953,6 +955,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "search.index.query.contexts")
 	delete(m, "search.index.revisions")
 	delete(m, "search.sanitization")
+	delete(m, "searchJobs")
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
@@ -2322,8 +2325,6 @@ type SettingsExperimentalFeatures struct {
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
-	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
-	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// SearchQueryInput description: Specify which version of the search query input to use
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
@@ -2387,7 +2388,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
-	delete(m, "searchJobs")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "showCodeMonitoringLogs")

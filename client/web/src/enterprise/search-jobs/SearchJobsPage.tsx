@@ -1,7 +1,8 @@
-import { FC, useState } from 'react'
+import { FC, useMemo, useState } from 'react'
 
-import { mdiRefresh, mdiDelete, mdiDownload } from '@mdi/js'
+import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
+import { timeFormat } from 'd3-time-format'
 import { upperFirst } from 'lodash'
 import LayersSearchOutlineIcon from 'mdi-react/LayersSearchOutlineIcon'
 
@@ -11,12 +12,11 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { SearchJobsOrderBy, SearchJobState } from '@sourcegraph/shared/src/graphql-operations'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
-    Badge,
-    BadgeVariantType,
     Button,
     Container,
     ErrorAlert,
     FeedbackBadge,
+    H2,
     Icon,
     Input,
     Link,
@@ -27,17 +27,21 @@ import {
     MultiComboboxOption,
     MultiComboboxPopover,
     PageHeader,
+    PageSwitcher,
     Select,
     Text,
-    H2,
     Tooltip,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { DownloadFileButton } from '../../components/DownloadFileButton'
+import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { Page } from '../../components/Page'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
 import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
+import { SearchJobBadge } from './SearchJobBadge/SearchJobBadge'
+import { CancelSearchJobModal, RerunSearchJobModal, SearchJobDeleteModal } from './SearchJobModal/SearchJobModal'
 import { User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
@@ -48,6 +52,7 @@ const SEARCH_JOB_STATES = [
     SearchJobState.FAILED,
     SearchJobState.QUEUED,
     SearchJobState.PROCESSING,
+    SearchJobState.CANCELED,
 ]
 
 /**
@@ -60,6 +65,7 @@ export const SEARCH_JOBS_QUERY = gql`
         query
         state
         URL
+        logURL
         startedAt
         finishedAt
         repoStats {
@@ -77,50 +83,75 @@ export const SEARCH_JOBS_QUERY = gql`
     }
 
     query SearchJobs(
-        $first: Int!
+        $first: Int
         $after: String
+        $last: Int
+        $before: String
         $query: String!
+        $userIDs: [ID!]
         $states: [SearchJobState!]
         $orderBy: SearchJobsOrderBy
     ) {
-        searchJobs(first: $first, after: $after, query: $query, states: $states, orderBy: $orderBy) {
+        searchJobs(
+            first: $first
+            after: $after
+            last: $last
+            before: $before
+            query: $query
+            userIDs: $userIDs
+            states: $states
+            orderBy: $orderBy
+            descending: true
+        ) {
             nodes {
                 ...SearchJobNode
             }
             totalCount
             pageInfo {
+                startCursor
                 endCursor
                 hasNextPage
+                hasPreviousPage
             }
         }
     }
 `
 
-export const SearchJobsPage: FC = props => {
+interface SearchJobsPageProps {
+    isAdmin: boolean
+}
+
+export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
+    const { isAdmin } = props
+
     const [searchTerm, setSearchTerm] = useState<string>('')
     const [searchStateTerm, setSearchStateTerm] = useState('')
     const [selectedUsers, setUsers] = useState<User[]>([])
     const [selectedStates, setStates] = useState<SearchJobState[]>([])
-    const [sortBy, setSortBy] = useState<SearchJobsOrderBy>(SearchJobsOrderBy.CREATED_DATE)
+    const [sortBy, setSortBy] = useState<SearchJobsOrderBy>(SearchJobsOrderBy.CREATED_AT)
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
+    const [jobToDelete, setJobToDelete] = useState<SearchJobNode | null>(null)
+    const [jobToCancel, setJobToCancel] = useState<SearchJobNode | null>(null)
+    const [jobToRestart, setJobToRestart] = useState<SearchJobNode | null>(null)
+
+    const debouncedSearchTerm = useDebounce(searchTerm, 500)
+
+    const { connection, error, loading, ...paginationProps } = usePageSwitcherPagination<
         SearchJobsResult,
         SearchJobsVariables,
         SearchJobNode
     >({
         query: SEARCH_JOBS_QUERY,
         variables: {
-            first: 5,
-            after: null,
-            query: searchStateTerm,
+            query: debouncedSearchTerm,
+            userIDs: selectedUsers.map(user => user.id),
             states: selectedStates,
             orderBy: sortBy,
         },
         options: {
-            // Comment out since it causes problem in storybook stories,
-            // TODO Bring back polling interval as soon as BE is ready
-            // pollInterval: 5000,
+            pollInterval: 5000,
             fetchPolicy: 'cache-and-network',
+            pageSize: 15,
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
@@ -133,8 +164,6 @@ export const SearchJobsPage: FC = props => {
     const suggestions = SEARCH_JOB_STATES.filter(
         filter => !selectedStates.includes(filter) && filter.toLowerCase().includes(searchStateTerm.toLowerCase())
     )
-
-    const searchJobs = connection?.nodes ?? []
 
     return (
         <Page>
@@ -189,7 +218,7 @@ export const SearchJobsPage: FC = props => {
                         </MultiComboboxPopover>
                     </MultiCombobox>
 
-                    <UsersPicker value={selectedUsers} onChange={setUsers} />
+                    {isAdmin && <UsersPicker value={selectedUsers} onChange={setUsers} />}
 
                     <Select
                         aria-label="Filter by search job status"
@@ -199,21 +228,21 @@ export const SearchJobsPage: FC = props => {
                         className={styles.sort}
                         selectClassName={styles.sortSelect}
                     >
-                        <option value={SearchJobsOrderBy.CREATED_DATE}>Sort by Created date</option>
+                        <option value={SearchJobsOrderBy.CREATED_AT}>Sort by Created date</option>
                         <option value={SearchJobsOrderBy.QUERY}>Sort by Query</option>
                         <option value={SearchJobsOrderBy.STATE}>Sort by Status</option>
                     </Select>
                 </header>
 
-                {error && !loading && <ErrorAlert error={error} />}
+                {error && !loading && <ErrorAlert error={error} className="mt-4 mb-0" />}
 
-                {loading && !connection && (
-                    <Text>
+                {!error && loading && !connection && (
+                    <div>
                         <LoadingSpinner /> Fetching search jobs list
-                    </Text>
+                    </div>
                 )}
 
-                {connection && (
+                {!error && connection && (
                     <ul className={styles.jobs}>
                         {connection.nodes.length === 0 && (
                             <SearchJobsZeroState
@@ -224,42 +253,62 @@ export const SearchJobsPage: FC = props => {
                         )}
 
                         {connection.nodes.map(searchJob => (
-                            <SearchJob key={searchJob.id} job={searchJob} />
+                            <SearchJob
+                                key={searchJob.id}
+                                job={searchJob}
+                                withCreatorColumn={isAdmin}
+                                onRerun={setJobToRestart}
+                                onCancel={setJobToCancel}
+                                onDelete={setJobToDelete}
+                            />
                         ))}
                     </ul>
                 )}
 
-                {connection && connection.nodes.length > 0 && (
+                {!error && connection && connection.nodes.length > 0 && (
                     <footer className={styles.footer}>
-                        {hasNextPage && (
-                            <Button variant="secondary" outline={true} disabled={loading} onClick={fetchMore}>
-                                Show more
-                            </Button>
-                        )}
-                        <span className={styles.paginationInfo}>
-                            {connection?.totalCount ?? 0} <b>search jobs</b> total{' '}
-                            {hasNextPage && <>(showing first {searchJobs.length})</>}
-                        </span>
+                        <PageSwitcher
+                            {...paginationProps}
+                            className="mt-3"
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel="search jobs"
+                        />
                     </footer>
                 )}
             </Container>
+
+            {jobToDelete && <SearchJobDeleteModal searchJob={jobToDelete} onDismiss={() => setJobToDelete(null)} />}
+            {jobToRestart && <RerunSearchJobModal searchJob={jobToRestart} onDismiss={() => setJobToRestart(null)} />}
+            {jobToCancel && <CancelSearchJobModal searchJob={jobToCancel} onDismiss={() => setJobToCancel(null)} />}
         </Page>
     )
 }
 
+const formatDate = timeFormat('%Y-%m-%d %H:%M:%S')
+const formatDateSlim = timeFormat('%Y-%m-%d')
+
 interface SearchJobProps {
     job: SearchJobNode
+    withCreatorColumn: boolean
+    onRerun: (job: SearchJobNode) => void
+    onCancel: (job: SearchJobNode) => void
+    onDelete: (job: SearchJobNode) => void
 }
 
 const SearchJob: FC<SearchJobProps> = props => {
-    const { job } = props
+    const { job, withCreatorColumn, onRerun, onCancel, onDelete } = props
     const { repoStats } = job
+
+    const startDate = useMemo(() => (job.startedAt ? formatDateSlim(new Date(job.startedAt)) : ''), [job.startedAt])
+    const fullStartDate = useMemo(() => (job.startedAt ? formatDate(new Date(job.startedAt)) : ''), [job.startedAt])
 
     return (
         <li className={styles.job}>
             <span className={styles.jobStatus}>
-                <span>{job.startedAt}</span>
-                <SearchJobBadge job={job} />
+                <Tooltip content={`Started at ${fullStartDate}`} placement="top">
+                    <span>{startDate}</span>
+                </Tooltip>
+                <SearchJobBadge job={job} withProgress={true} />
             </span>
 
             <span className={styles.jobQuery}>
@@ -272,75 +321,79 @@ const SearchJob: FC<SearchJobProps> = props => {
                 <SyntaxHighlightedSearchQuery query={job.query} />
             </span>
 
-            <span className={styles.jobCreator}>
-                <UserAvatar user={job.creator!} />
-                {job.creator?.displayName}
-            </span>
+            {withCreatorColumn && (
+                <span className={styles.jobCreator}>
+                    <UserAvatar user={job.creator!} />
+                    {job.creator?.displayName ?? job.creator?.username}
+                </span>
+            )}
 
             <span className={styles.jobActions}>
-                <Button variant="link" className={styles.jobViewLogs}>
-                    View logs
-                </Button>
+                <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
+                    <DownloadFileButton
+                        variant="link"
+                        disabled={!job.logURL}
+                        fileUrl={job.logURL ?? ''}
+                        fileName={`search-job-logs-${getFileNameFromURL(job.logURL)}`}
+                        withLoading={false}
+                        className={styles.jobViewLogs}
+                    >
+                        View logs
+                    </DownloadFileButton>
+                </Tooltip>
 
                 <Tooltip content="Rerun search job">
-                    <Button variant="secondary" outline={true} className={styles.jobSlimAction}>
+                    <Button
+                        variant="secondary"
+                        outline={true}
+                        className={styles.jobSlimAction}
+                        onClick={() => onRerun(job)}
+                    >
                         <Icon svgPath={mdiRefresh} aria-hidden={true} />
                     </Button>
                 </Tooltip>
 
+                {job.state !== SearchJobState.FAILED &&
+                    job.state !== SearchJobState.CANCELED &&
+                    job.state !== SearchJobState.COMPLETED && (
+                        <Tooltip content="Cancel search job">
+                            <Button
+                                variant="secondary"
+                                outline={true}
+                                className={styles.jobSlimAction}
+                                onClick={() => onCancel(job)}
+                            >
+                                <Icon svgPath={mdiStop} aria-hidden={true} />
+                            </Button>
+                        </Tooltip>
+                    )}
+
                 <Tooltip content="Delete search job">
-                    <Button variant="danger" outline={true} className={styles.jobSlimAction}>
+                    <Button
+                        variant="danger"
+                        outline={true}
+                        className={styles.jobSlimAction}
+                        onClick={() => onDelete(job)}
+                    >
                         <Icon svgPath={mdiDelete} aria-hidden={true} />
                     </Button>
                 </Tooltip>
             </span>
 
-            <Button variant="secondary" className={styles.jobDownload}>
-                <Icon svgPath={mdiDownload} aria-hidden={true} />
-                Download
-            </Button>
+            {job.URL && (
+                <DownloadFileButton
+                    fileUrl={job.URL}
+                    fileName={`search-job-results-${getFileNameFromURL(job.URL)}`}
+                    variant="secondary"
+                    withLoading={false}
+                    className={styles.jobDownload}
+                >
+                    <Icon svgPath={mdiDownload} aria-hidden={true} />
+                    Download
+                </DownloadFileButton>
+            )}
         </li>
     )
-}
-
-interface SearchJobBadgeProps {
-    job: SearchJobNode
-}
-
-const SearchJobBadge: FC<SearchJobBadgeProps> = props => {
-    const { job } = props
-
-    if (job.state === SearchJobState.PROCESSING) {
-        const totalRepo = job.repoStats.total
-        const totalProcessedRepos = job.repoStats.completed
-
-        return (
-            <div className={styles.jobProgress}>
-                <div
-                    // eslint-disable-next-line react/forbid-dom-props
-                    style={{ width: `${100 * (totalProcessedRepos / totalRepo)}%` }}
-                    className={styles.jobProgressBar}
-                />
-            </div>
-        )
-    }
-
-    return <Badge variant={getBadgeVariant(job.state)}>{job.state.toString()}</Badge>
-}
-
-const getBadgeVariant = (jobStatus: SearchJobState): BadgeVariantType => {
-    switch (jobStatus) {
-        case SearchJobState.COMPLETED:
-            return 'success'
-        case SearchJobState.QUEUED:
-            return 'secondary'
-        case SearchJobState.ERRORED:
-            return 'warning'
-        case SearchJobState.FAILED:
-            return 'danger'
-        case SearchJobState.PROCESSING:
-            return 'primary'
-    }
 }
 
 interface SearchJobsZeroStateProps {
@@ -361,8 +414,9 @@ const SearchJobsZeroState: FC<SearchJobsZeroStateProps> = props => {
 
 const SearchJobsWithFiltersZeroState: FC = () => (
     <ListPageZeroState
-        title="No Search jobs found"
-        subTitle="Try to reset filters to see all search jobs available to you"
+        title="No search jobs found"
+        subTitle="Reset filters to see all search jobs."
+        withIllustration={false}
         className={styles.zeroStateWithFilters}
     />
 )
@@ -406,3 +460,12 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
 const hasFiltersValues = (states: SearchJobState[], users: User[], searchTerm: string): boolean =>
     states.length > 0 || users.length > 0 || searchTerm.trim().length > 0
+
+const getFileNameFromURL = (url: string | null): string => {
+    if (url === null) {
+        return ''
+    }
+
+    const parts = url.split('/')
+    return parts[parts.length - 1]
+}

@@ -25,8 +25,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Bitbucket Cloud code host connections no longer automatically syncs the repository of the username used. The appropriate workspace name will have to be added to the `teams` list if repositories for that account need to be synced. [#55095](https://github.com/sourcegraph/sourcegraph/pull/55095)
 - Newly created access tokens are now hidden by default in the Sourcegraph UI. To view a token, click "show" button next to the token. [#56481](https://github.com/sourcegraph/sourcegraph/pull/56481)
 - The GitHub proxy service has been removed and is no longer required. You can safely remove it from your deployment. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
+- On startup, Zoekt indexserver will now delete the `<DATA_DIR>/.indexserver.tmp` directory to remove leftover repository clones, possibly causing a brief delay. Due to a bug, this directory wasn't previously cleaned up and could cause unnecessary disk usage. [zoekt#646](https://github.com/sourcegraph/zoekt/pull/646).
+- gRPC is now used by default for all internal (service to service) communication. This change should be invisible to most customers. However, if you're running in an environment that places restrictions on Sourcegraph's internal traffic, some prior configuration might be required. See the ["Sourcegraph 5.2 gRPC Configuration Guide"](https://docs.sourcegraph.com/admin/updates/grpc) for more information. [#56738](https://github.com/sourcegraph/sourcegraph/pull/56738)
 
 ### Fixed
+
+- Language detection for code highlighting now uses `go-enry` for all files by default, which fixes highlighting for MATLAB files. [#56559](https://github.com/sourcegraph/sourcegraph/pull/56559)
 
 ### Removed
 

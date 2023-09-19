@@ -104,6 +104,11 @@ public class CodyAutocompleteManager {
   }
 
   @RequiresEdt
+  public void clearAutocompleteSuggestionsForLanguageId(@NotNull String languageId) {
+    clearAutocompleteSuggestionsForLanguageIds(List.of(languageId));
+  }
+
+  @RequiresEdt
   public void disposeInlays(@NotNull Editor editor) {
     if (editor.isDisposed()) {
       return;

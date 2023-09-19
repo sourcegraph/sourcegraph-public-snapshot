@@ -1,3 +1,4 @@
+local path = require "path"
 local pattern = require "sg.autoindex.patterns"
 local recognizer = require "sg.autoindex.recognizer"
 
@@ -106,6 +107,9 @@ end
 return recognizer.new_path_recognizer {
   patterns = {
     pattern.new_path_basename "PKG-INFO",
+    pattern.new_path_basename "requirements.txt",
+    pattern.new_path_basename "pyproject.toml",
+    pattern.new_path_basename "setup.py"
   },
 
   patterns_for_content = {
@@ -113,12 +117,19 @@ return recognizer.new_path_recognizer {
   },
 
   generate = function(_, paths, contents_by_path)
+    local roots = {}
+    local has_package_info = false
     local libraries = {}
-    for i = 1, #paths do
-      local pkg_info_filepath = paths[i]
-      local content = contents_by_path[pkg_info_filepath]
 
-      handle_one_pkg_info(libraries, pkg_info_filepath, content)
+    for i = 1, #paths do
+      roots[path.dirname(paths[i])] = true
+
+      if path.basename(paths[i]) == "PKG-INFO" then
+        has_package_info = true
+        local pkg_info_filepath = paths[i]
+        local content = contents_by_path[pkg_info_filepath]
+        handle_one_pkg_info(libraries, pkg_info_filepath, content)
+      end
     end
 
     -- If we didn't find any libraries, just insert this as the index job.
@@ -155,6 +166,23 @@ return recognizer.new_path_recognizer {
       local name, version = get_name_and_version_from_content(contents_by_path["PKG-INFO"])
       if name and version then
         table.insert(jobs, make_job("", name, version, { "--exclude", exclude }))
+      end
+    end
+
+    -- Only consider pyproject.toml etc. if we're not looking at a package.
+    -- This is because these config files may have been accidentally
+    -- bundled in with the package; the PKG-INFO should contain the
+    -- canonicalized information regardless of the exact config file.
+    if not has_package_info then
+      for root in pairs(roots) do
+        table.insert(jobs, {
+          steps = {},
+          local_steps = {"pip install . || true"},
+          root = root,
+          indexer = indexer,
+          indexer_args = {"scip-python", "index"},
+          outfile = outfile,
+        })
       end
     end
 

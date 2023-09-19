@@ -29,6 +29,7 @@ const (
 	JobStateErrored    JobState = "errored"
 	JobStateFailed     JobState = "failed"
 	JobStateCompleted  JobState = "completed"
+	JobStateCanceled   JobState = "canceled"
 )
 
 // ToGraphQL returns the GraphQL representation of the worker state.

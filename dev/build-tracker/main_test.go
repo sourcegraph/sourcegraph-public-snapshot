@@ -44,7 +44,7 @@ func TestToBuildNotification(t *testing.T) {
 			},
 		}
 
-		notification := toBuildNotification(b)
+		notification := determineBuildStatusNotification(b)
 
 		if len(notification.Failed) != 2 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
@@ -82,7 +82,7 @@ func TestToBuildNotification(t *testing.T) {
 			},
 		}
 
-		notification := toBuildNotification(b)
+		notification := determineBuildStatusNotification(b)
 		if len(notification.Failed) != 2 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
 		}
@@ -95,7 +95,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = toBuildNotification(b)
+		notification = determineBuildStatusNotification(b)
 		if len(notification.Failed) != 3 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 3)
 		}
@@ -132,7 +132,7 @@ func TestToBuildNotification(t *testing.T) {
 			},
 		}
 
-		notification := toBuildNotification(b)
+		notification := determineBuildStatusNotification(b)
 		if len(notification.Failed) != 2 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
 		}
@@ -146,7 +146,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = toBuildNotification(b)
+		notification = determineBuildStatusNotification(b)
 		if len(notification.Failed) != 1 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
 		}
@@ -164,7 +164,7 @@ func TestToBuildNotification(t *testing.T) {
 			t.Fatalf("failed to add job to build: %v", err)
 		}
 
-		notification = toBuildNotification(b)
+		notification = determineBuildStatusNotification(b)
 		// All jobs should be fixed now
 		if len(notification.Failed) != 0 {
 			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)

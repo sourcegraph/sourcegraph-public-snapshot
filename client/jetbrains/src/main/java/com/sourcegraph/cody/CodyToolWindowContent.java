@@ -52,6 +52,7 @@ import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.ui.UnderlinedActionLink;
 import com.sourcegraph.cody.vscode.CancellationToken;
+import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.*;
 import java.util.List;
@@ -68,6 +69,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.plaf.ButtonUI;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.builtInWebServer.BuiltInServerOptions;
 
 public class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
@@ -320,7 +322,16 @@ public class CodyToolWindowContent implements UpdatableChat {
     signInWithSourcegraphButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
     signInWithSourcegraphButton.addActionListener(
         e -> {
-          BrowserUtil.browse("https://about.sourcegraph.com/app");
+          int port =
+              ApplicationManager.getApplication()
+                  .getService(BuiltInServerOptions.class)
+                  .getEffectiveBuiltInServerPort();
+          BrowserUtil.browse(
+              ConfigUtil.DOTCOM_URL
+                  + "user/settings/tokens/new/callback"
+                  + "?requestFrom=JETBRAINS"
+                  + "&port="
+                  + port);
           updateVisibilityOfContentPanels();
         });
     CodyOnboardingPanel codyOnboardingPanel =
@@ -570,6 +581,12 @@ public class CodyToolWindowContent implements UpdatableChat {
                 }
               } else {
                 logger.warn("Agent is disabled, can't use chat.");
+                this.addMessageToChat(
+                    ChatMessage.createAssistantMessage(
+                        "Cody is not able to reply at the moment. "
+                            + "This is a bug, please report an issue to the sourcegraph/sourcegraph "
+                            + "repository and try to include relevant context from idea.log if possible."));
+                this.finishMessageProcessing();
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
             });

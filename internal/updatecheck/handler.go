@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"sort"
 	"strconv"
@@ -67,30 +68,28 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
-// HandlerWithLog creates an HTTP handler that responds with information about
-// software updates for Sourcegraph. Using the given logger, a scoped logger is
-// created and the handler that is returned uses the logger internally.
-func HandlerWithLog(logger log.Logger) (http.HandlerFunc, error) {
-	logger = logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
-
-	var pubsubClient pubsub.TopicClient
-	if pubSubPingsTopicID == "" {
-		pubsubClient = pubsub.NewNoopTopicClient()
-	} else {
-		var err error
-		pubsubClient, err = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
-		if err != nil {
-			return nil, errors.Errorf("create Pub/Sub client: %v", err)
-		}
+// ForwardHandler returns a handler that forwards the request to
+// https://pings.sourcegraph.com.
+func ForwardHandler() (http.HandlerFunc, error) {
+	remote, err := url.Parse(defaultUpdateCheckURL)
+	if err != nil {
+		return nil, errors.Errorf("parse default update check URL: %v", err)
 	}
+
+	// If remote has a path, the proxy server will always append an unnecessary "/" to the path.
+	remotePath := remote.Path
+	remote.Path = ""
+	proxy := httputil.NewSingleHostReverseProxy(remote)
 	return func(w http.ResponseWriter, r *http.Request) {
-		HandlePingRequest(logger, pubsubClient, w, r)
+		r.Host = remote.Host
+		r.URL.Path = remotePath
+		proxy.ServeHTTP(w, r)
 	}, nil
 }
 
-// HandlePingRequest handles the ping requests and responds with information
-// about software updates for Sourcegraph.
-func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
+// Handle handles the ping requests and responds with information about software
+// updates for Sourcegraph.
+func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)

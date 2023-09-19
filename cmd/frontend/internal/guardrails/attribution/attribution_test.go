@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -101,7 +102,11 @@ func mockSearchClient(t testing.TB, repoNames []string) client.SearchClient {
 		}},
 	}
 
-	return client.MockedZoekt(logtest.Scoped(t), db, mockZoekt)
+	return client.Mocked(job.RuntimeClients{
+		Logger: logtest.Scoped(t),
+		DB:     db,
+		Zoekt:  mockZoekt,
+	})
 }
 
 func mockDotComClient(t testing.TB, repoNames []string) dotcom.Client {

@@ -103,7 +103,7 @@ func (s *Store) GetQueryRepoRev(ctx context.Context, job *types.ExhaustiveSearch
 	err error,
 ) {
 	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoRevSpecFmtStr, job.SearchRepoJobID))
-	err = row.Scan(&id, &query, &repoRev.Repository, &repoRev.RevisionSpecifier)
+	err = row.Scan(&id, &query, &repoRev.Repository, &repoRev.RevisionSpecifiers)
 	if err != nil {
 		return 0, "", types.RepositoryRevision{}, err
 	}

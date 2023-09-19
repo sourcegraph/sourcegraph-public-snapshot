@@ -21,6 +21,7 @@
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*"
+    "@sourcegraph/wildcard": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*"
   }
 }

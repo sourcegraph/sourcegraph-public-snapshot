@@ -53,6 +53,8 @@ var (
 		// Allow service to emit observability
 		{ID: "role_cloudtrace_agent", Role: "roles/cloudtrace.agent"},
 		{ID: "role_monitoring_metricwriter", Role: "roles/monitoring.metricWriter"},
+		// Allow service to publish Cloud Profiler profiles
+		{ID: "role_cloudprofiler_agent", Role: "roles/cloudprofiler.agent"},
 	}
 	// servicePort is provided to the container as $PORT in Cloud Run:
 	// https://cloud.google.com/run/docs/configuring/services/containers#configure-port
@@ -117,13 +119,15 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 
 	// Set up configuration for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
-		ServiceAccount: serviceaccount.New(stack, resourceid.New("cloudrun"), serviceaccount.Config{
-			ProjectID: vars.ProjectID,
-			AccountID: vars.Service.ID,
-			DisplayName: fmt.Sprintf("%s Service Account",
-				pointers.Deref(vars.Service.Name, vars.Service.ID)),
-			Roles: serviceAccountRoles,
-		}),
+		ServiceAccount: serviceaccount.New(stack,
+			resourceid.New("cloudrun"),
+			serviceaccount.Config{
+				ProjectID: vars.ProjectID,
+				AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
+				DisplayName: fmt.Sprintf("%s Service Account",
+					pointers.Deref(vars.Service.Name, vars.Service.ID)),
+				Roles: serviceAccountRoles,
+			}),
 
 		DiagnosticsSecret: diagnosticsSecret,
 		// Set up some base env vars
