@@ -59,7 +59,7 @@ find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2|@back_compat_com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_grpc_ecosystem_go_grpc_middleware_v2|@back_compat_com_github_grpc_ecosystem_go_grpc_middleware_v2|g' {}
+#find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_grpc_ecosystem_go_grpc_middleware_v2|@back_compat_com_github_grpc_ecosystem_go_grpc_middleware_v2|g' {} +
 """
 
 # https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
