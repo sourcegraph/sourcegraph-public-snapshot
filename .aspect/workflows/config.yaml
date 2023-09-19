@@ -9,8 +9,8 @@ tasks:
     # gazelle:
     # Checks that all tests are passing
     bazel:
-        flags:
-            - "--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc"
+        rcfiles:
+            - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
     test:
         env:
             PGUSER: postgres
