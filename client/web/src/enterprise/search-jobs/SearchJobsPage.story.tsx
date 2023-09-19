@@ -2,6 +2,7 @@ import type { MockedResponse } from '@apollo/client/testing'
 import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
@@ -270,6 +271,6 @@ const USER_PICKER_QUERY_MOCK: MockedResponse<GetUsersListResult, GetUsersListVar
 
 export const SearchJobsListPage: Story = () => (
     <MockedTestProvider mocks={[SEARCH_JOBS_MOCK, USER_PICKER_QUERY_MOCK]}>
-        <SearchJobsPage isAdmin={false} />
+        <SearchJobsPage isAdmin={false} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </MockedTestProvider>
 )
