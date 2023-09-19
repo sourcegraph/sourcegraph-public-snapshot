@@ -13,6 +13,7 @@
 - New settings to enable/disable autocomplete for individual languages [#56411](https://github.com/sourcegraph/sourcegraph/pull/56411)
 - New onboarding panel is being displayed instead of a chat when user don't have any accounts defined [#56633](https://github.com/sourcegraph/sourcegraph/pull/56633)
 - Added a status bar action for enabling/disabling autocomplete for a particular language [#56724](https://github.com/sourcegraph/sourcegraph/pull/56724)
+- Added status bar actions for opening settings [#56754](https://github.com/sourcegraph/sourcegraph/pull/56754)
 
 ### Changed
 
