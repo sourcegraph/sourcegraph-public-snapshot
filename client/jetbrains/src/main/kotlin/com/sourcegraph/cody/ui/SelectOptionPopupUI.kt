@@ -21,7 +21,6 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.NonOpaquePanel
 import com.intellij.util.Alarm
-import com.intellij.util.BooleanFunction
 import com.intellij.util.concurrency.SequentialTaskExecutor
 import com.intellij.util.ui.StartupUiUtil
 import com.intellij.util.ui.UIUtil
@@ -34,9 +33,11 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.Locale
 import java.util.function.Consumer
+import java.util.function.Predicate
 import java.util.stream.Collectors
 import javax.swing.BorderFactory
 import javax.swing.DefaultListCellRenderer
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
@@ -212,8 +213,7 @@ class SelectOptionPopupUI(
     return DefaultListCellRenderer()
   }
 
-  @Deprecated("Deprecated in Java")
-  override fun createTopLeftPanel(): JPanel {
+  override fun createHeader(): JComponent {
     val myTextFieldTitle = JLabel("Select option")
     val topPanel: JPanel = NonOpaquePanel(BorderLayout())
     val foregroundColor =
@@ -238,11 +238,6 @@ class SelectOptionPopupUI(
     return topPanel
   }
 
-  @Deprecated("Deprecated in Java")
-  override fun createSettingsPanel(): JPanel {
-    return JPanel()
-  }
-
   @Nls
   override fun getAccessibleName(): String {
     return "Select option"
@@ -263,7 +258,7 @@ class SelectOptionPopupUI(
 
     fun adjustEmptyText(
         textEditor: JBTextField,
-        function: BooleanFunction<in JBTextField>,
+        function: Predicate<in JBTextField>,
         leftText: String,
         rightText: String,
     ) {
