@@ -26,7 +26,7 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
             limit: 5000,
             interval: 1,
             lastReplenishment: new Date(),
-            infinite: false
+            infinite: false,
         },
         webhookURL: null,
         hasConnectionCheck: true,
