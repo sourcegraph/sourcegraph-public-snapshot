@@ -27,6 +27,7 @@ var (
 		Subcommands: []*cli.Command{
 			opsUpdateImagesCommand,
 			opsTagDetailsCommand,
+			newOpsUpdateImagesCommand,
 		},
 	}
 
@@ -34,7 +35,32 @@ var (
 	opsUpdateImagesContainerRegistryUsernameFlag string
 	opsUpdateImagesContainerRegistryPasswordFlag string
 	opsUpdateImagesPinTagFlag                    string
-	opsUpdateImagesCommand                       = &cli.Command{
+	newOpsUpdateImagesCommand                    = &cli.Command{
+		Name:      "new-update-images",
+		ArgsUsage: "<dir>",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "kind",
+				Aliases:     []string{"k"},
+				Usage:       "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
+				Value:       string(images.DeploymentTypeK8S),
+				Destination: &opsUpdateImagesDeploymentKindFlag,
+			},
+			&cli.StringFlag{
+				Name:        "pin-tag",
+				Aliases:     []string{"t"},
+				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
+				Destination: &opsUpdateImagesPinTagFlag,
+			},
+			&cli.StringFlag{
+				Name:  "registry",
+				Usage: "TODO",
+			},
+		},
+		Action: newOpsUpdateImages,
+	}
+
+	opsUpdateImagesCommand = &cli.Command{
 		Name:        "update-images",
 		ArgsUsage:   "<dir>",
 		Usage:       "Updates images in given directory to latest published image",
@@ -162,4 +188,38 @@ func opsUpdateImage(ctx *cli.Context) error {
 	}
 
 	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+}
+
+func newOpsUpdateImages(ctx *cli.Context) error {
+	args := ctx.Args().Slice()
+	if len(args) == 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
+		return flag.ErrHelp
+	}
+	if len(args) != 1 {
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "Multiple paths not currently supported"))
+		return flag.ErrHelp
+	}
+
+	_ = ctx.String("registry")
+
+	gcr := images.NewGCR("us.gcr.io", "sourcegraph-dev")
+	if err := gcr.LoadToken(); err != nil {
+		panic(err)
+	}
+
+	op := func(registry images.Registry, r *images.Repository) (string, error) {
+		newR, err := registry.GetByTag(r.Name(), "wip_releases")
+		if err != nil {
+			return "", err
+		}
+		std.Out.WriteLine(output.Styled(output.StyleSuccess, fmt.Sprintf("updated %s to: %q", r.Name(), newR.Ref())))
+		return newR.Ref(), nil
+	}
+
+	if err := images.UpdateK8sManifest(ctx.Context, gcr, args[0], op); err != nil {
+		panic(err)
+	}
+
+	return nil
 }

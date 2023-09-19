@@ -311,6 +311,7 @@ func getUpdatedImage(originalImage string, credential credentials.Credentials, p
 	if err != nil {
 		return "", err
 	}
+
 	imgRef.Credentials = &credential
 
 	if prevRepo, ok := seenImageRepos[imgRef.Name]; ok {
