@@ -8,6 +8,9 @@ tasks:
     # Checks that BUILD file content is up-to-date with sources
     # gazelle:
     # Checks that all tests are passing
+    bazel:
+        flags:
+            - "--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc"
     test:
         env:
             PGUSER: postgres
@@ -16,9 +19,6 @@ tasks:
             REDIS_CACHE_ENDPOINT: ":6379"
             GIT_PAGER: ''
             DISPLAY: ":99"
-        bazel:
-            flags:
-                - "--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc"
 
         collect_coverage: false
         # These flags are guaranteed to come after those added by Rosetta,
