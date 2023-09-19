@@ -32,9 +32,13 @@ type GitHubScenario struct {
 }
 
 func NewGitHubScenario(ctx context.Context, cfg *config.Config, t *testing.T) (*GitHubScenarioBuilder, error) {
+	client, err := NewGitHubClient(ctx, cfg.GitHub)
+	if err != nil {
+		return nil, err
+	}
 	return &GitHubScenarioBuilder{
 		test:     t,
-		client:   nil,
+		client:   client,
 		store:    NewStore(t),
 		actions:  NewActionManager(t),
 		reporter: NoopReporter{},
