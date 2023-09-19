@@ -1,3 +1,11 @@
+// 🔔 IMPORTANT: Be VERY careful not to introduce breaking changes to this
+// spec - raw protocol buffer wire format messages are persisted to database
+// as a cache, and Sourcegraph instances rely on this format to emit telemetry
+// to the managed Sourcegraph Telemetry Gateway service.
+//
+// Tests in ./internal/telemetrygateway/v1/backcompat_test.go can be used to
+// assert compatibility with snapshots created by older versions of this spec.
+
 syntax = "proto3";
 
 package telemetrygateway.v1;
@@ -9,21 +17,24 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/telemetrygatewa
 
 service TelemeteryGatewayService {
   // RecordEvents streams telemetry events in batches to the Telemetry Gateway
-  // service.
+  // service. Events should only be considered delivered if recording is
+  // acknowledged in RecordEventsResponse.
   //
-  // Callers should check the attributes of the Event type to ensure that only
-  // the appropriate fields are exported.
-  rpc RecordEvents(stream RecordEventsRequest) returns (RecordEventsResponse) {}
+  // 🚨 SECURITY: Callers should check the attributes of the Event type to ensure
+  // that only the appropriate fields are exported, as some fields should only
+  // be exported on an allowlist basis.
+  rpc RecordEvents(stream RecordEventsRequest) returns (stream RecordEventsResponse) {}
 }
 
 message RecordEventsRequestMetadata {
-  // Self-reported identifier for analytics purposes. Currently, this is an
-  // analytics prefix and the instance license key hashed together.
-  string analytics_identifier = 1;
+  // Client-provided request identifier for diagnostics purposes.
+  string request_id = 1;
+  // License key configured in the Sourcegraph instance emitting the event.
+  string license_key = 2;
 }
 
 message RecordEventsRequest {
-  message Events {
+  message EventsPayload {
     repeated Event events = 1;
   }
 
@@ -33,11 +44,17 @@ message RecordEventsRequest {
     // Events to record in a single request. Clients should aim to batch large
     // event backlogs into a series of smaller requests each <1MB in size in the
     // RecordEvents stream, e.g. using (google.golang.org/protobuf/proto).Size(...).
-    Events events = 2;
+    EventsPayload events = 2;
   }
 }
 
-message RecordEventsResponse {}
+message RecordEventsResponse {
+  // IDs of all events that were successfully recorded in the request.
+  //
+  // Note that if succeeded_events is a subset of events that were submitted,
+  // then some events failed to record and should be retried.
+  repeated string succeeded_events = 1;
+}
 
 message Event {
   // Generated ID of the event, currently expected to be UUID v4.
