@@ -291,64 +291,20 @@ export class Driver {
              */
             if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
-                await this.page
-                    .waitForSelector('.test-signup-form')
-                    .then(resp => {
-                        console.log('resp of .test-signup-form', resp)
-                    })
-                    .catch(err => {
-                        console.log('err of .test-signup-form', err)
-                    })
-
+                await this.page.waitForSelector('.test-signup-form')
                 if (email) {
                     await this.page.type('input[name=email]', email)
                 }
-                await this.page
-                    .type('input[name=username]', username)
-                    .then(resp => {
-                        console.log('resp of input[name=username]', resp)
-                    })
-                    .catch(err => {
-                        console.log('err of input[name=username]', err)
-                    })
-
-                await this.page
-                    .type('input[name=password]', password)
-                    .then(resp => {
-                        console.log('resp of input[name=password]', resp)
-                    })
-                    .then(err => {
-                        console.log('err of input[name=password]', err)
-                    })
-                await this.page
-                    .waitForSelector('button[type=submit]:not(:disabled)')
-                    .then(resp => {
-                        console.log('resp of button[type=submit]:not(:disabled)', resp)
-                    })
-                    .catch(err => {
-                        console.log('err of button[type=submit]:not(:disabled)', err)
-                    })
+                await this.page.type('input[name=username]', username)
+                await this.page.type('input[name=password]', password)
+                await this.page.waitForSelector('button[type=submit]:not(:disabled)')
                 // TODO(uwedeportivo): investigate race condition between puppeteer clicking this very fast and
                 // background gql client request fetching ViewerSettings. this race condition results in the gql request
                 // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
                 // you back to the login page
                 await delay(1000)
-                await this.page
-                    .click('button[type=submit]')
-                    .then(resp => {
-                        console.log('resp of button[type=submit]', resp)
-                    })
-                    .catch(err => {
-                        console.log('err of button[type=submit]', err)
-                    })
-                await this.page
-                    .waitForNavigation({ timeout: 300000 })
-                    .then(resp => {
-                        console.log('resp of waitForNavigation', resp)
-                    })
-                    .catch(err => {
-                        console.log('err of waitForNavigation', err)
-                    })
+                await this.page.click('button[type=submit]')
+                await this.page.waitForNavigation({ timeout: 300000 })
             } else {
                 logger.log('Thrown error...', error)
                 throw error
@@ -494,12 +450,6 @@ export class Driver {
                 variables: {},
             })
         )
-
-        await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
-            visible: true,
-            timeout: 300000,
-        })
-        await this.page.click('[data-testid="license-dismiss-button"]')
 
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {

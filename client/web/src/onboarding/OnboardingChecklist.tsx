@@ -46,6 +46,12 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
         return <></>
     }
 
+    // We don't want to show the onboarding checklist in integration tests
+    if (process.env.INTEGRATION_TESTS) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+        return <></>
+    }
+
     return (
         <>
             <Popover isOpen={isDropdownOpen} onOpenChange={toggleDropdownOpen}>
