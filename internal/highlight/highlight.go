@@ -419,15 +419,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
-	// Set the Filetype part of the command if:
-	//    1. We are overriding the config, because then we don't want syntect to try and
-	//       guess the filetype (but otherwise we want to maintain backwards compat with
-	//       whatever we were calculating before)
-	//    2. We are using treesitter. Always have syntect use the language provided in that
-	//       case to make sure that we have normalized the names of the language by then.
-	if filetypeQuery.LanguageOverride || filetypeQuery.Engine.isTreesitterBased() {
-		query.Filetype = filetypeQuery.Language
-	}
+	query.Filetype = filetypeQuery.Language
 
 	// Sourcegraph App: we do not use syntect_server/syntax-highlighter
 	//
