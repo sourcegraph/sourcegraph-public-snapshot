@@ -118,14 +118,14 @@ return recognizer.new_path_recognizer {
 
   generate = function(_, paths, contents_by_path)
     local roots = {}
-    local pkg_info_count = 0
+    local has_package_info = false
     local libraries = {}
 
     for i = 1, #paths do
       roots[path.dirname(paths[i])] = true
 
       if path.basename(paths[i]) == "PKG-INFO" then
-        pkg_info_count = pkg_info_count + 1
+        has_package_info = true
         local pkg_info_filepath = paths[i]
         local content = contents_by_path[pkg_info_filepath]
         handle_one_pkg_info(libraries, pkg_info_filepath, content)
@@ -173,7 +173,7 @@ return recognizer.new_path_recognizer {
     -- This is because these config files may have been accidentally
     -- bundled in with the package; the PKG-INFO should contain the
     -- canonicalized information regardless of the exact config file.
-    if pkg_info_count == 0 then
+    if not has_package_info then
       for root in pairs(roots) do
         table.insert(jobs, {
           steps = {},
