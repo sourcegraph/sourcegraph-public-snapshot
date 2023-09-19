@@ -19,6 +19,7 @@ import puppeteer, {
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
+import { cat } from 'shelljs'
 import { Key } from 'ts-key-enum'
 
 import { isDefined, logger } from '@sourcegraph/common'
@@ -292,20 +293,24 @@ export class Driver {
             if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
 
-                await this.page.waitForSelector('.test-signup-form')
-                if (email) {
-                    await this.page.type('input[name=email]', email)
+                try {
+                    await this.page.waitForSelector('.test-signup-form')
+                    if (email) {
+                        await this.page.type('input[name=email]', email)
+                    }
+                    await this.page.type('input[name=username]', username)
+                    await this.page.type('input[name=password]', password)
+                    await this.page.waitForSelector('button[type=submit]:not(:disabled)')
+                    // TODO(uwedeportivo): investigate race condition between puppeteer clicking this very fast and
+                    // background gql client request fetching ViewerSettings. this race condition results in the gql request
+                    // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
+                    // you back to the login page
+                    await delay(1000)
+                    await this.page.click('button[type=submit]')
+                    await this.page.waitForNavigation({ timeout: 300000 })
+                } catch (error) {
+                    logger.log('Error in sign up...', error)
                 }
-                await this.page.type('input[name=username]', username)
-                await this.page.type('input[name=password]', password)
-                await this.page.waitForSelector('button[type=submit]:not(:disabled)')
-                // TODO(uwedeportivo): investigate race condition between puppeteer clicking this very fast and
-                // background gql client request fetching ViewerSettings. this race condition results in the gql request
-                // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
-                // you back to the login page
-                await delay(1000)
-                await this.page.click('button[type=submit]')
-                await this.page.waitForNavigation({ timeout: 300000 })
             } else {
                 logger.log('Thrown error...', error)
                 throw error
