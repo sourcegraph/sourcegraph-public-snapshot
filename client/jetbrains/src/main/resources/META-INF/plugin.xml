@@ -210,6 +210,16 @@
             id="cody.disableLanguageForCodyAutocomplete"
             class="com.sourcegraph.cody.statusbar.CodyDisableLanguageForAutocompleteAction"/>
 
+        <action
+            id="cody.statusBar.manageAccounts"
+            class="com.sourcegraph.cody.statusbar.CodyManageAccountsAction"
+            text="Manage Accounts"/>
+
+        <action
+            id="cody.statusBar.openSettings"
+            class="com.sourcegraph.cody.statusbar.CodyOpenSettingsAction"
+            text="Open Settings"/>
+
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
             <reference ref="cody.refreshCodyAppDetection"/>
@@ -238,6 +248,8 @@
             <reference ref="cody.disableCodyAutocomplete"/>
             <reference ref="cody.enableLanguageForCodyAutocomplete"/>
             <reference ref="cody.disableLanguageForCodyAutocomplete"/>
+            <reference ref="cody.statusBar.manageAccounts"/>
+            <reference ref="cody.statusBar.openSettings"/>
         </group>
 
         <group id="Cody.Accounts.AddAccount">
