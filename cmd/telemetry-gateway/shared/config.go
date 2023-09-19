@@ -2,6 +2,7 @@ package shared
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -13,8 +14,6 @@ type Config struct {
 	Port              int
 	DiagnosticsSecret string
 
-	DebugServer string
-
 	Events struct {
 		PubSub struct {
 			Enabled   bool
@@ -22,8 +21,6 @@ type Config struct {
 			TopicID   string
 		}
 	}
-
-	AllowAnonymous bool
 
 	OpenTelemetry OpenTelemetryConfig
 }
@@ -44,6 +41,12 @@ func (c *Config) Load() {
 		"The project ID for the Pub/Sub.")
 	c.Events.PubSub.TopicID = c.GetOptional("TELEMETRY_GATEWAY_EVENTS_PUBSUB_TOPIC_ID",
 		"The topic ID for the Pub/Sub.")
+
+	c.OpenTelemetry.TracePolicy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
+	c.OpenTelemetry.GCPProjectID = c.GetOptional("CODY_GATEWAY_OTEL_GCP_PROJECT_ID", "Google Cloud Traces project ID.")
+	if c.OpenTelemetry.GCPProjectID == "" {
+		c.OpenTelemetry.GCPProjectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	}
 }
 
 func (c *Config) GetListenAdress() string {
