@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
@@ -64,13 +65,19 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 		return nil, err
 	}
 
-	return j.newSearchJobRoutines(workCtx, observationCtx, uploadStore)
+	newSearcherFactory := func(observationCtx *observation.Context, db database.DB) service.NewSearcher {
+		searchClient := client.New(observationCtx.Logger, db)
+		return service.FromSearchClient(searchClient)
+	}
+
+	return j.newSearchJobRoutines(workCtx, observationCtx, uploadStore, newSearcherFactory)
 }
 
 func (j *searchJob) newSearchJobRoutines(
 	workCtx context.Context,
 	observationCtx *observation.Context,
 	uploadStore uploadstore.Store,
+	newSearcherFactory func(*observation.Context, database.DB) service.NewSearcher,
 ) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
 		db := j.workerDB
@@ -81,8 +88,7 @@ func (j *searchJob) newSearchJobRoutines(
 			}
 		}
 
-		// We currently are relying on a fake for search.
-		newSearcher := service.NewSearcherFake()
+		newSearcher := newSearcherFactory(observationCtx, db)
 
 		exhaustiveSearchStore := store.New(db, observationCtx)
 
