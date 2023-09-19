@@ -12,6 +12,9 @@ tasks:
         rcfiles:
             - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
     test:
+      bazel:
+        flags:
+          - --test_env=PGUSER=postgres
         env:
             CI: "true"
             PGUSER: postgres
