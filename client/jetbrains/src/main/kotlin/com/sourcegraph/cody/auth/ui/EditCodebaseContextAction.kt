@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.auth.ui
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit
 import javax.swing.*
 
 class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Context Selection") {
+  val logger = logger<EditCodebaseContextAction>()
   private inner class EditCodebaseDialog : DialogWrapper(null, true) {
     val gitURL =
         ExtendableTextField(CodyAgent.getClient(project).codebase?.currentCodebase() ?: "", 40)
@@ -32,6 +34,7 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
             return ValidationInfo("Repository $repoName does not exist", gitURL)
           }
         } catch (e: Exception) {
+          logger.warn("failed to validate git url", e)
           return null
         }
       }
