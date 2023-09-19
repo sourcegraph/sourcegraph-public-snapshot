@@ -131,6 +131,10 @@ func (e *exporter) doExportEvents(ctx context.Context, requestID string, events 
 				succeededEvents = append(succeededEvents, resp.GetSucceededEvents()...)
 			}
 		}
+		if len(succeededEvents) < len(events) {
+			return succeededEvents, errors.Newf("%d events did not get recorded successfully",
+				len(events)-len(succeededEvents))
+		}
 		return succeededEvents, nil
 	}
 
