@@ -13,6 +13,7 @@ tasks:
             - ".aspect/bazelrc/ci.sourcegraph.bazelrc"
     test:
         env:
+            CI: "true"
             PGUSER: postgres
             PGDATABASE: postgres
             PGSSLMODE: disable
