@@ -4613,6 +4613,31 @@ CREATE VIEW site_config AS
     global_state.initialized
    FROM global_state;
 
+CREATE TABLE sponge_log_interpreters (
+    id integer NOT NULL,
+    name text NOT NULL
+);
+
+COMMENT ON TABLE sponge_log_interpreters IS 'References to pieces of UI logic that can be used to display test logs in a way that is easier to interpret.';
+
+CREATE SEQUENCE sponge_log_interpreters_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE sponge_log_interpreters_id_seq OWNED BY sponge_log_interpreters.id;
+
+CREATE TABLE sponge_logs (
+    id uuid NOT NULL,
+    log text NOT NULL,
+    interpreter_id integer
+);
+
+COMMENT ON TABLE sponge_logs IS 'Logs from tests that are uploaded and stored within a Sourcegraph instance, so that it is easy to share, compare, and collaborate on.';
+
 CREATE TABLE sub_repo_permissions (
     repo_id integer NOT NULL,
     user_id integer NOT NULL,
@@ -5242,6 +5267,8 @@ ALTER TABLE ONLY security_event_logs ALTER COLUMN id SET DEFAULT nextval('securi
 
 ALTER TABLE ONLY settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq'::regclass);
 
+ALTER TABLE ONLY sponge_log_interpreters ALTER COLUMN id SET DEFAULT nextval('sponge_log_interpreters_id_seq'::regclass);
+
 ALTER TABLE ONLY survey_responses ALTER COLUMN id SET DEFAULT nextval('survey_responses_id_seq'::regclass);
 
 ALTER TABLE ONLY teams ALTER COLUMN id SET DEFAULT nextval('teams_id_seq'::regclass);
@@ -5751,6 +5778,12 @@ ALTER TABLE ONLY security_event_logs
 
 ALTER TABLE ONLY settings
     ADD CONSTRAINT settings_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY sponge_log_interpreters
+    ADD CONSTRAINT sponge_log_interpreters_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY sponge_logs
+    ADD CONSTRAINT sponge_logs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY survey_responses
     ADD CONSTRAINT survey_responses_pkey PRIMARY KEY (id);
@@ -6926,6 +6959,9 @@ ALTER TABLE ONLY settings
 
 ALTER TABLE ONLY settings
     ADD CONSTRAINT settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
+
+ALTER TABLE ONLY sponge_logs
+    ADD CONSTRAINT sponge_logs_interpreter_id_fkey FOREIGN KEY (interpreter_id) REFERENCES sponge_log_interpreters(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY sub_repo_permissions
     ADD CONSTRAINT sub_repo_permissions_repo_id_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

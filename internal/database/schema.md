@@ -3976,6 +3976,37 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.sponge_log_interpreters"
+```
+ Column |  Type   | Collation | Nullable |                       Default                       
+--------+---------+-----------+----------+-----------------------------------------------------
+ id     | integer |           | not null | nextval('sponge_log_interpreters_id_seq'::regclass)
+ name   | text    |           | not null | 
+Indexes:
+    "sponge_log_interpreters_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "sponge_logs" CONSTRAINT "sponge_logs_interpreter_id_fkey" FOREIGN KEY (interpreter_id) REFERENCES sponge_log_interpreters(id) ON DELETE SET NULL
+
+```
+
+References to pieces of UI logic that can be used to display test logs in a way that is easier to interpret.
+
+# Table "public.sponge_logs"
+```
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ id             | uuid    |           | not null | 
+ log            | text    |           | not null | 
+ interpreter_id | integer |           |          | 
+Indexes:
+    "sponge_logs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "sponge_logs_interpreter_id_fkey" FOREIGN KEY (interpreter_id) REFERENCES sponge_log_interpreters(id) ON DELETE SET NULL
+
+```
+
+Logs from tests that are uploaded and stored within a Sourcegraph instance, so that it is easy to share, compare, and collaborate on.
+
 # Table "public.sub_repo_permissions"
 ```
    Column   |           Type           | Collation | Nullable | Default 
