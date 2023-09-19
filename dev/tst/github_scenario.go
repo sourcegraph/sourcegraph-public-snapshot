@@ -81,13 +81,16 @@ func (sb *GitHubScenarioBuilder) Users(users ...GitHubScenarioUser) *GitHubScena
 }
 
 func Team(name string, u ...GitHubScenarioUser) *GitHubScenarioTeam {
-	// stub
-	return nil
+	return NewGitHubScenarioTeam(name, u...)
 }
 
 func (sb *GitHubScenarioBuilder) Teams(teams ...*GitHubScenarioTeam) *GitHubScenarioBuilder {
 	sb.test.Helper()
-	// stub
+	for _, t := range teams {
+		sb.actions.AddSetup(t.CreateTeamAction(sb.client), t.AssignTeamAction(sb.client))
+		sb.actions.AddTeardown(t.DeleteTeamAction(sb.client))
+	}
+
 	return sb
 }
 
