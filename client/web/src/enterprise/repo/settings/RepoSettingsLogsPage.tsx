@@ -105,13 +105,21 @@ interface CommandLogsProps {
 }
 
 const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
-    const { recordedCommands, loading, error, fetchMore, hasNextPage } = useFetchRecordedCommands(repo.id)
-
+    const { recordedCommands, loading, error, fetchMore, hasNextPage, isRecordingEnabled } = useFetchRecordedCommands(
+        repo.id
+    )
     return (
         <>
             {error && <ErrorAlert error={error} />}
             <div aria-label="recorded commands">
-                {!loading && recordedCommands.length === 0 && <Text className="my-2">No recorded commands yet.</Text>}
+                {!loading && !isRecordingEnabled && (
+                    <div>
+                        <Text className="my-2">Command recording isn't enabled for this repository.</Text>
+                    </div>
+                )}
+                {!loading && recordedCommands.length === 0 && isRecordingEnabled && (
+                    <Text className="my-2">No recorded commands yet.</Text>
+                )}
                 {recordedCommands.map((command, index) => (
                     // We use the index as key here because commands don't have the concept
                     // of IDs and there's nothing really unique about each command.

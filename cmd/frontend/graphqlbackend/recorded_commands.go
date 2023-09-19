@@ -125,7 +125,7 @@ func (r *recordedCommandResolver) IsSuccess() bool {
 
 func (r *RepositoryResolver) IsRecordingEnabled() bool {
 	recordingConf := conf.Get().SiteConfig().GitRecorder
-	if recordingConf != nil || len(recordingConf.Repos) > 0 {
+	if recordingConf != nil && len(recordingConf.Repos) > 0 {
 		if recordingConf.Repos[0] == "*" {
 			return true
 		}
