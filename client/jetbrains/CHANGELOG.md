@@ -1,5 +1,11 @@
 # Sourcegraph Changelog
 
+## [Unreleased]
+
+### Highlights
+
+### Merged PRs
+
 ## [3.1.0]
 
 The Cody functionality of this plugin remains **experimental**. Don't hesitate to report
