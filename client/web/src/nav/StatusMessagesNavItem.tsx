@@ -345,8 +345,8 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 title="Gitserver disk threshold reached"
                                 message={status.message}
                                 messageHint="Search and cloning may be impacted until disk usage is reduced."
-                                linkTo="/site-admin/repositories"
-                                linkText="Manage repositories"
+                                linkTo="/site-admin/gitservers"
+                                linkText="Manage Gitservers"
                                 linkOnClick={toggleIsOpen}
                                 entryType="warning"
                             />
