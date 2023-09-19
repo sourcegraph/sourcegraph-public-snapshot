@@ -504,6 +504,7 @@ go_test(
         "//internal/highlight",
         "//internal/inventory",
         "//internal/oobmigration",
+        "//internal/ratelimit",
         "//internal/rbac",
         "//internal/rbac/types",
         "//internal/rcache",
