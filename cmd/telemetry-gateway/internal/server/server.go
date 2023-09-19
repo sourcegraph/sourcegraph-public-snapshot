@@ -35,7 +35,8 @@ type Server struct {
 var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
 func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
-	recordEventPayloadsHistogram, err := meter.Int64Histogram("telemetry-gateway.record_event_payloads")
+	recordEventPayloadsHistogram, err := meter.Int64Histogram(
+		"telemetry-gateway.record_events.payload_lengths")
 	if err != nil {
 		return nil, err
 	}
