@@ -725,46 +725,61 @@ func TestExternalServices(t *testing.T) {
 			{
 				"externalServices": {
 					"nodes": [
-					{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=", "rateLimiterState": {
-						"burst": 10,
-						"currentCapacity": 0,
-						"infinite": false,
-						"interval": 1,
-						"lastReplenishment": "1970-01-01T00:00:00Z",
-						"limit": 10
-					}},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=", "rateLimiterState": {
-						"burst": 10,
-						"currentCapacity": 0,
-						"infinite": false,
-						"interval": 1,
-						"lastReplenishment": "1970-01-01T00:00:00Z",
-						"limit": 10
-					}},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=", "rateLimiterState": {
-						"burst": 10,
-						"currentCapacity": 0,
-						"infinite": false,
-						"interval": 1,
-						"lastReplenishment": "1970-01-01T00:00:00Z",
-						"limit": 10
-					}},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=", "rateLimiterState": {
-						"burst": 10,
-						"currentCapacity": 0,
-						"infinite": false,
-						"interval": 1,
-						"lastReplenishment": "1970-01-01T00:00:00Z",
-						"limit": 10
-					}},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=", "rateLimiterState": {
-						"burst": 10,
-						"currentCapacity": 0,
-						"infinite": false,
-						"interval": 1,
-						"lastReplenishment": "1970-01-01T00:00:00Z",
-						"limit": 10
-					}}
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 1,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 1,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 1,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 1,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						},
+						{
+							"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=",
+							"rateLimiterState": {
+								"burst": 10,
+								"currentCapacity": 0,
+								"infinite": false,
+								"interval": 1,
+								"lastReplenishment": "1970-01-01T00:00:00Z",
+								"limit": 10
+							}
+						}
                     ]
                 }
 			}
