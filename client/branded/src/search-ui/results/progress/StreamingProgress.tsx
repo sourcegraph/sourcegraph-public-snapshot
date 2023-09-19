@@ -22,13 +22,14 @@ export interface StreamingProgressProps extends TelemetryProps {
 }
 
 export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<StreamingProgressProps>> = ({
-    progress,
-    query,
-    state,
-    showTrace,
-    onSearchAgain,
-    isSearchJobsEnabled,
-}) => {
+                                                                                                                progress,
+                                                                                                                query,
+                                                                                                                state,
+                                                                                                                showTrace,
+                                                                                                                onSearchAgain,
+                                                                                                                isSearchJobsEnabled,
+                                                                                                                telemetryService,
+                                                                                                            }) => {
     const isLoading = state === 'loading'
 
     return (
