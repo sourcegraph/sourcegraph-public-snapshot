@@ -124,10 +124,6 @@
                     }
                   ]
                 },
-                "requriredSteps": {
-                  "description": "Set this property if only a subset of steps are required for this task to complete.",
-                  "type": "number"
-                },
                 "info": {
                   "type": "string"
                 },
@@ -142,10 +138,26 @@
               "additionalProperties": false
             },
             "minItems": 1
+          },
+          "requiredSteps": {
+            "description": "Set this property if only a subset of steps are required for this task to complete.",
+            "type": "number"
           }
         },
         "required": ["steps"]
       }
+    },
+    "defaultSnippets": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["tasks"],

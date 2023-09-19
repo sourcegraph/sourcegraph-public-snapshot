@@ -45,7 +45,12 @@ const setup = (overrideTasks?: TourTaskType[]): RenderResult =>
     render(
         <MemoryRouter initialEntries={['/']}>
             <MockTemporarySettings settings={{}}>
-                <Tour telemetryService={mockedTelemetryService} id={TourId} tasks={overrideTasks ?? mockedTasks} />
+                <Tour
+                    telemetryService={mockedTelemetryService}
+                    id={TourId}
+                    tasks={overrideTasks ?? mockedTasks}
+                    defaultSnippets={{}}
+                />
             </MockTemporarySettings>
         </MemoryRouter>
     )
