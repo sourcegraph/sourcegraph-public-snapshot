@@ -15055,6 +15055,9 @@ type MockDB struct {
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
+	// SpongeLogsFunc is an instance of a mock function object controlling
+	// the behavior of the method SpongeLogs.
+	SpongeLogsFunc *DBSpongeLogsFunc
 	// SubRepoPermsFunc is an instance of a mock function object controlling
 	// the behavior of the method SubRepoPerms.
 	SubRepoPermsFunc *DBSubRepoPermsFunc
@@ -15359,6 +15362,11 @@ func NewMockDB() *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: func() (r0 database.SettingsStore) {
+				return
+			},
+		},
+		SpongeLogsFunc: &DBSpongeLogsFunc{
+			defaultHook: func() (r0 database.SpongeLogStore) {
 				return
 			},
 		},
@@ -15694,6 +15702,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Settings")
 			},
 		},
+		SpongeLogsFunc: &DBSpongeLogsFunc{
+			defaultHook: func() database.SpongeLogStore {
+				panic("unexpected invocation of MockDB.SpongeLogs")
+			},
+		},
 		SubRepoPermsFunc: &DBSubRepoPermsFunc{
 			defaultHook: func() database.SubRepoPermsStore {
 				panic("unexpected invocation of MockDB.SubRepoPerms")
@@ -15919,6 +15932,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
+		},
+		SpongeLogsFunc: &DBSpongeLogsFunc{
+			defaultHook: i.SpongeLogs,
 		},
 		SubRepoPermsFunc: &DBSubRepoPermsFunc{
 			defaultHook: i.SubRepoPerms,
@@ -21244,6 +21260,104 @@ func (c DBSettingsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBSpongeLogsFunc describes the behavior when the SpongeLogs method of the
+// parent MockDB instance is invoked.
+type DBSpongeLogsFunc struct {
+	defaultHook func() database.SpongeLogStore
+	hooks       []func() database.SpongeLogStore
+	history     []DBSpongeLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// SpongeLogs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) SpongeLogs() database.SpongeLogStore {
+	r0 := m.SpongeLogsFunc.nextHook()()
+	m.SpongeLogsFunc.appendCall(DBSpongeLogsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SpongeLogs method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBSpongeLogsFunc) SetDefaultHook(hook func() database.SpongeLogStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SpongeLogs method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBSpongeLogsFunc) PushHook(hook func() database.SpongeLogStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBSpongeLogsFunc) SetDefaultReturn(r0 database.SpongeLogStore) {
+	f.SetDefaultHook(func() database.SpongeLogStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBSpongeLogsFunc) PushReturn(r0 database.SpongeLogStore) {
+	f.PushHook(func() database.SpongeLogStore {
+		return r0
+	})
+}
+
+func (f *DBSpongeLogsFunc) nextHook() func() database.SpongeLogStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBSpongeLogsFunc) appendCall(r0 DBSpongeLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBSpongeLogsFuncCall objects describing the
+// invocations of this function.
+func (f *DBSpongeLogsFunc) History() []DBSpongeLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBSpongeLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBSpongeLogsFuncCall is an object that describes an invocation of method
+// SpongeLogs on an instance of MockDB.
+type DBSpongeLogsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SpongeLogStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBSpongeLogsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBSpongeLogsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -76,6 +76,7 @@ type DB interface {
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
+	SpongeLogs() SpongeLogStore
 	Teams() TeamStore
 	EventLogsScrapeState() EventLogsScrapeStateStore
 	RecentViewSignal() RecentViewSignalStore
@@ -347,6 +348,10 @@ func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
 
 func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
+}
+
+func (d *db) SpongeLogs() SpongeLogStore {
+	return &logStore{d.Store}
 }
 
 func (d *db) Teams() TeamStore {
