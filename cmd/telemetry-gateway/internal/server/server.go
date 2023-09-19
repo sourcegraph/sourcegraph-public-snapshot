@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io"
 
 	"go.opentelemetry.io/otel"
@@ -55,8 +54,6 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		logger = trace.Logger(stream.Context(), s.logger)
 		// publisher is initialized once for RecordEventsRequestMetadata.
 		publisher *events.Publisher
-		// submittedEvents is a count of events submitted so far in the stream.
-		submittedEvents int
 	)
 
 	for {
@@ -116,27 +113,8 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failedEvents)),
 					metric.WithAttributes(attribute.Bool("succeeded", false)))
 
-				// Generate failure message
-				var message string
-				if len(failedEvents) == submittedEvents {
-					message = "all events failed to submit"
-				} else {
-					message = "some events failed to submit"
-				}
-
-				// Collect details about the events that failed to submit.
-				failedEventsDetails := make([]*telemetrygatewayv1.RecordEventsErrorDetails_EventError, len(failedEvents))
-				errFields := make([]log.Field, len(failedEvents))
-				for i, failure := range failedEvents {
-					failedEventsDetails[i] = &telemetrygatewayv1.RecordEventsErrorDetails_EventError{
-						EventId: failure.EventID,
-						Error:   failure.PublishError.Error(),
-					}
-					errFields[i] = log.NamedError(fmt.Sprintf("error.%d", i), failure.PublishError)
-				}
-				details := &telemetrygatewayv1.RecordEventsErrorDetails{
-					FailedEvents: failedEventsDetails,
-				}
+				// Aggregate failure details
+				message, errFields, details := summarizeFailedEvents(len(events), failedEvents)
 
 				// Generate a log message for diagnostics
 				logger.With(errFields...).Error(message,
@@ -150,6 +128,8 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				if err != nil {
 					logger.Error("failed to marshal error status",
 						log.Error(err))
+					// Just return a failure message to the client without
+					// details if we can't marshal the error status
 					return status.Error(codes.Internal, message)
 				}
 				return st.Err()

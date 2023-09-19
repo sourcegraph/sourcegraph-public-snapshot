@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
 
@@ -79,7 +78,7 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	// Start streaming our set of events, chunking them based on message size
 	// as determined internally by chunk.Chunker. Keep track of the events we
 	// submit.
-	succeededEvents := make([]string, 0, len(events))
+	allSucceededEvents := make([]string, 0, len(events))
 	chunker := chunk.New(func(chunkedEvents []*telemetrygatewayv1.Event) error {
 		err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
 			Payload: &telemetrygatewayv1.RecordEventsRequest_Events{
@@ -88,47 +87,35 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 				},
 			},
 		})
-		failedEvents := make(map[string]struct{})
+
 		if err != nil {
-			if details := extractErrorDetails(err); details != nil {
-				for _, ev := range details.FailedEvents {
-					failedEvents[ev.EventId] = struct{}{}
-				}
+			// If the batch failed, check if we got details about the failure, which
+			// we can use to check if our failure is partial or total.
+			if chunkSucceeded := getSucceededEventsInError(chunkedEvents, err); len(chunkSucceeded) > 0 {
+				allSucceededEvents = append(allSucceededEvents, chunkSucceeded...)
+			}
+		} else {
+			// Otherwise, all events succeeded!
+			for _, event := range chunkedEvents {
+				allSucceededEvents = append(allSucceededEvents, event.GetId())
 			}
 		}
-		for _, ev := range chunkedEvents {
-			if _, failed := failedEvents[ev.GetId()]; !failed {
-				succeededEvents = append(succeededEvents, ev.Id)
-			}
-		}
+
 		return err
 	})
 
 	if err := chunker.Send(events...); err != nil {
-		return succeededEvents, errors.Wrap(err, "chunk and send events")
+		return allSucceededEvents, errors.Wrap(err, "chunk and send events")
 	}
 	if err := chunker.Flush(); err != nil {
-		return succeededEvents, errors.Wrap(err, "flush events")
+		return allSucceededEvents, errors.Wrap(err, "flush events")
 	}
 
 	if _, err := stream.CloseAndRecv(); err != nil {
-		return succeededEvents, errors.Wrap(err, "close request")
+		return allSucceededEvents, errors.Wrap(err, "close request")
 	}
 
-	return succeededEvents, nil
+	return allSucceededEvents, nil
 }
 
 func (e *exporter) Close() error { return e.conn.Close() }
-
-func extractErrorDetails(err error) *telemetrygatewayv1.RecordEventsErrorDetails {
-	st, ok := status.FromError(err)
-	if ok {
-		for _, detail := range st.Details() {
-			switch d := detail.(type) {
-			case *telemetrygatewayv1.RecordEventsErrorDetails:
-				return d
-			}
-		}
-	}
-	return nil
-}
