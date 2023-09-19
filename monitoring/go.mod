@@ -6,7 +6,7 @@ require (
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/hashicorp/hcl v1.0.0
-	github.com/prometheus/common v0.37.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/prometheus/prometheus v0.40.5
 	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
@@ -16,12 +16,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace (
-	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
-	github.com/prometheus/common => github.com/prometheus/common v0.32.1
-	// When developing, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/lib => ../lib
-)
+// When developing, this replace uses the local package instead of a pushed version.
+replace github.com/sourcegraph/sourcegraph/lib => ../lib
 
 require (
 	github.com/benbjohnson/clock v1.3.0 // indirect
@@ -74,3 +70,10 @@ require (
 	google.golang.org/protobuf v1.29.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// @ggilmore: This is a hack to get the 5.1.X patch release out. The gomod sg lint check is buggy, and can't handle
+// adjacent changes to underelated depdencies.
+require github.com/prometheus/common v0.37.0
+
+// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
+replace github.com/prometheus/common => github.com/prometheus/common v0.32.1

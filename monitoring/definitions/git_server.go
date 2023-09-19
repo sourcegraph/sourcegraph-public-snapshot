@@ -23,7 +23,7 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("gitserver", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "gitserver",

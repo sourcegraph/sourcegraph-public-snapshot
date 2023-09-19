@@ -16,6 +16,7 @@ func Frontend() *monitoring.Dashboard {
 		containerName = "(frontend|sourcegraph-frontend)"
 
 		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
+		grpcInternalAPIServiceName        = "api.internalapi.v1.ConfigService"
 	)
 
 	var sentinelSamplingIntervals []string
@@ -32,7 +33,8 @@ func Frontend() *monitoring.Dashboard {
 	}
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcZoektConfigurationServiceName)
+	grpcMethodVariableFrontendZoektConfiguration := shared.GRPCMethodVariable("zoekt_configuration", grpcZoektConfigurationServiceName)
+	grpcMethodVariableFrontendInternalAPI := shared.GRPCMethodVariable("internal_api", grpcInternalAPIServiceName)
 
 	orgMetricSpec := []struct{ name, route, description string }{
 		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
@@ -67,7 +69,8 @@ func Frontend() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVariableFrontendZoektConfiguration,
+			grpcMethodVariableFrontendInternalAPI,
 		},
 
 		Groups: []monitoring.Group{
@@ -408,20 +411,38 @@ func Frontend() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "frontend",
+					HumanServiceName:   "zoekt_configuration",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
 					InstanceFilterRegex:  `${internalInstance:regex}`,
 					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "frontend",
+					HumanServiceName:   "zoekt_configuration",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 					Namespace:          "", // intentionally empty
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
+					InstanceFilterRegex:  `${internalInstance:regex}`,
+					MessageSizeNamespace: "src",
+				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
 			{
