@@ -60,6 +60,7 @@ export const SearchJobDeleteModal: FC<SearchJobModalProps> = props => {
                 <Button
                     variant="danger"
                     disabled={loading}
+                    className={styles.actionButton}
                     onClick={() => deleteSearchJob({ variables: { id: searchJob.id } })}
                 >
                     {loading ? (
@@ -147,7 +148,12 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
                 <Button variant="secondary" outline={true} onClick={onDismiss}>
                     Cancel
                 </Button>
-                <Button variant="primary" disabled={loading} onClick={() => handleRerunClick()}>
+                <Button
+                    variant="primary"
+                    disabled={loading}
+                    className={styles.actionButton}
+                    onClick={() => handleRerunClick()}
+                >
                     {loading ? (
                         <>
                             <LoadingSpinner /> Re-running
@@ -186,6 +192,7 @@ export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
                 <Button
                     variant="danger"
                     disabled={loading}
+                    className={styles.actionButton}
                     onClick={() => cancelSearchJob({ variables: { id: searchJob.id } })}
                 >
                     {loading ? (
