@@ -26,7 +26,10 @@ type Server struct {
 	logger      log.Logger
 	eventsTopic pubsub.TopicClient
 
+	// Record event lengths of individual payloads
 	histogramRecordEventPayloads metric.Int64Histogram
+	// Record total event lengths of requests
+	histogramRecordEventTotals metric.Int64Histogram
 
 	// Fallback unimplemented handler
 	telemetrygatewayv1.UnimplementedTelemeteryGatewayServiceServer
@@ -36,7 +39,12 @@ var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
 func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
 	recordEventPayloadsHistogram, err := meter.Int64Histogram(
-		"telemetry-gateway.record_events.payload_lengths")
+		"telemetry-gateway.record_events.payload_length")
+	if err != nil {
+		return nil, err
+	}
+	recordEventTotalsHistogram, err := meter.Int64Histogram(
+		"telemetry-gateway.record_events.total_length")
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +54,7 @@ func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
 		eventsTopic: eventsTopic,
 
 		histogramRecordEventPayloads: recordEventPayloadsHistogram,
+		histogramRecordEventTotals:   recordEventTotalsHistogram,
 	}, nil
 }
 
@@ -54,7 +63,17 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		logger = trace.Logger(stream.Context(), s.logger)
 		// publisher is initialized once for RecordEventsRequestMetadata.
 		publisher *events.Publisher
+		// count of all processed events
+		totalSucceededEvents int64
+		totalFailedEvents    int64
 	)
+
+	defer func() {
+		s.histogramRecordEventTotals.Record(stream.Context(), totalSucceededEvents,
+			metric.WithAttributes(attribute.Bool("succeeded", true)))
+		s.histogramRecordEventTotals.Record(stream.Context(), totalFailedEvents,
+			metric.WithAttributes(attribute.Bool("succeeded", false)))
+	}()
 
 	for {
 		msg, err := stream.Recv()
@@ -110,8 +129,10 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			// Record succeeded and failed separately
 			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(succeeded)),
 				metric.WithAttributes(attribute.Bool("succeeded", true)))
+			totalSucceededEvents += int64(len(succeeded))
 			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failed)),
 				metric.WithAttributes(attribute.Bool("succeeded", false)))
+			totalFailedEvents += int64(len(failed))
 
 			// Generate a log message for diagnostics
 			summaryFields := []log.Field{
