@@ -637,8 +637,6 @@ type ExternalServiceRepo struct {
 	ExternalServiceID int64      `json:"externalServiceID"`
 	RepoID            api.RepoID `json:"repoID"`
 	CloneURL          string     `json:"cloneURL"`
-	UserID            int32      `json:"userID"`
-	OrgID             int32      `json:"orgID"`
 	CreatedAt         time.Time  `json:"createdAt"`
 }
 
