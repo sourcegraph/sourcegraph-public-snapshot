@@ -6,6 +6,7 @@ require (
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/hashicorp/hcl v1.0.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/prometheus v0.40.5
 	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037

@@ -23,7 +23,7 @@ func RepoUpdater() *monitoring.Dashboard {
 		},
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("repo_updater", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "repo-updater",
