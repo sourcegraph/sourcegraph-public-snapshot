@@ -1,13 +1,23 @@
 package com.sourcegraph.cody
 
-import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
+import com.sourcegraph.cody.config.CodyTokenCredentialsUi
 import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.config.ConfigUtil
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
-import io.netty.handler.codec.http.*
+import io.netty.handler.codec.http.DefaultFullHttpResponse
+import io.netty.handler.codec.http.FullHttpRequest
+import io.netty.handler.codec.http.FullHttpResponse
+import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpResponseStatus
+import io.netty.handler.codec.http.HttpUtil
+import io.netty.handler.codec.http.HttpVersion
+import io.netty.handler.codec.http.QueryStringDecoder
 import io.netty.util.CharsetUtil
 import org.jetbrains.ide.RestService
 
@@ -26,12 +36,7 @@ class SaveAccessTokenHttpService : RestService() {
         sendStatus(HttpResponseStatus.BAD_REQUEST, keepAlive, channel)
       }
 
-      // Save token
-      val project = ProjectManager.getInstance().openProjects[0]
-      val accountsHost = CodyPersistentAccountsHost(project)
-      accountsHost.addAccount(SourcegraphServerPath(ConfigUtil.DOTCOM_URL, ""), "", accessToken)
-      CodyAgent.getServer(project)
-          ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+      addAccount(accessToken)
 
       // Send response
       val htmlContent =
@@ -46,6 +51,33 @@ class SaveAccessTokenHttpService : RestService() {
       sendResponse(request, context, response)
     }
     return null
+  }
+
+  private fun addAccount(accessToken: String) {
+    val sourcegraphServerPath = SourcegraphServerPath(ConfigUtil.DOTCOM_URL, "")
+    val executor = SourcegraphApiRequestExecutor.Factory.getInstance().create(accessToken)
+    val modalityState = ModalityState.NON_MODAL
+    val emptyProgressIndicator = EmptyProgressIndicator(modalityState)
+
+    val project = getLastFocusedOrOpenedProject() ?: return
+    val accountsHost = CodyPersistentAccountsHost(project)
+    runCatching {
+          CodyTokenCredentialsUi.acquireLogin(
+              sourcegraphServerPath,
+              executor,
+              emptyProgressIndicator,
+              { login, server -> accountsHost.isAccountUnique(login, server) },
+              null)
+        }
+        .fold({ login ->
+          // Save account with login and token
+          accountsHost.addAccount(sourcegraphServerPath, login, accessToken)
+          CodyAgent.getServer(project)
+              ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+        }) {
+          val validationInfo = CodyTokenCredentialsUi.handleError(it)
+          // TODO what to do in case of an error?
+        }
   }
 
   override fun getServiceName(): String {
