@@ -2,11 +2,12 @@ package images
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 
-	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/sourcegraph/conc/pool"
 	"gopkg.in/yaml.v3"
 
@@ -15,9 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// UpdateCompose walks all `*.yaml` files assuming they are docker-compose files and
-// updates Sourcegraph images in each.
-func UpdateCompose(path string, creds credentials.Credentials, pinTag string) error {
+func UpdateComposeManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	var checked int
 	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
@@ -35,7 +34,7 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 		}
 
 		checked++
-		newComposeFile, innerErr := updateComposeFile(composeFile, creds, pinTag)
+		newComposeFile, innerErr := updateComposeFileBis(ctx, registry, op, composeFile)
 		if innerErr != nil {
 			return err
 		}
@@ -58,12 +57,12 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 	}
 
 	return nil
+
 }
 
-// updateComposeFile updates composeFile data and returns it.
-func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag string) ([]byte, error) {
+func updateComposeFileBis(ctx context.Context, registry Registry, op UpdateOperation, b []byte) ([]byte, error) {
 	var compose map[string]any
-	if err := yaml.Unmarshal(composeFile, &compose); err != nil {
+	if err := yaml.Unmarshal(b, &compose); err != nil {
 		return nil, err
 	}
 	services, ok := compose["services"].(map[string]any)
@@ -75,6 +74,7 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		original string
 		new      string
 	}
+
 	checks := pool.NewWithResults[*replace]().WithMaxGoroutines(10)
 	for name, entry := range services {
 		name := name
@@ -96,20 +96,30 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 				return nil
 			}
 
-			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag)
+			r, err := ParseRepository(originalImage)
 			if err != nil {
 				if errors.Is(err, ErrNoUpdateNeeded) {
-					std.Out.Verbosef("%s: %s", name, err)
+					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", originalImage)))
+					return nil
 				} else {
-					std.Out.WriteWarningf("%s: %s", name, err)
+					return nil
 				}
-				return nil
 			}
 
-			std.Out.VerboseLine(output.Styledf(output.StylePending, "%s: will update to %s", name, newImage))
+			newR, err := op(registry, r)
+			if err != nil {
+				if errors.Is(err, ErrNoUpdateNeeded) {
+					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", r.Ref())))
+					return nil
+				} else {
+					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("error on %q: %v", originalImage, err)))
+				}
+			}
+
+			std.Out.VerboseLine(output.Styledf(output.StylePending, "%s: will update to %s", name, newR.Ref()))
 			return &replace{
 				original: originalImage,
-				new:      newImage,
+				new:      newR.Ref(),
 			}
 		})
 	}
@@ -120,12 +130,12 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		if r == nil {
 			continue
 		}
-		composeFile = bytes.ReplaceAll(composeFile, []byte(r.original), []byte(r.new))
+		b = bytes.ReplaceAll(b, []byte(r.original), []byte(r.new))
 		updates++
 	}
 	if updates == 0 {
 		return nil, nil
 	}
 
-	return composeFile, nil
+	return b, nil
 }

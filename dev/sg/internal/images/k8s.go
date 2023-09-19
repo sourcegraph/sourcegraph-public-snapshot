@@ -13,7 +13,7 @@ import (
 
 // UpdateOperation returns a new container repository raw image field to be used in
 // manifests in the given registry.
-type UpdateOperation func(registry Registry, repo *Repository) (string, error)
+type UpdateOperation func(registry Registry, repo *Repository) (*Repository, error)
 
 func UpdateK8sManifest(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
 	updater := imageUpdater{
@@ -42,6 +42,11 @@ func UpdateK8sManifest(ctx context.Context, registry Registry, path string, op U
 	}.Execute()
 
 	return err
+}
+
+var conventionalInitContainerPaths = [][]string{
+	{"spec", "initContainers"},
+	{"spec", "template", "spec", "initContainers"},
 }
 
 type imageUpdater struct {
@@ -82,6 +87,12 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 				// be skipped.
 				r, err := ParseRepository(oldImage)
 				if err != nil {
+					return err
+				}
+
+				// Compute the new image field value, using the given UpdateOperation
+				newRepo, err := f.op(f.registry, r)
+				if err != nil {
 					if errors.Is(err, ErrNoUpdateNeeded) {
 						std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", oldImage)))
 						return nil
@@ -89,13 +100,8 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 						return err
 					}
 				}
-				// Compute the new image field value, using the given UpdateOperation
-				newImage, err := f.op(f.registry, r)
-				if err != nil {
-					return err
-				}
 				// Update the field in-place.
-				return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(newImage)))
+				return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(newRepo.Ref())))
 			}
 
 			// Apply the above on normal containers fields..
