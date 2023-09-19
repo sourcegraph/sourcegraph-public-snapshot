@@ -4074,7 +4074,6 @@ Referenced by:
  exported_at | timestamp with time zone |           |          | 
 Indexes:
     "telemetry_events_export_queue_pkey" PRIMARY KEY, btree (id)
-    "telemetry_events_export_queue_id_idx" btree (id)
 
 ```
 

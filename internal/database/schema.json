@@ -26634,16 +26634,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX telemetry_events_export_queue_pkey ON telemetry_events_export_queue USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "telemetry_events_export_queue_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX telemetry_events_export_queue_id_idx ON telemetry_events_export_queue USING btree (id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,

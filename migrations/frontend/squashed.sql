@@ -6301,8 +6301,6 @@ CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id
 
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
-CREATE INDEX telemetry_events_export_queue_id_idx ON telemetry_events_export_queue USING btree (id);
-
 CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
 
 CREATE UNIQUE INDEX unique_role_name ON roles USING btree (name);
