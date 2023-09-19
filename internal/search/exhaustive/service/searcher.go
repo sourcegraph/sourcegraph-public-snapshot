@@ -23,6 +23,12 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 	return newSearcherFunc(func(ctx context.Context, q string) (SearchQuery, error) {
 		// TODO adjust NewSearch API to enforce the user passing in a user id.
 		// IE do not rely on ctx actor since that could easily lead to a bug.
+
+		// TODO this hack is an ugly workaround to get the plan and jobs to
+		// get into a shape we like. it will break in bad ways but works for
+		// EAP.
+		q = "type:file index:no " + q
+
 		inputs, err := client.Plan(
 			ctx,
 			"V3",

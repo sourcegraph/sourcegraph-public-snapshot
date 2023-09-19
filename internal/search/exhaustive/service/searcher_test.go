@@ -54,16 +54,13 @@ func TestFromSearchClient(t *testing.T) {
 		})
 	}
 
-	// TODO every test query currently hardcodes type:file index:no. We
-	// shouldn't have to need to do that.
-
 	// NOTE: our search stack calls gitserver twice per non-HEAD revision we
 	// search. Converting a RefSpec into a RepoRev we validate the refspec
 	// exists (or expand a glob). Then at actual search time we resolve it
 	// again to find the actual commit to search.
 
 	do("global", newSearcherTestCase{
-		Query:        "type:file index:no content",
+		Query:        "content",
 		WantRefSpecs: "RepositoryRevSpec{1@} RepositoryRevSpec{2@}",
 		WantRepoRevs: "RepositoryRevision{1@} RepositoryRevision{2@}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
@@ -73,7 +70,7 @@ func TestFromSearchClient(t *testing.T) {
 	})
 
 	do("repo", newSearcherTestCase{
-		Query:        "type:file index:no repo:foo content",
+		Query:        "repo:foo content",
 		WantRefSpecs: "RepositoryRevSpec{1@}",
 		WantRepoRevs: "RepositoryRevision{1@}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
@@ -82,7 +79,7 @@ func TestFromSearchClient(t *testing.T) {
 	})
 
 	do("rev", newSearcherTestCase{
-		Query:        "type:file index:no repo:foo rev:dev1 content",
+		Query:        "repo:foo rev:dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
@@ -91,7 +88,7 @@ func TestFromSearchClient(t *testing.T) {
 	})
 
 	do("glob", newSearcherTestCase{
-		Query:        "type:file index:no repo:foo rev:*refs/heads/dev* content",
+		Query:        "repo:foo rev:*refs/heads/dev* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*}",
 		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
@@ -101,7 +98,7 @@ func TestFromSearchClient(t *testing.T) {
 	})
 
 	do("notglob", newSearcherTestCase{
-		Query:        "type:file index:no repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
+		Query:        "repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*:*!refs/heads/dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev2}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
@@ -110,16 +107,16 @@ func TestFromSearchClient(t *testing.T) {
 	})
 
 	do("nomatchglob", newSearcherTestCase{
-		Query:        "type:file index:no repo:foo rev:*refs/heads/doesnotmatch* content",
+		Query:        "repo:foo rev:*refs/heads/doesnotmatch* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/doesnotmatch*}",
 	})
 
 	do("norepos", newSearcherTestCase{
-		Query: "type:file index:no repo:doesnotmatch content",
+		Query: "repo:doesnotmatch content",
 	})
 
 	do("missingrev", newSearcherTestCase{
-		Query:        "type:file index:no repo:foo rev:dev1:missing content",
+		Query:        "repo:foo rev:dev1:missing content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
