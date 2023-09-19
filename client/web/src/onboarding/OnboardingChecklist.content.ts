@@ -4,14 +4,14 @@ export const content = [
         isComplete: false,
         title: 'Set license key',
         description: 'Please set your license key',
-        link: 'site-admin/configuration?id=setLicenseKey',
+        link: 'site-admin/configuration?actionItem=setLicenseKey',
     },
     {
         id: 'externalURL',
         isComplete: false,
         title: 'Set external URL',
         description: 'Must be set in order for Sourcegraph to work correctly.',
-        link: 'site-admin/configuration?id=setExternalURL',
+        link: 'site-admin/configuration?actionItem=setExternalURL',
     },
     {
         id: 'emailSmtp',
