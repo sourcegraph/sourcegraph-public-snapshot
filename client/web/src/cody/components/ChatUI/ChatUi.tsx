@@ -43,14 +43,14 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 
 interface IChatUIProps {
     codyChatStore: CodyChatStore
-    isSourcegraphApp?: boolean
+    isCodyApp?: boolean
     isCodyChatPage?: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
 export const ChatUI: React.FC<IChatUIProps> = ({
     codyChatStore,
-    isSourcegraphApp,
+    isCodyApp,
     isCodyChatPage,
     authenticatedUser,
 }): JSX.Element => {
@@ -95,7 +95,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
             fetchRepositoryNames,
-            isSourcegraphApp,
+            isCodyApp,
             logTranscriptEvent,
             transcriptHistory,
             className: 'mt-2',
@@ -107,7 +107,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
             fetchRepositoryNames,
-            isSourcegraphApp,
+            isCodyApp,
             logTranscriptEvent,
             transcriptHistory,
             authenticatedUser,
@@ -137,7 +137,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({
                 setInputHistory={setInputHistory}
                 onSubmit={onSubmit}
                 submitButtonComponent={SubmitButton}
-                fileLinkComponent={isSourcegraphApp ? AppFileLink : FileLink}
+                fileLinkComponent={isCodyApp ? AppFileLink : FileLink}
                 className={styles.container}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}

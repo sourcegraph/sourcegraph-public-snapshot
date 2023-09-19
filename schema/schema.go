@@ -64,9 +64,9 @@ type AppNotifications struct {
 	Key string `json:"key"`
 	// Message description: The Markdown message to display
 	Message string `json:"message"`
-	// VersionMax description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMax description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMax string `json:"version.max,omitempty"`
-	// VersionMin description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMin description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMin string `json:"version.min,omitempty"`
 }
 
@@ -1772,7 +1772,7 @@ type OtherExternalServiceConnection struct {
 	//
 	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as ["src-serve-local"].
 	Root string `json:"root,omitempty"`
 	Url  string `json:"url,omitempty"`
 }

@@ -1,6 +1,6 @@
-# Sourcegraph App
+# Cody App
 
-Sourcegraph App is a single-binary distribution of Sourcegraph that runs on your local machine.
+Cody App is a single-binary distribution of Sourcegraph that runs on your local machine.
 
 **Status:** alpha (only for internal use at Sourcegraph)
 
@@ -18,9 +18,9 @@ If your are running app on a fresh database instance you also have to perform th
 
 ## Usage
 
-Sourcegraph App is in alpha (only for internal use at Sourcegraph).
+Cody App is in alpha (only for internal use at Sourcegraph).
 
-Check the **Sourcegraph App release** bot in [`#app`](https://app.slack.com/client/T02FSM7DL/C04F9E7GUDP) (in the Sourcegraph internal Slack) for the latest release information.
+Check the **Cody App release** bot in [`#app`](https://app.slack.com/client/T02FSM7DL/C04F9E7GUDP) (in the Sourcegraph internal Slack) for the latest release information.
 
 ## Build and release
 

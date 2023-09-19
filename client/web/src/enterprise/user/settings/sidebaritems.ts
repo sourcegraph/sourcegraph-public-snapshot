@@ -27,7 +27,7 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Permissions',
         to: '/permissions',
         exact: true,
-        condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        condition: ({ isCodyApp }) => !isCodyApp,
     },
     {
         to: '/event-log',

@@ -7232,7 +7232,7 @@ type Site implements SettingsSubject {
     allowEditExternalServicesWithFile: Boolean!
     """
     The number of external services distinguished by local repositories and remote repositories.
-    Local repository code host connections are only supported in Sourcegraph App.
+    Local repository code host connections are only supported in Cody App.
     """
     externalServicesCounts: ExternalServicesCounts!
     """
@@ -7459,7 +7459,7 @@ type CodyGatewayRateLimitStatus {
 
 """
 External services count information includes a count of services for remote code host connections and a count of services
-for local code host connections (local is only supported for Sourcegraph App).
+for local code host connections (local is only supported for Cody App).
 """
 type ExternalServicesCounts {
     """

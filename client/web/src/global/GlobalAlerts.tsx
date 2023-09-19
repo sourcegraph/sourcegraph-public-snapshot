@@ -24,7 +24,7 @@ import styles from './GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 // NOTE: The name of the query is also added in the refreshSiteFlags() function
@@ -44,7 +44,7 @@ const QUERY = gql`
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphApp }) => {
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isCodyApp }) => {
     const settings = useSettings()
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
@@ -58,7 +58,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isSourcegraphApp && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isCodyApp && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (
@@ -113,8 +113,8 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                     .
                 </DismissibleAlert>
             )}
-            {/* Sourcegraph app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
-            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && !isSourcegraphApp && (
+            {/* Cody app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
+            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && !isCodyApp && (
                 <DismissibleAlert
                     key="no-embeddings-policies-alert"
                     partialStorageKey="no-embeddings-policies-alert"
@@ -131,11 +131,9 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
             )}
             <Notices alertClassName={styles.alert} location="top" />
 
-            {/* The link in the notice doesn't work in the Sourcegraph app since it's rendered by Markdown,
+            {/* The link in the notice doesn't work in the Cody app since it's rendered by Markdown,
             so don't show it there for now. */}
-            {!isSourcegraphApp && (
-                <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
-            )}
+            {!isCodyApp && <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />}
         </div>
     )
 }

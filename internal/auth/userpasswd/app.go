@@ -24,7 +24,7 @@ import (
 
 const appUsername = "admin"
 
-// appSecret stores the in-memory secret used by Sourcegraph App to enable passworldless
+// appSecret stores the in-memory secret used by Cody App to enable passworldless
 // login from the console.
 var appSecret secret
 
@@ -128,7 +128,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 	}
 }
 
-// AppSiteInit is called in the case of Sourcegraph App to create the initial site admin account.
+// AppSiteInit is called in the case of Cody App to create the initial site admin account.
 //
 // Returns a sign-in URL which will automatically sign in the user. This URL
 // can only be used once.

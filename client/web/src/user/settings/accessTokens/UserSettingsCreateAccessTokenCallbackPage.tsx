@@ -27,7 +27,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' |
      */
     onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 interface TokenRequester {
     /** The name of the source */
@@ -110,7 +110,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const isLightTheme = useIsLightTheme()
     const navigate = useNavigate()
@@ -168,7 +168,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             }
         }
 
-        if (isSourcegraphApp) {
+        if (isCodyApp) {
             // Append type=app to the url to indicate to the requester that the callback is fulfilled by App
             const redirectURL = new URL(nextRequester.redirectURL)
             redirectURL.searchParams.set('type', 'app')
@@ -177,7 +177,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, port, destination])
+    }, [isSourcegraphDotCom, isCodyApp, location.search, navigate, requestFrom, requester, port, destination])
 
     /**
      * We use this to handle token creation request from redirections.
@@ -206,7 +206,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     // callback in a browser.
                                     // Then navigate back to the home page since App doesn't
                                     // have a back button or tab that can be closed.
-                                    if (isSourcegraphApp) {
+                                    if (isCodyApp) {
                                         tauriShellOpen(uri)
                                         navigate('/')
                                         return
@@ -228,7 +228,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isSourcegraphApp, navigate]
+            [requester, user.id, note, onDidCreateAccessToken, requestFrom, port, isCodyApp, navigate]
         )
     )
 

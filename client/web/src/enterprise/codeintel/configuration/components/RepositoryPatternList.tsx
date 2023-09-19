@@ -113,7 +113,7 @@ interface RepositoryListProps {
 }
 
 const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatterns }) => {
-    const isSourcegraphApp = window.context?.sourcegraphAppMode
+    const isCodyApp = window.context?.codyAppMode
     const [repositoryFetchLimit, setRepositoryFetchLimit] = useState(DEFAULT_FETCH_LIMIT)
     const {
         previewResult: preview,
@@ -188,7 +188,7 @@ const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatt
                 {preview.repositories.map(repo => (
                     <li key={repo.name} className="list-group-item">
                         {repo.externalRepository && <ExternalRepositoryIcon externalRepo={repo.externalRepository} />}
-                        {isSourcegraphApp ? (
+                        {isCodyApp ? (
                             <>{repo.name}</>
                         ) : (
                             <Link to={repo.url} target="_blank" rel="noopener noreferrer">

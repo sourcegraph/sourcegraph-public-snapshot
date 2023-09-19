@@ -421,7 +421,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 	query.Filetype = filetypeQuery.Language
 
-	// Sourcegraph App: we do not use syntect_server/syntax-highlighter
+	// Cody App: we do not use syntect_server/syntax-highlighter
 	//
 	// 1. It makes cross-compilation harder (requires a full Rust toolchain for the target, plus
 	//    a full C/C++ toolchain for the target.) Complicates macOS code signing.
@@ -431,7 +431,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//    hack to workaround https://github.com/trishume/syntect/issues/202 - and by extension needs
 	//    two separate binaries, and separate processes, to function semi-reliably.
 	//
-	// Instead, in Sourcegraph App we defer to Chroma for syntax highlighting.
+	// Instead, in Cody App we defer to Chroma for syntax highlighting.
 	if deploy.IsApp() {
 		document, err := highlightWithChroma(code, p.Filepath)
 		if err != nil {
