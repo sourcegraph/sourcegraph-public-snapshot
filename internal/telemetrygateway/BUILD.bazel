@@ -1,12 +1,8 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "telemetrygateway",
-    srcs = [
-        "error.go",
-        "exporter.go",
-    ],
+    srcs = ["exporter.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -15,22 +11,11 @@ go_library(
         "//internal/grpc/chunk",
         "//internal/grpc/defaults",
         "//internal/telemetrygateway/v1:telemetrygateway",
+        "//internal/trace",
         "//lib/errors",
+        "@com_github_google_uuid//:uuid",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//status",
-    ],
-)
-
-go_test(
-    name = "telemetrygateway_test",
-    srcs = ["error_test.go"],
-    embed = [":telemetrygateway"],
-    deps = [
-        "//internal/telemetrygateway/v1:telemetrygateway",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
     ],
 )
