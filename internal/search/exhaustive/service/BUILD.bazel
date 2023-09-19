@@ -60,6 +60,7 @@ go_test(
         "//internal/search/streaming",
         "//internal/types",
         "//internal/uploadstore/mocks",
+        "//lib/errors",
         "//lib/iterator",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_sourcegraph_zoekt//:zoekt",

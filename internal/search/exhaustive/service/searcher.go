@@ -77,7 +77,13 @@ func (s searchQuery) RepositoryRevSpecs(ctx context.Context) ([]types.Repository
 		repoRev := it.Current()
 		var revspecs []string
 		for _, rev := range repoRev.Revs {
-			revspecs = append(revspecs, rev.String())
+			revStr := rev.String()
+			// avoid storing empty string since our DB expects non-empty
+			// string + this is easier to read in the DB.
+			if revStr == "" {
+				revStr = "HEAD"
+			}
+			revspecs = append(revspecs, revStr)
 		}
 		repoRevSpecs = append(repoRevSpecs, types.RepositoryRevSpecs{
 			Repository:         repoRev.Repo.ID,
