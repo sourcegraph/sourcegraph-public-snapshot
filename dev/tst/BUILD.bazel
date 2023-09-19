@@ -15,7 +15,7 @@ go_library(
     deps = [
         "//dev/tst/config",
         "//lib/errors",
-        "@com_github_google_go_github//v53/github",
+        "@com_github_google_go_github_v53//github",
         "@com_github_google_uuid//:uuid",
     ],
 )
