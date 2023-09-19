@@ -53,9 +53,6 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		logger = trace.Logger(stream.Context(), s.logger)
 		// publisher is initialized once for RecordEventsRequestMetadata.
 		publisher *events.Publisher
-
-		recordingSuccess = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingSuccess, 0)
-		recordingErrors  = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingError, 0)
 	)
 
 	for {
@@ -103,30 +100,37 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				return status.Error(codes.InvalidArgument, "metadata not yet received")
 			}
 
+			// Send off our events
 			results := publisher.Publish(stream.Context(), events)
 
 			// Aggregate failure details
 			message, errFields, succeeded, failed := summarizeResults(results)
-
-			// Collect results
-			if len(succeeded) > 0 {
-				recordingSuccess = append(recordingSuccess, succeeded...)
-			}
-			if len(failed) > 0 {
-				recordingErrors = append(recordingErrors, failed...)
-			}
-
-			// Generate a log message for diagnostics
-			logger.With(errFields...).Error(message,
-				log.Int("submitted", len(events)),
-				log.Int("succeeded", len(succeeded)),
-				log.Int("failed", len(failed)))
 
 			// Record succeeded and failed separately
 			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(succeeded)),
 				metric.WithAttributes(attribute.Bool("succeeded", true)))
 			s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failed)),
 				metric.WithAttributes(attribute.Bool("succeeded", false)))
+
+			// Generate a log message for diagnostics
+			summaryFields := []log.Field{
+				log.Int("submitted", len(events)),
+				log.Int("succeeded", len(succeeded)),
+				log.Int("failed", len(failed)),
+			}
+			if len(errFields) > 0 {
+				logger.Error(message, append(summaryFields, errFields...)...)
+			} else {
+				logger.Info(message, summaryFields...)
+			}
+
+			// Let the client know what happened
+			if err := stream.Send(&telemetrygatewayv1.RecordEventsResponse{
+				SucceededEvents: succeeded,
+				FailedEvents:    failed,
+			}); err != nil {
+				return err
+			}
 
 		case nil:
 			continue
@@ -136,8 +140,6 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 		}
 	}
 
-	return stream.SendAndClose(&telemetrygatewayv1.RecordEventsResponse{
-		SucceededEvents: recordingSuccess,
-		FailedEvents:    recordingErrors,
-	})
+	logger.Info("request done")
+	return nil
 }
