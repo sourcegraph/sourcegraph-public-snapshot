@@ -46,10 +46,10 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// validateRequest can be used to validate the HTTP request before it is sent upstream.
 	// Returning a non-nil error will stop further processing and return the given error
 	// code, or a 400.
-	// Last parameter is a boolean indicating whether the request was flagged during validation.
+	// Second return value is a boolean indicating whether the request was flagged during validation.
 	//
 	// The provided logger already contains actor context.
-	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, error, bool)
+	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, bool, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
 	transformBody func(*ReqT, *actor.Actor)
@@ -153,7 +153,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 				return
 			}
-			status, err, flagged := methods.validateRequest(r.Context(), logger, feature, body)
+			status, flagged, err := methods.validateRequest(r.Context(), logger, feature, body)
 			if err != nil {
 				if status == 0 {
 					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
