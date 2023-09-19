@@ -3196,6 +3196,13 @@ changesetTemplate:
 			}
 		})
 	})
+
+	t.Run("ExportChangesets", func(t *testing.T) {
+		t.Run("non-existent batch change", func(t *testing.T) {
+			_, _, err := svc.ExportChangesets(ctx, 10203042, []int64{})
+			require.Error(t, err, "batch change does not exist")
+		})
+	})
 }
 
 func createJob(t *testing.T, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
