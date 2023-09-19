@@ -14,6 +14,11 @@ type ServiceSpec struct {
 	// the service, e.g. "CODY_GATEWAY_". If empty, default the an capitalized,
 	// lowercase-delimited version of the service ID.
 	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
+
+	// Protocol is a protocol other than HTTP that the service communicates
+	// with. If empty, the service uses HTTP. To use gRPC, configure 'h2c':
+	// https://cloud.google.com/run/docs/configuring/http2
+	Protocol *Protocol `json:"protocol,omitempty"`
 }
 
 func (s ServiceSpec) Validate() []error {
@@ -21,3 +26,7 @@ func (s ServiceSpec) Validate() []error {
 	// TODO: Add validation
 	return errs
 }
+
+type Protocol string
+
+const ProtocolH2C Protocol = "h2c"
