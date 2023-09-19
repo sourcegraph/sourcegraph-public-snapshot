@@ -36,7 +36,7 @@ func NewGitHubScenario(ctx context.Context, cfg *config.Config, t *testing.T) (*
 		client:   client,
 		store:    NewStore(t),
 		actions:  NewActionManager(t),
-		reporter: NoopReporter{},
+		reporter: &NoopReporter{},
 	}, nil
 }
 
@@ -46,14 +46,16 @@ func (sb *GitHubScenarioBuilder) T(t *testing.T) *GitHubScenarioBuilder {
 	return sb
 }
 
-func (sb *GitHubScenarioBuilder) Verbose() {
-	sb.reporter = ConsoleReporter{}
+func (sb *GitHubScenarioBuilder) Verbose() *GitHubScenarioBuilder {
+	sb.reporter = &ConsoleReporter{}
 	sb.actions.Reporter = sb.reporter
+	return sb
 }
 
-func (sb *GitHubScenarioBuilder) Quiet() {
-	sb.reporter = NoopReporter{}
+func (sb *GitHubScenarioBuilder) Quiet() *GitHubScenarioBuilder {
+	sb.reporter = &NoopReporter{}
 	sb.actions.Reporter = sb.reporter
+	return sb
 }
 
 func (sb *GitHubScenarioBuilder) Org(name string) *GitHubScenarioBuilder {

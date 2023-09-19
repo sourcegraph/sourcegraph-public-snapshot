@@ -75,7 +75,7 @@ func NewActionManager(t *testing.T) *actionRunner {
 		T:        t,
 		setup:    make([]Action, 0),
 		teardown: make([]Action, 0),
-		Reporter: NoopReporter{},
+		Reporter: &NoopReporter{},
 	}
 }
 
