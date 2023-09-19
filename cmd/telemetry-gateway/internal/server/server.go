@@ -77,7 +77,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 			// TODO: Should we include this on events? Should we really validate
 			// the key, or just get the metadata?
-			licenseInfo, _, err := licensing.ParseProductLicenseKeyWithBuiltinOrGenerationKey(metadata.GetLicenseKey())
+			licenseInfo, _, err := licensing.ParseProductLicenseKey(metadata.GetLicenseKey())
 			if err != nil {
 				return status.Errorf(codes.InvalidArgument, "invalid license key: %s", err)
 			}
