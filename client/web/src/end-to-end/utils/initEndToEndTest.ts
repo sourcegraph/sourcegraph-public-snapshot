@@ -10,6 +10,7 @@ export async function initEndToEndTest(): Promise<Driver> {
     MockDate.reset()
 
     const config = getConfig('headless', 'slowMo', 'testUserPassword')
+
     // Start browser
     const driver = await createDriverForTest({
         sourcegraphBaseUrl,
