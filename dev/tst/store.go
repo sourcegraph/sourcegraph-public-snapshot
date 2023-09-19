@@ -52,22 +52,42 @@ func (s *ScenarioStore) GetOrg() (*github.Organization, error) {
 
 func (s *ScenarioStore) SetScenarioUserMapping(u *GitHubScenarioUser, user *github.User) {
 	s.T.Helper()
+	s.store[u.Key()] = user
 }
 
 func (s *ScenarioStore) SetUsers(users []*github.User) {
 	s.T.Helper()
+	s.store["all-users"] = users
 }
 
 func (s *ScenarioStore) GetUsers() ([]*github.User, error) {
 	s.T.Helper()
-	//stub
-	return nil, nil
+	var result []*github.User
+	if v, ok := s.store["org"]; ok {
+		if t, ok := v.([]*github.User); ok {
+			result = t
+		} else {
+			return result, castFailure
+		}
+	} else {
+		return result, errors.Newf("%s not found - it might not have been loaded yet", "all-users")
+	}
+	return result, nil
 }
 
 func (s *ScenarioStore) GetScenarioUser(u GitHubScenarioUser) (*github.User, error) {
 	s.T.Helper()
-	//stub
-	return nil, nil
+	var result *github.User
+	if v, ok := s.store[u.Key()]; ok {
+		if t, ok := v.(*github.User); ok {
+			result = t
+		} else {
+			return result, castFailure
+		}
+	} else {
+		return result, errors.Newf("%s not found - it might not have been loaded yet", u.Key())
+	}
+	return result, nil
 }
 
 func (s *ScenarioStore) SetTeam(gt *GitHubScenarioTeam, t *github.Team) {
