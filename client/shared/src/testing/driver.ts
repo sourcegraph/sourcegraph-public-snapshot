@@ -451,6 +451,12 @@ export class Driver {
             })
         )
 
+        await this.page.waitForSelector('[data-testid="license-dismiss-button"]', {
+            visible: true,
+            timeout: 300000,
+        })
+        await this.page.click('[data-testid="license-dismiss-button"]')
+
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
