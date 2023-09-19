@@ -2,7 +2,7 @@ import { render, cleanup, type RenderResult, fireEvent, act } from '@testing-lib
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
-import { TourLanguage, type TourTaskStepType, type TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -25,34 +25,18 @@ const StepLink: TourTaskStepType = {
         value: '#',
     },
 }
-const StepRestart: TourTaskStepType = {
+const StepRestart = {
     id: 'Restart',
     label: 'Restart',
     action: {
         type: 'restart',
         value: 'Restart button title',
     },
-}
-const StepLanguageSpecificLink: TourTaskStepType = {
-    id: 'LanguageSpecificLink',
-    label: 'Language Specific Link',
-    action: {
-        type: 'link',
-        value: {
-            [TourLanguage.C]: '#',
-            [TourLanguage.Go]: '#',
-            [TourLanguage.Java]: '#',
-            [TourLanguage.Javascript]: '#',
-            [TourLanguage.Php]: '#',
-            [TourLanguage.Python]: '#',
-            [TourLanguage.Typescript]: '#',
-        },
-    },
-}
+} satisfies TourTaskStepType
 const mockedTasks: TourTaskType[] = [
     {
         title: 'Task 1',
-        steps: [StepLink, StepVideo, StepLanguageSpecificLink, StepRestart],
+        steps: [StepLink, StepVideo, StepRestart],
     },
 ]
 
@@ -76,10 +60,7 @@ describe('Tour.tsx', () => {
     test('renders and triggers initial event log', () => {
         const { getByTestId } = setup()
         expect(getByTestId('tour-content')).toBeTruthy()
-        expect(
-            mockedTelemetryService.log.withArgs(TourId + 'Shown', { language: undefined }, { language: undefined })
-                .calledOnce
-        ).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs(TourId + 'Shown').calledOnce).toBeTruthy()
     })
 
     test('handles closing tour and triggers event log', () => {
@@ -89,10 +70,7 @@ describe('Tour.tsx', () => {
         fireEvent.click(getByTestId('tour-close-btn'))
 
         expect(() => getByTestId('tour-content')).toThrow()
-        expect(
-            mockedTelemetryService.log.withArgs(TourId + 'Closed', { language: undefined }, { language: undefined })
-                .calledOnce
-        ).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs(TourId + 'Closed').calledOnce).toBeTruthy()
     })
 
     test('handles "type=video" step and triggers event log', () => {
@@ -103,67 +81,21 @@ describe('Tour.tsx', () => {
 
         // click somewhere outside to close video modal
         fireEvent.click(getByTestId('modal-video-close'))
-        expect(
-            mockedTelemetryService.log.withArgs(
-                TourId + StepVideo.id + 'Clicked',
-                { language: undefined },
-                { language: undefined }
-            ).calledOnce
-        ).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs(TourId + StepVideo.id + 'Clicked').calledOnce).toBeTruthy()
     })
 
     test('handles "type=link" step and triggers event log', () => {
         const { getByText } = setup()
         fireEvent.click(getByText(StepLink.label))
-        expect(
-            mockedTelemetryService.log.withArgs(
-                TourId + StepLink.id + 'Clicked',
-                { language: undefined },
-                { language: undefined }
-            ).calledOnce
-        ).toBeTruthy()
-    })
-
-    test('handles "type=link" language specific step and triggers event log', () => {
-        const { getByText } = setup()
-        fireEvent.click(getByText(StepLanguageSpecificLink.label))
-        expect(
-            mockedTelemetryService.log.withArgs(
-                TourId + StepLanguageSpecificLink.id + 'Clicked',
-                { language: undefined },
-                { language: undefined }
-            ).calledOnce
-        ).toBeTruthy()
-        fireEvent.click(getByText(TourLanguage.Javascript))
-
-        expect(
-            mockedTelemetryService.log.withArgs(
-                TourId + 'LanguageClicked',
-                { language: TourLanguage.Javascript },
-                { language: TourLanguage.Javascript }
-            ).calledOnce
-        ).toBeTruthy()
-        expect(
-            mockedTelemetryService.log.withArgs(
-                TourId + StepLanguageSpecificLink.id + 'Clicked',
-                { language: TourLanguage.Javascript },
-                { language: TourLanguage.Javascript }
-            ).calledOnce
-        ).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs(TourId + StepLink.id + 'Clicked').calledOnce).toBeTruthy()
     })
 
     test('handles "type=restart" and triggers event log', () => {
         const { getByText } = setup()
 
-        fireEvent.click(getByText(StepRestart.action.value as string))
+        fireEvent.click(getByText(StepRestart.action.value))
 
-        expect(
-            mockedTelemetryService.log.withArgs(
-                TourId + StepRestart.id + 'Clicked',
-                { language: undefined },
-                { language: undefined }
-            ).callCount
-        ).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs(TourId + StepRestart.id + 'Clicked').callCount).toBeTruthy()
     })
 
     test('handles completing tour and triggers event log', () => {
@@ -171,9 +103,6 @@ describe('Tour.tsx', () => {
         act(() => {
             fireEvent.click(getByText(StepLink.label))
         })
-        expect(
-            mockedTelemetryService.log.withArgs(TourId + 'Completed', { language: undefined }, { language: undefined })
-                .calledOnce
-        ).toBeTruthy()
+        expect(mockedTelemetryService.log.withArgs(TourId + 'Completed').calledOnce).toBeTruthy()
     })
 })

@@ -164,6 +164,23 @@ func (r *Resolver) IterateRepoRevs(ctx context.Context, opts search.RepoOptions)
 	})
 }
 
+// ResolveRevSpecs will resolve RepoRevSpecs returned by IterateRepoRevs. It
+// requires passing in the same options to work correctly.
+//
+// NOTE: This API is not idiomatic and can return non-nil error with a useful
+// Resolved. In particular the it may return a *MissingRepoRevsError.
+func (r *Resolver) ResolveRevSpecs(ctx context.Context, op search.RepoOptions, repoRevSpecs []RepoRevSpecs) (_ Resolved, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.ResolveRevSpecs", attribute.Stringer("opts", &op))
+	defer tr.EndWithErr(&err)
+
+	result := dbResolved{
+		Associated: repoRevSpecs,
+	}
+
+	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
+	return resolved, err
+}
+
 // queryDB is a lightweight wrapper of doQueryDB which adds tracing.
 func (r *Resolver) queryDB(ctx context.Context, op search.RepoOptions) (_ dbResolved, _ types.MultiCursor, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.queryDB", attribute.Stringer("opts", &op))

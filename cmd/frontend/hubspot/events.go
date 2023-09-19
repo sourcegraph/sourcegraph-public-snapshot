@@ -1,16 +1,19 @@
 package hubspot
 
-import "net/url"
+import (
+	"context"
+	"net/url"
+)
 
 // LogEvent logs a user action or event. The response will have a status code of
 // 200 with no data in the body
 //
 // http://developers.hubspot.com/docs/methods/enterprise_events/http_api
-func (c *Client) LogEvent(email string, eventID string, params map[string]string) error {
+func (c *Client) LogEvent(ctx context.Context, email string, eventID string, params map[string]string) error {
 	params["_a"] = c.portalID
 	params["_n"] = eventID
 	params["email"] = email
-	err := c.get("LogEvent", c.baseEventURL(), email, params)
+	err := c.get(ctx, "LogEvent", c.baseEventURL(), email, params)
 	if err != nil {
 		return err
 	}

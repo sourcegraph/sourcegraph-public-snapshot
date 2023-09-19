@@ -1,17 +1,19 @@
-import { forwardRef, type MouseEvent, useState } from 'react'
+import { forwardRef, type MouseEvent, ReactNode, useState } from 'react'
 
 import type { ButtonProps } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../../components/LoaderButton'
+import { LoaderButton } from './LoaderButton'
 
 interface DownloadFileButtonProps extends ButtonProps {
     fileUrl: string
     fileName: string
-    children?: string
+    alwaysShowLabel?: boolean
+    withLoading?: boolean
+    children?: ReactNode
 }
 
 export const DownloadFileButton = forwardRef<HTMLButtonElement, DownloadFileButtonProps>((props, ref) => {
-    const { fileUrl, fileName, children, onClick, ...attributes } = props
+    const { fileUrl, fileName, children, alwaysShowLabel = true, withLoading = true, onClick, ...attributes } = props
 
     const [isLoading, setLoading] = useState(false)
 
@@ -38,8 +40,8 @@ export const DownloadFileButton = forwardRef<HTMLButtonElement, DownloadFileButt
             ref={ref}
             {...attributes}
             label={children}
-            loading={isLoading}
-            alwaysShowLabel={true}
+            loading={withLoading && isLoading}
+            alwaysShowLabel={alwaysShowLabel}
             onClick={handleClick}
         />
     )
