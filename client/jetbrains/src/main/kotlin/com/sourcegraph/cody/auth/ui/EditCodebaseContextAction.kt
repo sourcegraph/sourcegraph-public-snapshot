@@ -8,6 +8,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.protocol.GetRepoID
 import java.awt.event.ActionEvent
+import java.util.concurrent.TimeUnit
 import javax.swing.*
 
 class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Context Selection") {
@@ -24,10 +25,14 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
     override fun doValidate(): ValidationInfo? {
       val repoName = gitURL.text
       if (repoName.isNotEmpty()) {
-        val server = CodyAgent.getInitializedServer(project).get()
-        val id = server.getRepoId(GetRepoID(repoName)).get()
-        if (id == null) {
-          return ValidationInfo("Repository $repoName does not exist", gitURL)
+        try {
+          val server = CodyAgent.getInitializedServer(project).get(1, TimeUnit.SECONDS)
+          val id = server.getRepoId(GetRepoID(repoName)).get(4, TimeUnit.SECONDS)
+          if (id == null) {
+            return ValidationInfo("Repository $repoName does not exist", gitURL)
+          }
+        } catch (e: Exception) {
+          return null
         }
       }
       return null
