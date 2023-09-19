@@ -3138,6 +3138,14 @@ def go_dependencies():
         version = "v47.1.0",
     )
     go_repository(
+        name = "com_github_google_go_github_v53",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/google/go-github/v53",
+        sum = "h1:wvz3FyF53v4BK+AsnvCmeNhf8AkTaeh2SoYu/XUvTtI=",
+        version = "v53.2.0",
+    )
+
+    go_repository(
         name = "com_github_google_go_pkcs11",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/google/go-pkcs11",
