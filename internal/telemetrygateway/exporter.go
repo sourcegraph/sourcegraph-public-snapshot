@@ -5,8 +5,10 @@ import (
 	"io"
 	"net/url"
 
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -14,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,6 +36,8 @@ func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQ
 		return nil, errors.Wrap(err, "insecure export address used outside of dev mode")
 	}
 
+	// TODO(@bobheadxi): Maybe don't use defaults.DialOptions etc, which are
+	// geared towards in-Sourcegraph services.
 	var opts []grpc.DialOption
 	if insecureTarget {
 		opts = defaults.DialOptions(logger)
@@ -58,6 +63,30 @@ type exporter struct {
 }
 
 func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv1.Event) ([]string, error) {
+	tr, ctx := trace.New(ctx, "ExportEvents", attribute.Int("events", len(events)))
+	defer tr.End()
+
+	var requestID string
+	if tr.IsRecording() {
+		requestID = tr.SpanContext().TraceID().String()
+	} else {
+		requestID = uuid.NewString()
+	}
+
+	succeeded, err := e.doExportEvents(ctx, requestID, events)
+	if err != nil {
+		tr.SetError(err)
+		// Surface request ID to help us correlate log entries more easily on
+		// our end, because Telemetry Gateway doesn't return granular failure
+		// details.
+		return succeeded, errors.Wrapf(err, "request %q", requestID)
+	}
+	return succeeded, nil
+}
+
+// doExportEvents makes it easier for us to wrap all errors in our request ID
+// for ease of investigating failures.
+func (e *exporter) doExportEvents(ctx context.Context, requestID string, events []*telemetrygatewayv1.Event) ([]string, error) {
 	// Start the stream
 	stream, err := e.client.RecordEvents(ctx)
 	if err != nil {
@@ -68,6 +97,7 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	if err := stream.Send(&telemetrygatewayv1.RecordEventsRequest{
 		Payload: &telemetrygatewayv1.RecordEventsRequest_Metadata{
 			Metadata: &telemetrygatewayv1.RecordEventsRequestMetadata{
+				RequestId:  requestID,
 				LicenseKey: e.conf.SiteConfig().LicenseKey,
 			},
 		},
@@ -87,8 +117,8 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 		// If anything goes wrong stream.Recv() will let us know.
 		_ = stream.CloseSend()
 
+		// Wait for responses from server.
 		succeededEvents := make([]string, 0, len(events))
-		var errs error
 		for {
 			resp, err := stream.Recv()
 			if errors.Is(err, io.EOF) {
@@ -97,15 +127,11 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 			if err != nil {
 				return succeededEvents, err
 			}
-			for _, e := range resp.GetSucceededEvents() {
-				succeededEvents = append(succeededEvents, e.GetEventId())
-			}
-			for _, e := range resp.GetFailedEvents() {
-				errs = errors.Append(errs, errors.Newf("%s (event %s)",
-					e.GetError(), e.GetEventId()))
+			if len(resp.GetSucceededEvents()) > 0 {
+				succeededEvents = append(succeededEvents, resp.GetSucceededEvents()...)
 			}
 		}
-		return succeededEvents, errs
+		return succeededEvents, nil
 	}
 
 	// Start streaming our set of events, chunking them based on message size

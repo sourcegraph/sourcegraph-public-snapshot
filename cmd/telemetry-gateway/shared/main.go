@@ -45,6 +45,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 
 	// Initialize our gRPC server
+	// TODO(@bobheadxi): Maybe don't use defaults.NewServer, which is geared
+	// towards in-Sourcegraph services.
 	grpcServer := defaults.NewServer(obctx.Logger)
 	defer grpcServer.GracefulStop()
 	telemetryGatewayServer, err := server.New(obctx.Logger, eventsTopic)

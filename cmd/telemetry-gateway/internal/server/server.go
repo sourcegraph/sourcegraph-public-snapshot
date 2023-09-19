@@ -70,8 +70,8 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				return status.Error(codes.InvalidArgument, "received metadata more than once")
 			}
 
-			// Simple validation on our most important fields.
 			metadata := msg.GetMetadata()
+			logger = logger.With(log.String("request_id", metadata.GetRequestId()))
 			if metadata.GetLicenseKey() == "" {
 				return status.Error(codes.InvalidArgument, "metadata missing license key")
 			}
@@ -82,8 +82,8 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				return status.Errorf(codes.InvalidArgument, "invalid license key: %s", err)
 			}
 			logger.Info("handling events submission stream",
-				log.Stringp("salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
-				log.Stringp("salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
+				log.Stringp("license.salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
+				log.Stringp("license.salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
 
 			// Set up a publisher with the provided metadata
 			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata)
@@ -118,7 +118,7 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				log.Int("succeeded", len(succeeded)),
 				log.Int("failed", len(failed)),
 			}
-			if len(errFields) > 0 {
+			if len(failed) > 0 {
 				logger.Error(message, append(summaryFields, errFields...)...)
 			} else {
 				logger.Info(message, summaryFields...)
@@ -127,7 +127,6 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			// Let the client know what happened
 			if err := stream.Send(&telemetrygatewayv1.RecordEventsResponse{
 				SucceededEvents: succeeded,
-				FailedEvents:    failed,
 			}); err != nil {
 				return err
 			}

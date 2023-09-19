@@ -35,7 +35,7 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		}}
 
 		message, logFields, succeeded, failed := summarizeResults(results)
-		autogold.Expect("all events in batch failed to submit").Equal(t, message)
+		autogold.Expect("some events in batch failed to submit").Equal(t, message)
 		assert.Len(t, logFields, 1)
 		assert.Len(t, succeeded, 1)
 		assert.Len(t, failed, 1)
@@ -49,7 +49,7 @@ func TestSummarizeFailedEvents(t *testing.T) {
 		}}
 
 		message, logFields, succeeded, failed := summarizeResults(results)
-		autogold.Expect("all events in batch failed to submit").Equal(t, message)
+		autogold.Expect("all events in batch submitted successfully").Equal(t, message)
 		assert.Len(t, logFields, 0)
 		assert.Len(t, succeeded, 2)
 		assert.Len(t, failed, 0)

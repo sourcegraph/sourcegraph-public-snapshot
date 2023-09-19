@@ -6,33 +6,27 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/events"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
 func summarizeResults(results []events.PublishEventResult) (
 	string,
 	[]log.Field,
-	[]*telemetrygatewayv1.RecordEventsResponse_RecordingSuccess,
-	[]*telemetrygatewayv1.RecordEventsResponse_RecordingError,
+	[]string,
+	[]events.PublishEventResult,
 ) {
 	// Collect details about the events that failed to submit.
 	var (
 		errFields = make([]log.Field, 0)
-		succeeded = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingSuccess, 0, len(results))
-		failed    = make([]*telemetrygatewayv1.RecordEventsResponse_RecordingError, 0)
+		succeeded = make([]string, 0, len(results))
+		failed    = make([]events.PublishEventResult, 0)
 	)
 
 	for i, result := range results {
 		if result.PublishError != nil {
-			failed = append(failed, &telemetrygatewayv1.RecordEventsResponse_RecordingError{
-				EventId: result.EventID,
-				Error:   result.PublishError.Error(),
-			})
-			errFields[i] = log.NamedError(fmt.Sprintf("error.%d", i), result.PublishError)
+			failed = append(failed, result)
+			errFields = append(errFields, log.NamedError(fmt.Sprintf("error.%d", i), result.PublishError))
 		} else {
-			succeeded = append(succeeded, &telemetrygatewayv1.RecordEventsResponse_RecordingSuccess{
-				EventId: result.EventID,
-			})
+			succeeded = append(succeeded, result.EventID)
 		}
 	}
 
