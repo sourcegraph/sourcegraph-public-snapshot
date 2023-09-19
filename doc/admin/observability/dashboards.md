@@ -3223,7 +3223,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102202`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -3304,7 +3304,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102212`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",is_internal_error="true",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",is_internal_error="true",grpc_method=~"${zoekt_configuration_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -3686,7 +3686,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102402`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -3767,7 +3767,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102412`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",is_internal_error="true",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"api.internalapi.v1.ConfigService",is_internal_error="true",grpc_method=~"${internal_api_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -7259,7 +7259,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -7340,7 +7340,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",is_internal_error="true",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",is_internal_error="true",grpc_method=~"${gitserver_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -15470,7 +15470,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -15551,7 +15551,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",is_internal_error="true",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",is_internal_error="true",grpc_method=~"${repo_updater_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -16970,7 +16970,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -17051,7 +17051,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",is_internal_error="true",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",is_internal_error="true",grpc_method=~"${searcher_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -18663,7 +18663,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100602` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -18744,7 +18744,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100612` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",is_internal_error="true",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",is_internal_error="true",grpc_method=~"${symbols_method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -21316,7 +21316,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100900` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_code!="OK"}[2m])))) / ((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))))))`
 
 </details>
 
@@ -21337,7 +21337,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100901` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -21385,7 +21385,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100910` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService"}[2m])))))))`
 
 </details>
 
@@ -21412,7 +21412,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100911` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"zoekt.webserver.v1.WebserverService",grpc_method=~"${zoekt_webserver_method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 

@@ -1084,7 +1084,7 @@ func Zoekt() *monitoring.Dashboard {
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "zoekt-webserver",
 					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "", // deliberately empty
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
