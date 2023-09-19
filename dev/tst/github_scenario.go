@@ -93,20 +93,33 @@ func (sb *GitHubScenarioBuilder) Teams(teams ...*GitHubScenarioTeam) *GitHubScen
 
 func (sb *GitHubScenarioBuilder) Repos(repos ...*GitHubScenarioRepo) *GitHubScenarioBuilder {
 	sb.test.Helper()
+	for _, r := range repos {
+		if r.fork {
+			sb.actions.AddSetup(r.ForkRepoAction(sb.client), r.GetRepoAction(sb.client))
+			// Seems like you can't change permissions for a repo fork
+			//sb.setupActions = append(sb.setupActions, r.SetPermissionsAction(sb.client))
+			sb.actions.AddTeardown(r.DeleteRepoAction(sb.client))
+		} else {
+			sb.actions.AddSetup(r.NewRepoAction(sb.client),
+				r.GetRepoAction(sb.client),
+				r.InitLocalRepoAction(sb.client),
+				r.SetPermissionsAction(sb.client),
+			)
 
-	// stub
+			sb.actions.AddTeardown(r.DeleteRepoAction(sb.client))
+		}
+		sb.actions.AddSetup(r.AssignTeamAction(sb.client))
+	}
 
 	return sb
 }
 
 func PublicRepo(name string, team string, fork bool) *GitHubScenarioRepo {
-	// stub
-	return nil
+	return NewGitHubScenarioRepo(name, team, fork, false)
 }
 
 func PrivateRepo(name string, team string, fork bool) *GitHubScenarioRepo {
-	// stub
-	return nil
+	return NewGitHubScenarioRepo(name, team, fork, true)
 }
 
 func (sb *GitHubScenarioBuilder) Setup(ctx context.Context) (GitHubScenario, func(context.Context) error, error) {
