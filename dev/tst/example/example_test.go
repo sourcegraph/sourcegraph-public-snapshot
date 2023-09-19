@@ -13,12 +13,17 @@ import (
 var tstCfg *config.Config
 
 func TestRepo(t *testing.T) {
-	builder, err := tst.NewGitHubScenario(context.Background(), tstCfg, t)
+	cfg, err := config.FromFile("config.json")
+	if err != nil {
+		fmt.Printf("error loading scenario config: %v\n", err)
+	}
+
+	builder, err := tst.NewGitHubScenario(context.Background(), cfg, t)
 	if err != nil {
 		fmt.Printf("failed to create scenario: %v", err)
 	}
 
-	s := builder.Org("tst-org").Verbose().
+	s := builder.Verbose().Org("tst-org").
 		Users(tst.Admin, tst.User1).
 		Teams(tst.Team("public-team", tst.Admin), tst.Team("private-team", tst.User1)).
 		Repos(tst.PublicRepo("sgtest/go-diff", "public-team", true), tst.PrivateRepo("sgtest/private", "private-team", true))
@@ -33,12 +38,4 @@ func TestRepo(t *testing.T) {
 		os.Exit(1)
 	}
 	defer teardown(ctx)
-}
-
-func main() {
-	cfg, err := config.FromFile("config.json")
-	if err != nil {
-		fmt.Printf("error loading scenario config: %v\n", err)
-	}
-	tstCfg = cfg
 }
