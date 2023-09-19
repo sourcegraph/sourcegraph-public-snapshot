@@ -1,12 +1,14 @@
 package db
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/stretchr/testify/require"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNewDBFromConfFunc(t *testing.T) {
@@ -24,10 +26,17 @@ func TestNewDBFromConfFunc(t *testing.T) {
 
 	t.Run("fake addr", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			ServiceConnectionConfig: conftypes.ServiceConnections{
-				Qdrant: "fake_address_but_it_does_not_matter_because_grpc_dialing_is_lazy",
+			SiteConfiguration: schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Qdrant: &schema.Qdrant{
+						Enabled: true,
+					},
+				},
 			},
+			ServiceConnectionConfig: conftypes.ServiceConnections{Qdrant: "fake_address_but_it_does_not_matter_because_grpc_dialing_is_lazy"},
 		})
+		c := conf.Get()
+		println(c)
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)
 		got, err := getDB()
 		require.NoError(t, err)
