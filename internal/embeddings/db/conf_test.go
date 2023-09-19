@@ -35,8 +35,6 @@ func TestNewDBFromConfFunc(t *testing.T) {
 			},
 			ServiceConnectionConfig: conftypes.ServiceConnections{Qdrant: "fake_address_but_it_does_not_matter_because_grpc_dialing_is_lazy"},
 		})
-		c := conf.Get()
-		println(c)
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)
 		got, err := getDB()
 		require.NoError(t, err)
