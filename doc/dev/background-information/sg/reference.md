@@ -1191,6 +1191,7 @@ Build Wolfi packages and images locally, and update base image hashes
 ```sh
 # Update base image hashes
 $ sg wolfi update-hashes
+$ sg wolfi update-hashes jaeger-agent
 
 # Build a specific package using a manifest from wolfi-packages/
 $ sg wolfi package jaeger
@@ -1239,9 +1240,10 @@ Flags:
 Update Wolfi base images hashes to the latest versions.
 
 ```sh
-$ Update the hash references for all Wolfi base images in the 'dev/oci_deps.bzl' file.
+$ Update the hash references for Wolfi base images in the 'dev/oci_deps.bzl' file.
+$ By default all hashes will be updated; pass in a base image name to update a specific image.
 
-$ This is done by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
+$ Hash references are updated by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
 ```
 
 Flags:
