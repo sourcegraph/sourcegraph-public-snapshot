@@ -67,8 +67,8 @@ type Variables struct {
 	// '-${randomizedSuffix}' will be added, as project IDs must be unique.
 	ProjectIDPrefix string
 
-	// Name is a display name for the project. It does not need to be unique.
-	Name string
+	// DisplayName is a display name for the project. It does not need to be unique.
+	DisplayName string
 
 	// Labels to apply to the project.
 	Labels map[string]string
@@ -113,7 +113,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 		Project: project.NewProject(stack,
 			id.ResourceID("project"),
 			&project.ProjectConfig{
-				Name:              pointers.Ptr(vars.Name),
+				Name:              pointers.Ptr(vars.DisplayName),
 				ProjectId:         &projectID.HexValue,
 				AutoCreateNetwork: false,
 				BillingAccount:    pointers.Ptr(BillingAccountID),
