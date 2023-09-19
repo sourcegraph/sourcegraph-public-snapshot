@@ -83,7 +83,7 @@ func (m *actionRunner) AddSetup(actions ...Action) {
 	m.setup = append(m.setup, actions...)
 }
 func (m *actionRunner) AddTeardown(actions ...Action) {
-	m.setup = append(m.teardown, actions...)
+	m.teardown = append(m.teardown, actions...)
 }
 
 func (m *actionRunner) setupPlan() string {
