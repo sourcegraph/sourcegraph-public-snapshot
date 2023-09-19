@@ -1,0 +1,20 @@
+- steps: []
+  local_steps:
+    - pip install . || true
+  root: first_root
+  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer_args:
+    - scip-python
+    - index
+  outfile: index.scip
+  requestedEnvVars: []
+- steps: []
+  local_steps:
+    - pip install . || true
+  root: second_root
+  indexer: sourcegraph/scip-python@sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321
+  indexer_args:
+    - scip-python
+    - index
+  outfile: index.scip
+  requestedEnvVars: []
