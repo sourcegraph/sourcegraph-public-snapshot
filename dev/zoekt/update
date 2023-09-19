@@ -37,6 +37,9 @@ go mod tidy
 echo "Ensure that we update Bazel dependency files."
 bazel run '//:gazelle-update-repos'
 
+echo "Ensure that we update Bazel build files."
+bazel configure
+
 echo "Ensure we update go.sum by actually compiling some code which depends on zoekt."
 echo "We do this by running 'go test' without actually running any tests."
 go test -run '^$' github.com/sourcegraph/sourcegraph/internal/search/zoekt

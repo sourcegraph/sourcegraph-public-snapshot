@@ -54,3 +54,5 @@ metadataTest:
       value: 'http://sourcegraph-frontend-internal'
     - key: DATA_DIR
       value: '/data/index'
+    - key: GRPC_ENABLED
+      value: 'false'

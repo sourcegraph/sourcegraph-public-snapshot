@@ -58,6 +58,8 @@ find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2|@back_compat_com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_grpc_ecosystem_go_grpc_middleware_v2|@back_compat_com_github_grpc_ecosystem_go_grpc_middleware_v2|g' {} +
 """
 
 # https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
@@ -118,6 +120,25 @@ def back_compat_defs():
             "github.com/sourcegraph/conc",
         sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=",  # Need to be manually updated when bumping the back compat release target.
         version = "v0.2.0",  # Need to be manually updated when bumping the back compat release target.
+    )
+
+    go_repository(
+        name = "back_compat_com_github_grpc_ecosystem_go_grpc_middleware_providers_openmetrics_v2",
+        build_file_proto_mode = "disable_global",
+        build_directives = [
+            "gazelle:resolve go github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors @back_compat_com_github_grpc_ecosystem_go_grpc_middleware_v2//interceptors"
+        ],
+        importpath = "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2",
+        sum = "h1:kKuOg7gEBO7otn5QpZ4FnlbZBz1p5EZ7sX6RDbE36Bc=",
+        version = "v2.0.0-rc.3",
+    )
+
+    go_repository(
+        name = "back_compat_com_github_grpc_ecosystem_go_grpc_middleware_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/grpc-ecosystem/go-grpc-middleware/v2",
+        sum = "h1:o95KDiV/b1xdkumY5YbLR0/n2+wBxUpgf3HgfKgTyLI=",
+        version = "v2.0.0-rc.3",
     )
 
     go_repository(

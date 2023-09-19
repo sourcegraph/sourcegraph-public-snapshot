@@ -31,6 +31,7 @@ oci_image(
     env = {
         "DATA_DIR": "/data/index",
         "SRC_FRONTEND_INTERNAL": "http://sourcegraph-frontend-internal",
+        "GRPC_ENABLED": "false",
     },
     tars = [
         ":tar_scip-ctags",
