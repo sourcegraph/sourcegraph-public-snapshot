@@ -2,10 +2,13 @@ package tst
 
 import (
 	"context"
+	"crypto/tls"
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/google/go-github/v53/github"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/dev/tst/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,6 +17,26 @@ import (
 type GitHubClient struct {
 	cfg *config.GitHub
 	c   *github.Client
+}
+
+func NewGitHubClient(ctx context.Context, cfg config.GitHub) (*GitHubClient, error) {
+	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: cfg.Token},
+	))
+
+	tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
+	tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	gh, err := github.NewEnterpriseClient(cfg.URL, cfg.URL, tc)
+	if err != nil {
+		return nil, err
+	}
+
+	c := GitHubClient{
+		cfg: &cfg,
+		c:   gh,
+	}
+	return &c, nil
 }
 
 func (gh *GitHubClient) CreateOrg(ctx context.Context, name string) (*github.Organization, error) {
