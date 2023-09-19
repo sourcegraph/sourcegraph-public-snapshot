@@ -119,6 +119,59 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 	})
 }
 
+// IterateRepoRevs does the database portion of repository resolving. This API
+// is exported for search jobs (exhaustive) to allow it to seperate the step
+// which only speaks to the DB to the step speaks to gitserver/etc.
+//
+// NOTE: This iterator may return a *MissingRepoRevsError. However, it may be
+// different to the error returned by Iterator since when speaking to
+// gitserver it may find additional missing revs.
+//
+// The other error type that may be returned is ErrNoResolvedRepos.
+func (r *Resolver) IterateRepoRevs(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[RepoRevSpecs] {
+	if opts.Limit == 0 {
+		opts.Limit = 4096
+	}
+
+	var missing []RepoRevSpecs
+	done := false
+	return iterator.New(func() ([]RepoRevSpecs, error) {
+		// We need to retry since page.Associated may be empty but there are
+		// still more pages to fetch from the DB. The iterator will stop once
+		// it receives an empty page.
+		//
+		// TODO(keegan) I don't like this whole MissingRepoRevsError behavior
+		// in this iterator and the other. There is likely a more
+		// straightforward behaviour here which will also avoid needs like
+		// this extra for loop.
+		for !done {
+			page, next, err := r.queryDB(ctx, opts)
+			if err != nil {
+				return nil, err
+			}
+
+			missing = append(missing, page.Missing...)
+			done = next == nil
+			opts.Cursors = next
+
+			// Found a non-zero result, pass it on to the iterator.
+			if len(page.Associated) > 0 {
+				return page.Associated, nil
+			}
+		}
+
+		return nil, maybeMissingRepoRevsError(missing)
+	})
+}
+
+// queryDB is a lightweight wrapper of doQueryDB which adds tracing.
+func (r *Resolver) queryDB(ctx context.Context, op search.RepoOptions) (_ dbResolved, _ types.MultiCursor, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.queryDB", attribute.Stringer("opts", &op))
+	defer tr.EndWithErr(&err)
+
+	return r.doQueryDB(ctx, tr, op)
+}
+
 // resolve will take op and return the resolved RepositoryRevisions and any
 // RepoRevSpecs we failed to resolve. Additionally Next is a cursor to the
 // next page.
