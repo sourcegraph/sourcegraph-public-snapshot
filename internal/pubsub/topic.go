@@ -7,7 +7,10 @@ import (
 	"cloud.google.com/go/pubsub"
 	"google.golang.org/api/option"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -93,3 +96,23 @@ type noopTopicClient struct{}
 func (c *noopTopicClient) Ping(context.Context) error               { return nil }
 func (c *noopTopicClient) Publish(context.Context, ...[]byte) error { return nil }
 func (c *noopTopicClient) Stop()                                    {}
+
+// NewLoggingTopicClient creates a Pub/Sub client that just logs all messages,
+// and does nothing otherwise. This is also a useful stub implementation of the
+// TopicClient for testing/debugging purposes.
+func NewLoggingTopicClient(logger log.Logger) TopicClient {
+	return &loggingTopicClient{logger: logger.Scoped("pubsub", "")}
+}
+
+type loggingTopicClient struct {
+	logger log.Logger
+	noopTopicClient
+}
+
+func (c *loggingTopicClient) Publish(ctx context.Context, messages ...[]byte) error {
+	l := trace.Logger(ctx, c.logger)
+	for _, m := range messages {
+		l.Info("Publish", log.String("message", string(m)))
+	}
+	return nil
+}

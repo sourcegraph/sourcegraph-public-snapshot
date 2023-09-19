@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -286,10 +288,12 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 			return
 		}
 
+		events := telemetryrecorder.NewBestEffort(logger, db)
 		var user types.User
 
 		signInResult := database.SecurityEventNameSignInAttempted
 		logSignInEvent(r, db, &user, &signInResult)
+		events.Record(r.Context(), telemetry.FeatureSignIn, telemetry.ActionFailed, telemetry.EventParameters{})
 
 		// We have more failure scenarios and ONLY one successful scenario. By default,
 		// assume a SignInFailed state so that the deferred logSignInEvent function call
@@ -364,6 +368,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		}
 
 		signInResult = database.SecurityEventNameSignInSucceeded
+		events.Record(r.Context(), telemetry.FeatureSignIn, telemetry.ActionSucceeded, telemetry.EventParameters{})
 	}
 }
 

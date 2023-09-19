@@ -17,7 +17,7 @@ import (
 // Resolver is the GraphQL resolver of all things related to telemetry V2.
 type Resolver struct {
 	logger   log.Logger
-	teestore teestore.Store
+	teestore *teestore.Store
 }
 
 // New returns a new Resolver whose store uses the given database

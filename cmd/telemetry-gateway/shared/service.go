@@ -14,7 +14,7 @@ var Service service.Service = svc{}
 
 type svc struct{}
 
-func (svc) Name() string { return "pings" }
+func (svc) Name() string { return "telemetry-gateway" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := &Config{}

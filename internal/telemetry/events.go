@@ -10,6 +10,8 @@ type eventFeature string
 // All event names in Sourcegraph's Go services.
 const (
 	FeatureExample eventFeature = "exampleFeature"
+
+	FeatureSignIn eventFeature = "signIn"
 )
 
 // eventAction defines the action associated with an event. Values should
@@ -21,4 +23,8 @@ type eventAction string
 
 const (
 	ActionExample eventAction = "exampleAction"
+
+	ActionFailed    eventAction = "failed"
+	ActionSucceeded eventAction = "succeeded"
+	ActionAttempted eventAction = "attempted"
 )

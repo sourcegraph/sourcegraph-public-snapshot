@@ -63,6 +63,12 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		require.NoError(t, store.QueueForExport(ctx, events))
 	})
 
+	t.Run("CountUnexported", func(t *testing.T) {
+		count, err := store.CountUnexported(ctx)
+		require.NoError(t, err)
+		require.Equal(t, count, int64(3))
+	})
+
 	t.Run("ListForExport", func(t *testing.T) {
 		limit := len(events) - 1
 		export, err := store.ListForExport(ctx, limit)

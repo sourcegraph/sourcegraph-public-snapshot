@@ -4,7 +4,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/pings/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"

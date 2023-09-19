@@ -19,30 +19,18 @@ import (
 
 type Exporter interface {
 	ExportEvents(context.Context, []*telemetrygatewayv1.Event) ([]string, error)
+	Close() error
 }
 
-// exportAddress currently has no default value, as the feature is not enabled
-// by default. In a future release, the default will be something like
-// 'dns:telemetry-gateway.sourcegraph.com'
-var exportAddress = env.Get("SRC_TELEMETRY_GATEWAY_ADDR", "",
-	"Target Telemetry Gateway address: https://github.com/grpc/grpc/blob/master/doc/naming.md")
-
-func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQuerier) (Exporter, error) {
-	// TODO(@bobheadxi): In a future release, it will no longer be possible to
-	// omit this.
-	if exportAddress == "" {
-		return noopExporter{}, nil
-	}
-
+func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQuerier, exportAddress string) (Exporter, error) {
 	u, err := url.Parse(exportAddress)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid SRC_TELEMETRY_GATEWAY_ADDR")
+		return nil, errors.Wrap(err, "invalid export address")
 	}
 
-	// https://github.com/grpc/grpc/blob/master/doc/naming.md
-	insecureTarget := u.Scheme != "dns"
+	insecureTarget := u.Scheme != "https"
 	if insecureTarget && !env.InsecureDev {
-		return nil, errors.Wrap(err, "insecure SRC_TELEMETRY_GATEWAY_ADDR used outside of dev mode")
+		return nil, errors.Wrap(err, "insecure export address used outside of dev mode")
 	}
 
 	var opts []grpc.DialOption
@@ -51,26 +39,26 @@ func NewExporter(ctx context.Context, logger log.Logger, c conftypes.SiteConfigQ
 	} else {
 		opts = defaults.ExternalDialOptions(logger)
 	}
-	conn, err := grpc.DialContext(ctx, u.String(), opts...)
+	conn, err := grpc.DialContext(ctx, u.Host, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing telemetry gateway")
 	}
 
-	return &exporter{client: telemetrygatewayv1.NewTelemeteryGatewayServiceClient(conn)}, nil
-}
-
-type noopExporter struct{}
-
-func (e noopExporter) ExportEvents(context.Context, []*telemetrygatewayv1.Event) ([]string, error) {
-	return nil, nil
+	return &exporter{
+		client: telemetrygatewayv1.NewTelemeteryGatewayServiceClient(conn),
+		conf:   c,
+		conn:   conn,
+	}, nil
 }
 
 type exporter struct {
 	client telemetrygatewayv1.TelemeteryGatewayServiceClient
 	conf   conftypes.SiteConfigQuerier
+	conn   *grpc.ClientConn
 }
 
 func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv1.Event) ([]string, error) {
+	// Start the stream
 	stream, err := e.client.RecordEvents(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "start export")
@@ -124,6 +112,8 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 
 	return succeededEvents, nil
 }
+
+func (e *exporter) Close() error { return e.conn.Close() }
 
 func extractErrorDetails(err error) *telemetrygatewayv1.RecordEventsErrorDetails {
 	st, ok := status.FromError(err)

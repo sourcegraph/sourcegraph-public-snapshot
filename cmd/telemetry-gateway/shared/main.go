@@ -33,15 +33,22 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 	defer shutdownOtel()
 
-	eventsPubSubClient, err := pubsub.NewTopicClient(config.Events.PubSub.ProjectID, config.Events.PubSub.TopicID)
-	if err != nil {
-		return errors.Errorf("create Events Pub/Sub client: %v", err)
+	var eventsTopic pubsub.TopicClient
+	if !config.Events.PubSub.Enabled {
+		obctx.Logger.Warn("pub/sub events publishing disabled, logging messages instead")
+		eventsTopic = pubsub.NewLoggingTopicClient(obctx.Logger)
+	} else {
+		eventsTopic, err = pubsub.NewTopicClient(config.Events.PubSub.ProjectID, config.Events.PubSub.TopicID)
+		if err != nil {
+			return errors.Errorf("create Events Pub/Sub client: %v", err)
+		}
 	}
 
 	// Initialize our gRPC server
-	grpcServer := defaults.NewServer(obctx.Logger) // TODO
+	grpcServer := defaults.NewServer(obctx.Logger)
 	telemetrygatewayv1.RegisterTelemeteryGatewayServiceServer(grpcServer,
-		server.New(obctx.Logger, eventsPubSubClient))
+		server.New(obctx.Logger, eventsTopic))
+	defer grpcServer.GracefulStop()
 
 	// Start up the service
 	addr := config.GetListenAdress()
@@ -56,11 +63,9 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 					obctx.Logger,
 					config.DiagnosticsSecret,
 					func(ctx context.Context) error {
-						// TODO: Enable this healtcheck after deploying the
-						// service in MSP.
-						// if err := eventsPubSubClient.Ping(ctx); err != nil {
-						// 	return errors.Wrap(err, "eventsPubSubClient.Ping")
-						// }
+						if err := eventsTopic.Ping(ctx); err != nil {
+							return errors.Wrap(err, "eventsPubSubClient.Ping")
+						}
 						return nil
 					},
 				),

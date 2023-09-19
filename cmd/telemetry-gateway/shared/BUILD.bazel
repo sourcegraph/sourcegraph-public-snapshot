@@ -31,7 +31,6 @@ go_library(
         "//lib/errors",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric//:metric",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
-        "@com_github_grpc_ecosystem_go_grpc_middleware//auth",
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
@@ -40,6 +39,5 @@ go_library(
         "@io_opentelemetry_go_otel_sdk//resource",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk_metric//:metric",
-        "@org_golang_google_grpc//:go_default_library",
     ],
 )

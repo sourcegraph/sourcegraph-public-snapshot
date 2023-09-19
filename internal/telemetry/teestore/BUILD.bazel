@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/featureflag",
+        "//internal/telemetry/sensitivemetadataallowlist",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//lib/errors",
         "//lib/pointers",

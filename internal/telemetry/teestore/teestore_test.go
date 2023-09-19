@@ -33,7 +33,7 @@ func TestToEventLogs(t *testing.T) {
 			expectEventLogs: autogold.Expect(`[
   {
     "ID": 0,
-    "Name": ".",
+    "Name": "V2:.",
     "URL": "",
     "UserID": 0,
     "AnonymousUserID": "",
@@ -61,7 +61,7 @@ func TestToEventLogs(t *testing.T) {
 			expectEventLogs: autogold.Expect(`[
   {
     "ID": 0,
-    "Name": ".",
+    "Name": "V2:.",
     "URL": "",
     "UserID": 0,
     "AnonymousUserID": "",
@@ -89,7 +89,7 @@ func TestToEventLogs(t *testing.T) {
 				Id:        "1",
 				Timestamp: timestamppb.New(time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)),
 				Feature:   "CodeSearch",
-				Action:    "Seach",
+				Action:    "Search",
 				Source: &telemetrygatewayv1.EventSource{
 					Client: &telemetrygatewayv1.EventSource_Client{
 						Name:    "VSCODE",
@@ -120,12 +120,13 @@ func TestToEventLogs(t *testing.T) {
 			expectEventLogs: autogold.Expect(`[
   {
     "ID": 0,
-    "Name": "VSCODE:CodeSearch.Seach",
+    "Name": "V2:CodeSearch.Search",
     "URL": "sourcegraph.com/foobar",
     "UserID": 1234,
     "AnonymousUserID": "anonymous",
     "Argument": {
-      "private": "sensitive-data"
+      "private": "sensitive-data",
+      "privateMetadata.export": false
     },
     "PublicArgument": {
       "public": 2

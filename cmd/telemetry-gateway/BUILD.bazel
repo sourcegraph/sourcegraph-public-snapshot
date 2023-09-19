@@ -77,7 +77,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/pings/shared",
+        "//cmd/telemetry-gateway/shared",
         "//internal/conf",
         "//internal/env",
         "//internal/sanitycheck",
