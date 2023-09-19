@@ -97,9 +97,9 @@ mkShell {
     shellcheck
 
     # Web tools.
-    nodejs-16_x
-    nodejs-16_x.pkgs.pnpm
-    nodejs-16_x.pkgs.typescript
+    nodejs-18_x
+    nodejs-18_x.pkgs.pnpm
+    nodejs-18_x.pkgs.typescript
 
     # Rust utils for syntax-highlighter service, currently not pinned to the same versions.
     cargo

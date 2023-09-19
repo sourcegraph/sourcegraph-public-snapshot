@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
+	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -271,7 +273,7 @@ var sg = &cli.App{
 		// Common dev tasks
 		startCommand,
 		runCommand,
-		ciCommand,
+		ci.Command,
 		testCommand,
 		lintCommand,
 		generateCommand,
@@ -300,6 +302,7 @@ var sg = &cli.App{
 		auditCommand,
 		pageCommand,
 		cloudCommand,
+		msp.Command,
 
 		// Util
 		helpCommand,

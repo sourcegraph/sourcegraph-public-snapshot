@@ -74,7 +74,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
             visibility = visibility,
             testonly = kwargs.get("testonly", None),
         ),
-        supports_workers = False,
+        supports_workers = 0,
 
         # Allow any other args
         **kwargs

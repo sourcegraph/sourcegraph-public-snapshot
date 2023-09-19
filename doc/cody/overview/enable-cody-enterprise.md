@@ -186,7 +186,7 @@ _[*OpenAI models supported](https://platform.openai.com/docs/models)_
 
 ### Azure OpenAI <span class="badge badge-experimental">Experimental</span>
 
-> NOTE: Azure OpenAI support is highly experimental. We do not recommend using it in a production setting. 
+> NOTE: Azure OpenAI support is experimental.
 
 First, make sure you created a project in the Azure OpenAI portal.
 
@@ -210,6 +210,37 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
   }
 }
 ```
+
+### Anthropic Claude through AWS Bedrock <span class="badge badge-experimental">Experimental</span>
+
+> NOTE: AWS Bedrock support is experimental.
+
+First, make sure you have access to AWS Bedrock (currently in beta). Next, request access to the Anthropic Claude models in Bedrock.
+This may take some time to provision.
+
+Next, create an IAM user with programmatic access in your AWS account. Depending on your AWS setup, different ways may be required to provide access. All completions requests are made from the `frontend` service, so this service needs to be able to access AWS. You can either use instance role bindings, or directly configure the IAM user credentials in configuration.
+
+Once ready, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  // [...]
+  "cody.enabled": true,
+  "completions": {
+    "provider": "aws-bedrock",
+    "chatModel": "anthropic.claude-v2",
+    "fastChatModel": "anthropic.claude-instant-v1",
+    "completionModel": "anthropic.claude-instant-v1",
+    "endpoint": "<AWS-Region>", // For example: us-west-2.
+    "accessToken": "<See below>"
+  }
+}
+```
+
+For the access token, you can either:
+- Leave it empty and rely on instance role bindings or other AWS configurations that are present in the `frontend` service.
+- Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` if directly configuring the credentials.
+- Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>:<SESSION_TOKEN>` if a session token is also required.
 
 ---
 

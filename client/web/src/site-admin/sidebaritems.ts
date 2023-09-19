@@ -111,6 +111,10 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/packages',
             condition: isPackagesEnabled,
         },
+        {
+            label: 'Gitservers',
+            to: '/site-admin/gitservers',
+        },
     ],
     condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
 }

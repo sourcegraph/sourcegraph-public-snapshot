@@ -275,16 +275,20 @@ func (g *generator) generate(ctx context.Context) error {
 	var (
 		sitemapIndex = sitemap.NewSitemapIndex()
 		addedURLs    = 0
-		sm           = sitemap.New()
 		sitemaps     []*sitemap.Sitemap
+		addSitemap   = func() *sitemap.Sitemap {
+			var sm = sitemap.New()
+			url := &sitemap.URL{Loc: fmt.Sprintf("https://sourcegraph.com/sitemap_%03d.xml.gz", len(sitemaps))}
+			sitemapIndex.Add(url)
+			sitemaps = append(sitemaps, sm)
+			return sm
+		}
+		sm *sitemap.Sitemap = addSitemap()
 	)
 	for _, docSubPage := range docsSubPages {
 		if addedURLs >= 50000 {
 			addedURLs = 0
-			url := &sitemap.URL{Loc: fmt.Sprintf("https://sourcegraph.com/sitemap_%03d.xml.gz", len(sitemaps))}
-			sitemapIndex.Add(url)
-			sitemaps = append(sitemaps, sm)
-			sm = sitemap.New()
+			sm = addSitemap()
 		}
 		addedURLs++
 		sm.Add(&sitemap.URL{
@@ -292,7 +296,6 @@ func (g *generator) generate(ctx context.Context) error {
 			ChangeFreq: sitemap.Weekly,
 		})
 	}
-	sitemaps = append(sitemaps, sm)
 
 	{
 		outFile, err := os.Create(filepath.Join(g.outDir, "sitemap.xml.gz"))

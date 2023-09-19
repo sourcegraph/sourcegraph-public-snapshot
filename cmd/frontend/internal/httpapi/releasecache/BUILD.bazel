@@ -36,6 +36,9 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":releasecache"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/errcode",
@@ -43,6 +46,7 @@ go_test(
         "//internal/extsvc/github",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/testutil",
         "//lib/errors",
         "//schema",

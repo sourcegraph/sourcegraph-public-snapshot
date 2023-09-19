@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 public class LocalAppManager {
   private static final Logger logger = Logger.getInstance(LocalAppManager.class);
   public static final String DEFAULT_LOCAL_APP_URL = "http://localhost:3080/";
+  public static final String LOCAL_APP_ID = "Cody app";
   private static final Map<String, LocalAppPaths> appPathsByPlatform =
       Map.of(
           "darwin", // only support macOS for now

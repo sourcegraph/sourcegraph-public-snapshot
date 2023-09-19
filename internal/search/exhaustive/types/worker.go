@@ -8,7 +8,7 @@ import (
 // WorkerJob contains the common fields for all worker jobs.
 type WorkerJob struct {
 	State           JobState
-	FailureMessage  *string
+	FailureMessage  string
 	StartedAt       time.Time
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
@@ -29,6 +29,7 @@ const (
 	JobStateErrored    JobState = "errored"
 	JobStateFailed     JobState = "failed"
 	JobStateCompleted  JobState = "completed"
+	JobStateCanceled   JobState = "canceled"
 )
 
 // ToGraphQL returns the GraphQL representation of the worker state.

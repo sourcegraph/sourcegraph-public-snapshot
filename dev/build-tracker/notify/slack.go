@@ -30,6 +30,11 @@ func newCacheItem[T any](value T) *cacheItem[T] {
 	}
 }
 
+type NotificationClient interface {
+	Send(info *BuildNotification) error
+	GetNotification(buildNumber int) *SlackNotification
+}
+
 type Client struct {
 	slack   slack.Client
 	team    team.TeammateResolver

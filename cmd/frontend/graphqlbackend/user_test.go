@@ -948,6 +948,10 @@ func TestSchema_SetCompletedPostSignup(t *testing.T) {
 			return nil
 		})
 
+		userEmails := dbmocks.NewMockUserEmailsStore()
+		userEmails.HasVerifiedEmailFunc.SetDefaultReturn(true, nil)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
 		RunTest(t, &Test{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: currentUserID}),
 			Schema:  mustParseGraphQLSchema(t, db),

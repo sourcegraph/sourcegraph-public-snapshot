@@ -5,6 +5,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
+import { isSearchJobsEnabled } from '../search-jobs/utility'
 
 import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
 
@@ -37,6 +38,7 @@ const CodyChatPage = lazyComponent(() => import('../cody/chat/CodyChatPage'), 'C
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
 const AppSetup = lazyComponent(() => import('./app/setup/AppSetupWizard'), 'AppSetupWizard')
+const SearchJob = lazyComponent(() => import('./search-jobs/SearchJobsPage'), 'SearchJobsPage')
 
 export const enterpriseRoutes: RouteObject[] = [
     {
@@ -71,6 +73,15 @@ export const enterpriseRoutes: RouteObject[] = [
             <LegacyRoute
                 render={props => <CodeInsightsRouter {...props} />}
                 condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
+            />
+        ),
+    },
+    {
+        path: EnterprisePageRoutes.SearchJobs,
+        element: (
+            <LegacyRoute
+                render={props => <SearchJob isAdmin={props.authenticatedUser?.siteAdmin ?? false} />}
+                condition={isSearchJobsEnabled}
             />
         ),
     },

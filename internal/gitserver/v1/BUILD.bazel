@@ -29,6 +29,7 @@ go_proto_library(
 
 go_library(
     name = "gitserver",
+    srcs = ["errors.go"],
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1",
     visibility = [
@@ -40,6 +41,11 @@ go_library(
         "//internal/gitserver/gitdomain:__pkg__",
         "//internal/gitserver/integration_tests:__pkg__",
         "//internal/gitserver/protocol:__pkg__",
+    ],
+    deps = [
+        "//lib/errors",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )
 

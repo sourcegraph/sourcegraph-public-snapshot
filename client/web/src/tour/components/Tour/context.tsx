@@ -1,22 +1,12 @@
 import React from 'react'
 
-import type { TourLanguage, TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
+import type { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
 
 interface TourContextType {
     /**
-     * Language user has chosen initially for the tour
-     */
-    language?: TourLanguage
-
-    /**
-     * Stores context.language and triggers `${TourId}LanguageClicked` event log
-     */
-    onLanguageSelect: (language: TourLanguage) => void
-
-    /**
      * Marks step as completed and triggers `${TourId}${step.id}Clicked` event log
      */
-    onStepClick: (step: TourTaskStepType, language?: TourLanguage) => void
+    onStepClick: (step: TourTaskStepType) => void
 
     /**
      * Restarts tour and triggers `${TourId}${step.id}Clicked` event log

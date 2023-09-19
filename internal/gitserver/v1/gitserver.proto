@@ -9,7 +9,8 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
-  rpc CreateCommitFromPatchBinary(CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
@@ -23,6 +24,21 @@ service GitserverService {
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   // TODO: Remove this endpoint after 5.2, it is deprecated.
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
+}
+
+// DiskInfoRequest is a empty request for the DiskInfo RPC.
+message DiskInfoRequest {}
+
+// DiskInfoResponse contains the results of the DiskInfo RPC request.
+message DiskInfoResponse {
+  // free_space is the amount of space avaialable on a gitserver instance.
+  uint64 free_space = 1;
+
+  // total_space is the total amount of space on a gitserver instance.
+  uint64 total_space = 2;
+
+  // percent_used is the percent of disk space used on a gitserver instance.
+  float percent_used = 3;
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
@@ -95,25 +111,35 @@ message PushConfig {
 // CreateCommitFromPatchBinaryRequest is the request information needed for
 // creating the simulated staging area git object for a repo.
 message CreateCommitFromPatchBinaryRequest {
-  // repo is the name of the repo to be updated
-  string repo = 1;
-  // base_commit is the revision that the staging area object is based on
-  string base_commit = 2;
-  // patch is the diff contents to be used to create the staging area revision
-  bytes patch = 3;
-  // target_ref is the ref that will be created for this patch
-  string target_ref = 4;
-  // unique_ref is a boolean that indicates whether a unique number will be
-  // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
-  bool unique_ref = 5;
-  // commit_info is the information to be used for the commit
-  PatchCommitInfo commit_info = 6;
-  // push_config is the configuration to be used for pushing the commit
-  PushConfig push = 7;
-  // git_apply_args are the arguments to be passed to git apply
-  repeated string git_apply_args = 8;
-  // push_ref is the optional override for the ref that is pushed to
-  optional string push_ref = 9;
+  message Metadata {
+    // repo is the name of the repo to be updated
+    string repo = 1;
+    // base_commit is the revision that the staging area object is based on
+    string base_commit = 2;
+    // target_ref is the ref that will be created for this patch
+    string target_ref = 3;
+    // unique_ref is a boolean that indicates whether a unique number will be
+    // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+    bool unique_ref = 4;
+    // commit_info is the information to be used for the commit
+    PatchCommitInfo commit_info = 5;
+    // push_config is the configuration to be used for pushing the commit
+    PushConfig push = 6;
+    // git_apply_args are the arguments to be passed to git apply
+    repeated string git_apply_args = 7;
+    // push_ref is the optional override for the ref that is pushed to
+    optional string push_ref = 8;
+  }
+
+  message Patch {
+    // data is the diff contents to be used to create the staging area revision
+    bytes data = 1;
+  }
+
+  oneof payload {
+    Metadata metadata = 1;
+    Patch patch = 2;
+  }
 }
 
 message CreateCommitFromPatchError {
@@ -130,16 +156,17 @@ message CreateCommitFromPatchError {
 // CreateCommitFromPatchBinaryResponse is the response type returned after
 // creating a commit from a patch
 message CreateCommitFromPatchBinaryResponse {
+  reserved 2;
+  reserved "error";
+
   // rev is the tag that the staging object can be found at
   string rev = 1;
-  // error is populated only on error
-  CreateCommitFromPatchError error = 2;
   // changelistid is the Perforce changelist id
   string changelist_id = 3;
 }
 message ExecRequest {
   string repo = 1;
-  string ensure_revision = 2;
+  bytes ensure_revision = 2;
   repeated bytes args = 3;
   bytes stdin = 4;
   bool no_timeout = 5;

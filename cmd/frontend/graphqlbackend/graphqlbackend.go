@@ -385,6 +385,10 @@ func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{})
 }
 
+func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Client) (*graphql.Schema, error) {
+	return NewSchema(db, gitserverClient, []OptionalResolver{})
+}
+
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
@@ -604,6 +608,16 @@ func NewSchema(
 			resolver.ContentLibraryResolver = contentLibraryResolver
 			schemas = append(schemas, contentLibrary)
 		}
+
+		if searchJobsResolver := optional.SearchJobsResolver; searchJobsResolver != nil {
+			EnterpriseResolvers.searchJobsResolver = searchJobsResolver
+			resolver.SearchJobsResolver = searchJobsResolver
+			schemas = append(schemas, searchJobSchema)
+			// Register NodeByID handlers.
+			for kind, res := range searchJobsResolver.NodeResolvers() {
+				resolver.nodeByIDFns[kind] = res
+			}
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -652,6 +666,7 @@ type OptionalResolver struct {
 	CodyContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
+	SearchJobsResolver
 	GitHubAppsResolver
 	GuardrailsResolver
 	InsightsAggregationResolver
@@ -751,6 +766,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return CodeHostByID(ctx, r.db, id)
 		},
+		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitserverByID(ctx, id)
+		},
 	}
 	return r
 }
@@ -767,6 +785,7 @@ var EnterpriseResolvers = struct {
 	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
+	searchJobsResolver          SearchJobsResolver
 	gitHubAppsResolver          GitHubAppsResolver
 	guardrailsResolver          GuardrailsResolver
 	insightsAggregationResolver InsightsAggregationResolver

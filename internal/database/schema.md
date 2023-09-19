@@ -1581,7 +1581,6 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "exhaustive_search_jobs_pkey" PRIMARY KEY, btree (id)
-    "exhaustive_search_jobs_query_initiator_id_key" UNIQUE CONSTRAINT, btree (query, initiator_id)
 Foreign-key constraints:
     "exhaustive_search_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -2339,9 +2338,11 @@ Stores the configuration used for code intel index jobs for a repository.
  cancel                 | boolean                  |           | not null | false
  should_reindex         | boolean                  |           | not null | false
  requested_envvars      | text[]                   |           |          | 
+ enqueuer_user_id       | integer                  |           | not null | 0
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_dequeue_order_idx" btree ((enqueuer_user_id > 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text
     "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
     "lsif_indexes_state" btree (state)
@@ -4806,7 +4807,8 @@ Foreign-key constraints:
     u.local_steps,
     u.should_reindex,
     u.requested_envvars,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.enqueuer_user_id
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);

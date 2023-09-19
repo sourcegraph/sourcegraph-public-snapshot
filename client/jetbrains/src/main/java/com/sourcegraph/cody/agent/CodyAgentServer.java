@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface for the server-part of the Cody agent protocol. The implementation of this interface is
@@ -37,12 +38,21 @@ public interface CodyAgentServer {
   @JsonRequest("graphql/currentUserId")
   CompletableFuture<String> currentUserId();
 
+  @JsonRequest("graphql/getRepoIdIfEmbeddingExists")
+  CompletableFuture<@Nullable String> getRepoIdIfEmbeddingExists(GetRepoID repoName);
+
+  @JsonRequest("graphql/getRepoId")
+  CompletableFuture<String> getRepoId(GetRepoID repoName);
+
   // Notifications
   @JsonNotification("initialized")
   void initialized();
 
   @JsonNotification("exit")
   void exit();
+
+  @JsonNotification("transcript/reset")
+  void transcriptReset();
 
   @JsonNotification("extensionConfiguration/didChange")
   void configurationDidChange(ExtensionConfiguration document);
@@ -61,4 +71,7 @@ public interface CodyAgentServer {
 
   @JsonNotification("debug/message")
   void debugMessage(DebugMessage message);
+
+  @JsonNotification("autocomplete/clearLastCandidate")
+  void autocompleteClearLastCandidate();
 }

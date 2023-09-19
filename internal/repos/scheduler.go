@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,65 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-// schedulerConfig tracks the active scheduler configuration.
-type schedulerConfig struct {
-	running               bool
-	autoGitUpdatesEnabled bool
-}
-
-// RunScheduler runs the worker that schedules git fetches of synced repositories in git-server.
-func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateScheduler) {
-	var (
-		have schedulerConfig
-		stop context.CancelFunc
-	)
-
-	logger = logger.Scoped("RunScheduler", "git fetch scheduler")
-
-	conf.Watch(func() {
-		c := conf.Get()
-
-		want := schedulerConfig{
-			running:               true,
-			autoGitUpdatesEnabled: !c.DisableAutoGitUpdates,
-		}
-
-		if have == want {
-			return
-		}
-
-		logger.Debug("config changed")
-		if stop != nil {
-			stop()
-			logger.Info("stopped previous scheduler")
-		}
-
-		// We setup a separate sub-context so that we can reuse the original
-		// parent context every time we're starting up the newly configured
-		// scheduler. If we'd assign to ctx it'd only be usable up until the
-		// we'd call stop.
-		var ctx2 context.Context
-		ctx2, stop = context.WithCancel(ctx)
-
-		go scheduler.runUpdateLoop(ctx2)
-		if want.autoGitUpdatesEnabled {
-			go scheduler.runScheduleLoop(ctx2)
-		}
-
-		logger.Debug(
-			"started configured scheduler",
-			log.String("version", "new"),
-			log.Bool("auto-git-updates", want.autoGitUpdatesEnabled),
-		)
-
-		// We converged to the desired configuration.
-		have = want
-
-		// Assigning stop to _ makes go-lint not report a false positive context leak.
-		_ = stop
-	})
-}
 
 const (
 	// minDelay is the minimum amount of time between scheduled updates for a single repository.
@@ -113,6 +55,7 @@ type UpdateScheduler struct {
 	updateQueue *updateQueue
 	schedule    *schedule
 	logger      log.Logger
+	cancelCtx   context.CancelFunc
 }
 
 // A configuredRepo represents the configuration data for a given repo from
@@ -148,6 +91,22 @@ func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
 	}
 }
 
+func (s *UpdateScheduler) Start() {
+	// Make sure the update scheduler acts as an internal actor, so it can see all
+	// repos.
+	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
+	s.cancelCtx = cancel
+
+	go s.runUpdateLoop(ctx)
+	go s.runScheduleLoop(ctx)
+}
+
+func (s *UpdateScheduler) Stop() {
+	if s.cancelCtx != nil {
+		s.cancelCtx()
+	}
+}
+
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
 func (s *UpdateScheduler) runScheduleLoop(ctx context.Context) {
 	for {
@@ -156,6 +115,10 @@ func (s *UpdateScheduler) runScheduleLoop(ctx context.Context) {
 		case <-ctx.Done():
 			s.schedule.reset()
 			return
+		}
+
+		if conf.Get().DisableAutoGitUpdates {
+			continue
 		}
 
 		s.runSchedule()

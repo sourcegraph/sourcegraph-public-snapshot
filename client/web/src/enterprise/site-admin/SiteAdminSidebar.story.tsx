@@ -41,6 +41,7 @@ export const AdminSidebarItems: Story = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -51,6 +52,7 @@ export const AdminSidebarItems: Story = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -61,6 +63,7 @@ export const AdminSidebarItems: Story = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -71,6 +74,7 @@ export const AdminSidebarItems: Story = () => (
                     batchChangesExecutionEnabled={false}
                     batchChangesWebhookLogsEnabled={false}
                     codeInsightsEnabled={true}
+                    endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
                     {...webProps}
@@ -81,6 +85,7 @@ export const AdminSidebarItems: Story = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
+                    endUserOnboardingEnabled={false}
                 />
             </Grid>
         )}

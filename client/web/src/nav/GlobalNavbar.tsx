@@ -33,10 +33,10 @@ import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
+import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import type { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
-import { NotificationsNavbarItem } from '../site-admin/notifications/NotificationsNavbarItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
@@ -187,6 +187,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     </>
                 ),
             },
+            !!isSearchJobsEnabled() && {
+                path: EnterprisePageRoutes.SearchJobs,
+                content: (
+                    <>
+                        Search Jobs <ProductStatusBadge className="ml-2" status="experimental" />
+                    </>
+                ),
+            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [ownEnabled, showSearchContext, codySearchEnabled])
@@ -194,8 +202,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
     const isLightTheme = useIsLightTheme()
-
-    const [isSetupChecklistEnabled] = useFeatureFlag('setup-checklist', false)
 
     return (
         <>
@@ -296,17 +302,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             name="feedback"
                         />
                     )}
+                    {isSourcegraphDotCom && (
+                        <NavItem>
+                            <NavLink variant={navLinkVariant} to="https://about.sourcegraph.com" external={true}>
+                                About Sourcegraph
+                            </NavLink>
+                        </NavItem>
+                    )}
                 </NavGroup>
                 <NavActions>
                     {isSourcegraphApp && <UpdateGlobalNav />}
-                    {!props.authenticatedUser && !isSourcegraphDotCom && (
-                        <NavAction>
-                            <Link className={styles.link} to="https://about.sourcegraph.com">
-                                About Sourcegraph
-                            </Link>
-                        </NavAction>
-                    )}
-                    {isSetupChecklistEnabled && <NotificationsNavbarItem />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <NavAction>

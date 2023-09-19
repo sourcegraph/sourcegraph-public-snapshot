@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -96,22 +97,25 @@ func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err err
 		return nil
 	}
 
-	var metadata json.RawMessage
-	if event.Metadata != nil {
-		var err error
-		metadata, err = json.Marshal(event.Metadata)
-		if err != nil {
-			return errors.Wrap(err, "marshaling metadata")
-		}
+	// Always have metadata
+	if event.Metadata == nil {
+		event.Metadata = map[string]any{}
 	}
 
+	// HACK: Inject Sourcegraph actor that is held in the span context
+	event.Metadata["sg.actor"] = sgactor.FromContext(spanCtx)
+
+	metadata, err := json.Marshal(event.Metadata)
+	if err != nil {
+		return errors.Wrap(err, "marshaling metadata")
+	}
 	if err := l.tableInserter.Put(
 		backgroundContextWithSpan(spanCtx),
 		bigQueryEvent{
 			Name:       string(event.Name),
 			Source:     event.Source,
 			Identifier: event.Identifier,
-			Metadata:   metadata,
+			Metadata:   json.RawMessage(metadata),
 			CreatedAt:  time.Now(),
 		},
 	); err != nil {

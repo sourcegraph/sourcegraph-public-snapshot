@@ -13,12 +13,12 @@ func TestUpdateCheckURL(t *testing.T) {
 		want           string
 		errorLogsCount int
 	}{
-		{name: "default OK", env: "", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 0},
-		{name: "specified default OK", env: "https://sourcegraph.com/", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 0},
-		{name: "http NOK", env: "http://sourcegraph.com/", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 1},
+		{name: "default OK", env: "", want: "https://pings.sourcegraph.com/updates", errorLogsCount: 0},
+		{name: "specified dotcom OK", env: "https://sourcegraph.com/", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 0},
+		{name: "http not OK", env: "http://sourcegraph.com/", want: "https://pings.sourcegraph.com/updates", errorLogsCount: 1},
 		{name: "env OK", env: "https://fourfegraph.com/", want: "https://fourfegraph.com/.api/updates", errorLogsCount: 0},
-		{name: "env no protocol NOK", env: "fourfegraph.com", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 1},
-		{name: "env garbage NOK", env: "garbage  foo", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 1},
+		{name: "env no protocol not OK", env: "fourfegraph.com", want: "https://pings.sourcegraph.com/updates", errorLogsCount: 1},
+		{name: "env garbage not OK", env: "garbage  foo", want: "https://pings.sourcegraph.com/updates", errorLogsCount: 1},
 	}
 
 	for _, test := range tests {

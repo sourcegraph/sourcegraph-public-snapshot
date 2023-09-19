@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "loadbalancer",
+    srcs = ["loadbalancer.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//cloudrunv2service",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computebackendservice",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeglobaladdress",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeglobalforwardingrule",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computemanagedsslcertificate",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeregionnetworkendpointgroup",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesslcertificate",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesslpolicy",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computetargethttpsproxy",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeurlmap",
+    ],
+)

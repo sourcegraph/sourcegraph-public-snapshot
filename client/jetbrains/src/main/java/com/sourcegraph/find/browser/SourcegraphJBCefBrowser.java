@@ -2,7 +2,8 @@ package com.sourcegraph.find.browser;
 
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
-import com.sourcegraph.config.SettingsChangeListener;
+import com.sourcegraph.cody.config.notification.AccountSettingChangeListener;
+import com.sourcegraph.cody.config.notification.CodySettingChangeListener;
 import com.sourcegraph.config.ThemeUtil;
 import javax.swing.*;
 import org.cef.CefApp;
@@ -25,7 +26,12 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
 
     requestHandler
         .getProject()
-        .getService(SettingsChangeListener.class)
+        .getService(AccountSettingChangeListener.class)
+        .setJavaToJSBridge(javaToJSBridge);
+
+    requestHandler
+        .getProject()
+        .getService(CodySettingChangeListener.class)
         .setJavaToJSBridge(javaToJSBridge);
 
     UIManager.addPropertyChangeListener(

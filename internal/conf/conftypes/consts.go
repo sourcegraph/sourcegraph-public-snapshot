@@ -27,6 +27,7 @@ const (
 	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
 	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
 	CompletionsProviderNameFireworks   CompletionsProviderName = "fireworks"
+	CompletionsProviderNameAWSBedrock  CompletionsProviderName = "aws-bedrock"
 )
 
 type EmbeddingsConfig struct {

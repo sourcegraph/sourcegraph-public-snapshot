@@ -33,6 +33,7 @@ import type { CodeInsightsProps } from '../../insights/types'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { isSearchJobsEnabled } from '../../search-jobs/utility'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
@@ -83,10 +84,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
-
-    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
-
     const [rankingEnabled] = useFeatureFlag('search-ranking')
+    const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
+    const [enduserOnboardingEnabled] = useFeatureFlag('end-user-onboarding', false)
+
+    const showOnboardingTour = enduserOnboardingEnabled && !!authenticatedUser && !isSourcegraphDotCom
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -400,12 +402,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 onSearchSubmit={handleSidebarSearchSubmit}
                 setSidebarCollapsed={setSidebarCollapsed}
             >
-                <GettingStartedTour
-                    className="mb-1"
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    telemetryService={props.telemetryService}
-                    isAuthenticated={!!props.authenticatedUser}
-                />
+                {showOnboardingTour && (
+                    <GettingStartedTour className="mb-1" telemetryService={props.telemetryService} />
+                )}
             </SearchFiltersSidebar>
 
             {aggregationUIMode === AggregationUIMode.SearchPage && (
@@ -440,10 +439,12 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         setSidebarCollapsed={setSidebarCollapsed}
                         stats={
                             <StreamingProgress
+                                query={`${submittedURLQuery} patterntype:${patternType}`}
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                                 state={results?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
+                                isSearchJobsEnabled={isSearchJobsEnabled()}
                             />
                         }
                     />

@@ -4,7 +4,10 @@ import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import java.awt.*;
+import com.sourcegraph.cody.autocomplete.InlayModelUtils;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import org.jetbrains.annotations.NotNull;
 
 public class AutocompleteRenderUtils {
@@ -30,5 +33,43 @@ public class AutocompleteRenderUtils {
           .getColorsScheme()
           .getAttributes(DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT);
     }
+  }
+
+  public static TextAttributes getCustomTextAttributes(
+      @NotNull Editor editor, @NotNull Integer fontColor) {
+    Color color = new Color(fontColor);
+    TextAttributes attrs = getTextAttributesForEditor(editor).clone();
+    attrs.setForegroundColor(color);
+    return attrs;
+  }
+
+  public static void rerenderAllAutocompleteInlays(Editor editor) {
+    InlayModelUtils.getAllInlaysForEditor(editor).stream()
+        .filter(inlay -> inlay.getRenderer() instanceof CodyAutocompleteElementRenderer)
+        .forEach(
+            inlayAutocomplete -> {
+              CodyAutocompleteElementRenderer renderer =
+                  (CodyAutocompleteElementRenderer) inlayAutocomplete.getRenderer();
+              if (renderer instanceof CodyAutocompleteSingleLineRenderer) {
+                editor
+                    .getInlayModel()
+                    .addInlineElement(
+                        inlayAutocomplete.getOffset(),
+                        new CodyAutocompleteSingleLineRenderer(
+                            renderer.getText(),
+                            renderer.completionItem,
+                            editor,
+                            renderer.getType()));
+                inlayAutocomplete.dispose();
+              } else if (renderer instanceof CodyAutocompleteBlockElementRenderer) {
+                editor
+                    .getInlayModel()
+                    .addInlineElement(
+                        inlayAutocomplete.getOffset(),
+                        new CodyAutocompleteBlockElementRenderer(
+                            renderer.getText(), renderer.completionItem, editor));
+                inlayAutocomplete.dispose();
+              }
+            });
   }
 }

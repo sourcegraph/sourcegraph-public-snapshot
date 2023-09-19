@@ -1,18 +1,24 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, FC } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 import { Button, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
-import type { StreamingProgressProps } from './StreamingProgress'
 import { CountContent, getProgressText } from './StreamingProgressCount'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 import styles from './StreamingProgressSkippedButton.module.scss'
 
-export const StreamingProgressSkippedButton: React.FunctionComponent<
-    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
-> = ({ progress, onSearchAgain }) => {
+interface StreamingProgressSkippedButtonProps {
+    query: string
+    progress: Progress
+    isSearchJobsEnabled?: boolean
+    onSearchAgain: (additionalFilters: string[]) => void
+}
+
+export const StreamingProgressSkippedButton: FC<StreamingProgressSkippedButtonProps> = props => {
+    const { query, progress, isSearchJobsEnabled, onSearchAgain } = props
     const [isOpen, setIsOpen] = useState(false)
 
     const skippedWithWarningOrError = useMemo(
@@ -55,7 +61,12 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                 className={styles.skippedPopover}
                 data-testid="streaming-progress-skipped-popover"
             >
-                <StreamingProgressSkippedPopover progress={progress} onSearchAgain={onSearchAgainWithPopupClose} />
+                <StreamingProgressSkippedPopover
+                    query={query}
+                    progress={progress}
+                    isSearchJobsEnabled={isSearchJobsEnabled}
+                    onSearchAgain={onSearchAgainWithPopupClose}
+                />
             </PopoverContent>
         </Popover>
     )

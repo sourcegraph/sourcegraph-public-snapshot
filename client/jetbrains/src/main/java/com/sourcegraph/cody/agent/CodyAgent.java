@@ -203,7 +203,7 @@ public class CodyAgent implements Disposable {
   private static File agentBinary() throws CodyAgentException {
     Path pluginPath = agentDirectory();
     if (pluginPath == null) {
-      throw new CodyAgentException("Cody AI by Sourcegraph plugin path not found");
+      throw new CodyAgentException("Sourcegraph Cody + Code Search plugin path not found");
     }
     Path binarySource = pluginPath.resolve("agent").resolve(agentBinaryName());
     if (!Files.isRegularFile(binarySource)) {
@@ -263,9 +263,11 @@ public class CodyAgent implements Disposable {
             .setOutput(process.getOutputStream())
             .setLocalService(client)
             .create();
-    client.server = launcher.getRemoteProxy();
-    client.documents = new CodyAgentDocuments(client.server);
-    client.codebase = new CodyAgentCodebase(client.server);
+
+    CodyAgentServer server = launcher.getRemoteProxy();
+    client.server = server;
+    client.documents = new CodyAgentDocuments(server);
+    client.codebase = new CodyAgentCodebase(server, project);
     this.listeningToJsonRpc = launcher.startListening();
   }
 

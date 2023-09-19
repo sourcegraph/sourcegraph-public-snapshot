@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/languages",
     visibility = ["//visibility:public"],
     deps = [
+        "//lib/errors",
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@org_golang_x_exp//slices",
     ],

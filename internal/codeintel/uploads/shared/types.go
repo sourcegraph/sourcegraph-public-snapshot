@@ -119,6 +119,7 @@ type Index struct {
 	AssociatedUploadID *int                         `json:"associatedUpload"`
 	ShouldReindex      bool                         `json:"shouldReindex"`
 	RequestedEnvVars   []string                     `json:"requestedEnvVars"`
+	EnqueuerUserID     int32                        `json:"enqueuerUserID"`
 }
 
 func (i Index) RecordID() int {

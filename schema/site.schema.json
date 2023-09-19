@@ -38,7 +38,10 @@
     },
     "defaultRateLimit": {
       "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
-      "type": "number",
+      "type": "integer",
+      "!go": {
+        "pointer": true
+      },
       "default": -1
     },
     "RedirectUnsupportedBrowser": {
@@ -125,6 +128,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "searchJobs": {
+          "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -383,9 +394,9 @@
         "enableGRPC": {
           "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
-            "pointer": false
+            "pointer": true
           }
         },
         "enablePermissionsWebhooks": {
@@ -1940,6 +1951,11 @@
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
       "properties": {
+        "minimumExternalAccountAge": {
+          "description": "The minimum amount of days a Github or GitLab account must exist, before being allowed on Sourcegraph.com.",
+          "type": "integer",
+          "default": 0
+        },
         "app.notifications": {
           "description": "Notifications to display in the Sourcegraph app.",
           "type": "array",
@@ -2723,8 +2739,8 @@
         "provider": {
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
-          "default": "anthropic",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai"]
+          "default": "sourcegraph",
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock"]
         },
         "endpoint": {
           "type": "string",

@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
@@ -84,6 +83,8 @@ type RecordedCommandResolver interface {
 	Command() string
 	Dir() string
 	Path() string
+	Output() string
+	IsSuccess() bool
 }
 
 type recordedCommandResolver struct {
@@ -102,11 +103,8 @@ func (r *recordedCommandResolver) Duration() float64 {
 	return r.command.Duration
 }
 
-var urlRegex = lazyregexp.New(`((https?|ssh|git)://[^:@]+:)[^@]+(@)`)
-
 func (r *recordedCommandResolver) Command() string {
-	redacted := urlRegex.ReplaceAllString(strings.Join(r.command.Args, " "), "$1<REDACTED>$3")
-	return redacted
+	return strings.Join(r.command.Args, " ")
 }
 
 func (r *recordedCommandResolver) Dir() string {
@@ -115,4 +113,12 @@ func (r *recordedCommandResolver) Dir() string {
 
 func (r *recordedCommandResolver) Path() string {
 	return r.command.Path
+}
+
+func (r *recordedCommandResolver) Output() string {
+	return r.command.Output
+}
+
+func (r *recordedCommandResolver) IsSuccess() bool {
+	return r.command.IsSuccess
 }

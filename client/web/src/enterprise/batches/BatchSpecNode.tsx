@@ -40,10 +40,10 @@ import type {
     BatchSpecWorkspaceFileResult,
     BatchSpecWorkspaceFileVariables,
 } from '../../graphql-operations'
+import { humanizeSize } from '../../util/size'
 
 import { BATCH_SPEC_WORKSPACE_FILE, generateFileDownloadLink } from './backend'
 import { BatchSpec } from './BatchSpec'
-import { humanizeSize } from './utils/size'
 
 import styles from './BatchSpecNode.module.scss'
 

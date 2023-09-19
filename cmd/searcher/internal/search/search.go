@@ -227,7 +227,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return path, zf, err
 	}
 
-	hybrid := !p.IsStructuralPat && p.FeatHybrid
+	// Hybrid search only works with our normal searcher code path, not
+	// structural search.
+	hybrid := !p.IsStructuralPat
 	if hybrid {
 		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
 			log.String("repo", string(p.Repo)),

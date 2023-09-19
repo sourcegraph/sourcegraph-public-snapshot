@@ -151,6 +151,7 @@ ts_project(
         "src/search-ui/results/progress/StreamingProgressCount.tsx",
         "src/search-ui/results/progress/StreamingProgressSkippedButton.tsx",
         "src/search-ui/results/progress/StreamingProgressSkippedPopover.tsx",
+        "src/search-ui/results/progress/exhaustive-search/exhaustive-search-validation.ts",
         "src/search-ui/results/progress/utils.ts",
         "src/search-ui/results/sidebar/FilterLink.tsx",
         "src/search-ui/results/sidebar/QuickLink.tsx",
@@ -172,6 +173,7 @@ ts_project(
         ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/extension-api-types",
+        ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
@@ -236,6 +238,7 @@ ts_project(
         "src/search-ui/results/progress/StreamingProgressCount.test.tsx",
         "src/search-ui/results/progress/StreamingProgressSkippedButton.test.tsx",
         "src/search-ui/results/progress/StreamingProgressSkippedPopover.test.tsx",
+        "src/search-ui/results/progress/exhaustive-search/exhaustive-search-validation.test.ts",
         "src/search-ui/results/sidebar/FilterLink.test.tsx",
         "src/search-ui/results/sidebar/QuickLink.test.tsx",
         "src/search-ui/results/sidebar/SearchFilterSection.test.tsx",
@@ -279,7 +282,7 @@ npm_package(
 
 jest_test(
     name = "test",
-    timeout = "moderate",
+    timeout = "long",
     data = [
         ":branded_tests",
     ],

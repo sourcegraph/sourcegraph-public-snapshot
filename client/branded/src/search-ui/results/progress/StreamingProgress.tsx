@@ -12,24 +12,35 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 import styles from './StreamingProgressCount.module.scss'
 
 export interface StreamingProgressProps {
+    query: string
     state: StreamingResultsState
     progress: Progress
     showTrace?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
+    isSearchJobsEnabled?: boolean
 }
 
 export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<StreamingProgressProps>> = ({
     progress,
+    query,
     state,
     showTrace,
     onSearchAgain,
+    isSearchJobsEnabled,
 }) => {
     const isLoading = state === 'loading'
 
     return (
         <>
             {isLoading && <StreamingProgressCount progress={progress} state={state} hideIcon={true} />}
-            {!isLoading && <StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />}
+            {!isLoading && (
+                <StreamingProgressSkippedButton
+                    query={query}
+                    progress={progress}
+                    isSearchJobsEnabled={isSearchJobsEnabled}
+                    onSearchAgain={onSearchAgain}
+                />
+            )}
             <TraceLink showTrace={showTrace} trace={progress.trace} />
         </>
     )

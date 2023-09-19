@@ -411,13 +411,15 @@ func Frontend() *monitoring.Dashboard {
 					HumanServiceName:   "frontend",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${internalInstance:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${internalInstance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "frontend",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
+					Namespace:          "", // intentionally empty
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
