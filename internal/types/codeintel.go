@@ -33,7 +33,7 @@ type CodeIntelAggregatedInvestigationEvent struct {
 type CodeIntelAggregatedCommitDistance struct {
 	Mean, StdDeviation             float64
 	Count, Max, Min, P10, P75, P90 int
-	Indexer                        string
+	Indexer, DequeueAlgorithm      string
 	Week                           time.Time
 }
 
@@ -81,7 +81,7 @@ type CodeIntelEventSummary struct {
 }
 
 type CodeIntelCommitDistanceSummary struct {
-	Indexer                                                   string
+	Indexer, DequeueAlgorithm                                 string
 	CommitDistanceMean, CommitDistanceStddev                  *float64
 	CommitDistanceCount, CommitDistanceMax, CommitDistanceMin *int32
 	CommitDistanceP10, CommitDistanceP75, CommitDistanceP90   *int32

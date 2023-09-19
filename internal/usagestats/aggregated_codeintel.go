@@ -172,6 +172,7 @@ func groupAggregatedCodeIntelStats(
 	for _, event := range rawDistanceEvents {
 		commitDistanceSummary = append(commitDistanceSummary, types.CodeIntelCommitDistanceSummary{
 			Indexer:              event.Indexer,
+			DequeueAlgorithm:     event.DequeueAlgorithm,
 			CommitDistanceMean:   pointers.Ptr(event.Mean),
 			CommitDistanceStddev: pointers.Ptr(event.StdDeviation),
 			CommitDistanceCount:  pointers.Int32(event.Count),

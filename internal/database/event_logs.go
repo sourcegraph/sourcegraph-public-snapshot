@@ -1259,6 +1259,7 @@ func (l *eventLogStore) aggregateCodeIntelCommitDistanceEvents(ctx context.Conte
 		return event, s.Scan(
 			&event.Week,
 			&event.Indexer,
+			&event.DequeueAlgorithm,
 			&event.StdDeviation,
 			&event.Mean,
 			&event.Count,
@@ -1286,6 +1287,7 @@ WITH events AS (
 SELECT
 	current_week,
 	indexer,
+	algorithm,
 	stddev_pop(distance) AS stddev,
 	avg(distance) AS mean,
 	count(*) AS count,
@@ -1295,7 +1297,7 @@ SELECT
 	percentile_disc(0.75) WITHIN GROUP (ORDER BY distance) AS p75,
 	percentile_disc(0.90) WITHIN GROUP (ORDER BY distance) AS p90
 FROM events
-GROUP BY current_week, indexer
+GROUP BY current_week, indexer, algorithm
 `
 
 func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
