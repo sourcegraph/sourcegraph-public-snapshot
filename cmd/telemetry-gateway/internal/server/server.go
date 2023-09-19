@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"io"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -18,9 +21,13 @@ import (
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
+var meter = otel.GetMeterProvider().Meter("cmd/telemetry-gateway/internal/server")
+
 type Server struct {
 	logger      log.Logger
 	eventsTopic pubsub.TopicClient
+
+	histogramRecordEventPayloads metric.Int64Histogram
 
 	// Fallback unimplemented handler
 	telemetrygatewayv1.UnimplementedTelemeteryGatewayServiceServer
@@ -28,11 +35,18 @@ type Server struct {
 
 var _ telemetrygatewayv1.TelemeteryGatewayServiceServer = (*Server)(nil)
 
-func New(logger log.Logger, eventsTopic pubsub.TopicClient) *Server {
+func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
+	recordEventPayloadsHistogram, err := meter.Int64Histogram("telemetry-gateway.record_event_payloads")
+	if err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		logger:      logger.Scoped("server", "grpc server"),
 		eventsTopic: eventsTopic,
-	}
+
+		histogramRecordEventPayloads: recordEventPayloadsHistogram,
+	}, nil
 }
 
 func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService_RecordEventsServer) error {
@@ -80,7 +94,18 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			}
 
 			results := publisher.Publish(stream.Context(), events)
-			if failedEvents := results.FailedEvents(); len(failedEvents) > 0 {
+			if failedEvents := results.FailedEvents(); len(failedEvents) == 0 {
+				// Record suceeded
+				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(events)),
+					metric.WithAttributes(attribute.Bool("succeeded", true)))
+			} else {
+				// Record succeeded and failed separately
+				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(events)-len(failedEvents)),
+					metric.WithAttributes(attribute.Bool("succeeded", true)))
+				s.histogramRecordEventPayloads.Record(stream.Context(), int64(len(failedEvents)),
+					metric.WithAttributes(attribute.Bool("succeeded", false)))
+
+				// Generate failure message
 				var message string
 				if len(failedEvents) == submittedEvents {
 					message = "all events failed to submit"

@@ -46,9 +46,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Initialize our gRPC server
 	grpcServer := defaults.NewServer(obctx.Logger)
-	telemetrygatewayv1.RegisterTelemeteryGatewayServiceServer(grpcServer,
-		server.New(obctx.Logger, eventsTopic))
 	defer grpcServer.GracefulStop()
+	telemetryGatewayServer, err := server.New(obctx.Logger, eventsTopic)
+	if err != nil {
+		return errors.Wrap(err, "init telemetry gateway server")
+	}
+	telemetrygatewayv1.RegisterTelemeteryGatewayServiceServer(grpcServer, telemetryGatewayServer)
 
 	// Start up the service
 	addr := config.GetListenAdress()
