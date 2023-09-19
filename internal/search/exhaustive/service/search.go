@@ -62,9 +62,9 @@ type NewSearcher interface {
 // a SearchQuery, but this makes it harder to make changes to search going
 // forward for what should be rare errors.
 type SearchQuery interface {
-	RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpec, error)
+	RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpecs, error)
 
-	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpec) ([]types.RepositoryRevision, error)
+	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpecs) ([]types.RepositoryRevision, error)
 
 	Search(context.Context, types.RepositoryRevision, CSVWriter) error
 }
@@ -243,8 +243,8 @@ func (backendFake) NewSearch(ctx context.Context, q string) (SearchQuery, error)
 		if n, err := fmt.Sscanf(part, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
 			continue
 		}
-		r.RepositoryRevSpec.Repository = r.Repository
-		r.RepositoryRevSpec.RevisionSpecifier = "spec"
+		r.RepositoryRevSpecs.Repository = r.Repository
+		r.RepositoryRevSpecs.RevisionSpecifiers = types.RevisionSpecifiers("spec")
 		repoRevs = append(repoRevs, r)
 	}
 	if len(repoRevs) == 0 {
@@ -257,23 +257,23 @@ type searcherFake struct {
 	repoRevs []types.RepositoryRevision
 }
 
-func (s searcherFake) RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpec, error) {
-	seen := map[types.RepositoryRevSpec]bool{}
-	var repoRevSpecs []types.RepositoryRevSpec
+func (s searcherFake) RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpecs, error) {
+	seen := map[types.RepositoryRevSpecs]bool{}
+	var repoRevSpecs []types.RepositoryRevSpecs
 	for _, r := range s.repoRevs {
-		if seen[r.RepositoryRevSpec] {
+		if seen[r.RepositoryRevSpecs] {
 			continue
 		}
-		seen[r.RepositoryRevSpec] = true
-		repoRevSpecs = append(repoRevSpecs, r.RepositoryRevSpec)
+		seen[r.RepositoryRevSpecs] = true
+		repoRevSpecs = append(repoRevSpecs, r.RepositoryRevSpecs)
 	}
 	return repoRevSpecs, nil
 }
 
-func (s searcherFake) ResolveRepositoryRevSpec(_ context.Context, repoRevSpec types.RepositoryRevSpec) ([]types.RepositoryRevision, error) {
+func (s searcherFake) ResolveRepositoryRevSpec(_ context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
 	var repoRevs []types.RepositoryRevision
 	for _, r := range s.repoRevs {
-		if r.RepositoryRevSpec == repoRevSpec {
+		if r.RepositoryRevSpecs == repoRevSpec {
 			repoRevs = append(repoRevs, r)
 		}
 	}
@@ -284,5 +284,5 @@ func (s searcherFake) Search(_ context.Context, r types.RepositoryRevision, w CS
 	if err := w.WriteHeader("repo", "revspec", "revision"); err != nil {
 		return err
 	}
-	return w.WriteRow(strconv.Itoa(int(r.Repository)), r.RevisionSpecifier, string(r.Revision))
+	return w.WriteRow(strconv.Itoa(int(r.Repository)), string(r.RevisionSpecifiers), string(r.Revision))
 }

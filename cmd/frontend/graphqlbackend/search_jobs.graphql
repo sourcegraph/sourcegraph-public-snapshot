@@ -206,5 +206,5 @@ type SearchJobConnection {
     """
     Information to aid in pagination.
     """
-    pageInfo: PageInfo!
+    pageInfo: BidirectionalPageInfo!
 }

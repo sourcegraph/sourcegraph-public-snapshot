@@ -23,6 +23,7 @@ This is currently a two-step process, which will be further automated in the fut
   - Buildkite will rebuild the base images and publish them to Dockerhub.
 - Run `sg wolfi update-hashes` locally to update the base image hashes in `dev/oci_deps.bzl`. Commit these changes and merge to `main`.
   - This fetches the updated base image hashes from the images that were pushed to Dockerhub in the previous step.
+- Backport the PR that updated `dev/oci_deps.bzl` to the release branch.
 
 ### Modify an existing base image
 
@@ -31,7 +32,7 @@ To modify a base image to add packages, users, or directories:
 - Update its apko YAML configuration file, which can be found under [`wolfi-images/`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/)
 - Build the image
   - To build locally, use `sg wolfi image <image-name>`.
-  - To build on CI, push your changes and Buildkite will build your image and push it to our `us.gcr.io/sourcegraph-dev/` dev repository.
+  - To build on CI, push your changes and Buildkite will build your image and push it to our `us.gcr.io/sourcegraph-dev/` dev repository. Instructions for pulling this image will be shown at the top of the Buildkite page.
 - Test your changes by exec-ing into the image, or update `dev/oci_deps.bzl` to point at your dev base image and build the full image with Bazel.
 - Once happy, merge your changes and wait for the `main` branch's Buildkite run to complete.
   - Buildkite will rebuild the base image and publish it to Dockerhub.

@@ -48,7 +48,7 @@ func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.Can
 		return nil, err
 	}
 
-	return nil, r.svc.CancelSearchJob(ctx, jobID)
+	return &graphqlbackend.EmptyResponse{}, r.svc.CancelSearchJob(ctx, jobID)
 }
 
 func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.DeleteSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -57,7 +57,7 @@ func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.Del
 		return nil, err
 	}
 
-	return nil, r.svc.DeleteSearchJob(ctx, jobID)
+	return &graphqlbackend.EmptyResponse{}, r.svc.DeleteSearchJob(ctx, jobID)
 }
 
 func newSearchJobConnectionResolver(db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
