@@ -182,7 +182,7 @@ func NewHandler(
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Get(apirouter.SearchJob).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
+	m.Get(apirouter.SearchJobResults).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
 	m.Get(apirouter.SearchJobLogs).Handler(trace.Route(handlers.SearchJobsLogsHandler))
 
 	// Return the minimum src-cli version that's compatible with this instance

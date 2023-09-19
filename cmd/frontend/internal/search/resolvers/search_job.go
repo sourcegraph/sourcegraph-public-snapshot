@@ -72,7 +72,7 @@ func (r searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d", r.Job.ID))
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func (r searchJobResolver) URL(ctx context.Context) (*string, error) {
 }
 func (r searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d/logs", r.Job.ID))
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
