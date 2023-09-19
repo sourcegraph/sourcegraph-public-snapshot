@@ -283,7 +283,6 @@ export class Driver {
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 300000 })
         } catch (error) {
-            logger.log('Current error...', error)
             /**
              * In case a user is not authenticated, and site-init is required, two redirects happen:
              * 1. Redirect to /sign-in?returnTo=%2F
@@ -306,7 +305,6 @@ export class Driver {
                 await this.page.click('button[type=submit]')
                 await this.page.waitForNavigation({ timeout: 300000 })
             } else {
-                logger.log('Thrown error...', error)
                 throw error
             }
         }
@@ -450,7 +448,6 @@ export class Driver {
                 variables: {},
             })
         )
-
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
