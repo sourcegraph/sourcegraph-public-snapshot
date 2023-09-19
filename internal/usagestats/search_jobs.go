@@ -2,10 +2,12 @@ package usagestats
 
 import (
 	"context"
-	"github.com/sourcegraph/log"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -109,31 +111,32 @@ func GetWeeklySearchFormViews(ctx context.Context, db database.DB, stats *types.
 
 func GetWeeklySearchFormValidationErrors(ctx context.Context, db database.DB, stats *types.SearchJobsUsageStatistics, now time.Time) error {
 	const getSearchJobsAggregatedQuery = `
-		SELECT COUNT(*), argument::json->>'errors' as argument FROM event_logs
+		SELECT COUNT(*) as count, argument::json->>'errors' as errors FROM event_logs
 		WHERE name = 'SearchJobsValidationErrors' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
-		GROUP BY argument;
+		GROUP BY errors
+		ORDER BY count DESC, errors
 	`
 
 	rows, err := db.QueryContext(ctx, getSearchJobsAggregatedQuery, timeNow())
-	weeklySearchJobsSearchValidationErrors := []types.SearchJobsValidationErrorPing{}
-
 	if err != nil {
 		return errors.Wrap(err, "GetWeeklySearchFormValidationErrors")
 	}
 	defer rows.Close()
 
+	errorsAggregate := []types.SearchJobsValidationErrorPing{}
 	for rows.Next() {
-		weeklySearchJobsSearchErrors := types.SearchJobsValidationErrorPing{}
+		var v types.SearchJobsValidationErrorPing
 		if err := rows.Scan(
-			&weeklySearchJobsSearchErrors.TotalCount,
-			&weeklySearchJobsSearchErrors.Errors,
+			&v.TotalCount,
+			dbutil.JSONMessage(&v.Errors),
 		); err != nil {
 			return errors.Wrap(err, "GetWeeklySearchFormViews")
 		}
-		weeklySearchJobsSearchValidationErrors = append(weeklySearchJobsSearchValidationErrors, weeklySearchJobsSearchErrors)
+
+		errorsAggregate = append(errorsAggregate, v)
 	}
 
-	stats.WeeklySearchJobsValidationErrors = weeklySearchJobsSearchValidationErrors
+	stats.WeeklySearchJobsValidationErrors = errorsAggregate
 
-	return nil
+	return errors.Wrap(rows.Err(), "GetWeeklySearchFormViews")
 }
