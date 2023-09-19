@@ -22,6 +22,7 @@ import type { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DigestList } from '../digest/DigestList'
 
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
@@ -67,7 +68,9 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         )
     )
 
-    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs' | null>(null)
+    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs' | 'changelog-anywhere' | null>(
+        null
+    )
 
     // Select the appropriate tab after loading:
     // - If the user has code monitors, show the list tab
@@ -99,6 +102,8 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     break
                 case 'list':
                     eventLogger.logPageView('CodeMonitoringPage')
+                case 'changelog-anywhere':
+                    eventLogger.logPageView('ChangeLogAnywherePage')
             }
         }
     }, [currentTab, userHasCodeMonitors])
@@ -115,9 +120,14 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 actions={
                     authenticatedUser &&
                     !isSourcegraphApp && (
-                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
-                        </Button>
+                        <>
+                            <Button to="/code-monitoring/new" variant="primary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
+                            </Button>
+                            <Button to="/code-monitoring/new-changelog" variant="primary" as={Link} className="ml-2">
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a changelog
+                            </Button>
+                        </>
                     )
                 }
                 description={
@@ -153,6 +163,24 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                                     </Link>
                                 </div>
                             )}
+                            <div className="nav-item">
+                                <Link
+                                    to=""
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        setCurrentTab('changelog-anywhere')
+                                    }}
+                                    className={classNames(
+                                        'nav-link flex-row',
+                                        currentTab === 'changelog-anywhere' && 'active'
+                                    )}
+                                    role="button"
+                                >
+                                    <span className="text-content" data-tab-content="Changelogs">
+                                        Changelogs
+                                    </span>
+                                </Link>
+                            </div>
                             <div className="nav-item">
                                 <Link
                                     to=""
@@ -206,6 +234,8 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                         />
                     )}
+
+                    {currentTab === 'changelog-anywhere' && <DigestList authenticatedUser={authenticatedUser} />}
                 </div>
             )}
         </div>
