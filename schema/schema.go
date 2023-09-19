@@ -1440,9 +1440,9 @@ type JVMPackagesConnection struct {
 
 // LinkStep description: Link step
 type LinkStep struct {
-	Type    any `json:"type"`
-	Value   any `json:"value"`
-	Variant any `json:"variant,omitempty"`
+	Type    any    `json:"type"`
+	Value   string `json:"value"`
+	Variant any    `json:"variant,omitempty"`
 }
 
 // LocalGitExternalService description: Configuration for integration local Git repositories.
@@ -1692,14 +1692,15 @@ type OnboardingStep struct {
 	Info string `json:"info,omitempty"`
 	// Label description: Label of the step shown to the user
 	Label string `json:"label"`
+	// RequriredSteps description: Set this property if only a subset of steps are required for this task to complete.
+	RequriredSteps float64 `json:"requriredSteps,omitempty"`
 	// Tooltip description: More information about this step
 	Tooltip string `json:"tooltip,omitempty"`
 }
 
 // OnboardingTask description: An onboarding task
 type OnboardingTask struct {
-	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
-	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	Icon any `json:"icon,omitempty"`
 	// Steps description: Steps that need to be completed by the user
 	Steps []*OnboardingStep `json:"steps"`
 	// Title description: Title of this task
@@ -2112,6 +2113,15 @@ type SearchScope struct {
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
 	Value string `json:"value"`
+}
+
+// SearchStep description: Search query step
+type SearchStep struct {
+	// Query description: The query template to use.
+	Query string `json:"query"`
+	// Snippets description: Possible code snippets for this query. Can also be a language -> code snippets map.
+	Snippets any `json:"snippets,omitempty"`
+	Type     any `json:"type"`
 }
 
 // SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
@@ -2978,8 +2988,8 @@ type UsernameIdentity struct {
 
 // VideoStep description: Video step
 type VideoStep struct {
-	Type  any `json:"type"`
-	Value any `json:"value"`
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.
