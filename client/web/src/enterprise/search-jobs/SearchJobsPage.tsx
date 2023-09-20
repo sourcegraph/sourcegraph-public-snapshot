@@ -177,7 +177,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
                 path={[{ icon: LayersSearchOutlineIcon, text: 'Search Jobs' }]}
                 description={
                     <>
-                        Run search queries over all repositories, branches, commit and revisions.{' '}
+                        Manage Sourcegraph queries that have been run exhaustively to return all results.{' '}
                         <Link to="">Learn more</Link> about search jobs.
                     </>
                 }
@@ -328,7 +328,7 @@ const SearchJob: FC<SearchJobProps> = props => {
 
             {withCreatorColumn && (
                 <span className={styles.jobCreator}>
-                    <UserAvatar user={job.creator!} />
+                    <UserAvatar user={job.creator!} className={styles.jobAvatar} />
                     {job.creator?.displayName ?? job.creator?.username}
                 </span>
             )}
