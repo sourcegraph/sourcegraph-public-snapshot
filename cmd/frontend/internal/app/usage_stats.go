@@ -51,7 +51,7 @@ func allEventsArchiveHandler(db database.DB) http.HandlerFunc {
 		}
 		names := strings.Split(namesQuery, ",")
 
-		dateRangeQuery := r.URL.Query().Get("dateRange") 
+		dateRangeQuery := r.URL.Query().Get("dateRange")
 		if len(dateRangeQuery) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
 			return

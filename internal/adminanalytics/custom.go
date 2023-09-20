@@ -14,7 +14,7 @@ type Custom struct {
 	Ctx       context.Context
 	DateRange string
 	Grouping  string
-	Events	  []string
+	Events    []string
 	DB        database.DB
 	Cache     bool
 }
@@ -42,7 +42,7 @@ func (c *Custom) Users() (*AnalyticsFetcher, error) {
 
 func (c *Custom) UserActivity(args *struct {
 	graphqlutil.ConnectionArgs
-	After         *string
+	After *string
 }) (*analyticsUserActivePeriodsConnection, error) {
 	opt := analyticsUserActivePeriodsListOptions{}
 
@@ -56,10 +56,10 @@ func (c *Custom) UserActivity(args *struct {
 	}
 
 	return &analyticsUserActivePeriodsConnection{
-		db: c.DB,
-		opt: opt,
+		db:        c.DB,
+		opt:       opt,
 		dateRange: c.DateRange,
-		events: c.Events,
-		grouping: c.Grouping,
+		events:    c.Events,
+		grouping:  c.Grouping,
 	}, nil
 }

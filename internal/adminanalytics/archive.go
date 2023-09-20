@@ -23,7 +23,7 @@ func GetAllEventsArchive(ctx context.Context, db database.DB, eventNames []strin
 	// trim space from all event names
 	trimmedEventNames := make([]string, 0, len(eventNames))
 	for _, name := range eventNames {
-		trimmedEventNames = append(trimmedEventNames, strings.TrimSpace(name)) 
+		trimmedEventNames = append(trimmedEventNames, strings.TrimSpace(name))
 	}
 
 	events, err := db.EventLogs().AllEvents(ctx, trimmedEventNames, fromDate, time.Now())

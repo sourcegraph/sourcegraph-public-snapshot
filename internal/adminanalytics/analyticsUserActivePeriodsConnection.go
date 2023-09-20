@@ -18,36 +18,36 @@ type analyticsUserActivePeriodsListOptions struct {
 }
 
 type analyticsUserActivePeriodsConnection struct {
-	db             database.DB
-	opt	analyticsUserActivePeriodsListOptions
-	dateRange      string
-	events	       []string
-	grouping       string
-	
+	db        database.DB
+	opt       analyticsUserActivePeriodsListOptions
+	dateRange string
+	events    []string
+	grouping  string
+
 	// cache results because they are used by multiple fields
 	once       sync.Once
-	users			[]*analyticsUserActivityNode
-	totalCount 	int
-	err 		error
+	users      []*analyticsUserActivityNode
+	totalCount int
+	err        error
 }
 
 type analyticsUserActivePeriodNode struct {
-	date            time.Time
-	count           float64
+	date  time.Time
+	count float64
 }
 
 type analyticsUserActivityNode struct {
-	userID			int32
-	username		*string
-	displayName		*string
+	userID          int32
+	username        *string
+	displayName     *string
 	periods         []*analyticsUserActivePeriodNode
 	totalEventCount int
 }
 
 type dbAnalyticsUserActivity struct {
-	UserID			int32
-	Username		*string
-	DisplayName		*string
+	UserID          int32
+	Username        *string
+	DisplayName     *string
 	EventsOverTime  []byte
 	TotalEventCount int32
 }
@@ -106,7 +106,7 @@ func (r *analyticsUserActivePeriodsConnection) compute(ctx context.Context) ([]*
 			return
 		}
 		if r.grouping == Weekly {
-			to = now.AddDate(0, 0, -int(now.Weekday())+1) // monday of current week
+			to = now.AddDate(0, 0, -int(now.Weekday())+1)     // monday of current week
 			from = from.AddDate(0, 0, -int(from.Weekday())+1) // monday of original week
 			daysOffset = 7
 		}
@@ -120,29 +120,29 @@ func (r *analyticsUserActivePeriodsConnection) compute(ctx context.Context) ([]*
 			}
 
 			eventsOverTime := make(map[string]float64, 0)
-			if err := json.Unmarshal(tmpNode.EventsOverTime, &eventsOverTime); err != nil{
+			if err := json.Unmarshal(tmpNode.EventsOverTime, &eventsOverTime); err != nil {
 				r.err = err
 				return
 			}
 
 			node := &analyticsUserActivityNode{
-				userID: tmpNode.UserID,
-				username: tmpNode.Username,
-				displayName: tmpNode.DisplayName,
+				userID:          tmpNode.UserID,
+				username:        tmpNode.Username,
+				displayName:     tmpNode.DisplayName,
 				totalEventCount: int(tmpNode.TotalEventCount),
-				periods: make([]*analyticsUserActivePeriodNode, 0),
+				periods:         make([]*analyticsUserActivePeriodNode, 0),
 			}
 
 			// generate a periods array based on the date range requested.
 			for date := from; date.Before(to) || date.Equal(to); date = date.AddDate(0, 0, daysOffset) {
 				period := &analyticsUserActivePeriodNode{
-					date: bod(date),
+					date:  bod(date),
 					count: 0,
 				}
-		
+
 				node.periods = append(node.periods, period)
 			}
-			
+
 			// loop through node.periods and update the count.
 			for _, period := range node.periods {
 				for date, count := range eventsOverTime {
