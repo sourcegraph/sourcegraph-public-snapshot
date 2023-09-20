@@ -119,3 +119,8 @@ var contentLibrary string
 //
 //go:embed search_jobs.graphql
 var searchJobSchema string
+
+// telemetrySchema is the Sourcegraph Telemetry V2 raw graphql schema.
+//
+//go:embed telemetry.graphql
+var telemetrySchema string
