@@ -13,7 +13,7 @@ import (
 func TestDecomposePerforceRemoteURL(t *testing.T) {
 	t.Run("not a perforce scheme", func(t *testing.T) {
 		remoteURL, _ := vcs.ParseURL("https://www.google.com")
-		_, _, _, _, err := decomposePerforceRemoteURL(remoteURL)
+		_, _, _, _, _, err := decomposePerforceRemoteURL(remoteURL)
 		assert.Error(t, err)
 	})
 
