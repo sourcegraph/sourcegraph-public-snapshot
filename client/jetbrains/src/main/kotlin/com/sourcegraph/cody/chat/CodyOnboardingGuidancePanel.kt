@@ -9,7 +9,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.chat.UIComponents.createMainButton
-import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -24,9 +23,9 @@ import javax.swing.JPanel
 import javax.swing.text.html.HTMLEditorKit
 import org.apache.commons.lang3.StringUtils
 
-class CodyOnboardingGuidancePanel(displayName: String?) : JPanel() {
+class CodyOnboardingGuidancePanel(val originalDisplayName: String?) : JPanel() {
 
-  private val userDisplayName: String? = displayName?.let { truncateDisplayName(it) }
+  private val userDisplayName: String? = originalDisplayName?.let { truncateDisplayName(it) }
 
   private val mainButton: JButton = createMainButton("Get started")
 
@@ -108,9 +107,6 @@ class CodyOnboardingGuidancePanel(displayName: String?) : JPanel() {
   private fun createGetStartedButton(): JPanel {
     val buttonPanel = JPanel(BorderLayout())
     mainButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-    mainButton.addActionListener {
-      CodyApplicationSettings.getInstance().isOnboardingGuidanceDismissed = true
-    }
     buttonPanel.add(mainButton, BorderLayout.NORTH)
     buttonPanel.border = BorderFactory.createEmptyBorder(PADDING, 0, 0, 0)
     return buttonPanel

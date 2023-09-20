@@ -93,6 +93,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
+  private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -316,15 +317,23 @@ public class CodyToolWindowContent implements UpdatableChat {
     if (!CodyApplicationSettings.getInstance().isOnboardingGuidanceDismissed()) {
       String displayName =
           Optional.ofNullable(activeAccount).map(CodyAccount::getDisplayName).orElse(null);
-      CodyOnboardingGuidancePanel codyOnboardingGuidancePanel =
+      CodyOnboardingGuidancePanel newCodyOnboardingGuidancePanel =
           new CodyOnboardingGuidancePanel(displayName);
-      codyOnboardingGuidancePanel.addMainButtonActionListener(
-          e -> updateVisibilityOfContentPanels());
-      try {
-        allContentPanel.remove(ONBOARDING_PANEL_INDEX);
-      } catch (Throwable ex) {
-        // ignore because panel was not created before
+      newCodyOnboardingGuidancePanel.addMainButtonActionListener(
+          e -> {
+            CodyApplicationSettings.getInstance().setOnboardingGuidanceDismissed(true);
+            updateVisibilityOfContentPanels();
+          });
+      if (displayName != null) {
+        if (codyOnboardingGuidancePanel != null
+            && !displayName.equals(codyOnboardingGuidancePanel.getOriginalDisplayName()))
+          try {
+            allContentPanel.remove(ONBOARDING_PANEL_INDEX);
+          } catch (Throwable ex) {
+            // ignore because panel was not created before
+          }
       }
+      codyOnboardingGuidancePanel = newCodyOnboardingGuidancePanel;
       allContentPanel.add(codyOnboardingGuidancePanel, ONBOARDING_PANEL, ONBOARDING_PANEL_INDEX);
       allContentLayout.show(allContentPanel, ONBOARDING_PANEL);
       isChatVisible = false;
