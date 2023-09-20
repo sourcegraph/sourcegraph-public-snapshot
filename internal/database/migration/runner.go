@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -25,7 +26,7 @@ func NewRunnerWithSchemas(
 	if err != nil {
 		return nil, err
 	}
-	var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
+	var verbose = env.LogLevel == "dbug"
 
 	var dsnsStrings []string
 	for schema, dsn := range dsns {
