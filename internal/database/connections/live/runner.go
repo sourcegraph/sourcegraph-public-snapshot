@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
