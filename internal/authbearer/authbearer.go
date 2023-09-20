@@ -1,4 +1,4 @@
-package auth
+package authbearer
 
 import (
 	"net/http"

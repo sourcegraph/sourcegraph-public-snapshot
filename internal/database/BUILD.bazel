@@ -142,6 +142,7 @@ go_library(
         "//internal/rbac/types",
         "//internal/search/result",
         "//internal/security",
+        "//internal/telemetry/sensitivemetadataallowlist",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/temporarysettings",
         "//internal/timeutil",

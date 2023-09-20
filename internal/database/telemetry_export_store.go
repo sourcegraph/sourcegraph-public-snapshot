@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,9 +34,8 @@ type TelemetryEventsExportQueueStore interface {
 	// ListForExport returns the cached events that should be exported next. All
 	// events returned should be exported.
 	//
-	// 🚨 SECURITY: Potentially sensitive parts of the payload are retained at
-	// this stage. The caller is responsible for ensuring sensitive data is
-	// stripped.
+	// 🚨 SECURITY: The implementation strips out sensitive contents from events
+	// that are not in sensitivemetadataallowlist.AllowedEventTypes().
 	ListForExport(ctx context.Context, limit int) ([]*telemetrygatewayv1.Event, error)
 
 	// MarkAsExported marks all events in the set of IDs as exported.
@@ -44,6 +44,9 @@ type TelemetryEventsExportQueueStore interface {
 	// DeletedExported deletes all events exported before the given timestamp,
 	// returning the number of affected events.
 	DeletedExported(ctx context.Context, before time.Time) (int64, error)
+
+	// CountUnexported returns the number of events not yet exported.
+	CountUnexported(ctx context.Context) (int64, error)
 }
 
 func TelemetryEventsExportQueueWith(logger log.Logger, other basestore.ShareableStore) TelemetryEventsExportQueueStore {
@@ -137,6 +140,8 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 	}
 	defer rows.Close()
 
+	sensitiveAllowlist := sensitivemetadataallowlist.AllowedEventTypes()
+
 	events := make([]*telemetrygatewayv1.Event, 0, limit)
 	for rows.Next() {
 		var id string
@@ -145,8 +150,9 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 		if err != nil {
 			return nil, err
 		}
-		var event telemetrygatewayv1.Event
-		if err := proto.Unmarshal(payloadPB, &event); err != nil {
+
+		event := &telemetrygatewayv1.Event{}
+		if err := proto.Unmarshal(payloadPB, event); err != nil {
 			tr.RecordError(err)
 			logger.Error("failed to unmarshal telemetry event payload",
 				log.String("id", id),
@@ -155,7 +161,11 @@ func (s *telemetryEventsExportQueueStore) ListForExport(ctx context.Context, lim
 			// investigation.
 			continue
 		}
-		events = append(events, &event)
+
+		// 🚨 SECURITY: Apply sensitive data redaction of the payload.
+		sensitiveAllowlist.Redact(event)
+
+		events = append(events, event)
 	}
 	tr.SetAttributes(attribute.Int("events", len(events)))
 	if err := rows.Err(); err != nil {
@@ -187,4 +197,13 @@ func (s *telemetryEventsExportQueueStore) DeletedExported(ctx context.Context, b
 		return 0, errors.Wrap(err, "failed to mark events as exported")
 	}
 	return result.RowsAffected()
+}
+
+func (s *telemetryEventsExportQueueStore) CountUnexported(ctx context.Context) (int64, error) {
+	var count int64
+	return count, s.ShareableStore.Handle().QueryRowContext(ctx, `
+	SELECT COUNT(*)
+	FROM telemetry_events_export_queue
+	WHERE exported_at IS NULL
+	`).Scan(&count)
 }

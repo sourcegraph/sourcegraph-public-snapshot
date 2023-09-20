@@ -35,15 +35,17 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 1, 0, 0, 0, time.UTC)),
 		Parameters: &telemetrygatewayv1.EventParameters{
 			Metadata: map[string]int64{"public": 1},
-			PrivateMetadata: &structpb.Struct{
-				Fields: map[string]*structpb.Value{"sensitive": structpb.NewStringValue("sensitive")},
-			},
 		},
 	}, {
 		Id:        "2",
 		Feature:   "Feature",
 		Action:    "Click",
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 2, 0, 0, 0, time.UTC)),
+		Parameters: &telemetrygatewayv1.EventParameters{
+			PrivateMetadata: &structpb.Struct{
+				Fields: map[string]*structpb.Value{"sensitive": structpb.NewStringValue("sensitive")},
+			},
+		},
 	}, {
 		Id:        "3",
 		Feature:   "Feature",
@@ -63,6 +65,12 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		require.NoError(t, store.QueueForExport(ctx, events))
 	})
 
+	t.Run("CountUnexported", func(t *testing.T) {
+		count, err := store.CountUnexported(ctx)
+		require.NoError(t, err)
+		require.Equal(t, count, int64(3))
+	})
+
 	t.Run("ListForExport", func(t *testing.T) {
 		limit := len(events) - 1
 		export, err := store.ListForExport(ctx, limit)
@@ -74,7 +82,11 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		require.NoError(t, err)
 		got, err := proto.Marshal(export[0])
 		require.NoError(t, err)
-		require.Equal(t, string(original), string(got))
+		assert.Equal(t, string(original), string(got))
+
+		// Check second item's private meta is stripped
+		assert.NotNil(t, events[1].Parameters.PrivateMetadata) // original
+		assert.Nil(t, export[1].Parameters.PrivateMetadata)    // got
 	})
 
 	t.Run("before export: DeleteExported", func(t *testing.T) {

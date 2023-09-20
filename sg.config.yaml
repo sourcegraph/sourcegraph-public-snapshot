@@ -132,6 +132,8 @@ env:
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
   GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
 
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "http://127.0.0.1:10080"
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -311,6 +313,31 @@ commands:
       - lib
       - internal
       - cmd/cody-gateway
+
+  telemetry-gateway:
+    cmd: |
+      # Telemetry Gateway needs this to parse and validate incoming license keys.
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/telemetry-gateway
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
+    checkBinary: .bin/telemetry-gateway
+    env:
+      PORT: "10080"
+      DIAGNOSTICS_SECRET: sekret
+      TELEMETRY_GATEWAY_EVENTS_PUBSUB_ENABLED: false
+      SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: "127.0.0.1:6080"
+      GRPC_WEB_UI_ENABLED: true
+    watch:
+      - lib
+      - internal
+      - cmd/telemetry-gateway
+      - internal/telemetrygateway
 
   pings:
     cmd: |
@@ -1080,6 +1107,7 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
+      - telemetry-gateway
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -1118,6 +1146,7 @@ commandsets:
       - blobstore
       - cody-gateway
       - embeddings
+      - telemetry-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 

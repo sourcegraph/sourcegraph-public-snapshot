@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetrygateway",
+    srcs = [
+        "exporter.go",
+        "identifier.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes",
+        "//internal/env",
+        "//internal/grpc/chunk",
+        "//internal/grpc/defaults",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

@@ -6,17 +6,20 @@ package defaults
 
 import (
 	"context"
+	"crypto/tls"
 	"sync"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -46,6 +49,23 @@ const defaultGRPCMessageReceiveSizeBytes = 90 * 1024 * 1024 // 90 MB
 // **Note**: Do not append to this slice directly, instead provide extra options
 // via "additionalOptions".
 func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc.DialOption {
+	return defaultDialOptions(logger, insecure.NewCredentials(), additionalOptions...)
+}
+
+// ExternalDialOptions is a set of default dial options that should be used for
+// gRPC clients external to a Sourcegraph deployment, e.g. Telemetry Gateway,
+// along with any additional client-specific options. In particular, these
+// options enforce TLS.
+//
+// Traffic within a Sourcegraph deployment should use DialOptions instead.
+//
+// **Note**: Do not append to this slice directly, instead provide extra options
+// via "additionalOptions".
+func ExternalDialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc.DialOption {
+	return defaultDialOptions(logger, credentials.NewTLS(&tls.Config{}), additionalOptions...)
+}
+
+func defaultDialOptions(logger log.Logger, creds credentials.TransportCredentials, additionalOptions ...grpc.DialOption) []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
@@ -53,7 +73,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 	metrics := mustGetClientMetrics()
 
 	out := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(creds),
 		grpc.WithChainStreamInterceptor(
 			metrics.StreamClientInterceptor(),
 			messagesize.StreamClientInterceptor,

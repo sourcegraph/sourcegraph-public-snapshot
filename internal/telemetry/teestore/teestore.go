@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -19,20 +20,16 @@ import (
 // Store tees events into both the event_logs table and the new telemetry export
 // queue, translating the message into the existing event_logs format on a
 // best-effort basis.
-type Store interface {
-	StoreEvents(context.Context, []*telemetrygatewayv1.Event) error
-}
-
-type store struct {
+type Store struct {
 	exportQueue database.TelemetryEventsExportQueueStore
 	eventLogs   database.EventLogStore
 }
 
-func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) Store {
-	return &store{exportQueue, eventLogs}
+func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) *Store {
+	return &Store{exportQueue, eventLogs}
 }
 
-func (s *store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
+func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
 	// Write to both stores at the same time.
 	wg := pool.New().WithErrors()
 	wg.Go(func() error {
@@ -41,16 +38,20 @@ func (s *store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Ev
 		}
 		return nil
 	})
-	wg.Go(func() error {
-		if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
-			return errors.Wrap(err, "bulk inserting events logs")
-		}
-		return nil
-	})
+	if !shouldDisableV1(ctx) {
+		wg.Go(func() error {
+			if err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events)); err != nil {
+				return errors.Wrap(err, "bulk inserting events logs")
+			}
+			return nil
+		})
+	}
 	return wg.Wait()
 }
 
 func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Event) []*database.Event {
+	sensitiveMetadataAllowlist := sensitivemetadataallowlist.AllowedEventTypes()
+
 	eventLogs := make([]*database.Event, len(telemetryEvents))
 	for i, e := range telemetryEvents {
 		// Note that all generated proto getters are nil-safe, so use those to
@@ -60,7 +61,7 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 			InsertID: nil, // not required on insert
 
 			// Identifiers
-			Name: fmt.Sprintf("%s%s.%s", maybeSourceEventNamePrefix(e.GetSource()), e.GetFeature(), e.GetAction()),
+			Name: fmt.Sprintf("V2:%s.%s", e.GetFeature(), e.GetAction()),
 			Timestamp: func() time.Time {
 				if e.GetTimestamp() == nil {
 					return now()
@@ -91,6 +92,11 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 				if len(md) == 0 {
 					return nil
 				}
+
+				// Attach a simple indicator to denote if this metadata will
+				// be exported.
+				md["privateMetadata.export"] = sensitiveMetadataAllowlist.IsAllowed(e)
+
 				data, err := json.Marshal(md)
 				if err != nil {
 					data, _ = json.Marshal(map[string]string{"marshal.error": err.Error()})
@@ -141,11 +147,4 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 		}
 	}
 	return eventLogs
-}
-
-func maybeSourceEventNamePrefix(s *telemetrygatewayv1.EventSource) string {
-	if name := s.GetClient().GetName(); name != "" {
-		return name + ":"
-	}
-	return ""
 }

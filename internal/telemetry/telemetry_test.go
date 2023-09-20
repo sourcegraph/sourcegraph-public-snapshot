@@ -64,4 +64,17 @@ func TestRecorderEndToEnd(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, telemetryEvents, wantEvents)
 	})
+
+	t.Run("record without v1", func(t *testing.T) {
+		ctx := teestore.WithoutV1(ctx)
+		assert.NoError(t, recorder.Record(ctx, "Test", "Action1", telemetry.EventParameters{}))
+
+		telemetryEvents, err := db.TelemetryEventsExportQueue().ListForExport(ctx, 999)
+		require.NoError(t, err)
+		assert.Len(t, telemetryEvents, wantEvents+1)
+
+		eventLogs, err := db.EventLogs().ListAll(ctx, database.EventLogsListOptions{UserID: userID})
+		require.NoError(t, err)
+		assert.Len(t, eventLogs, wantEvents) // v1 unchanged
+	})
 }

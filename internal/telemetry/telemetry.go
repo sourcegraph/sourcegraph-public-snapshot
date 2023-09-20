@@ -7,8 +7,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
-
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
@@ -45,19 +43,28 @@ type EventParameters struct {
 	BillingMetadata *EventBillingMetadata
 }
 
+type EventsStore interface {
+	StoreEvents(context.Context, []*telemetrygatewayv1.Event) error
+}
+
 // EventRecorder is for creating and recording telemetry events in the backend
 // using Telemetry V2, which exports events to Sourcergraph.
-type EventRecorder struct{ teestore teestore.Store }
+type EventRecorder struct{ store EventsStore }
 
-// ❗ Experimental - do not use!
-func NewEventRecorder(store teestore.Store) *EventRecorder {
-	return &EventRecorder{teestore: store}
+// NewEventRecorder creates a custom event recorder backed by a store
+// implementation. In general, prefer to use the telemetryrecorder.New()
+// constructor instead.
+//
+// If you don't care about event recording failures, consider using a
+// BestEffortEventRecorder instead.
+func NewEventRecorder(store EventsStore) *EventRecorder {
+	return &EventRecorder{store: store}
 }
 
 // Record records a single telemetry event with the context's Sourcegraph
 // actor.
 func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters EventParameters) error {
-	return r.teestore.StoreEvents(ctx, []*telemetrygatewayv1.Event{
+	return r.store.StoreEvents(ctx, []*telemetrygatewayv1.Event{
 		newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, feature, action, parameters),
 	})
 }
@@ -72,5 +79,5 @@ func (r *EventRecorder) BatchRecord(ctx context.Context, events ...Event) error 
 	for i, e := range events {
 		rawEvents[i] = newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, e.Feature, e.Action, e.Parameters)
 	}
-	return r.teestore.StoreEvents(ctx, rawEvents)
+	return r.store.StoreEvents(ctx, rawEvents)
 }
