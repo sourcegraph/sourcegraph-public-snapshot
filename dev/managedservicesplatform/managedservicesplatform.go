@@ -75,7 +75,7 @@ func (r *Renderer) RenderEnvironment(
 		ProjectIDPrefix:       projectIDPrefix,
 		ProjectIDSuffixLength: svc.ProjectIDSuffixLength,
 
-		DisplayName: fmt.Sprintf("%s (%s)",
+		DisplayName: fmt.Sprintf("%s - %s",
 			pointers.Deref(svc.Name, svc.ID), env.ID),
 
 		Category: env.Category,
