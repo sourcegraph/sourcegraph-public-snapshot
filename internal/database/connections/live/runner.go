@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"database/sql"
+	"os"
 
 	"github.com/sourcegraph/log"
 
@@ -18,6 +19,7 @@ func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns map[string]strin
 }
 
 func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
+	var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "frontend")
@@ -33,13 +35,22 @@ func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[s
 		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			pending := out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", dsns[name]))
+			var pending output.Pending
+			if verbose {
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", dsns[name]))
+			} else {
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", "!!!Doom!!!"))
+			}
 			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
 				pending.Destroy()
 				return nil, err
 			}
-			pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", dsns[name]))
+			if verbose {
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", dsns[name]))
+			} else {
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", "!!!Doom!!!"))
+			}
 
 			return initStore(ctx, newStore, db, schema)
 		}
