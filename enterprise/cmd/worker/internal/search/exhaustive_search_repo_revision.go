@@ -63,6 +63,10 @@ func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.
 		return err
 	}
 
+	// TODO update GetQueryRepoRev to return the data we need.
+	//userID := record.InitiatorID
+	//ctx = actor.WithActor(ctx, actor.FromUser(userID))
+
 	q, err := h.newSearcher.NewSearch(ctx, query)
 	if err != nil {
 		return err

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
@@ -39,7 +40,10 @@ type newSearcherTestCase struct {
 func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher, tc newSearcherTestCase) {
 	assert := require.New(t)
 
-	searcher, err := newSearcher.NewSearch(ctx, tc.Query)
+	userID := int32(1)
+	ctx = actor.WithActor(ctx, actor.FromMockUser(userID))
+
+	searcher, err := newSearcher.NewSearch(ctx, userID, tc.Query)
 	assert.NoError(err)
 
 	// Test RepositoryRevSpecs
