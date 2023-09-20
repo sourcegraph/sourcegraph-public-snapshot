@@ -33,10 +33,6 @@ func NewRunnerWithSchemas(
 	}
 	if verbose {
 		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, " Connection DSNs used: %s", strings.Join(dsnsStrings, ", ")))
-	} else {
-		for schema := range dsns {
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, " Connecting to: %s", schema))
-		}
 	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {

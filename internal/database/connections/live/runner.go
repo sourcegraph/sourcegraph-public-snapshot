@@ -37,9 +37,9 @@ func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[s
 		return func(ctx context.Context) (runner.Store, error) {
 			var pending output.Pending
 			if verbose {
-				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", dsns[name]))
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s: %s", schema.Name, dsns[name]))
 			} else {
-				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", "!!!Doom!!!"))
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", schema.Name))
 			}
 			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
@@ -47,9 +47,9 @@ func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[s
 				return nil, err
 			}
 			if verbose {
-				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", dsns[name]))
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s: %s succeeded", schema.Name, dsns[name]))
 			} else {
-				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", "!!!Doom!!!"))
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", schema.Name))
 			}
 
 			return initStore(ctx, newStore, db, schema)
