@@ -13,7 +13,16 @@ interface DownloadFileButtonProps extends ButtonProps {
 }
 
 export const DownloadFileButton = forwardRef<HTMLButtonElement, DownloadFileButtonProps>((props, ref) => {
-    const { fileUrl, fileName, children, alwaysShowLabel = true, debounceTime = 0, onClick, ...attributes } = props
+    const {
+        fileUrl,
+        fileName,
+        children,
+        alwaysShowLabel = true,
+        debounceTime = 0,
+        disabled,
+        onClick,
+        ...attributes
+    } = props
 
     const [isLoading, setLoading] = useState(false)
 
@@ -45,7 +54,7 @@ export const DownloadFileButton = forwardRef<HTMLButtonElement, DownloadFileButt
             {...attributes}
             label={children}
             loading={isLoading}
-            disabled={isLoading}
+            disabled={isLoading || disabled}
             alwaysShowLabel={alwaysShowLabel}
             onClick={handleClick}
         />
