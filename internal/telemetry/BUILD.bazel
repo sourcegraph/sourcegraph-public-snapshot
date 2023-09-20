@@ -22,12 +22,12 @@ go_library(
 
 go_test(
     name = "telemetry_test",
-    tags = ["requires-network"],
     srcs = [
         "telemetry_test.go",
         "telemetrygateway_test.go",
     ],
     embed = [":telemetry"],
+    tags = ["requires-network"],
     deps = [
         "//internal/actor",
         "//internal/database",
