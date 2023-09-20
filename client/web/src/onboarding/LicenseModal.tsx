@@ -35,7 +35,7 @@ export const LicenseKeyModal: FC<LicenseKeyModalProps> = ({
     config,
     id,
     refetch,
-}): JSX.Element => {
+}) => {
     const navigate = useNavigate()
 
     const [isValid, setIsValid] = useState(false)
