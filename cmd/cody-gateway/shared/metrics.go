@@ -51,7 +51,7 @@ func maybeEnableMetrics(_ context.Context, logger log.Logger, config OpenTelemet
 			logger.Warn("error occurred force-flushing metrics", log.Error(err))
 		}
 		if err := provider.Shutdown(shutdownCtx); err != nil {
-			logger.Warn("error occured shutting down metrics", log.Error(err))
+			logger.Warn("error occurred shutting down metrics", log.Error(err))
 		}
 		logger.Info("metrics shut down", log.Duration("elapsed", time.Since(start)))
 	}, nil
