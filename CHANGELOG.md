@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
+## Unreleased 5.3.0 (planned release date: February, 2024)
+
 ## Unreleased 5.2.0 (planned release date: October 4, 2023)
 
 ### Added
@@ -37,7 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
 - The federation feature that could redirect users from their own Sourcegraph instance to public repositories on Sourcegraph.com has been removed. It allowed users to open a repository URL on their own Sourcegraph instance and, if the repository wasn't found on that instance, the user would be redirect to the repository on Sourcegraph.com, where it was possibly found. The feature has been broken for over a year though and we don't know that it was used. If you want to use it, please open a feature-request issue and tag the `@sourcegraph/source` team. [#55161](https://github.com/sourcegraph/sourcegraph/pull/55161)
 
-## Unreleased 5.1.9 (planned release date: September 20, 2023)
+## 5.1.9
 
 ### Added
 
