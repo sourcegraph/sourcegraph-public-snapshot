@@ -111,13 +111,19 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
 
+			// TODO: Investigate using actor propagation handler for extracting
+			// this. We had some issues before getting that to work, so for now
+			// just stick with what we've seen working so far.
+			sgActorID := r.Header.Get("X-Sourcegraph-Actor-UID")
+			sgActorAnonymousUID := r.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")
+
 			// Build logger for lifecycle of this request with lots of details.
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger)).With(
 				append(
 					requestclient.FromContext(r.Context()).LogFields(),
 					// Sourcegraph actor details
-					log.String("sg.actorID", r.Header.Get("X-Sourcegraph-Actor-UID")),
-					log.String("sg.anonymousID", r.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")),
+					log.String("sg.actorID", sgActorID),
+					log.String("sg.anonymousID", sgActorAnonymousUID),
 				)...,
 			)
 
@@ -246,6 +252,10 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
 							"upstream_status_code":         upstreamStatusCode,
 							"resolved_status_code":         resolvedStatusCode,
+
+							// Actor details, specific to the actor Source
+							"sg_actor_id":            sgActorID,
+							"sg_actor_anonymous_uid": sgActorAnonymousUID,
 						}),
 					},
 				)
