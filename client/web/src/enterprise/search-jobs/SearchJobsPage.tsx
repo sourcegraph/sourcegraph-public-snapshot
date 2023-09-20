@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react'
+import { type FC, useMemo, useState } from 'react'
 
 import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
@@ -39,11 +39,11 @@ import { usePageSwitcherPagination } from '../../components/FilteredConnection/h
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
-import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
+import type { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
 import { SearchJobBadge } from './SearchJobBadge/SearchJobBadge'
 import { CancelSearchJobModal, RerunSearchJobModal, SearchJobDeleteModal } from './SearchJobModal/SearchJobModal'
-import { User, UsersPicker } from './UsersPicker'
+import { type User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
 
@@ -335,19 +335,19 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </span>
             )}
 
-            <span className={styles.jobActions}>
-                <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
-                    <DownloadFileButton
-                        variant="link"
-                        disabled={!job.logURL}
-                        fileUrl={job.logURL ?? ''}
-                        debounceTime={1000}
-                        className={styles.jobViewLogs}
-                    >
-                        View logs
-                    </DownloadFileButton>
-                </Tooltip>
+            <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
+                <DownloadFileButton
+                    variant="link"
+                    disabled={!job.logURL}
+                    fileUrl={job.logURL ?? ''}
+                    debounceTime={1000}
+                    className={styles.jobViewLogs}
+                >
+                    View logs
+                </DownloadFileButton>
+            </Tooltip>
 
+            <span className={styles.jobActions}>
                 <Tooltip content="Rerun search job">
                     <Button
                         variant="secondary"

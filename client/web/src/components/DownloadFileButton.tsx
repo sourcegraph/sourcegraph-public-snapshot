@@ -1,4 +1,4 @@
-import { forwardRef, type MouseEvent, ReactNode, useState } from 'react'
+import { forwardRef, type MouseEvent, type ReactNode, useState } from 'react'
 
 import type { ButtonProps } from '@sourcegraph/wildcard'
 
@@ -64,7 +64,7 @@ function syntheticDownload(url: string, name: string): void {
 }
 
 function getHeaderFileName(disposition: string): string | null {
-    const utf8FilenameRegex = /filename\*=UTF-8''([\w%\-\.]+)(?:; ?|$)/i
+    const utf8FilenameRegex = /filename\*=utf-8''([\w%.]+)(?:; ?|$)/i
     const asciiFilenameRegex = /^filename=(["']?)(.*?[^\\])\1(?:; ?|$)/i
 
     let fileName = null
@@ -77,7 +77,7 @@ function getHeaderFileName(disposition: string): string | null {
         if (filenameStart >= 0) {
             const partialDisposition = disposition.slice(filenameStart)
             const matches = asciiFilenameRegex.exec(partialDisposition)
-            if (matches != null && matches[2]) {
+            if (matches?.[2]) {
                 fileName = matches[2]
             }
         }
