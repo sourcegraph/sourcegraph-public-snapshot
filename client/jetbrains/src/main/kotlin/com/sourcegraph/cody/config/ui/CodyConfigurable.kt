@@ -25,7 +25,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
       lateinit var enableCodyCheckbox: Cell<JBCheckBox>
-      group("Cody AI") {
+      group("Cody") {
         row {
           enableCodyCheckbox =
               checkBox("Enable Cody")
