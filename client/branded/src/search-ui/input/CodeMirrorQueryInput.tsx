@@ -44,14 +44,6 @@ export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
     }
 
     /**
-     * If set suggestions can be applied by pressing enter. In the past we
-     * didn't enable this behavior because it interfered with loading
-     * suggestions asynchronously, but CodeMirror allows us to disable selecting
-     * a suggestion by default. This is currently an experimental feature.
-     */
-    applySuggestionsOnEnter?: boolean
-
-    /**
      * When provided the query input will allow the user to "cycle" through the
      * serach history by pressing arrow up/down when the input is empty.
      */
@@ -95,8 +87,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     ariaInvalid,
     ariaBusy,
     tabIndex = 0,
-    // CodeMirror implementation specific options
-    applySuggestionsOnEnter = false,
     searchHistory,
     onSelectSearchFromHistory,
     // Used by the VSCode extension (which doesn't use this component directly,
@@ -129,9 +119,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 isSourcegraphDotCom,
                 navigate,
-                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, navigate, applySuggestionsOnEnter, fetchStreamSuggestions, selectedSearchContextSpec]
+        [isSourcegraphDotCom, navigate, fetchStreamSuggestions, selectedSearchContextSpec]
     )
 
     const extensions = useMemo(() => {

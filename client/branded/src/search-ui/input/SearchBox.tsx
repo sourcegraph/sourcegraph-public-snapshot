@@ -33,13 +33,7 @@ export interface SearchBoxProps
         PlatformContextProps<'requestGraphQL'>,
         Pick<
             LazyQueryInputProps,
-            | 'autoFocus'
-            | 'onFocus'
-            | 'onSubmit'
-            | 'interpretComments'
-            | 'onChange'
-            | 'onCompletionItemSelected'
-            | 'applySuggestionsOnEnter'
+            'autoFocus' | 'onFocus' | 'onSubmit' | 'interpretComments' | 'onChange' | 'onCompletionItemSelected'
         > {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
@@ -194,7 +188,6 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         patternType={props.patternType}
                         queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
                     />
