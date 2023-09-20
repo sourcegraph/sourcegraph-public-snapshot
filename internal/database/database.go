@@ -64,6 +64,7 @@ type DB interface {
 	Settings() SettingsStore
 	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
+	TelemetryEventsExportQueue() TelemetryEventsExportQueueStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
@@ -299,6 +300,13 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
 	return TemporarySettingsWith(d.Store)
+}
+
+func (d *db) TelemetryEventsExportQueue() TelemetryEventsExportQueueStore {
+	return TelemetryEventsExportQueueWith(
+		d.logger.Scoped("telemetry_events", "telemetry events export queue store"),
+		d.Store,
+	)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {

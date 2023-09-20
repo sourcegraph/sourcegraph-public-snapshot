@@ -136,7 +136,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
     const debouncedSearchTerm = useDebounce(searchTerm, 500)
 
-    const { connection, error, loading, ...paginationProps } = usePageSwitcherPagination<
+    const { connection, error, loading, refetch, ...paginationProps } = usePageSwitcherPagination<
         SearchJobsResult,
         SearchJobsVariables,
         SearchJobNode
@@ -159,6 +159,11 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
             return data?.searchJobs
         },
     })
+
+    const handleSearchJobCreate = (): void => {
+        setJobToRestart(null)
+        refetch()
+    }
 
     // Render only non-selected filters and filters that match with search term value
     const suggestions = SEARCH_JOB_STATES.filter(
@@ -278,7 +283,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
             </Container>
 
             {jobToDelete && <SearchJobDeleteModal searchJob={jobToDelete} onDismiss={() => setJobToDelete(null)} />}
-            {jobToRestart && <RerunSearchJobModal searchJob={jobToRestart} onDismiss={() => setJobToRestart(null)} />}
+            {jobToRestart && <RerunSearchJobModal searchJob={jobToRestart} onDismiss={handleSearchJobCreate} />}
             {jobToCancel && <CancelSearchJobModal searchJob={jobToCancel} onDismiss={() => setJobToCancel(null)} />}
         </Page>
     )

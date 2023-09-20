@@ -40,7 +40,7 @@ func setEvaluatedFlagToCache(a *actor.Actor, flagName string, value bool) {
 		return
 	}
 
-	evalStore.HSet(getFlagCacheKey(flagName), visitorID, strconv.FormatBool(value))
+	_ = evalStore.HSet(getFlagCacheKey(flagName), visitorID, strconv.FormatBool(value))
 }
 
 func getVisitorIDForActor(a *actor.Actor) (string, error) {

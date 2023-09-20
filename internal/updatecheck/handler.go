@@ -136,7 +136,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseW
 		return
 	}
 
-	// Sourcegraph App: We always send back a ping response (rather than StatusNoContent) because
+	// Cody App: We always send back a ping response (rather than StatusNoContent) because
 	// the user's instance may have unseen notification messages.
 	if deploy.IsDeployTypeApp(pr.DeployType) {
 		if hasUpdate {
@@ -213,7 +213,7 @@ type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
 	DeployType           string          `json:"deployType"`
-	Os                   string          `json:"os,omitempty"` // Only used in Sourcegraph App
+	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
 	DependencyVersions   json.RawMessage `json:"dependencyVersions,omitempty"`
 	AuthProviders        []string        `json:"auth,omitempty"`
@@ -250,11 +250,11 @@ type pingRequest struct {
 	TosAccepted                   bool            `json:"tosAccepted,omitempty"`
 	TotalUsers                    int32           `json:"totalUsers,omitempty"`
 	TotalOrgs                     int32           `json:"totalOrgs,omitempty"`
-	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Sourcegraph App
+	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Cody App
 	HasRepos                      bool            `json:"repos,omitempty"`
 	EverSearched                  bool            `json:"searched,omitempty"`
 	EverFindRefs                  bool            `json:"refs,omitempty"`
-	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
+	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`

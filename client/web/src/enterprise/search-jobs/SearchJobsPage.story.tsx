@@ -33,8 +33,10 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
     request: {
         query: getDocumentNode(SEARCH_JOBS_QUERY),
         variables: {
-            first: 20,
+            first: 15,
             after: null,
+            last: null,
+            before: null,
             query: '',
             userIDs: [],
             states: [],
@@ -173,6 +175,8 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                     __typename: 'PageInfo',
                     hasNextPage: false,
                     endCursor: null,
+                    startCursor: null,
+                    hasPreviousPage: false,
                 },
             },
         },

@@ -16,7 +16,7 @@ go_build() {
     echo "--- :chrome: Building web"
     # esbuild is faster
     pnpm install
-    NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 DEV_WEB_BUILDER=esbuild pnpm run build-web
+    NODE_ENV=production ENTERPRISE=1 CODY_APP=1 DEV_WEB_BUILDER=esbuild pnpm run build-web
   fi
 
   export GO111MODULE=on

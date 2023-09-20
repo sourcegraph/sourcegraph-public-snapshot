@@ -442,7 +442,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-// Create a ping body with limited fields, used in Sourcegraph App.
+// Create a ping body with limited fields, used in Cody App.
 func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	logFunc := logger.Debug
 
@@ -792,7 +792,7 @@ func check(logger log.Logger, db database.DB) {
 	defer cancel()
 
 	updateBodyFunc := updateBody
-	// In Sourcegraph App mode, use limited pings.
+	// In Cody App mode, use limited pings.
 	if deploy.IsApp() {
 		updateBodyFunc = limitedUpdateBody
 	}
@@ -842,7 +842,7 @@ func check(logger log.Logger, db database.DB) {
 			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
 		}
 
-		// Sourcegraph App: we always get ping responses back, as they may contain notification messages for us.
+		// Cody App: we always get ping responses back, as they may contain notification messages for us.
 		if deploy.IsApp() {
 			var response pingResponse
 			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
