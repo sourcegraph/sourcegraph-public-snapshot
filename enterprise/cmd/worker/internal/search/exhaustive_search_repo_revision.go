@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -58,16 +59,14 @@ type exhaustiveSearchRepoRevHandler struct {
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
-	jobID, query, repoRev, err := h.store.GetQueryRepoRev(ctx, record)
+	jobID, query, repoRev, initiatorID, err := h.store.GetQueryRepoRev(ctx, record)
 	if err != nil {
 		return err
 	}
 
-	// TODO update GetQueryRepoRev to return the data we need.
-	//userID := record.InitiatorID
-	//ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	ctx = actor.WithActor(ctx, actor.FromUser(initiatorID))
 
-	q, err := h.newSearcher.NewSearch(ctx, query)
+	q, err := h.newSearcher.NewSearch(ctx, initiatorID, query)
 	if err != nil {
 		return err
 	}
