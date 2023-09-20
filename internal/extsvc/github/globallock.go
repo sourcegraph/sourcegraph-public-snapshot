@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
@@ -63,7 +64,14 @@ func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *ht
 		metricFailedLockRequestsGauge.Inc()
 		// Note that we do NOT fail the request here, this lock is considered best
 		// effort.
-		logger.Error("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+		//
+		// We log a warning if the error is ErrTaken, since this can happen from time to time.
+		// Otherwise we log an error.
+		if errors.HasType(err, &redsync.ErrTaken{}) {
+			logger.Warn("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+		} else {
+			logger.Error("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+		}
 	} else {
 		didGetLock = true
 	}
