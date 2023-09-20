@@ -26,11 +26,23 @@ service TelemeteryGatewayService {
   rpc RecordEvents(stream RecordEventsRequest) returns (stream RecordEventsResponse) {}
 }
 
+message Identifier {
+  message LicensedInstanceIdentifier {
+    // License key configured in the Sourcegraph instance emitting the event.
+    string license_key = 1;
+  }
+
+  oneof identifier {
+    // A licensed Sourcegraph instance.
+    LicensedInstanceIdentifier licensed_instance = 1;
+  }
+}
+
 message RecordEventsRequestMetadata {
   // Client-provided request identifier for diagnostics purposes.
   string request_id = 1;
-  // License key configured in the Sourcegraph instance emitting the event.
-  string license_key = 2;
+  // Telemetry source self-identification.
+  Identifier identifier = 2;
 }
 
 message RecordEventsRequest {
