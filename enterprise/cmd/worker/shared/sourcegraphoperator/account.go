@@ -11,6 +11,7 @@ import (
 
 type ExternalAccountData struct {
 	ServiceAccount bool `json:"serviceAccount"`
+	DemoteAdmin    bool `json:"demoteAdmin"`
 }
 
 // GetAccountData parses account data and retrieves SOAP external account data.

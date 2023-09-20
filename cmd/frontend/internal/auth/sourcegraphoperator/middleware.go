@@ -16,6 +16,7 @@ import (
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -203,6 +204,13 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
 					return
 				}
+
+				// TODO: Get the SOAP external account, but i kinda forgot whether the external account would be created before or after this callback handler
+				var soapExternalAccount *extsvc.Account
+				accountData, err := sourcegraphoperator.MarshalAccountData(sourcegraphoperator.ExternalAccountData{DemoteAdmin: true})
+				// todo handle error
+				_, err = db.UserExternalAccounts().LookupUserAndSave(r.Context(), soapExternalAccount.AccountSpec, accountData)
+				// todo handle error
 			}
 
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid the open-redirect vulnerability.
