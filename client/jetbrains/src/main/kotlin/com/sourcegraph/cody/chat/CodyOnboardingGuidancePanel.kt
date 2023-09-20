@@ -13,20 +13,28 @@ import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import java.awt.BorderLayout
 import java.awt.Dimension
+import java.awt.event.ActionListener
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.Icon
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import javax.swing.text.html.HTMLEditorKit
+import org.apache.commons.lang3.StringUtils
 
-class CodyOnboardingGuidancePanel : JPanel() {
+class CodyOnboardingGuidancePanel(displayName: String?) : JPanel() {
+
+  private val userDisplayName: String? = displayName?.let { truncateDisplayName(it) }
+
+  private val mainButton: JButton = createMainButton("Get started")
+
   init {
     val introductionMessage =
         createIntroductionMessage(
             buildString {
-              append("<html><body><h2>Hi</h2>")
+              append("<html><body><h2>${createGreetings()}</h2>")
               append(
                   "<p>Let's start by getting you familiar with all the possibilities Cody provides:</p>")
               append("</body></html>")
@@ -80,6 +88,13 @@ class CodyOnboardingGuidancePanel : JPanel() {
     this.add(buttonPanel)
   }
 
+  private fun createGreetings(): String {
+    if (!userDisplayName.isNullOrEmpty()) {
+      return "Hi, $userDisplayName"
+    }
+    return "Hi"
+  }
+
   private fun createIntroductionMessage(introductionMessageText: String): JEditorPane {
     val introductionMessage = createHtmlViewer(UIUtil.getPanelBackground())
     val introductionMessageEditorKit = introductionMessage.editorKit as HTMLEditorKit
@@ -92,12 +107,11 @@ class CodyOnboardingGuidancePanel : JPanel() {
 
   private fun createGetStartedButton(): JPanel {
     val buttonPanel = JPanel(BorderLayout())
-    val button = createMainButton("Get started")
-    button.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-    button.addActionListener {
+    mainButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+    mainButton.addActionListener {
       CodyApplicationSettings.getInstance().isOnboardingGuidanceDismissed = true
     }
-    buttonPanel.add(button, BorderLayout.NORTH)
+    buttonPanel.add(mainButton, BorderLayout.NORTH)
     buttonPanel.border = BorderFactory.createEmptyBorder(PADDING, 0, 0, 0)
     return buttonPanel
   }
@@ -135,6 +149,17 @@ class CodyOnboardingGuidancePanel : JPanel() {
     sectionInfoHtmlEditorKit.styleSheet.addRule(paragraphColorStyle)
     sectionInfoHtmlEditorKit.styleSheet.addRule("""h3 { margin-top: 0;}""")
     return sectionInfo
+  }
+
+  private fun truncateDisplayName(displayName: String): String {
+    if (displayName.length > 32) {
+      return StringUtils.truncate(displayName, 32) + "..."
+    }
+    return displayName
+  }
+
+  fun addMainButtonActionListener(actionListener: ActionListener) {
+    mainButton.addActionListener(actionListener)
   }
 
   companion object {

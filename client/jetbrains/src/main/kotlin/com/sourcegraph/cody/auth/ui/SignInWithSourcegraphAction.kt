@@ -23,7 +23,7 @@ class SignInWithSourcegraphAction(private val defaultServer: String = ConfigUtil
 
     dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
-      accountsHost.addAccount(dialog.server, dialog.login, dialog.token)
+      accountsHost.addAccount(dialog.server, dialog.login, dialog.displayName, dialog.token)
       if (project != null && ConfigUtil.isCodyEnabled()) {
         // Notify Cody Agent about config changes.
         CodyAgent.getServer(project)

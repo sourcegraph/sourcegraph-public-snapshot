@@ -64,6 +64,7 @@ class SignInWithSourcegraphPanel : JPanel() {
   fun addMainButtonActionListener(actionListener: ActionListener) {
     mainButton.addActionListener(actionListener)
   }
+
   private fun createPanelWithSignInWithAnEnterpriseInstance(): JPanel {
     val signInWithAnEnterpriseInstance: AnActionLink =
         UnderlinedActionLink("Sign in with an Enterprise Instance", SignInWithSourcegraphAction(""))

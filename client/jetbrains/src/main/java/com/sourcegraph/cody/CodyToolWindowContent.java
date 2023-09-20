@@ -44,6 +44,7 @@ import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.context.ContextMessage;
@@ -71,6 +72,9 @@ import org.jetbrains.builtInWebServer.BuiltInServerOptions;
 
 public class CodyToolWindowContent implements UpdatableChat {
   public static final String ONBOARDING_PANEL = "onboardingPanel";
+  public static final int CHAT_PANEL_INDEX = 0;
+  public static final int SIGN_IN_PANEL_INDEX = 1;
+  public static final int ONBOARDING_PANEL_INDEX = 2;
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   public static final String SING_IN_WITH_SOURCEGRAPH_PANEL = "singInWithSourcegraphPanel";
   private static final int CHAT_TAB_INDEX = 0;
@@ -190,10 +194,9 @@ public class CodyToolWindowContent implements UpdatableChat {
                   + port);
           updateVisibilityOfContentPanels();
         });
-    JPanel onboardingPanel = createOnboardingPanel();
-    allContentPanel.add(tabbedPane, "tabbedPane");
-    allContentPanel.add(singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
-    allContentPanel.add(onboardingPanel, ONBOARDING_PANEL);
+    allContentPanel.add(tabbedPane, "tabbedPane", CHAT_PANEL_INDEX);
+    allContentPanel.add(
+        singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL, SIGN_IN_PANEL_INDEX);
     allContentLayout.show(allContentPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
     updateVisibilityOfContentPanels();
     // Add welcome message
@@ -309,7 +312,20 @@ public class CodyToolWindowContent implements UpdatableChat {
       isChatVisible = false;
       return;
     }
+    CodyAccount activeAccount = codyAuthenticationManager.getActiveAccount(project);
     if (!CodyApplicationSettings.getInstance().isOnboardingGuidanceDismissed()) {
+      String displayName =
+          Optional.ofNullable(activeAccount).map(CodyAccount::getDisplayName).orElse(null);
+      CodyOnboardingGuidancePanel codyOnboardingGuidancePanel =
+          new CodyOnboardingGuidancePanel(displayName);
+      codyOnboardingGuidancePanel.addMainButtonActionListener(
+          e -> updateVisibilityOfContentPanels());
+      try {
+        allContentPanel.remove(ONBOARDING_PANEL_INDEX);
+      } catch (Throwable ex) {
+        // ignore because panel was not created before
+      }
+      allContentPanel.add(codyOnboardingGuidancePanel, ONBOARDING_PANEL, ONBOARDING_PANEL_INDEX);
       allContentLayout.show(allContentPanel, ONBOARDING_PANEL);
       isChatVisible = false;
       return;
@@ -327,11 +343,6 @@ public class CodyToolWindowContent implements UpdatableChat {
       allContentLayout.show(allContentPanel, "tabbedPane");
       isChatVisible = true;
     }
-  }
-
-  @RequiresEdt
-  private @NotNull JPanel createOnboardingPanel() {
-    return new CodyOnboardingGuidancePanel();
   }
 
   @NotNull

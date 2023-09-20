@@ -64,16 +64,20 @@ class SaveAccessTokenHttpService : RestService() {
     val project = getLastFocusedOrOpenedProject() ?: return
     val accountsHost = CodyPersistentAccountsHost(project)
     runCatching {
-          CodyTokenCredentialsUi.acquireLogin(
+          CodyTokenCredentialsUi.acquireDetails(
               sourcegraphServerPath,
               executor,
               emptyProgressIndicator,
               { login, server -> accountsHost.isAccountUnique(login, server) },
               null)
         }
-        .fold({ login ->
+        .fold({ accountDetails ->
           // Save account with login and token
-          accountsHost.addAccount(sourcegraphServerPath, login, accessToken)
+          accountsHost.addAccount(
+              sourcegraphServerPath,
+              accountDetails.username,
+              accountDetails.displayName,
+              accessToken)
           CodyAgent.getServer(project)
               ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
         }) {

@@ -40,5 +40,6 @@ private fun CodyLoginRequest.configure(dialog: BaseLoginDialog) {
 
 private fun BaseLoginDialog.getAuthData(): CodyAuthData? {
   DialogManager.show(this)
-  return if (isOK) CodyAuthData(CodyAccount.create(login, server), login, token) else null
+  return if (isOK) CodyAuthData(CodyAccount.create(login, displayName, server), login, token)
+  else null
 }
