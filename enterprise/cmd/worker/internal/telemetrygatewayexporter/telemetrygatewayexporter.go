@@ -24,6 +24,8 @@ type config struct {
 	MaxExportBatchSize int
 
 	ExportedEventsRetentionWindow time.Duration
+
+	QueueCleanupInterval time.Duration
 }
 
 var ConfigInst = &config{}
@@ -34,11 +36,16 @@ func (c *config) Load() {
 	// 'https://telemetry-gateway.sourcegraph.com', and eventually, won't be configurable.
 	c.ExportAddress = env.Get("TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR", "", "Target Telemetry Gateway address")
 
-	c.ExportInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL", 10*time.Minute, "Interval at which to export telemetry")
-	c.MaxExportBatchSize = env.MustGetInt("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE", 5000, "Maximum number of events to export in each batch")
+	c.ExportInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL", 10*time.Minute,
+		"Interval at which to export telemetry")
+	c.MaxExportBatchSize = env.MustGetInt("TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE", 5000,
+		"Maximum number of events to export in each batch")
 
 	c.ExportedEventsRetentionWindow = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION",
 		2*24*time.Hour, "Duration to retain already-exported telemetry events before deleting")
+
+	c.QueueCleanupInterval = env.MustGetDuration("TELEMETRY_GATEWAY_EXPORTER_QUEUE_CLEANUP_INTERVAL",
+		1*time.Hour, "Interval at which to clean up telemetry export queue")
 }
 
 type telemetryGatewayExporter struct{}

@@ -35,7 +35,7 @@ func newQueueCleanupJob(store database.TelemetryEventsExportQueueStore, cfg conf
 		job,
 		goroutine.WithName("telemetrygatewayexporter.queue_cleanup"),
 		goroutine.WithDescription("telemetrygatewayexporter queue cleanup"),
-		goroutine.WithInterval(1*time.Hour),
+		goroutine.WithInterval(cfg.QueueCleanupInterval),
 	)
 }
 
