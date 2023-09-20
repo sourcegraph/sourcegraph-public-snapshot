@@ -8657,6 +8657,16 @@ type GitUpdatesDisabled {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when the disk threshold for gitserver is reached.
+"""
+type GitserverDiskThresholdReached {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when there are no repositories and no sync jobs in process
 """
 type NoRepositoriesDetected {
@@ -8728,6 +8738,7 @@ union StatusMessage =
     | ExternalServiceSyncError
     | SyncError
     | IndexingProgress
+    | GitserverDiskThresholdReached
 
 """
 An arbitrarily large integer encoded as a decimal string.

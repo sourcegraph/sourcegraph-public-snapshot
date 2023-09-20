@@ -2603,6 +2603,8 @@ type SiteConfiguration struct {
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GitserverDiskUsageWarningThreshold description: Disk usage threshold at which to display warning notification. Value is a percentage.
+	GitserverDiskUsageWarningThreshold *int `json:"gitserver.diskUsageWarningThreshold,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
@@ -2821,6 +2823,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
+	delete(m, "gitserver.diskUsageWarningThreshold")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")
