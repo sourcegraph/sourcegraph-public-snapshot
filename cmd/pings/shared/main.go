@@ -36,8 +36,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	server := httpserver.NewFromAddr(
 		addr,
 		&http.Server{
-			ReadTimeout:  75 * time.Second,
-			WriteTimeout: 2 * time.Minute,
+			ReadTimeout:  time.Minute,
+			WriteTimeout: time.Minute,
 			Handler:      serverHandler,
 		},
 	)
