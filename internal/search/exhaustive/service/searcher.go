@@ -58,13 +58,6 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 	})
 }
 
-// TODO maybe reuse for the fake
-type newSearcherFunc func(context.Context, int32, string) (SearchQuery, error)
-
-func (f newSearcherFunc) NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
-	return f(ctx, userID, q)
-}
-
 type searchQuery struct {
 	userID     int32
 	exhaustive jobutil.Exhaustive

@@ -236,12 +236,16 @@ func (c *BlobstoreCSVWriter) Close() error {
 //	- ResolveRepositoryRevSpec returns the repoRevs for that repository.
 //	- Search will write one result which is just the repo and revision.
 func NewSearcherFake() NewSearcher {
-	return backendFake{}
+	return newSearcherFunc(fakeNewSearch)
 }
 
-type backendFake struct{}
+type newSearcherFunc func(context.Context, int32, string) (SearchQuery, error)
 
-func (backendFake) NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
+func (f newSearcherFunc) NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
+	return f(ctx, userID, q)
+}
+
+func fakeNewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
 	if err := isSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
