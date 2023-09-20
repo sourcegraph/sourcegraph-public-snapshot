@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -77,18 +78,24 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 
 			metadata := msg.GetMetadata()
 			logger = logger.With(log.String("request_id", metadata.GetRequestId()))
-			if metadata.GetLicenseKey() == "" {
-				return status.Error(codes.InvalidArgument, "metadata missing license key")
+
+			// Validate self-reported instance identifier
+			switch metadata.GetIdentifier().Identifier.(type) {
+			case *telemetrygatewayv1.Identifier_LicensedInstance:
+				licenseKey := metadata.Identifier.GetLicensedInstance().GetLicenseKey()
+				licenseInfo, _, err := licensing.ParseProductLicenseKey(licenseKey)
+				if err != nil {
+					return status.Errorf(codes.InvalidArgument, "invalid license key: %s", err)
+				}
+				logger.Info("handling events submission stream for licensed instance",
+					log.Stringp("license.salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
+					log.Stringp("license.salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
+
+			default:
+				logger.Error("unknown identifier type",
+					log.String("type", fmt.Sprintf("%T", metadata.Identifier.Identifier)))
+				return status.Error(codes.Unimplemented, "unsupported identifier type")
 			}
-			// TODO: Should we include this on events? Should we really validate
-			// the key, or just get the metadata?
-			licenseInfo, _, err := licensing.ParseProductLicenseKey(metadata.GetLicenseKey())
-			if err != nil {
-				return status.Errorf(codes.InvalidArgument, "invalid license key: %s", err)
-			}
-			logger.Info("handling events submission stream",
-				log.Stringp("license.salesforceOpportunityID", licenseInfo.SalesforceOpportunityID),
-				log.Stringp("license.salesforceSubscriptionID", licenseInfo.SalesforceSubscriptionID))
 
 			// Set up a publisher with the provided metadata
 			publisher, err = events.NewPublisherForStream(s.eventsTopic, metadata)

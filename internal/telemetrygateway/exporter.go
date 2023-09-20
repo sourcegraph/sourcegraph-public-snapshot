@@ -66,6 +66,12 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 	tr, ctx := trace.New(ctx, "ExportEvents", attribute.Int("events", len(events)))
 	defer tr.End()
 
+	identifier, err := newIdentifier(e.conf)
+	if err != nil {
+		tr.SetError(err)
+		return nil, err
+	}
+
 	var requestID string
 	if tr.IsRecording() {
 		requestID = tr.SpanContext().TraceID().String()
@@ -73,7 +79,7 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 		requestID = uuid.NewString()
 	}
 
-	succeeded, err := e.doExportEvents(ctx, requestID, events)
+	succeeded, err := e.doExportEvents(ctx, requestID, identifier, events)
 	if err != nil {
 		tr.SetError(err)
 		// Surface request ID to help us correlate log entries more easily on
@@ -86,7 +92,12 @@ func (e *exporter) ExportEvents(ctx context.Context, events []*telemetrygatewayv
 
 // doExportEvents makes it easier for us to wrap all errors in our request ID
 // for ease of investigating failures.
-func (e *exporter) doExportEvents(ctx context.Context, requestID string, events []*telemetrygatewayv1.Event) ([]string, error) {
+func (e *exporter) doExportEvents(
+	ctx context.Context,
+	requestID string,
+	identifier *telemetrygatewayv1.Identifier,
+	events []*telemetrygatewayv1.Event,
+) ([]string, error) {
 	// Start the stream
 	stream, err := e.client.RecordEvents(ctx)
 	if err != nil {
@@ -98,7 +109,7 @@ func (e *exporter) doExportEvents(ctx context.Context, requestID string, events 
 		Payload: &telemetrygatewayv1.RecordEventsRequest_Metadata{
 			Metadata: &telemetrygatewayv1.RecordEventsRequestMetadata{
 				RequestId:  requestID,
-				LicenseKey: e.conf.SiteConfig().LicenseKey,
+				Identifier: identifier,
 			},
 		},
 	}); err != nil {
