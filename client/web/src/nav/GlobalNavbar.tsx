@@ -31,6 +31,7 @@ import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
+import { OnboardingChecklist } from '../onboarding'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
@@ -155,6 +156,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
+    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
     const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isCodyApp
@@ -326,9 +328,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && !isCodyApp && (
-                        <NavAction>
-                            <StatusMessagesNavItem isCodyApp={isCodyApp} />
-                        </NavAction>
+                        <>
+                            {isAdminOnboardingEnabled && (
+                                <NavAction>
+                                    <OnboardingChecklist />
+                                </NavAction>
+                            )}
+                            <NavAction>
+                                <StatusMessagesNavItem isCodyApp={isCodyApp} />
+                            </NavAction>
+                        </>
                     )}
                     {!props.authenticatedUser ? (
                         <>
