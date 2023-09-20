@@ -50,7 +50,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 	// Mocks
 	gitlabMock := newMockGitLab(mockGitLabOp{
 		t: t,
-		users: []*gitlab.User{
+		users: []*gitlab.AuthUser{
 			{
 				ID:       101,
 				Username: "b.l",

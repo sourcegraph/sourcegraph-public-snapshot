@@ -16,7 +16,7 @@ type SearchJobsResolver interface {
 	DeleteSearchJob(ctx context.Context, args *DeleteSearchJobArgs) (*EmptyResponse, error)
 
 	// Queries
-	SearchJobs(ctx context.Context, args *SearchJobsArgs) (SearchJobsConnectionResolver, error)
+	SearchJobs(ctx context.Context, args *SearchJobsArgs) (*graphqlutil.ConnectionResolver[SearchJobResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -44,6 +44,7 @@ type SearchJobResolver interface {
 	StartedAt(ctx context.Context) *gqlutil.DateTime
 	FinishedAt(ctx context.Context) *gqlutil.DateTime
 	URL(ctx context.Context) (*string, error)
+	LogURL(ctx context.Context) (*string, error)
 	RepoStats(ctx context.Context) (SearchJobStatsResolver, error)
 }
 
@@ -81,12 +82,12 @@ type SearchJobArgs struct {
 }
 
 type SearchJobsArgs struct {
-	First      int32
-	After      *string
+	graphqlutil.ConnectionResolverArgs
 	Query      *string
 	States     *[]string
 	OrderBy    string
 	Descending bool
+	UserIDs    *[]graphql.ID
 }
 
 type SearchJobsConnectionResolver interface {

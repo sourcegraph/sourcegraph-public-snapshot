@@ -1,67 +1,37 @@
-import { memo } from 'react'
+import { type FC, memo } from 'react'
 
 import { withFeatureFlag } from '../featureFlags/withFeatureFlag'
 
 import { Tour, type TourProps } from './components/Tour/Tour'
 import { TourInfo } from './components/Tour/TourInfo'
 import { withErrorBoundary } from './components/withErrorBoundary'
-import {
-    authenticatedExtraTask,
-    authenticatedTasks,
-    visitorsTasks,
-    visitorsTasksWithNotebook,
-    visitorsTasksWithNotebookExtraTask,
-} from './data'
+import { authenticatedExtraTask, useOnboardingTasks } from './data'
 
-function TourVisitorWithNotebook(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
+const GatedTour = withFeatureFlag('end-user-onboarding', Tour)
+
+type TourWrapperProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id' | 'defaultSnippets'>
+
+const TourWrapper: FC<TourWrapperProps> = props => {
+    const { loading, error, data } = useOnboardingTasks()
+    if (loading || error || !data) {
+        return null
+    }
+
     return (
-        <Tour
+        <GatedTour
             {...props}
-            id="TourWithNotebook"
-            title="Code search basics"
-            keepCompletedTasks={true}
-            tasks={visitorsTasksWithNotebook}
-            extraTask={visitorsTasksWithNotebookExtraTask}
+            id="TourAuthenticated"
+            tasks={data.tasks}
+            defaultSnippets={data.defaultSnippets}
+            extraTask={authenticatedExtraTask}
         />
     )
 }
 
-function TourVisitorRegular(props: Omit<TourProps, 'tasks' | 'id'>): JSX.Element {
-    return <Tour {...props} id="Tour" tasks={visitorsTasks} />
-}
-
-const TourVisitor = withFeatureFlag('ab-visitor-tour-with-notebooks', TourVisitorWithNotebook, TourVisitorRegular)
-
-type TourWithErrorBoundaryProps = Omit<TourProps, 'useStore' | 'eventPrefix' | 'tasks' | 'id'> & {
-    isAuthenticated?: boolean
-    isSourcegraphDotCom: boolean
-}
-
-const TourWithErrorBoundary = memo(
-    withErrorBoundary(({ isAuthenticated, isSourcegraphDotCom, ...props }: TourWithErrorBoundaryProps) => {
-        // Do not show if on prem
-        if (!isSourcegraphDotCom) {
-            return null
-        }
-
-        // Show visitors version
-        if (!isAuthenticated) {
-            return <TourVisitor {...props} />
-        }
-
-        return (
-            <TourAuthenticated
-                {...props}
-                id="TourAuthenticated"
-                tasks={authenticatedTasks}
-                extraTask={authenticatedExtraTask}
-            />
-        )
-    })
-)
-
-// Show for enabled control group
-export const TourAuthenticated = withFeatureFlag('quick-start-tour-for-authenticated-users', Tour)
+// This needed to be split up into two compontent definitions because
+// eslint warns that `useOnboardingTasks` cannot be used inside a callback
+// (but the value passed to `withErrorBoundary` really is a component)
+const TourWithErrorBoundary = memo(withErrorBoundary(TourWrapper))
 
 export const GettingStartedTour = Object.assign(TourWithErrorBoundary, {
     Info: TourInfo,

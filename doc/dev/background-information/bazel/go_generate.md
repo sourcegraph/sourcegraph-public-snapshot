@@ -102,18 +102,18 @@ genrule(
 )
 ```
 
-When we build our defined target `enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml` we get the following:
+When we build our defined target `cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml` we get the following:
 
 ```
-$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (1 packages loaded, 2 targets configured).
+$ bazel build cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (1 packages loaded, 2 targets configured).
 INFO: Found 1 target...
-ERROR: /Users/tech/work/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: Executing genrule //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: (Exit 1): bash failed:
- error executing command (from target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml) /bin/bash -c ... (remaining 1 argument skipped)
+ERROR: /Users/tech/work/sourcegraph/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: Executing genrule //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: (Exit 1): bash failed:
+ error executing command (from target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml) /bin/bash -c ... (remaining 1 argument skipped)
 
 Use --sandbox_debug to see verbose messages from the sandbox and retain the sandbox build root for debugging
 cmd/frontend/graphqlbackend/schema.graphql did not match any files
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed to build
+Target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed to build
 Use --verbose_failures to see the command lines of failed build steps.
 INFO: Elapsed time: 0.543s, Critical Path: 0.16s
 INFO: 2 processes: 2 internal.
@@ -164,14 +164,14 @@ genrule(
 This time round, when we build out target , we get:
 
 ```
-$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (2 packages loaded, 5 targets configured).
+$ bazel build cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (2 packages loaded, 5 targets configured).
 INFO: Found 1 target...
-ERROR: /Users/tech/work/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: declared output 'enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go' was not created by genrule. This is pr
+ERROR: /Users/tech/work/sourcegraph/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: declared output 'cmd/frontend/internal/guardrails/dotcom/operations.go' was not created by genrule. This is pr
 obably because the genrule actually didn't create this output, or because the output was a directory and the genrule was run remotely (note that only the contents of declared file outputs are copied from genrules run remotely)
-ERROR: /Users/tech/work/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: Executing genrule //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: not all outputs were c
+ERROR: /Users/tech/work/sourcegraph/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: Executing genrule //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: not all outputs were c
 reated or valid
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed to build
+Target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed to build
 Use --verbose_failures to see the command lines of failed build steps.
 INFO: Elapsed time: 0.315s, Critical Path: 0.05s
 INFO: 2 processes: 1 internal, 1 darwin-sandbox.
@@ -195,18 +195,18 @@ genrule(
 And we get:
 
 ```
-$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml --sandbox_debug
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (1 packages loaded, 3 targets configured).
+$ bazel build cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml --sandbox_debug
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (1 packages loaded, 3 targets configured).
 INFO: Found 1 target...
-INFO: From Executing genrule //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml:
+INFO: From Executing genrule //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml:
 HERE
-./enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go
+./cmd/frontend/internal/guardrails/dotcom/operations.go
 HERE
-ERROR: /Users/tech/work/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: declared output 'enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go' was not created by genrule. This is pr
+ERROR: /Users/tech/work/sourcegraph/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: declared output 'cmd/frontend/internal/guardrails/dotcom/operations.go' was not created by genrule. This is pr
 obably because the genrule actually didn't create this output, or because the output was a directory and the genrule was run remotely (note that only the contents of declared file outputs are copied from genrules run remotely)
-ERROR: /Users/tech/work/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: Executing genrule //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: not all outputs were c
+ERROR: /Users/tech/work/sourcegraph/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:32:8: Executing genrule //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: not all outputs were c
 reated or valid
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed to build
+Target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed to build
 Use --verbose_failures to see the command lines of failed build steps.
 INFO: Elapsed time: 0.191s, Critical Path: 0.05s
 INFO: 2 processes: 1 internal, 1 darwin-sandbox.
@@ -217,7 +217,7 @@ Ah! We see it now:
 
 ```
 HERE
-./enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go
+./cmd/frontend/internal/guardrails/dotcom/operations.go
 HERE
 ```
 
@@ -228,7 +228,7 @@ We can edit the `cmd` attribute as following:
 ```
 genrule(
   # ...
-  cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml) && mv enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go $@",
+  cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml) && mv cmd/frontend/internal/guardrails/dotcom/operations.go $@",
   # ...
 )
 ```
@@ -236,11 +236,11 @@ genrule(
 And this time, when we build it, it works:
 
 ```
-$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (0 packages loaded, 0 targets configured).
+$ bazel build cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (0 packages loaded, 0 targets configured).
 INFO: Found 1 target...
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml up-to-date:
-  bazel-bin/enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go
+Target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml up-to-date:
+  bazel-bin/cmd/frontend/internal/guardrails/dotcom/operations.go
 INFO: Elapsed time: 0.132s, Critical Path: 0.00s
 INFO: 1 process: 1 internal.
 INFO: Build completed successfully, 1 total action
@@ -258,8 +258,8 @@ go_library(
         # "operations.go",
         ":generate_gengql_yaml"
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom",
+    visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/httpcli",
         "//internal/trace",
@@ -271,12 +271,12 @@ go_library(
 And then build it:
 
 ```
-$ rm enterprise/cmd/frontend/internal/guardrails/operations.go
-$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:dotcom
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:dotcom (0 packages loaded, 0 targets configured).
+$ rm cmd/frontend/internal/guardrails/operations.go
+$ bazel build cmd/frontend/internal/guardrails/dotcom:dotcom
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:dotcom (0 packages loaded, 0 targets configured).
 INFO: Found 1 target...
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:dotcom up-to-date:
-  bazel-bin/enterprise/cmd/frontend/internal/guardrails/dotcom/dotcom.a
+Target //cmd/frontend/internal/guardrails/dotcom:dotcom up-to-date:
+  bazel-bin/cmd/frontend/internal/guardrails/dotcom/dotcom.a
 INFO: Elapsed time: 0.120s, Critical Path: 0.00s
 INFO: 1 process: 1 internal.
 INFO: Build completed successfully, 1 total action
@@ -322,17 +322,17 @@ write_generated_to_source_files(
 We can ask Bazel to copy our files to the source tree with `bazel run`:
 
 ```
-$ bazel run enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml (0 packages loaded, 0 targets configured).
+$ bazel run cmd/frontend/internal/guardrails/dotcom:write_genql_yaml
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:write_genql_yaml (0 packages loaded, 0 targets configured).
 INFO: Found 1 target...
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml up-to-date:
-  bazel-bin/enterprise/cmd/frontend/internal/guardrails/dotcom/write_genql_yaml_update.sh
+Target //cmd/frontend/internal/guardrails/dotcom:write_genql_yaml up-to-date:
+  bazel-bin/cmd/frontend/internal/guardrails/dotcom/write_genql_yaml_update.sh
 INFO: Elapsed time: 0.109s, Critical Path: 0.00s
 INFO: 1 process: 1 internal.
-INFO: Running command line: bazel-bin/enterprise/cmd/frontend/internal/guardrails/dotcom/write_genql_yaml_update.sh
+INFO: Running command line: bazel-bin/cmd/frontend/internal/guardrails/dotcom/write_genql_yaml_update.sh
 INFO: Build completed successfully, 1 total action
-Copying file /private/var/tmp/_bazel_tech/3eea80c6015362974b7d423d1f30cb62/execroot/__main__/bazel-out/darwin_arm64-fastbuild/bin/enterprise/cmd/frontend/internal/guardrails/dotcom/write_genql_yaml_update.sh.runfiles/__main__/
-enterprise/cmd/frontend/internal/guardrails/dotcom/copy_write_genql_yaml/operations.go to enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go in /Users/tech/work/sourcegraph
+Copying file /private/var/tmp/_bazel_tech/3eea80c6015362974b7d423d1f30cb62/execroot/__main__/bazel-out/darwin_arm64-fastbuild/bin/cmd/frontend/internal/guardrails/dotcom/write_genql_yaml_update.sh.runfiles/__main__/
+cmd/frontend/internal/guardrails/dotcom/copy_write_genql_yaml/operations.go to cmd/frontend/internal/guardrails/dotcom/operations.go in /Users/tech/work/sourcegraph
 ```
 
 As a convenience for everyone, we can add our target to `dev/BUILD.bazel`, in the `write_all_generated` rule:
@@ -345,7 +345,7 @@ write_source_files(
         "//lib/codeintel/lsif/protocol:write_symbol_kind",
         # ...
         # We add this:
-        "//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
+        "//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
     ],
 )
 ```
@@ -363,10 +363,10 @@ The macro `write_generated_to_source_files`, doesn't just wrap a few details abo
 Let's see it in action: we drop a schema in `genql.yaml`, making the current `operations.go` out of sync:
 
 ```
-diff --git a/enterprise/cmd/frontend/internal/guardrails/dotcom/genql.yaml b/enterprise/cmd/frontend/internal/guardrails/dotcom/genql.yaml
+diff --git a/cmd/frontend/internal/guardrails/dotcom/genql.yaml b/cmd/frontend/internal/guardrails/dotcom/genql.yaml
 index 21b7290a62..9a17d30852 100644
---- a/enterprise/cmd/frontend/internal/guardrails/dotcom/genql.yaml
-+++ b/enterprise/cmd/frontend/internal/guardrails/dotcom/genql.yaml
+--- a/cmd/frontend/internal/guardrails/dotcom/genql.yaml
++++ b/cmd/frontend/internal/guardrails/dotcom/genql.yaml
 @@ -1,6 +1,5 @@
  schema:
    - ../../../../../../cmd/frontend/graphqlbackend/schema.graphql
@@ -379,24 +379,24 @@ index 21b7290a62..9a17d30852 100644
 Now lets run the following test:
 
 ```
-$ bazel test //enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test
-INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test (0 packages loaded, 0 targets configured).
+$ bazel test //cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test
+INFO: Analyzed target //cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test (0 packages loaded, 0 targets configured).
 INFO: Found 1 test target...
-ERROR: /Users/tech/work/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:19:8: Executing genrule //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: (Exit 1): bash failed:
- error executing command (from target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml) /bin/bash -c ... (remaining 1 argument skipped)
+ERROR: /Users/tech/work/sourcegraph/cmd/frontend/internal/guardrails/dotcom/BUILD.bazel:19:8: Executing genrule //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml failed: (Exit 1): bash failed:
+ error executing command (from target //cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml) /bin/bash -c ... (remaining 1 argument skipped)
 
 Use --sandbox_debug to see verbose messages from the sandbox and retain the sandbox build root for debugging
 operations.graphql:3: query-spec does not match schema: Cannot query field "snippetAttribution" on type "Query".
-Target //enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test failed to build
+Target //cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test failed to build
 Use --verbose_failures to see the command lines of failed build steps.
 INFO: Elapsed time: 0.197s, Critical Path: 0.05s
 INFO: 2 processes: 2 internal.
-//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test FAILED TO BUILD
+//cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test FAILED TO BUILD
 
 Executed 0 out of 1 test: 1 fails to build.
 FAILED: Build did NOT complete successfully
 ```
 
-Yup it fails. Please note that we don't have to remember the name of that target, we could simply run `bazel test //enterprise/cmd/frontend/internal/guardrails/...` to get the same results (along with a few other tests).
+Yup it fails. Please note that we don't have to remember the name of that target, we could simply run `bazel test //cmd/frontend/internal/guardrails/...` to get the same results (along with a few other tests).
 
 > 💡 This is how the CI works, it simply runs `bazel test //...` so it will automatically catch any target getting out of sync.

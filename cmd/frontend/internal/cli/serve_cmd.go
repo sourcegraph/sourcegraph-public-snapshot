@@ -291,6 +291,8 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
+			SearchJobsDataExportHandler:     enterprise.SearchJobsDataExportHandler,
+			SearchJobsLogsHandler:           enterprise.SearchJobsLogsHandler,
 			NewDotcomLicenseCheckHandler:    enterprise.NewDotcomLicenseCheckHandler,
 			NewChatCompletionsStreamHandler: enterprise.NewChatCompletionsStreamHandler,
 			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
@@ -385,7 +387,7 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	if pool, ok := redispool.Cache.Pool(); ok {
 		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
-		// If redis is disabled we are in Sourcegraph App and can rely on an
+		// If redis is disabled we are in Cody App and can rely on an
 		// in-memory store.
 		store, err = memstore.NewCtx(0)
 	}

@@ -50,7 +50,7 @@ type distributedStore struct {
 func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
 	pool, ok := redispool.Cache.Pool()
 	if !ok {
-		// Redis is disabled. This means we are using Sourcegraph App which
+		// Redis is disabled. This means we are using Cody App which
 		// does not expose prometheus metrics. For now that means we can skip
 		// this store doing anything.
 		return nil, nil
@@ -100,7 +100,7 @@ func (d *distributedStore) Gather() ([]*dto.MetricFamily, error) {
 func (d *distributedStore) Ingest(instance string, mfs []*dto.MetricFamily) error {
 	pool, ok := redispool.Cache.Pool()
 	if !ok {
-		// Redis is disabled. This means we are using Sourcegraph App which
+		// Redis is disabled. This means we are using Cody App which
 		// does not expose prometheus metrics. For now that means we can skip
 		// this store doing anything.
 		return nil

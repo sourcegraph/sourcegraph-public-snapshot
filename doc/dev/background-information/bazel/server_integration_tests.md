@@ -17,7 +17,7 @@ An e2e test against the `server:candidate` image is composed of:
 - A test target, using the `server_integration_test` rule, defined in `testing/BUILD.bazel`. 
 - A wrapper shell script, defined in `testing/[your-test-name].sh`.
 
-The `server_integration_test` rule will automatically add a dependency against `//enterprise/cmd/server:image_tarball` which is the target that builds the `server:candidate` container image, that will be used during the lifetime of the test to instanciate a server, by running the container in Docker. 
+The `server_integration_test` rule will automatically add a dependency against `//cmd/server:image_tarball` which is the target that builds the `server:candidate` container image, that will be used during the lifetime of the test to instanciate a server, by running the container in Docker. 
 
 Assuming you have named you new e2e test target `"foo_test"`, you'll be able to run with a single command the e2e test: `bazel test //testing:foo_test`. This will build the server image for you, launch it, run your script and finally delete the running container. 
 

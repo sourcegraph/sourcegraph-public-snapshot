@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -18,11 +19,11 @@ import (
 var releaseCommand = &cli.Command{
 	Name:     "release",
 	Usage:    "Sourcegraph release utilities",
-	Category: CategoryUtil,
+	Category: category.Util,
 	Subcommands: []*cli.Command{{
 		Name:     "cve-check",
 		Usage:    "Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release",
-		Category: CategoryUtil,
+		Category: category.Util,
 		Action:   cveCheck,
 		Flags: []cli.Flag{
 			&buildNumberFlag,

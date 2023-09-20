@@ -116,7 +116,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 		// OSS packages cannot import enterprise packages, but when we build the entire
 		// application this will be implemented.
 		//
-		// See enterprise/cmd/frontend/internal/auth/sourcegraphoperator for more details
+		// See cmd/frontend/internal/auth/sourcegraphoperator for more details
 		// and additional test coverage on the functionality.
 		"Sourcegraph operator unimplemented in OSS": {
 			user:            &types.User{ID: 1, SiteAdmin: true},

@@ -99,6 +99,10 @@ export class CodeMirrorEditor implements Editor {
         return null
     }
 
+    public getActiveTextEditorSelectionOrVisibleContent(): ActiveTextEditorSelection | null {
+        return this.getActiveTextEditorSelectionOrEntireFile()
+    }
+
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         const editor = this.editor
         if (editor) {
@@ -152,5 +156,15 @@ export class CodeMirrorEditor implements Editor {
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         // Not implemented.
         return Promise.resolve(undefined)
+    }
+
+    public getActiveInlineChatTextEditor(): ActiveTextEditor | null {
+        // Not implemented.
+        return null
+    }
+
+    public getActiveInlineChatSelection(): ActiveTextEditorSelection | null {
+        // Not implemented.
+        return null
     }
 }

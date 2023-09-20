@@ -73,7 +73,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ListFunc: &StoreListFunc{
-			defaultHook: func(context.Context) (r0 *iterator.Iterator[string], r1 error) {
+			defaultHook: func(context.Context, string) (r0 *iterator.Iterator[string], r1 error) {
 				return
 			},
 		},
@@ -115,7 +115,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		ListFunc: &StoreListFunc{
-			defaultHook: func(context.Context) (*iterator.Iterator[string], error) {
+			defaultHook: func(context.Context, string) (*iterator.Iterator[string], error) {
 				panic("unexpected invocation of MockStore.List")
 			},
 		},
@@ -694,23 +694,23 @@ func (c StoreInitFuncCall) Results() []interface{} {
 // StoreListFunc describes the behavior when the List method of the parent
 // MockStore instance is invoked.
 type StoreListFunc struct {
-	defaultHook func(context.Context) (*iterator.Iterator[string], error)
-	hooks       []func(context.Context) (*iterator.Iterator[string], error)
+	defaultHook func(context.Context, string) (*iterator.Iterator[string], error)
+	hooks       []func(context.Context, string) (*iterator.Iterator[string], error)
 	history     []StoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) List(v0 context.Context) (*iterator.Iterator[string], error) {
-	r0, r1 := m.ListFunc.nextHook()(v0)
-	m.ListFunc.appendCall(StoreListFuncCall{v0, r0, r1})
+func (m *MockStore) List(v0 context.Context, v1 string) (*iterator.Iterator[string], error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(StoreListFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the List method of the
 // parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreListFunc) SetDefaultHook(hook func(context.Context) (*iterator.Iterator[string], error)) {
+func (f *StoreListFunc) SetDefaultHook(hook func(context.Context, string) (*iterator.Iterator[string], error)) {
 	f.defaultHook = hook
 }
 
@@ -718,7 +718,7 @@ func (f *StoreListFunc) SetDefaultHook(hook func(context.Context) (*iterator.Ite
 // List method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreListFunc) PushHook(hook func(context.Context) (*iterator.Iterator[string], error)) {
+func (f *StoreListFunc) PushHook(hook func(context.Context, string) (*iterator.Iterator[string], error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -727,19 +727,19 @@ func (f *StoreListFunc) PushHook(hook func(context.Context) (*iterator.Iterator[
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreListFunc) SetDefaultReturn(r0 *iterator.Iterator[string], r1 error) {
-	f.SetDefaultHook(func(context.Context) (*iterator.Iterator[string], error) {
+	f.SetDefaultHook(func(context.Context, string) (*iterator.Iterator[string], error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreListFunc) PushReturn(r0 *iterator.Iterator[string], r1 error) {
-	f.PushHook(func(context.Context) (*iterator.Iterator[string], error) {
+	f.PushHook(func(context.Context, string) (*iterator.Iterator[string], error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreListFunc) nextHook() func(context.Context) (*iterator.Iterator[string], error) {
+func (f *StoreListFunc) nextHook() func(context.Context, string) (*iterator.Iterator[string], error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -775,6 +775,9 @@ type StoreListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *iterator.Iterator[string]
@@ -786,7 +789,7 @@ type StoreListFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreListFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

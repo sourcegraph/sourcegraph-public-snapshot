@@ -1708,7 +1708,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 
 		// can changeset be published
 		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
-		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangesetJobFailed
+		isChangesetClosable := isChangesetOpen || isChangesetDraft
 
 		// check what operations this changeset support, most likely from the state
 		// so get the changeset then derive the operations from it's state.

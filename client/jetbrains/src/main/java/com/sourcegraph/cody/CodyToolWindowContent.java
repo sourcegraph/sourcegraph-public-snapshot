@@ -22,6 +22,7 @@ import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.components.AnActionLink;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
@@ -33,6 +34,7 @@ import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.RecipeInfo;
+import com.sourcegraph.cody.auth.ui.SignInWithSourcegraphAction;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -41,23 +43,18 @@ import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
+import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
+import com.sourcegraph.cody.ui.UnderlinedActionLink;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.SettingsComponent;
-import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.telemetry.GraphQlLogger;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -71,11 +68,12 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.plaf.ButtonUI;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.builtInWebServer.BuiltInServerOptions;
 
 public class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
+  public static final String SING_IN_WITH_SOURCEGRAPH_PANEL = "singInWithSourcegraphPanel";
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
   private final @NotNull CardLayout allContentLayout = new CardLayout();
@@ -88,6 +86,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final JButton stopGeneratingButton =
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
   private final @NotNull JBPanelWithEmptyText recipesPanel;
+  public final EmbeddingStatusView embeddingStatusView;
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -99,7 +98,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     tabbedPane.insertTab("Chat", null, contentPanel, null, CHAT_TAB_INDEX);
     recipesPanel = new JBPanelWithEmptyText(new GridLayout(0, 1));
     recipesPanel.setLayout(new BoxLayout(recipesPanel, BoxLayout.Y_AXIS));
-    tabbedPane.insertTab("Recipes", null, recipesPanel, null, RECIPES_TAB_INDEX);
+    tabbedPane.insertTab("Commands", null, recipesPanel, null, RECIPES_TAB_INDEX);
 
     // Initiate filling recipes panel in the background
     refreshRecipes();
@@ -164,7 +163,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     lowerPanel.add(stopGeneratingButtonPanel);
     lowerPanel.add(controlsPanel);
 
-    EmbeddingStatusView embeddingStatusView = new EmbeddingStatusView(project);
+    embeddingStatusView = new EmbeddingStatusView(project);
     embeddingStatusView.setBorder(topBorder);
     lowerPanel.add(embeddingStatusView);
 
@@ -177,12 +176,12 @@ public class CodyToolWindowContent implements UpdatableChat {
 
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
-    JPanel appNotInstalledPanel = createAppNotInstalledPanel();
+    JPanel singInWithSourcegraphPanel = createSignInWithSourcegraphPanel();
     JPanel appNotRunningPanel = createAppNotRunningPanel();
     allContentPanel.add(tabbedPane, "tabbedPane");
-    allContentPanel.add(appNotInstalledPanel, "appNotInstalledPanel");
+    allContentPanel.add(singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
     allContentPanel.add(appNotRunningPanel, "appNotRunningPanel");
-    allContentLayout.show(allContentPanel, "appNotInstalledPanel");
+    allContentLayout.show(allContentPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
     updateVisibilityOfContentPanels();
     // Add welcome message
     addWelcomeMessage();
@@ -291,12 +290,15 @@ public class CodyToolWindowContent implements UpdatableChat {
 
   @RequiresEdt
   private void updateVisibilityOfContentPanels() {
+    CodyAuthenticationManager codyAuthenticationManager = CodyAuthenticationManager.getInstance();
+    if (codyAuthenticationManager.getAccounts().isEmpty()) {
+      allContentLayout.show(allContentPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
+      isChatVisible = false;
+      return;
+    }
     if (LocalAppManager.isPlatformSupported()
-        && ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.LOCAL_APP) {
-      if (!LocalAppManager.isLocalAppInstalled()) {
-        allContentLayout.show(allContentPanel, "appNotInstalledPanel");
-        isChatVisible = false;
-      } else if (!LocalAppManager.isLocalAppRunning()) {
+        && codyAuthenticationManager.getActiveAccountType(project) == AccountType.LOCAL_APP) {
+      if (!LocalAppManager.isLocalAppRunning()) {
         allContentLayout.show(allContentPanel, "appNotRunningPanel");
         isChatVisible = false;
       } else {
@@ -310,21 +312,46 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   @RequiresEdt
-  private @NotNull JPanel createAppNotInstalledPanel() {
+  private @NotNull JPanel createSignInWithSourcegraphPanel() {
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
-        "<html><body><h2>Get Started</h2>"
-            + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code."
-            + " Download and run the Cody desktop app to Configure your local code graph.</p><"
-            + "/body></html>");
-    JButton downloadCodyAppButton = createMainButton("Download Cody App");
-    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
-    downloadCodyAppButton.addActionListener(
+        "<html><body><h2>Welcome to Cody</h2>"
+            + "<p>Understand and write code faster with an AI assistant</p>"
+            + "</body></html>");
+    JButton signInWithSourcegraphButton = createMainButton("Sign in for free with Sourcegraph.com");
+    signInWithSourcegraphButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    signInWithSourcegraphButton.addActionListener(
         e -> {
-          BrowserUtil.browse("https://about.sourcegraph.com/app");
+          int port =
+              ApplicationManager.getApplication()
+                  .getService(BuiltInServerOptions.class)
+                  .getEffectiveBuiltInServerPort();
+          BrowserUtil.browse(
+              ConfigUtil.DOTCOM_URL
+                  + "user/settings/tokens/new/callback"
+                  + "?requestFrom=JETBRAINS"
+                  + "&port="
+                  + port);
           updateVisibilityOfContentPanels();
         });
-    return new CodyOnboardingPanel(project, jEditorPane, downloadCodyAppButton);
+    CodyOnboardingPanel codyOnboardingPanel =
+        new CodyOnboardingPanel(jEditorPane, signInWithSourcegraphButton);
+    JPanel signInWithAnEnterpriseInstance = createPanelWithSignInWithAnEnterpriseInstance();
+    codyOnboardingPanel.add(signInWithAnEnterpriseInstance);
+    return codyOnboardingPanel;
+  }
+
+  private JPanel createPanelWithSignInWithAnEnterpriseInstance() {
+    AnActionLink signInWithAnEnterpriseInstance =
+        new UnderlinedActionLink(
+            "Sign in with an Enterprise Instance", new SignInWithSourcegraphAction(""));
+    signInWithAnEnterpriseInstance.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JPanel panelWithSettingsLink = new JPanel(new BorderLayout());
+    panelWithSettingsLink.setBorder(JBUI.Borders.empty(20, 0));
+    JPanel linkPanel = new JPanel(new GridBagLayout());
+    linkPanel.add(signInWithAnEnterpriseInstance);
+    panelWithSettingsLink.add(linkPanel, BorderLayout.PAGE_START);
+    return panelWithSettingsLink;
   }
 
   @RequiresEdt
@@ -342,7 +369,7 @@ public class CodyToolWindowContent implements UpdatableChat {
           LocalAppManager.runLocalApp();
           updateVisibilityOfContentPanels();
         });
-    return new CodyOnboardingPanel(project, jEditorPane, runCodyAppButton);
+    return new CodyOnboardingPanel(jEditorPane, runCodyAppButton);
   }
 
   @NotNull
@@ -366,21 +393,9 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    String accessToken = ConfigUtil.getProjectAccessToken(project);
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
-    if (StringUtils.isEmpty(accessToken)) {
-      String noAccessTokenText =
-          "<p>It looks like you don't have Sourcegraph Access Token configured.</p>"
-              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
-      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(noAccessTokenText);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(assistantMessageWithSettingsButton);
-      ApplicationManager.getApplication()
-          .invokeLater(() -> addComponentToChat(messageContentPanel));
-    }
   }
 
   @NotNull
@@ -412,7 +427,7 @@ public class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  private void addComponentToChat(@NotNull JPanel messageContent) {
+  public void addComponentToChat(@NotNull JPanel messageContent) {
 
     var wrapperPanel = new JPanel();
     wrapperPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
@@ -510,6 +525,7 @@ public class CodyToolWindowContent implements UpdatableChat {
               addWelcomeMessage();
               messagesPanel.revalidate();
               messagesPanel.repaint();
+              CodyAgent.getInitializedServer(project).thenAccept(CodyAgentServer::transcriptReset);
             });
   }
 
@@ -565,6 +581,12 @@ public class CodyToolWindowContent implements UpdatableChat {
                 }
               } else {
                 logger.warn("Agent is disabled, can't use chat.");
+                this.addMessageToChat(
+                    ChatMessage.createAssistantMessage(
+                        "Cody is not able to reply at the moment. "
+                            + "This is a bug, please report an issue to the sourcegraph/sourcegraph "
+                            + "repository and try to include relevant context from idea.log if possible."));
+                this.finishMessageProcessing();
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
             });
@@ -572,29 +594,16 @@ public class CodyToolWindowContent implements UpdatableChat {
 
   @Override
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
-    // Use context
     if (contextMessages.isEmpty()) {
-      InstanceType instanceType = ConfigUtil.getInstanceType(project);
-
-      String report = "I found no context for your request.";
-      String ask =
-          instanceType == InstanceType.ENTERPRISE
-              ? "Please ensure this repository is added to your Sourcegraph Enterprise instance and that your access token and custom request headers are set up correctly."
-              : (instanceType == InstanceType.LOCAL_APP
-                  ? "Please ensure this repository is configured in Cody App."
-                  : (instanceType == InstanceType.DOTCOM
-                      ? "As your current server setting is Sourcegraph.com, please ensure this repository is public and indexed on Sourcegraph.com and that your access token is valid."
-                      : ""));
-      String resolution = "I will try to answer without context.";
-      this.addMessageToChat(
-          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution));
-    } else {
-
-      ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(contextFilesMessage);
-      this.addComponentToChat(messageContentPanel);
+      // Do nothing when there are no context files. It's normal that some answers have no context
+      // files.
+      return;
     }
+
+    ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
+    var messageContentPanel = new JPanel(new BorderLayout());
+    messageContentPanel.add(contextFilesMessage);
+    this.addComponentToChat(messageContentPanel);
   }
 
   public @NotNull JComponent getContentPanel() {

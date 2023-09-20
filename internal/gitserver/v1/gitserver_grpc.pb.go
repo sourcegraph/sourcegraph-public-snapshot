@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	GitserverService_BatchLog_FullMethodName                    = "/gitserver.v1.GitserverService/BatchLog"
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
+	GitserverService_DiskInfo_FullMethodName                    = "/gitserver.v1.GitserverService/DiskInfo"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
 	GitserverService_GetObject_FullMethodName                   = "/gitserver.v1.GitserverService/GetObject"
 	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
@@ -40,7 +41,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
 	BatchLog(ctx context.Context, in *BatchLogRequest, opts ...grpc.CallOption) (*BatchLogResponse, error)
-	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error)
+	CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error)
+	DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
@@ -73,9 +75,43 @@ func (c *gitserverServiceClient) BatchLog(ctx context.Context, in *BatchLogReque
 	return out, nil
 }
 
-func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error) {
-	out := new(CreateCommitFromPatchBinaryResponse)
-	err := c.cc.Invoke(ctx, GitserverService_CreateCommitFromPatchBinary_FullMethodName, in, out, opts...)
+func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, opts ...grpc.CallOption) (GitserverService_CreateCommitFromPatchBinaryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[0], GitserverService_CreateCommitFromPatchBinary_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceCreateCommitFromPatchBinaryClient{stream}
+	return x, nil
+}
+
+type GitserverService_CreateCommitFromPatchBinaryClient interface {
+	Send(*CreateCommitFromPatchBinaryRequest) error
+	CloseAndRecv() (*CreateCommitFromPatchBinaryResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceCreateCommitFromPatchBinaryClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceCreateCommitFromPatchBinaryClient) Send(m *CreateCommitFromPatchBinaryRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *gitserverServiceCreateCommitFromPatchBinaryClient) CloseAndRecv() (*CreateCommitFromPatchBinaryResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(CreateCommitFromPatchBinaryResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *gitserverServiceClient) DiskInfo(ctx context.Context, in *DiskInfoRequest, opts ...grpc.CallOption) (*DiskInfoResponse, error) {
+	out := new(DiskInfoResponse)
+	err := c.cc.Invoke(ctx, GitserverService_DiskInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +119,7 @@ func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context
 }
 
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[0], GitserverService_Exec_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Exec_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +178,7 @@ func (c *gitserverServiceClient) ListGitolite(ctx context.Context, in *ListGitol
 }
 
 func (c *gitserverServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], GitserverService_Search_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Search_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +210,7 @@ func (x *gitserverServiceSearchClient) Recv() (*SearchResponse, error) {
 }
 
 func (c *gitserverServiceClient) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Archive_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_Archive_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +242,7 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 }
 
 func (c *gitserverServiceClient) P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[3], GitserverService_P4Exec_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[4], GitserverService_P4Exec_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +323,8 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 // for forward compatibility
 type GitserverServiceServer interface {
 	BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error)
-	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error)
+	CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error
+	DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
@@ -311,8 +348,11 @@ type UnimplementedGitserverServiceServer struct {
 func (UnimplementedGitserverServiceServer) BatchLog(context.Context, *BatchLogRequest) (*BatchLogResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BatchLog not implemented")
 }
-func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
+func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(GitserverService_CreateCommitFromPatchBinaryServer) error {
+	return status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
+}
+func (UnimplementedGitserverServiceServer) DiskInfo(context.Context, *DiskInfoRequest) (*DiskInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DiskInfo not implemented")
 }
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
 	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
@@ -381,20 +421,46 @@ func _GitserverService_BatchLog_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCommitFromPatchBinaryRequest)
+func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(&gitserverServiceCreateCommitFromPatchBinaryServer{stream})
+}
+
+type GitserverService_CreateCommitFromPatchBinaryServer interface {
+	SendAndClose(*CreateCommitFromPatchBinaryResponse) error
+	Recv() (*CreateCommitFromPatchBinaryRequest, error)
+	grpc.ServerStream
+}
+
+type gitserverServiceCreateCommitFromPatchBinaryServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceCreateCommitFromPatchBinaryServer) SendAndClose(m *CreateCommitFromPatchBinaryResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *gitserverServiceCreateCommitFromPatchBinaryServer) Recv() (*CreateCommitFromPatchBinaryRequest, error) {
+	m := new(CreateCommitFromPatchBinaryRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _GitserverService_DiskInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiskInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(ctx, in)
+		return srv.(GitserverServiceServer).DiskInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: GitserverService_CreateCommitFromPatchBinary_FullMethodName,
+		FullMethod: GitserverService_DiskInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(ctx, req.(*CreateCommitFromPatchBinaryRequest))
+		return srv.(GitserverServiceServer).DiskInfo(ctx, req.(*DiskInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -639,8 +705,8 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GitserverService_BatchLog_Handler,
 		},
 		{
-			MethodName: "CreateCommitFromPatchBinary",
-			Handler:    _GitserverService_CreateCommitFromPatchBinary_Handler,
+			MethodName: "DiskInfo",
+			Handler:    _GitserverService_DiskInfo_Handler,
 		},
 		{
 			MethodName: "GetObject",
@@ -676,6 +742,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "CreateCommitFromPatchBinary",
+			Handler:       _GitserverService_CreateCommitFromPatchBinary_Handler,
+			ClientStreams: true,
+		},
 		{
 			StreamName:    "Exec",
 			Handler:       _GitserverService_Exec_Handler,

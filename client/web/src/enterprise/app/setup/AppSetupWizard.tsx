@@ -109,7 +109,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
                     <SetupStepsContent
                         telemetryService={telemetryService}
                         className={styles.content}
-                        isSourcegraphApp={true}
+                        isCodyApp={true}
                     />
 
                     <FooterWidgetPortal className={styles.footer} />

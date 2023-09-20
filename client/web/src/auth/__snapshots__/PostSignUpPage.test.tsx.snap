@@ -1,5 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`PostSignUpPage renders customized redirect when user has completed post signup flow 1`] = `<DocumentFragment />`;
+
 exports[`PostSignUpPage renders post signup page - with cody survey 1`] = `
 <DocumentFragment>
   <div

@@ -22,6 +22,7 @@ import {
     type FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/dist/Chat'
 import type { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -42,11 +43,17 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 
 interface IChatUIProps {
     codyChatStore: CodyChatStore
-    isSourcegraphApp?: boolean
+    isCodyApp?: boolean
     isCodyChatPage?: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp, isCodyChatPage }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({
+    codyChatStore,
+    isCodyApp,
+    isCodyChatPage,
+    authenticatedUser,
+}): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -88,9 +95,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
             fetchRepositoryNames,
-            isSourcegraphApp,
+            isCodyApp,
             logTranscriptEvent,
+            transcriptHistory,
             className: 'mt-2',
+            authenticatedUser,
         }),
         [
             scope,
@@ -98,14 +107,16 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
             fetchRepositoryNames,
-            isSourcegraphApp,
+            isCodyApp,
             logTranscriptEvent,
+            transcriptHistory,
+            authenticatedUser,
         ]
     )
 
     const gettingStartedComponentProps = useMemo(
-        () => ({ ...scopeSelectorProps, logTranscriptEvent, isCodyChatPage }),
-        [scopeSelectorProps, logTranscriptEvent, isCodyChatPage]
+        () => ({ ...scopeSelectorProps, logTranscriptEvent, isCodyChatPage, authenticatedUser }),
+        [scopeSelectorProps, isCodyChatPage, logTranscriptEvent, authenticatedUser]
     )
 
     if (!loaded) {
@@ -126,7 +137,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 setInputHistory={setInputHistory}
                 onSubmit={onSubmit}
                 submitButtonComponent={SubmitButton}
-                fileLinkComponent={isSourcegraphApp ? AppFileLink : FileLink}
+                fileLinkComponent={isCodyApp ? AppFileLink : FileLink}
                 className={styles.container}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}

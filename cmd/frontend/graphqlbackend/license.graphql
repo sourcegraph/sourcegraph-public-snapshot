@@ -1,52 +1,6 @@
-"""
-License basic info type.
-"""
-type LicenseInfo {
-    """
-    License plan.
-    """
-    plan: String!
-    """
-    License expiration date.
-    """
-    expiresAt: DateTime!
-    """
-    The number of users allowed by the license.
-    """
-    userCount: Int!
-    """
-    Whether license restricts number of users or not.
-    """
-    userCountRestricted: Boolean!
-    """
-    All license features.
-    """
-    features: [LicenseFeature!]!
-}
-
-"""
-License feature info type.
-"""
-type LicenseFeature {
-    """
-    License feature name.
-    """
-    name: String!
-    """
-    Whether feature is enabled or not by the license.
-    """
-    enabled: Boolean!
-}
-
 extend type Query {
     """
     Checks whether the given feature is enabled on Sourcegraph.
     """
     enterpriseLicenseHasFeature(feature: String!): Boolean!
-
-    """
-    Parse license key and returns features alongside its availability.
-    If licenseKey is omitted, uses current instance license.
-    """
-    licenseInfo(licenseKey: String): LicenseInfo!
 }

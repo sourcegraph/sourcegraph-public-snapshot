@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,7 +46,7 @@ sg rfc create "title"
 # Create a new private RFC. Possible types: [solution]
 sg rfc --private create --type <type> "title"
 `,
-	Category: CategoryCompany,
+	Category: category.Company,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:     "private",

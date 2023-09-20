@@ -14,7 +14,6 @@ import {
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import type {
     AllConfigResult,
-    CheckMirrorRepositoryConnectionResult,
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
@@ -55,6 +54,9 @@ import type {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    GitserversVariables,
+    GitserversResult,
+    GitserverFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -308,28 +310,12 @@ export const UPDATE_MIRROR_REPOSITORY = gql`
 `
 
 export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
-    mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
-        checkMirrorRepositoryConnection(repository: $repository, name: $name) {
+    mutation CheckMirrorRepositoryConnection($repository: ID!) {
+        checkMirrorRepositoryConnection(repository: $repository) {
             error
         }
     }
 `
-
-export function checkMirrorRepositoryConnection(
-    args:
-        | {
-              repository: Scalars['ID']
-          }
-        | {
-              name: string
-          }
-): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(data => data.checkMirrorRepositoryConnection)
-    )
-}
 
 export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['ID'] }): Observable<void> {
     return requestGraphQL<ScheduleRepositoryPermissionsSyncResult, ScheduleRepositoryPermissionsSyncVariables>(
@@ -356,30 +342,26 @@ export const RECLONE_REPOSITORY_MUTATION = gql`
     }
 `
 
-export const SITE_CONFIG_QUERY = gql`
-    query Site {
-        site {
-            __typename
-            id
-            canReloadSite
-            configuration {
-                id
-                effectiveContents
-                validationMessages
-            }
-        }
-    }
-`
-
 /**
- * @deprecated Prefer using the useQuery with SITE_CONFIG_QUERY instead
- *
  * Fetches the site and its configuration.
  *
  * @returns Observable that emits the site
  */
 export function fetchSite(): Observable<SiteResult['site']> {
-    return queryGraphQL<SiteResult>(SITE_CONFIG_QUERY).pipe(
+    return queryGraphQL<SiteResult>(gql`
+        query Site {
+            site {
+                __typename
+                id
+                canReloadSite
+                configuration {
+                    id
+                    effectiveContents
+                    validationMessages
+                }
+            }
+        }
+    `).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
     )
@@ -496,16 +478,8 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     )
 }
 
-export const UPDATE_SITE_CONFIG = gql`
-    mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
-        updateSiteConfiguration(lastID: $lastID, input: $input)
-    }
-`
-
 /**
  * Updates the site's configuration.
- *
- * @deprecated use the useMutation with UPDATE_SITE_CONFIG instead
  *
  * @returns An observable indicating whether or not a service restart is
  * required for the update to be applied.
@@ -524,21 +498,19 @@ export function updateSiteConfiguration(lastID: number, input: string): Observab
     )
 }
 
-export const RELOAD_SITE = gql`
-    mutation ReloadSite {
-        reloadSite {
-            alwaysNil
-        }
-    }
-`
-
 /**
  * Reloads the site.
- *
- * @deprecated Use the useMutation hook instead with the RELOAD_SITE mutation
  */
 export function reloadSite(): Observable<void> {
-    return requestGraphQL<ReloadSiteResult, ReloadSiteVariables>(RELOAD_SITE).pipe(
+    return requestGraphQL<ReloadSiteResult, ReloadSiteVariables>(
+        gql`
+            mutation ReloadSite {
+                reloadSite {
+                    alwaysNil
+                }
+            }
+        `
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.reloadSite) {
@@ -1087,23 +1059,33 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
     }
 `
 
-export const SEND_TEST_EMAIL = gql`
-    mutation SendTestEmailTo($to: String!, $config: SMTPConfig) {
-        sendTestEmail(to: $to, config: $config)
+const gitserverFieldsFragment = gql`
+    fragment GitserverFields on GitserverInstance {
+        id
+        address
+        freeDiskSpaceBytes
+        totalDiskSpaceBytes
     }
 `
 
-export const GET_LICENSE_INFO = gql`
-    query GetLicenseInfo($licenseKey: String) {
-        licenseInfo(licenseKey: $licenseKey) {
-            plan
-            userCount
-            userCountRestricted
-            expiresAt
-            features {
-                name
-                enabled
+export const GITSERVERS = gql`
+    query Gitservers {
+        gitservers {
+            nodes {
+                ...GitserverFields
             }
         }
     }
+
+    ${gitserverFieldsFragment}
 `
+
+export const useGitserversConnection = (): UseShowMorePaginationResult<GitserversResult, GitserverFields> =>
+    useShowMorePagination<GitserversResult, GitserversVariables, GitserverFields>({
+        query: GITSERVERS,
+        variables: {},
+        getConnection: result => {
+            const { gitservers } = dataOrThrowErrors(result)
+            return gitservers
+        },
+    })

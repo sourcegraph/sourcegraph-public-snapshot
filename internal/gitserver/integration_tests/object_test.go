@@ -56,7 +56,7 @@ func TestGetObject(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: true,
+					EnableGRPC: boolPointer(true),
 				},
 			},
 		})
@@ -71,7 +71,7 @@ func TestGetObject(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: false,
+					EnableGRPC: boolPointer(false),
 				},
 			},
 		})
@@ -81,4 +81,8 @@ func TestGetObject(t *testing.T) {
 			runTest(t, label, test, cli)
 		}
 	})
+}
+
+func boolPointer(b bool) *bool {
+	return &b
 }

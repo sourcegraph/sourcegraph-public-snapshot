@@ -17,7 +17,7 @@ type Config struct {
 
 	InsecureDev bool
 
-	Address string
+	Port int
 
 	DiagnosticsSecret string
 
@@ -28,9 +28,10 @@ type Config struct {
 	}
 
 	Anthropic struct {
-		AllowedModels     []string
-		AccessToken       string
-		MaxTokensToSample int
+		AllowedModels         []string
+		AccessToken           string
+		MaxTokensToSample     int
+		AllowedPromptPatterns []string
 	}
 
 	OpenAI struct {
@@ -73,7 +74,8 @@ type OpenTelemetryConfig struct {
 
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
-	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve Cody Gateway on.")
+	c.Port = c.GetInt("PORT", "9992", "Port to serve Cody Gateway on, generally injected by Cloud Run.")
+	// TODO: Eventually migrate to MSP standard (no prefix)
 	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
@@ -110,6 +112,7 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for Anthropic"))
 	}
 	c.Anthropic.MaxTokensToSample = c.GetInt("CODY_GATEWAY_ANTHROPIC_MAX_TOKENS_TO_SAMPLE", "10000", "Maximum permitted value of maxTokensToSample")
+	c.Anthropic.AllowedPromptPatterns = splitMaybe(c.GetOptional("CODY_GATEWAY_ANTHROPIC_ALLOWED_PROMPT_PATTERNS", "Prompt patterns to allow."))
 
 	c.OpenAI.AccessToken = c.GetOptional("CODY_GATEWAY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
@@ -121,13 +124,14 @@ func (c *Config) Load() {
 		c.AddError(errors.New("must provide allowed models for OpenAI"))
 	}
 
-	c.Fireworks.AccessToken = c.Get("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "", "The Fireworks access token to be used.")
+	c.Fireworks.AccessToken = c.GetOptional("CODY_GATEWAY_FIREWORKS_ACCESS_TOKEN", "The Fireworks access token to be used.")
 	c.Fireworks.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_FIREWORKS_ALLOWED_MODELS",
 		strings.Join([]string{
 			"accounts/fireworks/models/starcoder-16b-w8a16",
 			"accounts/fireworks/models/starcoder-7b-w8a16",
 			"accounts/fireworks/models/starcoder-3b-w8a16",
 			"accounts/fireworks/models/starcoder-1b-w8a16",
+			"accounts/fireworks/models/llama-v2-7b-code",
 			"accounts/fireworks/models/llama-v2-13b-code",
 			"accounts/fireworks/models/llama-v2-13b-code-instruct",
 			"accounts/fireworks/models/wizardcoder-15b",

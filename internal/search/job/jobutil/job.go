@@ -96,7 +96,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs)
 
 		builder := &jobBuilder{
 			query:          b,
@@ -330,7 +330,7 @@ func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 
 	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
-	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -898,8 +898,17 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 	return res
 }
 
-func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
-	isGlobalSearch := isGlobal(repoOptions) && st != query.SearchTypeStructural
+func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, inputs *search.Inputs) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
+	// Exhaustive search avoids zoekt since it splits up a search in a worker
+	// run per repo@revision.
+	if inputs.Exhaustive {
+		repoUniverseSearch = false
+		skipRepoSubsetSearch = false
+		runZoektOverRepos = false
+		return
+	}
+
+	isGlobalSearch := isGlobal(repoOptions) && inputs.PatternType != query.SearchTypeStructural
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := b.Index() != query.No
@@ -916,7 +925,7 @@ func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.T
 	// repos to search. This control flow implies len(searcherRepos)
 	// is always 0, meaning that we should not create jobs to run
 	// unindexed searcher.
-	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && onSourcegraphDotCom)
+	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && inputs.OnSourcegraphDotCom)
 
 	// runZoektOverRepos controls whether we run Zoekt over a set of
 	// resolved repositories. Because Zoekt can run natively run over all
@@ -928,7 +937,7 @@ func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.T
 	// we'd be skipping indexed search entirely).
 	// (2) If on Sourcegraph.com, resolve repos unconditionally (we run both global search
 	// and search over resolved repos, and return results from either job).
-	runZoektOverRepos = !repoUniverseSearch || onSourcegraphDotCom
+	runZoektOverRepos = !repoUniverseSearch || inputs.OnSourcegraphDotCom
 
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }

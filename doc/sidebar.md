@@ -37,6 +37,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Capabilities](cody/capabilities.md)
 - [Explanations](cody/explanations/index.md)
 - [Cody Use Cases](cody/use-cases.md)
+- [Custom Commands](cody/custom-commands.md)
 - [Troubleshooting](cody/troubleshooting.md)
 - [FAQ](cody/faq.md)
 

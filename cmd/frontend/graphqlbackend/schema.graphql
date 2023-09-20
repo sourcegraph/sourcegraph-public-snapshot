@@ -149,12 +149,7 @@ type Mutation {
         """
         The ID of the existing repository whose mirror to check.
         """
-        repository: ID
-        """
-        The name of a repository whose mirror to check. If the name is provided, the repository need not be added
-        to the site (but the site configuration must define a code host that knows how to handle the name).
-        """
-        name: String
+        repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
     """
     Schedule the mirror repository to be updated from its original source repository. Updating
@@ -841,7 +836,7 @@ type Mutation {
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
     # reasonable defaults instead.
-    sendTestEmail(to: String!, config: SMTPConfig): String!
+    sendTestEmail(to: String!): String!
 
     """
     Enqueues a sync for the external service. It will be picked up in the background.
@@ -2178,6 +2173,56 @@ type Query {
         """
         before: String
     ): PermissionConnection!
+
+    """
+    Returns information pertaining to all gitserver instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
+    gitservers: GitserverInstanceConnection!
+}
+
+"""
+A list of gitserver instances.
+"""
+type GitserverInstanceConnection {
+    """
+    A list of gitserver instances.
+    """
+    nodes: [GitserverInstance!]!
+    """
+    The total count of gitserver instances in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+GitserverInfo contains information about a gitserver instance.
+"""
+type GitserverInstance implements Node {
+    """
+    The unique identifier of the gitserver instance.
+    """
+    id: ID!
+
+    """
+    The address of the gitserver instance.
+    """
+    address: String!
+
+    """
+    The amount of free space available on the gitserver instance, in bytes.
+    """
+    freeDiskSpaceBytes: BigInt!
+
+    """
+    The total amount of storage space on the gitserver instance, in bytes.
+    """
+    totalDiskSpaceBytes: BigInt!
 }
 
 """
@@ -3977,6 +4022,16 @@ type RecordedCommand {
     Path to command executable (git executable in most cases).
     """
     path: String!
+
+    """
+    Output of the command.
+    """
+    output: String!
+
+    """
+    Indicates whether the command execution was successful.
+    """
+    isSuccess: Boolean!
 }
 
 """
@@ -7177,7 +7232,7 @@ type Site implements SettingsSubject {
     allowEditExternalServicesWithFile: Boolean!
     """
     The number of external services distinguished by local repositories and remote repositories.
-    Local repository code host connections are only supported in Sourcegraph App.
+    Local repository code host connections are only supported in Cody App.
     """
     externalServicesCounts: ExternalServicesCounts!
     """
@@ -7361,6 +7416,10 @@ type CodyLLMConfiguration {
     Maximum number of tokens client should use when talking to the completionModel.
     """
     completionModelMaxTokens: Int
+    """
+    Name of the provider being used for LLM interactions.
+    """
+    provider: String!
 }
 
 """
@@ -7400,7 +7459,7 @@ type CodyGatewayRateLimitStatus {
 
 """
 External services count information includes a count of services for remote code host connections and a count of services
-for local code host connections (local is only supported for Sourcegraph App).
+for local code host connections (local is only supported for Cody App).
 """
 type ExternalServicesCounts {
     """
@@ -7591,28 +7650,9 @@ enum AlertType {
 }
 
 """
-The group of alerts.
-"""
-enum AlertGroup {
-    AUTHENTICATION
-    CODEHOST
-    CODY
-    EXTERNAL_URL
-    LICENSE
-    OBSERVABILITY
-    SMTP
-    UPDATE
-    OTHER
-}
-
-"""
 An alert message shown to the viewer.
 """
 type Alert {
-    """
-    The group of this alert. Indicates what system it relates to.
-    """
-    group: AlertGroup!
     """
     The type of this alert.
     """
@@ -9992,70 +10032,6 @@ input TeamMemberInput {
     Account Login is usually the username on the external account platform.
     """
     externalAccountLogin: String
-}
-
-"""
-Defines the available SMTP authentication mechanisms.
-
-NONE: No authentication.
-PLAIN: Plain authentication using username and password.
-CRAM_MD5: CRAM-MD5 authentication using username and secret.
-"""
-enum SMTPAuthType {
-    """
-    No authentication.
-    """
-    NONE
-    """
-    Plain authentication, which uses username and password.
-    """
-    PLAIN
-    """
-    Cram MD5 authentication, which uses username and secret.
-    """
-    CRAM_MD5
-}
-
-"""
-Configuration to specify SMTP server settings.
-"""
-input SMTPConfig {
-    """
-    Hostname of the SMTP server.
-    """
-    host: String!
-    """
-    Port of the SMTP server.
-    """
-    port: Int!
-    """
-    Type of authentication to use for the SMTP server.
-    """
-    authentication: SMTPAuthType!
-    """
-    Username to authenticate with if authentication type is not "NONE".
-    """
-    username: String
-    """
-    Password or cram-md5 secret in case authentication type is "CRAM-MD5"
-    """
-    password: String
-    """
-    Domain to send with the hello command, if required by the SMTP server.
-    """
-    domain: String
-    """
-    If true, TLS verification will be skipped. Defaults to false.
-    """
-    noVerifyTLS: Boolean
-    """
-    The FROM email address that is used in emails sent by Sourcegraph.
-    """
-    emailAddress: String!
-    """
-    The FROM name that is used in emails sent by Sourcegraph.
-    """
-    emailSenderName: String
 }
 
 """

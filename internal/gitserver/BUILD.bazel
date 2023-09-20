@@ -45,6 +45,7 @@ go_library(
         "@com_github_golang_groupcache//lru",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
@@ -93,6 +94,7 @@ go_test(
         "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/observation",
+        "//internal/ratelimit",
         "//internal/types",
         "//internal/wrexec",
         "//lib/errors",
@@ -105,5 +107,6 @@ go_test(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_x_time//rate",
     ],
 )
