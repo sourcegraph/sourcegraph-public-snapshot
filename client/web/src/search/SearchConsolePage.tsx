@@ -16,7 +16,6 @@ import {
 } from '@sourcegraph/branded'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
@@ -40,9 +39,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const location = useLocation()
     const navigate = useNavigate()
     const { streamSearch, isSourcegraphDotCom } = props
-    const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
-        applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
-    }))
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
         [location.search]
@@ -73,9 +69,8 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             createDefaultSuggestions({
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 isSourcegraphDotCom,
-                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom]
     )
 
     const extensions = useMemo(
