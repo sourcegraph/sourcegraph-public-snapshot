@@ -18,7 +18,7 @@ import { IResult } from '../useChartFilters'
 import { CUSTOM_USERS_CONNECTION } from './queries'
 import { UserNode } from './userNode'
 
-import styles from './userNode.module.scss'
+import styles from './index.module.scss'
 
 interface Props extends Pick<IResult, 'dateRange' | 'grouping'> {
     debouncedSearchText: string[]

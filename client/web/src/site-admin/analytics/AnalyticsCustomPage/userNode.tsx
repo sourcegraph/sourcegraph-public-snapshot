@@ -4,7 +4,7 @@ import { Link } from '@sourcegraph/wildcard'
 
 import { AnalyticsUserActivity } from '../../../graphql-operations'
 
-import styles from './userNode.module.scss'
+import styles from './index.module.scss'
 
 interface UserNodeProps {
     node: AnalyticsUserActivity

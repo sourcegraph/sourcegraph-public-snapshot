@@ -20,7 +20,7 @@ import { AllEventNamesResult } from '../../../graphql-operations'
 
 import { ALL_EVENT_NAMES } from './queries'
 
-import styles from './userNode.module.scss'
+import styles from './index.module.scss'
 
 interface eventNamesInputButton {
     display: string
