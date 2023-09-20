@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -48,15 +49,18 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	})
 
 	// Create test users:
-	//   1. logan, who has no external accounts
-	//   2. morgan, who is an expired SOAP user but has more external accounts
-	//   3. jordan, who is a SOAP user that has not expired
-	//   4. riley, who is an expired SOAP user (will be cleaned up)
-	//   5. cris, who has a non-SOAP external account
+	//   1. logan, who has no external accounts and is a site admin (will not be changed)
+	//   2. morgan, who is an expired SOAP user but has more external accounts (will be demoted)
+	//   3. jordan, who is a SOAP user that has not expired (will not be changed)
+	//   4. riley, who is an expired SOAP user (will be deleted)
+	//   5. cris, who has a non-SOAP external account and is not a site admin (will not be changed)
 	//   6. cami, who is an expired SOAP user on the permanent accounts list
-	//      (is a service account)
-	// All the above except riley will be deleted.
+	//      (is a service account, will not be touched)
+	// In all of the above, SOAP users are also made site admins.
+	// The lists below indicate who will and will not be deleted or otherwise
+	// modified.
 	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami"}
+	wantAdmins := []string{"jordan", "logan", "cris", "cami"}
 
 	_, err := db.Users().Create(
 		ctx,
@@ -80,7 +84,8 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), morgan.ID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), morgan.ID)
 	require.NoError(t, err)
 	err = db.UserExternalAccounts().AssociateUserAndSave(
 		ctx,
@@ -94,8 +99,9 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, morgan.ID, true))
 
-	_, err = db.UserExternalAccounts().CreateUserAndSave(
+	jordan, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		database.NewUser{
 			Username: "jordan",
@@ -109,6 +115,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, jordan.ID, true))
 
 	riley, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
@@ -124,8 +131,10 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		extsvc.AccountData{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), riley.ID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), riley.ID)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, riley.ID, true))
 
 	_, err = db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
@@ -160,8 +169,10 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		accountData,
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE users SET created_at = $1 WHERE id = $2`, time.Now().Add(-61*time.Minute), cami.ID)
+	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), cami.ID)
 	require.NoError(t, err)
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, cami.ID, true))
 
 	t.Run("handle with cleanup", func(t *testing.T) {
 		err = handler.Handle(ctx)
@@ -171,9 +182,20 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		got := make([]string, 0, len(users))
+		gotAdmins := make([]string, 0, len(users))
 		for _, u := range users {
 			got = append(got, u.Username)
+			if u.SiteAdmin {
+				gotAdmins = append(gotAdmins, u.Username)
+			}
 		}
+
+		slices.Sort(wantNotDeleted)
+		slices.Sort(got)
+		slices.Sort(wantAdmins)
+		slices.Sort(gotAdmins)
+
 		assert.Equal(t, wantNotDeleted, got)
+		assert.Equal(t, wantAdmins, gotAdmins)
 	})
 }
