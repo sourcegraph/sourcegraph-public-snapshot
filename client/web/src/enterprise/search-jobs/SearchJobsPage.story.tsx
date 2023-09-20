@@ -18,6 +18,8 @@ import {
 import { SEARCH_JOBS_QUERY, SearchJobsPage } from './SearchJobsPage'
 import { GET_USERS_QUERY } from './UsersPicker'
 
+type SearchJob = SearchJobsResult['searchJobs']['nodes'][number]
+
 const defaultStory: Meta = {
     title: 'web/search-jobs',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
@@ -170,7 +172,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                             avatarURL: null,
                         },
                     },
-                ],
+                ] as SearchJob[],
                 totalCount: 5,
                 pageInfo: {
                     __typename: 'BidirectionalPageInfo',
