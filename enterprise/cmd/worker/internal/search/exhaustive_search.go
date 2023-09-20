@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -54,7 +55,10 @@ var _ workerutil.Handler[*types.ExhaustiveSearchJob] = &exhaustiveSearchHandler{
 func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchJob) (err error) {
 	// TODO observability? read other handlers to see if we are missing stuff
 
-	q, err := h.newSearcher.NewSearch(ctx, record.Query)
+	userID := record.InitiatorID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+
+	q, err := h.newSearcher.NewSearch(ctx, userID, record.Query)
 	if err != nil {
 		return err
 	}

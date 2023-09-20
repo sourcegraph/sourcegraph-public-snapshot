@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -62,7 +63,10 @@ func (h *exhaustiveSearchRepoHandler) Handle(ctx context.Context, logger log.Log
 		return err
 	}
 
-	q, err := h.newSearcher.NewSearch(ctx, parent.Query)
+	userID := parent.InitiatorID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+
+	q, err := h.newSearcher.NewSearch(ctx, userID, parent.Query)
 	if err != nil {
 		return err
 	}

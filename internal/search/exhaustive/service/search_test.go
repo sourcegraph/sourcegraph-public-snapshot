@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
@@ -39,7 +41,10 @@ type newSearcherTestCase struct {
 func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher, tc newSearcherTestCase) {
 	assert := require.New(t)
 
-	searcher, err := newSearcher.NewSearch(ctx, tc.Query)
+	userID := int32(1)
+	ctx = actor.WithActor(ctx, actor.FromMockUser(userID))
+
+	searcher, err := newSearcher.NewSearch(ctx, userID, tc.Query)
 	assert.NoError(err)
 
 	// Test RepositoryRevSpecs
@@ -63,6 +68,19 @@ func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher,
 		assert.NoError(err)
 	}
 	assert.Equal(tc.WantCSV, csv.buf.String())
+}
+
+func TestWrongUser(t *testing.T) {
+	assert := require.New(t)
+
+	userID1 := int32(1)
+	userID2 := int32(2)
+
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID1))
+
+	newSearcher := FromSearchClient(client.NewStrictMockSearchClient())
+	_, err := newSearcher.NewSearch(ctx, userID2, "foo")
+	assert.Error(err)
 }
 
 func joinStringer[T fmt.Stringer](xs []T) string {

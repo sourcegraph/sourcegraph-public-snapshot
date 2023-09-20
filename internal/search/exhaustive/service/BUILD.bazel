@@ -43,6 +43,7 @@ go_test(
     ],
     embed = [":service"],
     deps = [
+        "//internal/actor",
         "//internal/api",
         "//internal/database",
         "//internal/database/dbmocks",
