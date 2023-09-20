@@ -14,8 +14,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/log"
 
@@ -87,10 +86,16 @@ func ForwardHandler() (http.HandlerFunc, error) {
 	}, nil
 }
 
+type Meter struct {
+	RequestCounter          metric.Int64Counter
+	RequestHasUpdateCounter metric.Int64Counter
+	ErrorCounter            metric.Int64Counter
+}
+
 // Handle handles the ping requests and responds with information about software
 // updates for Sourcegraph.
-func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
-	requestCounter.Inc()
+func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w http.ResponseWriter, r *http.Request) {
+	meter.RequestCounter.Add(r.Context(), 1)
 
 	pr, err := readPingRequest(r)
 	if err != nil {
@@ -119,7 +124,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseW
 	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
 
 	// Always log, even on malformed version strings
-	logPing(logger, pubsubClient, r, pr, hasUpdate)
+	logPing(logger, pubsubClient, meter, r, pr, hasUpdate)
 
 	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -140,7 +145,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseW
 	// the user's instance may have unseen notification messages.
 	if deploy.IsDeployTypeApp(pr.DeployType) {
 		if hasUpdate {
-			requestHasUpdateCounter.Inc()
+			meter.RequestHasUpdateCounter.Add(r.Context(), 1)
 		}
 		w.Header().Set("content-type", "application/json; charset=utf-8")
 		_, _ = w.Write(body)
@@ -153,7 +158,7 @@ func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseW
 		return
 	}
 	w.Header().Set("content-type", "application/json; charset=utf-8")
-	requestHasUpdateCounter.Inc()
+	meter.RequestHasUpdateCounter.Add(r.Context(), 1)
 	_, _ = w.Write(body)
 }
 
@@ -387,12 +392,12 @@ type pingPayload struct {
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
-func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing", "logs ping requests")
 	defer func() {
-		if r := recover(); r != nil {
-			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", r)))
-			errorCounter.Inc()
+		if err := recover(); err != nil {
+			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", err)))
+			meter.ErrorCounter.Add(r.Context(), 1)
 		}
 	}()
 
@@ -414,14 +419,14 @@ func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, r *http.Request
 
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
-		errorCounter.Inc()
+		meter.ErrorCounter.Add(r.Context(), 1)
 		logger.Error("failed to marshal payload", log.Error(err))
 		return
 	}
 
 	err = pubsubClient.Publish(context.Background(), message)
 	if err != nil {
-		errorCounter.Inc()
+		meter.ErrorCounter.Add(r.Context(), 1)
 		logger.Error("failed to publish", log.String("message", string(message)), log.Error(err))
 		return
 	}
@@ -782,18 +787,3 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 
 	return json.Marshal(singlePeriodUsage)
 }
-
-var (
-	requestCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_server_requests",
-		Help: "Number of requests to the update check handler.",
-	})
-	requestHasUpdateCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_server_requests_has_update",
-		Help: "Number of requests to the update check handler where an update is available.",
-	})
-	errorCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_server_errors",
-		Help: "Number of errors that occur while publishing server pings.",
-	})
-)

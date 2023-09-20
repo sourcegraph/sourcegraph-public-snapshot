@@ -10,6 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -26,7 +28,13 @@ import (
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	profiler.Init()
 
-	// Initialize our server
+	shutdownOtel, err := initOpenTelemetry(ctx, obctx.Logger, config.OpenTelemetry)
+	if err != nil {
+		return errors.Wrap(err, "initOpenTelemetry")
+	}
+	defer shutdownOtel()
+
+	// Initialize HTTP server
 	serverHandler, err := newServerHandler(obctx.Logger, config)
 	if err != nil {
 		return errors.Errorf("create server handler: %v", err)
@@ -50,6 +58,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	goroutine.MonitorBackgroundRoutines(ctx, server)
 	return nil
 }
+
+var meter = otel.GetMeterProvider().Meter("pings/shared")
 
 func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	r := mux.NewRouter()
@@ -115,10 +125,37 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 		}
 		return
 	})
+
+	requestCounter, err := meter.Int64Counter(
+		"pings.request_count",
+		metric.WithDescription("number of requests to the update check handler"),
+	)
+	if err != nil {
+		return nil, errors.Errorf("create request counter: %v", err)
+	}
+	requestHasUpdateCounter, err := meter.Int64Counter(
+		"pings.request_has_update_count",
+		metric.WithDescription("number of requests to the update check handler where an update is available"),
+	)
+	if err != nil {
+		return nil, errors.Errorf("create request has update counter: %v", err)
+	}
+	errorCounter, err := meter.Int64Counter(
+		"pings.error_count",
+		metric.WithDescription("number of errors that occur while publishing server pings"),
+	)
+	if err != nil {
+		return nil, errors.Errorf("create request counter: %v", err)
+	}
+	meter := &updatecheck.Meter{
+		RequestCounter:          requestCounter,
+		RequestHasUpdateCounter: requestHasUpdateCounter,
+		ErrorCounter:            errorCounter,
+	}
 	r.Path("/updates").
 		Methods(http.MethodGet, http.MethodPost).
 		HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			updatecheck.Handle(logger, pubsubClient, w, r)
+			updatecheck.Handle(logger, pubsubClient, meter, w, r)
 		})
 	return r, nil
 }
