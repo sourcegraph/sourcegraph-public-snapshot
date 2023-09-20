@@ -8297,6 +8297,10 @@ type Analytics {
     Code insights statistics
     """
     codeInsights(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodesInsightsResult!
+    """
+    A list of all event names for custom event autocomplete
+    """
+    allEventNames: [String]!
 }
 
 """
