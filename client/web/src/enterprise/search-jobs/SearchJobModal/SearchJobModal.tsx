@@ -1,9 +1,11 @@
 import { FC } from 'react'
 
+import { useApolloClient } from '@apollo/client'
+
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
-import { SearchJobNode } from '../../../graphql-operations'
+import { SearchJobNode, SearchJobState } from '../../../graphql-operations'
 import { SearchJobCard } from '../SearchJobCard/SearchJobCard'
 
 import styles from './SearchJobModal.module.scss'
@@ -23,11 +25,17 @@ interface SearchJobModalProps {
 
 export const SearchJobDeleteModal: FC<SearchJobModalProps> = props => {
     const { searchJob, onDismiss } = props
+    const client = useApolloClient()
 
     const [deleteSearchJob, { loading, error }] = useMutation(DELETE_SEARCH_JOB, {
         onCompleted: (data, clientOptions) => {
+            const deletedSearchJobReference = client.cache.identify({
+                __typename: 'SearchJob',
+                id: searchJob.id,
+            })
+
             // Delete just deleted search job from the apollo cache
-            clientOptions?.client?.cache.evict({ id: searchJob.id })
+            client.cache.evict({ id: deletedSearchJobReference })
             onDismiss()
         },
     })
@@ -52,6 +60,7 @@ export const SearchJobDeleteModal: FC<SearchJobModalProps> = props => {
                 <Button
                     variant="danger"
                     disabled={loading}
+                    className={styles.actionButton}
                     onClick={() => deleteSearchJob({ variables: { id: searchJob.id } })}
                 >
                     {loading ? (
@@ -110,7 +119,14 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
     const error = cancelError || creationError
 
     const handleRerunClick = async (): Promise<void> => {
-        await cancelSearchJob({ variables: { id: searchJob.id } })
+        if (
+            searchJob.state !== SearchJobState.COMPLETED &&
+            searchJob.state !== SearchJobState.FAILED &&
+            searchJob.state !== SearchJobState.CANCELED
+        ) {
+            await cancelSearchJob({ variables: { id: searchJob.id } })
+        }
+
         await createSearchJob({ variables: { query: searchJob.query } })
 
         onDismiss()
@@ -132,7 +148,12 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
                 <Button variant="secondary" outline={true} onClick={onDismiss}>
                     Cancel
                 </Button>
-                <Button variant="primary" disabled={loading} onClick={() => handleRerunClick()}>
+                <Button
+                    variant="primary"
+                    disabled={loading}
+                    className={styles.actionButton}
+                    onClick={() => handleRerunClick()}
+                >
                     {loading ? (
                         <>
                             <LoadingSpinner /> Re-running
@@ -171,6 +192,7 @@ export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
                 <Button
                     variant="danger"
                     disabled={loading}
+                    className={styles.actionButton}
                     onClick={() => cancelSearchJob({ variables: { id: searchJob.id } })}
                 >
                     {loading ? (
