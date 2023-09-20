@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react'
+import { type FC, useMemo, useState } from 'react'
 
 import { mdiDelete, mdiDownload, mdiRefresh, mdiStop } from '@mdi/js'
 import classNames from 'classnames'
@@ -37,12 +37,13 @@ import {
 import { DownloadFileButton } from '../../components/DownloadFileButton'
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
 import { ListPageZeroState } from '../../components/ZeroStates/ListPageZeroState'
-import { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
+import type { SearchJobNode, SearchJobsResult, SearchJobsVariables } from '../../graphql-operations'
 
 import { SearchJobBadge } from './SearchJobBadge/SearchJobBadge'
 import { CancelSearchJobModal, RerunSearchJobModal, SearchJobDeleteModal } from './SearchJobModal/SearchJobModal'
-import { User, UsersPicker } from './UsersPicker'
+import { type User, UsersPicker } from './UsersPicker'
 
 import styles from './SearchJobsPage.module.scss'
 
@@ -172,6 +173,7 @@ export const SearchJobsPage: FC<SearchJobsPageProps> = props => {
 
     return (
         <Page>
+            <PageTitle title="Search jobs" />
             <PageHeader
                 annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 path={[{ icon: LayersSearchOutlineIcon, text: 'Search Jobs' }]}
@@ -333,20 +335,19 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </span>
             )}
 
-            <span className={styles.jobActions}>
-                <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
-                    <DownloadFileButton
-                        variant="link"
-                        disabled={!job.logURL}
-                        fileUrl={job.logURL ?? ''}
-                        fileName={`search-job-logs-${getFileNameFromURL(job.logURL)}`}
-                        withLoading={false}
-                        className={styles.jobViewLogs}
-                    >
-                        View logs
-                    </DownloadFileButton>
-                </Tooltip>
+            <Tooltip content={!job.logURL ? 'There are no logs yet' : ''}>
+                <DownloadFileButton
+                    variant="link"
+                    disabled={!job.logURL}
+                    fileUrl={job.logURL ?? ''}
+                    debounceTime={1000}
+                    className={styles.jobViewLogs}
+                >
+                    View logs
+                </DownloadFileButton>
+            </Tooltip>
 
+            <span className={styles.jobActions}>
                 <Tooltip content="Rerun search job">
                     <Button
                         variant="secondary"
@@ -388,9 +389,8 @@ const SearchJob: FC<SearchJobProps> = props => {
             {job.URL && (
                 <DownloadFileButton
                     fileUrl={job.URL}
-                    fileName={`search-job-results-${getFileNameFromURL(job.URL)}`}
                     variant="secondary"
-                    withLoading={false}
+                    debounceTime={1000}
                     className={styles.jobDownload}
                 >
                     <Icon svgPath={mdiDownload} aria-hidden={true} />
@@ -465,12 +465,3 @@ const SearchJobsInitialZeroState: FC<SearchJobsInitialZeroStateProps> = props =>
 const formatJobState = (state: SearchJobState): string => upperFirst(state.toLowerCase())
 const hasFiltersValues = (states: SearchJobState[], users: User[], searchTerm: string): boolean =>
     states.length > 0 || users.length > 0 || searchTerm.trim().length > 0
-
-const getFileNameFromURL = (url: string | null): string => {
-    if (url === null) {
-        return ''
-    }
-
-    const parts = url.split('/')
-    return parts[parts.length - 1]
-}
