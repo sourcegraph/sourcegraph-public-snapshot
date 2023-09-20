@@ -67,6 +67,10 @@ func (s *PerforceDepotSyncer) Type() string {
 	return "perforce"
 }
 
+func (s *PerforceDepotSyncer) CanConnect(ctx context.Context, host, username, password string) error {
+	return p4testWithTrust(ctx, host, username, password)
+}
+
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
 func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
 	username, password, host, path, err := decomposePerforceRemoteURL(remoteURL)
