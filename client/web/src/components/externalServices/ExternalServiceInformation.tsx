@@ -16,7 +16,7 @@ interface ExternalServiceInformationProps {
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     kind: ExternalServiceKind
     displayName: string
-    rateLimiterState?: RateLimiterState
+    rateLimiterState?: RateLimiterState | null
     codeHostID: string
     reposNumber: number
     syncInProgress: boolean
