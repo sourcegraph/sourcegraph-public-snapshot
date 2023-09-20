@@ -33,3 +33,13 @@ func reverse[T any](src []T) []T {
 	}
 	return reversed
 }
+
+func mapValues[K comparable, V any](m map[K]V) []V {
+	values := []V{}
+
+	for _, v := range m {
+		values = append(values, v)
+	}
+
+	return values
+}

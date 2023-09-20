@@ -91,20 +91,23 @@ func userEmail(u *GitHubScenarioUser) string {
 }
 
 func (u *GitHubScenarioUser) GetUserAction(client *GitHubClient) Action {
-	name := u.Name()
-	if u.Name() == Admin.Name() {
-		name = client.cfg.User
-	}
+	// we have to deref here otherwise inside the action the user changes to
+	// not what the user is AT THIS POINT
+	scenarioUser := *u
 	return &action{
 		id:   u.Key(),
-		name: "get-user-" + name,
+		name: "get-github-user-" + u.Name(),
 		fn: func(ctx context.Context, store *ScenarioStore) (ActionResult, error) {
-			user, err := client.GetUser(ctx, name)
+			var username = scenarioUser.Name()
+			if username == Admin.Name() {
+				username = client.cfg.User
+			}
+			user, err := client.GetUser(ctx, username)
 			if err != nil {
 				return nil, err
 			}
 
-			store.SetScenarioUserMapping(u, user)
+			store.SetScenarioUserMapping(&scenarioUser, user)
 			return &actionResult[*github.User]{item: user}, nil
 		},
 	}

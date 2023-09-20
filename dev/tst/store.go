@@ -52,6 +52,7 @@ func (s *ScenarioStore) GetOrg() (*github.Organization, error) {
 
 func (s *ScenarioStore) SetScenarioUserMapping(u *GitHubScenarioUser, user *github.User) {
 	s.T.Helper()
+	println(u.Key(), u.Name())
 	s.store[u.Key()] = user
 }
 
@@ -85,7 +86,7 @@ func (s *ScenarioStore) GetScenarioUser(u GitHubScenarioUser) (*github.User, err
 			return result, castFailure
 		}
 	} else {
-		return result, errors.Newf("%s not found - it might not have been loaded yet", u.Key())
+		return result, errors.Newf("scenario user %q not found - it might not have been loaded yet", u.Key())
 	}
 	return result, nil
 }
