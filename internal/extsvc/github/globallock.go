@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
@@ -123,6 +124,17 @@ func (m *mockLock) UnlockContext(_ context.Context) (bool, error) {
 	return false, nil
 }
 
+// With a default number of retries of 32, this will average to 8 seconds.
+const (
+	minRetryDelayMilliSec = 200
+	maxRetryDelayMilliSec = 300
+)
+
+// From https://github.com/go-redsync/redsync/blob/master/redsync.go
+func retryDelay(tries int) time.Duration {
+	return time.Duration(rand.Intn(maxRetryDelayMilliSec-minRetryDelayMilliSec)+minRetryDelayMilliSec) * time.Millisecond
+}
+
 func lockForToken(logger log.Logger, token string) lock {
 	if testLock != nil {
 		return testLock
@@ -142,7 +154,7 @@ func lockForToken(logger log.Logger, token string) lock {
 	}
 
 	locker := redsync.New(redigo.NewPool(pool))
-	return locker.NewMutex(fmt.Sprintf("github-concurrency:%s", hashedToken))
+	return locker.NewMutex(fmt.Sprintf("github-concurrency:%s", hashedToken), redsync.WithRetryDelayFunc(retryDelay))
 }
 
 type inMemoryLock struct{ mu *sync.Mutex }

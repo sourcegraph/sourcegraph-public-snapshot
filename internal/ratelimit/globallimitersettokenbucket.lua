@@ -6,5 +6,10 @@ local bucket_replenish_interval = tonumber(ARGV[2])
 local allowed_burst = tonumber(ARGV[3])
 
 redis.call('SET', bucket_quota_key, bucket_quota)
+redis.call('EXPIRE', bucket_quota_key, 86400)
+
 redis.call('SET', replenish_interval_seconds_key, bucket_replenish_interval)
+redis.call('EXPIRE', replenish_interval_seconds_key, 86400)
+
 redis.call('SET', burst_key, allowed_burst)
+redis.call('EXPIRE', burst_key, 86400)
