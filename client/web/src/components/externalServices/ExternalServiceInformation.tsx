@@ -44,7 +44,9 @@ export const RateLimiterStateInfo: FC<{ rateLimiterState: RateLimiterState }> = 
             ) : (
                 <td>
                     <Tooltip content={rateLimiterDebug}>
-                        <span>{(rateLimiterState.limit / rateLimiterState.interval).toFixed(2)} requests per second</span>
+                        <span>
+                            {(rateLimiterState.limit / rateLimiterState.interval).toFixed(2)} requests per second
+                        </span>
                     </Tooltip>
                 </td>
             )}
