@@ -48,7 +48,6 @@ export const OnboardingChecklist: FC = (): JSX.Element => {
 
     // We don't want to show the onboarding checklist in integration tests
     if (process.env.INTEGRATION_TESTS) {
-         
         return <></>
     }
 

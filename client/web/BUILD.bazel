@@ -1965,7 +1965,6 @@ ts_project(
         "src/nav/UserNavItem.test.tsx",
         "src/notebooks/serialize/convertMarkdownToBlocks.test.ts",
         "src/notebooks/serialize/index.test.ts",
-        "src/onboarding/LicenseModal.test.tsx",
         "src/onboarding/OnboardingChecklist.mocks.ts",
         "src/onboarding/OnboardingChecklist.test.tsx",
         "src/open-in-editor/build-url.test.ts",
