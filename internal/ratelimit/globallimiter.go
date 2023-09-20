@@ -131,7 +131,7 @@ func (r *globalRateLimiter) WaitN(ctx context.Context, n int) (err error) {
 	}
 
 	// Reserve a token from the bucket.
-	timeToWait, err := r.waitn(ctx, n, now, waitLimit)
+	timeToWait, err := r.waitn(ctx, n, waitLimit)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (r *globalRateLimiter) newTimer(d time.Duration) (<-chan time.Time, func() 
 	return timer.C, timer.Stop
 }
 
-func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.Time, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
+func (r *globalRateLimiter) waitn(ctx context.Context, n int, maxTimeToWait time.Duration) (timeToWait time.Duration, err error) {
 	metricLimiterAttempts.Inc()
 	metricLimiterWaiting.Inc()
 	defer metricLimiterWaiting.Dec()
