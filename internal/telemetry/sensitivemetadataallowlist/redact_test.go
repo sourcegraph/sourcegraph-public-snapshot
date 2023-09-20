@@ -29,27 +29,40 @@ func TestRedactEvent(t *testing.T) {
 	tests := []struct {
 		name   string
 		mode   redactMode
+		event  *telemetrygatewayv1.Event
 		assert func(t *testing.T, got *telemetrygatewayv1.Event)
 	}{
 		{
-			name: "redact all sensitive",
-			mode: redactAllSensitive,
+			name:  "redact all sensitive",
+			mode:  redactAllSensitive,
+			event: makeFullEvent(),
 			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
 				assert.Nil(t, got.Parameters.PrivateMetadata)
 				assert.Nil(t, got.MarketingTracking)
 			},
 		},
 		{
-			name: "redact marketing",
-			mode: redactMarketing,
+			name:  "redact all sensitive on empty event",
+			mode:  redactAllSensitive,
+			event: &telemetrygatewayv1.Event{},
+			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
+				assert.Nil(t, got.Parameters.PrivateMetadata)
+				assert.Nil(t, got.MarketingTracking)
+			},
+		},
+		{
+			name:  "redact marketing",
+			mode:  redactMarketing,
+			event: makeFullEvent(),
 			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
 				assert.NotNil(t, got.Parameters.PrivateMetadata)
 				assert.Nil(t, got.MarketingTracking)
 			},
 		},
 		{
-			name: "redact nothing",
-			mode: redactNothing,
+			name:  "redact nothing",
+			mode:  redactNothing,
+			event: makeFullEvent(),
 			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
 				assert.NotNil(t, got.Parameters.PrivateMetadata)
 				assert.NotNil(t, got.MarketingTracking)

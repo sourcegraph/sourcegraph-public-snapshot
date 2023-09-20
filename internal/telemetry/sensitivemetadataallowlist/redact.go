@@ -31,5 +31,7 @@ func redactEvent(event *telemetrygatewayv1.Event, mode redactMode) {
 	}
 
 	// redactAllSensitive
-	event.Parameters.PrivateMetadata = nil
+	if event.Parameters != nil {
+		event.Parameters.PrivateMetadata = nil
+	}
 }

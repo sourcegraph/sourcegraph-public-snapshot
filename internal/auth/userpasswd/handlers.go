@@ -15,8 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -282,9 +280,7 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
 func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
-	logger = logger.Scoped("signin", "sign-in request handler")
-	events := telemetryrecorder.NewBestEffort(logger, db)
-
+	logger = logger.Scoped("HandleSignin", "sign in request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -299,13 +295,8 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		// assume a SignInFailed state so that the deferred logSignInEvent function call
 		// will log the correct security event in case of a failure.
 		signInResult = database.SecurityEventNameSignInFailed
-		signInResultAction := telemetry.ActionFailed
 		defer func() {
 			logSignInEvent(r, db, &user, &signInResult)
-
-			actorCtx := sgactor.WithActor(r.Context(), sgactor.FromActualUser(&user))
-			events.Record(actorCtx, telemetry.FeatureSignIn, signInResultAction, telemetry.EventParameters{})
-
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 
@@ -373,7 +364,6 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		}
 
 		signInResult = database.SecurityEventNameSignInSucceeded
-		signInResultAction = telemetry.ActionSucceeded
 	}
 }
 
@@ -469,6 +459,7 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
+	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 }
 
