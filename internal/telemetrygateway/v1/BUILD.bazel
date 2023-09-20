@@ -29,17 +29,29 @@ go_proto_library(
 
 go_library(
     name = "telemetrygateway",
+    srcs = ["event.go"],
     embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1",
     visibility = [
+        "//cmd/frontend/internal/telemetry/resolvers:__pkg__",
         "//cmd/telemetrygateway/server:__pkg__",
         "//cmd/telemetrygateway/shared:__pkg__",
         "//internal/api:__pkg__",
+        "//internal/database:__pkg__",
         "//internal/extsvc/gitolite:__pkg__",
+        "//internal/telemetry:__pkg__",
+        "//internal/telemetry/teestore:__pkg__",
         "//internal/telemetrygateway:__pkg__",
         "//internal/telemetrygateway/gitdomain:__pkg__",
         "//internal/telemetrygateway/integration_tests:__pkg__",
         "//internal/telemetrygateway/protocol:__pkg__",
+    ],
+    deps = [
+        "//internal/actor",
+        "//internal/featureflag",
+        "//lib/pointers",
+        "@com_github_google_uuid//:uuid",
+        "@org_golang_google_protobuf//types/known/timestamppb",
     ],
 )
 
@@ -55,4 +67,26 @@ buf_lint_test(
     timeout = "short",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],
+)
+
+go_test(
+    name = "telemetrygateway_test",
+    srcs = [
+        "backcompat_test.go",
+        "event_test.go",
+        "main_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":telemetrygateway"],
+    deps = [
+        "//internal/actor",
+        "//lib/pointers",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//encoding/protojson",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/known/structpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
 )
