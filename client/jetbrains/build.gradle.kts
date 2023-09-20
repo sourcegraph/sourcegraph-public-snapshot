@@ -14,7 +14,7 @@ val isAgentEnabled = findProperty("enableAgent") != "false"
 plugins {
   id("java")
   // Dependencies are locked at this version to work with JDK 11 on CI.
-  id("org.jetbrains.kotlin.jvm") version "1.7.0"
+  id("org.jetbrains.kotlin.jvm") version "1.9.10"
   id("org.jetbrains.intellij") version "1.13.3"
   id("org.jetbrains.changelog") version "1.3.1"
   id("com.diffplug.spotless") version "6.21.0"
