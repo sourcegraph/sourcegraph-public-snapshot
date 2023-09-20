@@ -112,7 +112,7 @@ const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
         <>
             {error && <ErrorAlert error={error} />}
             <div aria-label="recorded commands">
-                {!loading && !isRecordingEnabled && (
+                {!loading && isRecordingEnabled === false && (
                     <div>
                         <Text className="my-2">Command recording isn't enabled for this repository.</Text>
                     </div>

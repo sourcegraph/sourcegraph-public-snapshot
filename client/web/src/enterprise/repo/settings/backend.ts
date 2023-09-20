@@ -92,13 +92,13 @@ interface UseFetchRecordedCommandsResult {
     recordedCommands: RepositoryRecordedCommandFields[]
     hasNextPage: boolean
     fetchMore: (offset: number) => void
-    isRecordingEnabled: boolean
+    isRecordingEnabled?: boolean
 }
 
 export const useFetchRecordedCommands = (repoId: string): UseFetchRecordedCommandsResult => {
     const [recordedCommands, setRecordedCommands] = useState<RepositoryRecordedCommandFields[]>([])
     const [hasNextPage, setHasNextPage] = useState(false)
-    const [isRecordingEnabled, setIsRecordingEnabled] = useState(false)
+    const [isRecordingEnabled, setIsRecordingEnabled] = useState<boolean>()
 
     const [fetchRecordedCommands, { loading, error }] = useLazyQuery<
         RepositoryRecordedCommandsResult,

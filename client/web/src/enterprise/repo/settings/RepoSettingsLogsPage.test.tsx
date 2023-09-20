@@ -133,6 +133,7 @@ describe('RepoSettingsLogsPage', () => {
                 data: {
                     node: {
                         __typename: 'Repository',
+                        isRecordingEnabled: true,
                         recordedCommands: {
                             nodes: [],
                             totalCount: 0,

@@ -131,7 +131,7 @@ func (r *RepositoryResolver) IsRecordingEnabled() bool {
 		}
 
 		for _, repo := range recordingConf.Repos {
-			if repo == r.Name() {
+			if strings.EqualFold(repo, r.Name()) {
 				return true
 			}
 		}
