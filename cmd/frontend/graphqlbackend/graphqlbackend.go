@@ -385,6 +385,10 @@ func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{})
 }
 
+func NewSchemaWithGitserverClient(db database.DB, gitserverClient gitserver.Client) (*graphql.Schema, error) {
+	return NewSchema(db, gitserverClient, []OptionalResolver{})
+}
+
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
@@ -428,7 +432,10 @@ func NewSchema(
 	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient)
-	schemas := []string{mainSchema, outboundWebhooksSchema}
+	schemas := []string{
+		mainSchema,
+		outboundWebhooksSchema,
+	}
 
 	for _, optional := range optionals {
 		if batchChanges := optional.BatchChangesResolver; batchChanges != nil {
@@ -614,6 +621,12 @@ func NewSchema(
 				resolver.nodeByIDFns[kind] = res
 			}
 		}
+
+		if telemetryResolver := optional.TelemetryRootResolver; telemetryResolver != nil {
+			EnterpriseResolvers.telemetryResolver = telemetryResolver
+			resolver.TelemetryRootResolver = telemetryResolver
+			schemas = append(schemas, telemetrySchema)
+		}
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
@@ -674,6 +687,7 @@ type OptionalResolver struct {
 	SearchContextsResolver
 	WebhooksResolver
 	ContentLibraryResolver
+	*TelemetryRootResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -762,6 +776,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		CodeHostKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return CodeHostByID(ctx, r.db, id)
 		},
+		gitserverIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitserverByID(ctx, id)
+		},
 	}
 	return r
 }
@@ -790,6 +807,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver      SearchContextsResolver
 	webhooksResolver            WebhooksResolver
 	contentLibraryResolver      ContentLibraryResolver
+	telemetryResolver           *TelemetryRootResolver
 }{}
 
 // Root returns a new schemaResolver.

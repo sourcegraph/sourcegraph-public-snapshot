@@ -111,8 +111,7 @@ Available commands in `sg.config.yaml`:
 * embeddings
 * executor-kubernetes-template
 * executor-template
-* frontend: Enterprise frontend
-* github-proxy
+* frontend: Frontend
 * gitserver
 * gitserver-0
 * gitserver-1
@@ -136,6 +135,7 @@ Available commands in `sg.config.yaml`:
 * symbols
 * syntax-highlighter
 * tauri: App shell (Tauri)
+* telemetry-gateway
 * web-integration-build-prod: Build production web application for integration tests
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
@@ -1192,6 +1192,7 @@ Build Wolfi packages and images locally, and update base image hashes
 ```sh
 # Update base image hashes
 $ sg wolfi update-hashes
+$ sg wolfi update-hashes jaeger-agent
 
 # Build a specific package using a manifest from wolfi-packages/
 $ sg wolfi package jaeger
@@ -1240,9 +1241,10 @@ Flags:
 Update Wolfi base images hashes to the latest versions.
 
 ```sh
-$ Update the hash references for all Wolfi base images in the 'dev/oci_deps.bzl' file.
+$ Update the hash references for Wolfi base images in the 'dev/oci_deps.bzl' file.
+$ By default all hashes will be updated; pass in a base image name to update a specific image.
 
-$ This is done by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
+$ Hash references are updated by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
 ```
 
 Flags:
@@ -1293,6 +1295,16 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Fix all checks
 * `--oss`: Omit Sourcegraph-teammate-specific setup
+* `--skip-pre-commit`: Skip overwriting pre-commit.com installation
+
+### sg setup disable-pre-commit
+
+Disable pre-commit hooks.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg src
 

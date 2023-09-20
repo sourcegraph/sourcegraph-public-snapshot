@@ -14,9 +14,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/urlredactor"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,6 +68,10 @@ type PerforceDepotSyncer struct {
 
 func (s *PerforceDepotSyncer) Type() string {
 	return "perforce"
+}
+
+func (s *PerforceDepotSyncer) CanConnect(ctx context.Context, host, username, password string) error {
+	return p4testWithTrust(ctx, host, username, password)
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
@@ -181,7 +187,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	// something for p4?
 	output, err := runCommandCombinedOutput(ctx, cmd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
+		return nil, errors.Wrapf(err, "failed to update with output %q", urlredactor.New(remoteURL).Redact(string(output)))
 	}
 
 	if !s.FusionConfig.Enabled {
@@ -290,7 +296,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = ctxerr
+			err = errors.Wrap(ctxerr, "p4 login context error")
 		}
 		if len(out) > 0 {
 			err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
@@ -322,7 +328,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
-			err = ctxerr
+			err = errors.Wrap(ctxerr, "p4 depots context error")
 		}
 		if len(out) > 0 {
 			err = errors.Wrapf(err, `failed to run command "p4 depots" (output follows)\n\n%s`, specifyCommandInErrorMessage(string(out), cmd))

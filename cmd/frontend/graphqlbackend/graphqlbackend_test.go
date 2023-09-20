@@ -107,7 +107,7 @@ func TestRecloneRepository(t *testing.T) {
 			GitServers: []string{serverURL.Host},
 		}, SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: false,
+				EnableGRPC: boolPointer(false),
 			},
 		},
 	})
@@ -248,4 +248,8 @@ func TestResolverTo(t *testing.T) {
 			t.Errorf("expected treeEntry to be tree")
 		}
 	})
+}
+
+func boolPointer(b bool) *bool {
+	return &b
 }

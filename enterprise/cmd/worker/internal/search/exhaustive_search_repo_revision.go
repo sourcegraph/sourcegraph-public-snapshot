@@ -2,14 +2,18 @@ package search
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -22,11 +26,15 @@ func newExhaustiveSearchRepoRevisionWorker(
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*types.ExhaustiveSearchRepoRevisionJob],
 	exhaustiveSearchStore *store.Store,
+	newSearcher service.NewSearcher,
+	uploadStore uploadstore.Store,
 	config config,
 ) goroutine.BackgroundRoutine {
 	handler := &exhaustiveSearchRepoRevHandler{
-		logger: log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
-		store:  exhaustiveSearchStore,
+		logger:      log.Scoped("exhaustive-search-repo-revision", "The background worker running exhaustive searches on a revision of a repository"),
+		store:       exhaustiveSearchStore,
+		newSearcher: newSearcher,
+		uploadStore: uploadStore,
 	}
 
 	opts := workerutil.WorkerOptions{
@@ -42,13 +50,33 @@ func newExhaustiveSearchRepoRevisionWorker(
 }
 
 type exhaustiveSearchRepoRevHandler struct {
-	logger log.Logger
-	store  *store.Store
+	logger      log.Logger
+	store       *store.Store
+	newSearcher service.NewSearcher
+	uploadStore uploadstore.Store
 }
 
 var _ workerutil.Handler[*types.ExhaustiveSearchRepoRevisionJob] = &exhaustiveSearchRepoRevHandler{}
 
 func (h *exhaustiveSearchRepoRevHandler) Handle(ctx context.Context, logger log.Logger, record *types.ExhaustiveSearchRepoRevisionJob) error {
-	// TODO at the moment this does nothing. This will be implemented in a future PR.
-	return errors.New("not implemented")
+	jobID, query, repoRev, initiatorID, err := h.store.GetQueryRepoRev(ctx, record)
+	if err != nil {
+		return err
+	}
+
+	ctx = actor.WithActor(ctx, actor.FromUser(initiatorID))
+
+	q, err := h.newSearcher.NewSearch(ctx, initiatorID, query)
+	if err != nil {
+		return err
+	}
+
+	csvWriter := service.NewBlobstoreCSVWriter(ctx, h.uploadStore, fmt.Sprintf("%d-%d", jobID, record.ID))
+
+	err = q.Search(ctx, repoRev, csvWriter)
+	if closeErr := csvWriter.Close(); closeErr != nil {
+		err = errors.Append(err, closeErr)
+	}
+
+	return err
 }

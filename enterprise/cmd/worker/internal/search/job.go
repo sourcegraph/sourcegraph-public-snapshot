@@ -12,8 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
+	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -51,10 +53,32 @@ func (j *searchJob) Description() string {
 }
 
 func (j *searchJob) Config() []env.Config {
-	return nil
+	return []env.Config{uploadstore.ConfigInst}
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	workCtx := actor.WithInternalActor(context.Background())
+
+	uploadStore, err := uploadstore.New(workCtx, observationCtx, uploadstore.ConfigInst)
+	if err != nil {
+		j.err = err
+		return nil, err
+	}
+
+	newSearcherFactory := func(observationCtx *observation.Context, db database.DB) service.NewSearcher {
+		searchClient := client.New(observationCtx.Logger, db)
+		return service.FromSearchClient(searchClient)
+	}
+
+	return j.newSearchJobRoutines(workCtx, observationCtx, uploadStore, newSearcherFactory)
+}
+
+func (j *searchJob) newSearchJobRoutines(
+	workCtx context.Context,
+	observationCtx *observation.Context,
+	uploadStore uploadstore.Store,
+	newSearcherFactory func(*observation.Context, database.DB) service.NewSearcher,
+) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
 		db := j.workerDB
 		if db == nil {
@@ -64,8 +88,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 			}
 		}
 
-		// We currently are relying on a fake for search.
-		newSearcher := service.NewSearcherFake()
+		newSearcher := newSearcherFactory(observationCtx, db)
 
 		exhaustiveSearchStore := store.New(db, observationCtx)
 
@@ -84,12 +107,10 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 			observationCtx,
 		)
 
-		workCtx := actor.WithInternalActor(context.Background())
-
 		j.workers = []goroutine.BackgroundRoutine{
 			newExhaustiveSearchWorker(workCtx, observationCtx, searchWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
-			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, j.config),
-			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, j.config),
+			newExhaustiveSearchRepoWorker(workCtx, observationCtx, repoWorkerStore, exhaustiveSearchStore, newSearcher, j.config),
+			newExhaustiveSearchRepoRevisionWorker(workCtx, observationCtx, revWorkerStore, exhaustiveSearchStore, newSearcher, uploadStore, j.config),
 		}
 	})
 

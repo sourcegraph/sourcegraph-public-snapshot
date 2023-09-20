@@ -1862,24 +1862,25 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) 
 
 <br />
 
-## github-proxy: github_proxy_waiting_requests
+## github: src_githubcom_concurrency_lock_waiting_requests
 
 <p class="subtitle">number of requests waiting on the global mutex</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> github-proxy: 100+ number of requests waiting on the global mutex for 5m0s
+- <span class="badge badge-warning">warning</span> github: 100+ number of requests waiting on the global mutex for 5m0s
 
 **Next steps**
 
-- 								- **Check github-proxy logs for network connection issues.
-								- **Check github status.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-github-proxy-waiting-requests).
+- 								- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
+								- **Check redis-store health.
+								- **Check GitHub status.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-waiting-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_github_proxy_waiting_requests"
+  "warning_github_src_githubcom_concurrency_lock_waiting_requests"
 ]
 ```
 
@@ -1888,323 +1889,71 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((max(github_proxy_waiting_requests)) >= 100)`
+Generated query for warning alert: `max((max(src_githubcom_concurrency_lock_waiting_requests)) >= 100)`
 
 </details>
 
 <br />
 
-## github-proxy: container_cpu_usage
+## github: src_githubcom_concurrency_lock_failed_lock_requests
 
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
+<p class="subtitle">number of lock failures</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance
+- <span class="badge badge-warning">warning</span> github: 100+ number of lock failures for 5m0s
 
 **Next steps**
 
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-container-cpu-usage).
+- 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
+							- **Check redis-store health.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-lock-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_container_cpu_usage"
+  "warning_github_src_githubcom_concurrency_lock_failed_lock_requests"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}) >= 99)`
+Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))) >= 100)`
 
 </details>
 
 <br />
 
-## github-proxy: container_memory_usage
+## github: src_githubcom_concurrency_lock_failed_unlock_requests
 
-<p class="subtitle">container memory usage by instance</p>
+<p class="subtitle">number of unlock failures</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> github-proxy: 99%+ container memory usage by instance
+- <span class="badge badge-warning">warning</span> github: 100+ number of unlock failures for 5m0s
 
 **Next steps**
 
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-container-memory-usage).
+- 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
+							- **Check redis-store health.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-unlock-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_github-proxy_container_memory_usage"
+  "warning_github_src_githubcom_concurrency_lock_failed_unlock_requests"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}) >= 99)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[1d])) >= 80)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
-- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[1d])) >= 80)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-cpu-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[5m])) >= 90)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 90%+ container memory usage (5m maximum) by instance
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-memory-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_memory_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[5m])) >= 90)`
-
-</details>
-
-<br />
-
-## github-proxy: container_oomkill_events_total
-
-<p class="subtitle">container OOMKILL events total by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 1+ container OOMKILL events total by instance
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-container-oomkill-events-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_container_oomkill_events_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^github-proxy.*"})) >= 1)`
-
-</details>
-
-<br />
-
-## github-proxy: go_goroutines
-
-<p class="subtitle">maximum active goroutines</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 10000+ maximum active goroutines for 10m0s
-
-**Next steps**
-
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_go_goroutines"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*github-proxy"})) >= 10000)`
-
-</details>
-
-<br />
-
-## github-proxy: go_gc_duration_seconds
-
-<p class="subtitle">maximum go garbage collection duration</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 2s+ maximum go garbage collection duration
-
-**Next steps**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-go-gc-duration-seconds).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_go_gc_duration_seconds"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*github-proxy"})) >= 2)`
-
-</details>
-
-<br />
-
-## github-proxy: pods_available_percentage
-
-<p class="subtitle">percentage pods available</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> github-proxy: less than 90% percentage pods available for 10m0s
-
-**Next steps**
-
-- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-pods-available-percentage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_github-proxy_pods_available_percentage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `min((sum by (app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*github-proxy"}) * 100) <= 90)`
+Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))) >= 100)`
 
 </details>
 

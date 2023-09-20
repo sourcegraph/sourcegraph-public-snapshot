@@ -100,13 +100,19 @@ func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_Creat
 	return s.SendAndClose(res)
 }
 
+func (gs *GRPCServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*proto.DiskInfoResponse, error) {
+	return getDiskInfo(gs.Server.ReposDir)
+}
+
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
 	internalReq := protocol.ExecRequest{
-		Repo:           api.RepoName(req.GetRepo()),
-		EnsureRevision: req.GetEnsureRevision(),
-		Args:           byteSlicesToStrings(req.GetArgs()),
-		Stdin:          req.GetStdin(),
-		NoTimeout:      req.GetNoTimeout(),
+		Repo:      api.RepoName(req.GetRepo()),
+		Args:      byteSlicesToStrings(req.GetArgs()),
+		Stdin:     req.GetStdin(),
+		NoTimeout: req.GetNoTimeout(),
+
+		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
+		EnsureRevision: string(req.GetEnsureRevision()),
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -452,10 +458,16 @@ func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
 	repo := api.RepoName(req.GetRepo())
+
+	if req.Repo == "" {
+		return nil, status.Error(codes.InvalidArgument, "no Repo given")
+	}
+
 	resp, err := gs.Server.isRepoCloneable(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.ToProto(), nil
 }
 

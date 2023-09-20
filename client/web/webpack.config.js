@@ -51,7 +51,7 @@ const {
   SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
-  SOURCEGRAPH_APP,
+  CODY_APP,
 } = ENVIRONMENT_CONFIG
 
 const isHotReloadEnabled = NODE_ENV !== 'production' && !IS_CI
@@ -129,7 +129,7 @@ const config = {
   entry: {
     // Desktop app vs. Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint. The app endoint imports a strict superset of the enterprise entrypoint.
-    app: SOURCEGRAPH_APP
+    app: CODY_APP
       ? path.join(enterpriseDirectory, 'app-main.tsx')
       : ENTERPRISE
       ? path.join(enterpriseDirectory, 'main.tsx')

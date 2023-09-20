@@ -64,7 +64,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
 const commonProps = (props: Args): UserNavItemProps => ({
     authenticatedUser,
     isSourcegraphDotCom: props.isSourcegraphDotCom,
-    isSourcegraphApp: false,
+    isCodyApp: false,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,
     telemetryService: NOOP_TELEMETRY_SERVICE,

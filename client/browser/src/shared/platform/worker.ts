@@ -3,7 +3,7 @@ import { checkOk } from '@sourcegraph/http-client'
 import { isDefaultSourcegraphUrl } from '../util/context'
 
 /*
- * See [freeze_legacy_extensions.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e8abca577d556b557372518170aaf045093ea760/-/blob/enterprise/cmd/frontend/internal/registry/scripts/freeze_legacy_extensions.go)
+ * See [freeze_legacy_extensions.go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e8abca577d556b557372518170aaf045093ea760/-/blob/cmd/frontend/internal/registry/scripts/freeze_legacy_extensions.go)
  * and [sourcegraph/pull/45923](https://github.com/sourcegraph/sourcegraph/pull/45923) for more context.
  */
 const LEGACY_EXTENSIONS_BUCKET_URL = 'https://storage.googleapis.com/sourcegraph-legacy-extensions/'

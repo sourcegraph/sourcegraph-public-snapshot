@@ -11,8 +11,8 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/precise-code-intel-worker/shared",
-        "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//internal/sanitycheck",
+        "//internal/service/svcmain",
     ],
 )
 

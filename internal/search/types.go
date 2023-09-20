@@ -38,6 +38,9 @@ type Inputs struct {
 	Features               *Features
 	Protocol               Protocol
 	SanitizeSearchPatterns []*regexp.Regexp
+
+	// TODO(keegan) is this the best way to sneak this behaviour in?
+	Exhaustive bool // we adjust some behaviours if we are exhaustive search.
 }
 
 // MaxResults computes the limit for the query.

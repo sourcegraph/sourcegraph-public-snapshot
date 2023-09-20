@@ -192,6 +192,7 @@ func TestExecRequest(t *testing.T) {
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
+		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 	}
 	h := s.Handler()
 
@@ -626,46 +627,6 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	b.StopTimer()
 }
 
-func TestUrlRedactor(t *testing.T) {
-	testCases := []struct {
-		url      string
-		message  string
-		redacted string
-	}{
-		{
-			url:      "http://token@github.com/foo/bar/",
-			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
-		},
-		{
-			url:      "http://user:password@github.com/foo/bar/",
-			message:  "fatal: repository 'http://user:password@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://user:<redacted>@github.com/foo/bar/' not found",
-		},
-		{
-			url:      "http://git:password@github.com/foo/bar/",
-			message:  "fatal: repository 'http://git:password@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://git:<redacted>@github.com/foo/bar/' not found",
-		},
-		{
-			url:      "http://token@github.com///repo//nick/",
-			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run("", func(t *testing.T) {
-			remoteURL, err := vcs.ParseURL(testCase.url)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if actual := newURLRedactor(remoteURL).redact(testCase.message); actual != testCase.redacted {
-				t.Fatalf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
-			}
-		})
-	}
-}
-
 func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 	t.Helper()
 	c := exec.Command(cmd, arg...)
@@ -740,7 +701,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		Locker:                  NewRepositoryLocker(),
 		cloneLimiter:            limiter.NewMutable(1),
 		cloneableLimiter:        limiter.NewMutable(1),
-		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	}

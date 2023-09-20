@@ -290,7 +290,6 @@ export class Driver {
              */
             if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
-
                 await this.page.waitForSelector('.test-signup-form')
                 if (email) {
                     await this.page.type('input[name=email]', email)
@@ -852,7 +851,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
 
     // Chrome
     args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
-    if (process.getuid() === 0) {
+    if (process.getuid?.() === 0) {
         // TODO don't run as root in CI
         logger.warn('Running as root, disabling sandbox')
         args.push('--no-sandbox', '--disable-setuid-sandbox')

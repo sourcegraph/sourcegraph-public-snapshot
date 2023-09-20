@@ -14,13 +14,13 @@ import { refreshSiteFlags } from '../site/backend'
 import { SiteAdminRepositoriesContainer } from './SiteAdminRepositoriesContainer'
 
 interface Props extends TelemetryProps {
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /** A page displaying the repositories on this site */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const location = useLocation()
 
@@ -68,7 +68,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 className="mb-3"
             />
 
-            {isSourcegraphApp && (
+            {isCodyApp && (
                 <LimitedAccessBanner
                     storageKey="app.manage-repositories-with-new-settings"
                     badgeText="Repositories"

@@ -89,6 +89,29 @@ VALUES (%s, %s)
 RETURNING id
 `
 
+const getQueryRepoRevFmtStr = `
+SELECT sj.id, sj.initiator_id, sj.query, srj.repo_id, srj.ref_spec
+FROM exhaustive_search_repo_jobs srj
+JOIN exhaustive_search_jobs sj ON srj.search_job_id = sj.id
+WHERE srj.id = %s
+`
+
+func (s *Store) GetQueryRepoRev(ctx context.Context, job *types.ExhaustiveSearchRepoRevisionJob) (
+	id int64,
+	query string,
+	repoRev types.RepositoryRevision,
+	initiatorID int32,
+	err error,
+) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getQueryRepoRevFmtStr, job.SearchRepoJobID))
+	err = row.Scan(&id, &initiatorID, &query, &repoRev.Repository, &repoRev.RevisionSpecifiers)
+	if err != nil {
+		return 0, "", types.RepositoryRevision{}, -1, err
+	}
+	repoRev.Revision = job.Revision
+	return id, query, repoRev, initiatorID, nil
+}
+
 func scanRevSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchRepoRevisionJob, error) {
 	var job types.ExhaustiveSearchRepoRevisionJob
 	// required field for the sync worker, but

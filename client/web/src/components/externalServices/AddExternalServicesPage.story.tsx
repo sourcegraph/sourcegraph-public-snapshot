@@ -33,7 +33,7 @@ export const Overview: Story = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isSourcegraphApp={false}
+                isCodyApp={false}
             />
         )}
     </WebStory>
@@ -52,7 +52,7 @@ export const OverviewWithBusinessLicense: Story = () => {
                     autoFocusForm={false}
                     externalServicesFromFile={false}
                     allowEditExternalServicesWithFile={false}
-                    isSourcegraphApp={false}
+                    isCodyApp={false}
                 />
             )}
         </WebStory>
@@ -70,7 +70,7 @@ export const AddConnectionBykind: Story = () => (
                 autoFocusForm={false}
                 externalServicesFromFile={false}
                 allowEditExternalServicesWithFile={false}
-                isSourcegraphApp={false}
+                isCodyApp={false}
             />
         )}
     </WebStory>

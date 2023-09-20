@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated(since = "3.1.0")
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
@@ -44,7 +45,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
   public boolean isCodyEnabled = true;
-  @Nullable public Boolean isCodyAutocompleteEnabled;
+  @Nullable public Boolean isCodyAutocompleteEnabled = true;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
   @Nullable public Boolean isCodyDebugEnabled;

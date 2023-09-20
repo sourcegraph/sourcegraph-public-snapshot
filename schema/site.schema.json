@@ -38,7 +38,10 @@
     },
     "defaultRateLimit": {
       "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
-      "type": "number",
+      "type": "integer",
+      "!go": {
+        "pointer": true
+      },
       "default": -1
     },
     "RedirectUnsupportedBrowser": {
@@ -125,6 +128,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "searchJobs": {
+          "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -383,9 +394,9 @@
         "enableGRPC": {
           "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
-            "pointer": false
+            "pointer": true
           }
         },
         "enablePermissionsWebhooks": {
@@ -1936,6 +1947,14 @@
         }
       ]
     },
+    "gitserver.diskUsageWarningThreshold": {
+      "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
+      "type": "integer",
+      "default": 90,
+      "!go": {
+        "pointer": true
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
@@ -1963,12 +1982,12 @@
                 "minLength": 1
               },
               "version.min": {
-                "description": "If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.",
+                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
                 "type": "string",
                 "minLength": 1
               },
               "version.max": {
-                "description": "If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.",
+                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
                 "type": "string",
                 "minLength": 1
               }
@@ -2618,8 +2637,8 @@
         "provider": {
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
-          "default": "anthropic",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai"]
+          "default": "sourcegraph",
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock"]
         },
         "endpoint": {
           "type": "string",

@@ -263,9 +263,11 @@ public class CodyAgent implements Disposable {
             .setOutput(process.getOutputStream())
             .setLocalService(client)
             .create();
-    client.server = launcher.getRemoteProxy();
-    client.documents = new CodyAgentDocuments(client.server);
-    client.codebase = new CodyAgentCodebase(client.server);
+
+    CodyAgentServer server = launcher.getRemoteProxy();
+    client.server = server;
+    client.documents = new CodyAgentDocuments(server);
+    client.codebase = new CodyAgentCodebase(server, project);
     this.listeningToJsonRpc = launcher.startListening();
   }
 

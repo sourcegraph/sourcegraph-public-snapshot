@@ -17,6 +17,7 @@ export interface StreamingProgressProps {
     progress: Progress
     showTrace?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
+    isSearchJobsEnabled?: boolean
 }
 
 export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<StreamingProgressProps>> = ({
@@ -25,6 +26,7 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
     state,
     showTrace,
     onSearchAgain,
+    isSearchJobsEnabled,
 }) => {
     const isLoading = state === 'loading'
 
@@ -32,7 +34,12 @@ export const StreamingProgress: React.FunctionComponent<React.PropsWithChildren<
         <>
             {isLoading && <StreamingProgressCount progress={progress} state={state} hideIcon={true} />}
             {!isLoading && (
-                <StreamingProgressSkippedButton query={query} progress={progress} onSearchAgain={onSearchAgain} />
+                <StreamingProgressSkippedButton
+                    query={query}
+                    progress={progress}
+                    isSearchJobsEnabled={isSearchJobsEnabled}
+                    onSearchAgain={onSearchAgain}
+                />
             )}
             <TraceLink showTrace={showTrace} trace={progress.trace} />
         </>

@@ -11,7 +11,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/zoekt"
+	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
+	"google.golang.org/grpc"
+
+	webproto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/web"
 
@@ -105,7 +112,7 @@ Hello world example in go`, typeFile},
 	}, filesIndexed)
 
 	// we expect one command against git, lets just fake it.
-	ts := httptest.NewServer(&search.Service{
+	service := &search.Service{
 		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
 			if commitA != "indexedfdeadbeefdeadbeefdeadbeefdeadbeef" {
 				return nil, errors.Errorf("expected first commit to be indexed, got: %s", commitA)
@@ -120,8 +127,21 @@ Hello world example in go`, typeFile},
 		Store:   s,
 		Indexed: backend.ZoektDial(zoektURL),
 		Log:     logtest.Scoped(t),
+	}
+
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
+	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
+		Service: service,
 	})
-	defer ts.Close()
+
+	handler := internalgrpc.MultiplexHandlers(grpcServer, service)
+
+	ts := httptest.NewServer(handler)
+
+	t.Cleanup(func() {
+		ts.Close()
+		grpcServer.Stop()
+	})
 
 	cases := []struct {
 		Name    string
@@ -209,7 +229,6 @@ Hello world example in go
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  tc.Pattern,
 				FetchTimeout: fetchTimeoutForCI(t),
-				FeatHybrid:   true,
 			}
 
 			m, err := doSearch(ts.URL, &req)
@@ -264,8 +283,10 @@ func newZoekt(t *testing.T, repo *zoekt.Repository, files map[string]struct {
 		t.Fatal(err)
 	}
 
+	streamer := &streamer{Searcher: searcher}
+
 	h, err := web.NewMux(&web.Server{
-		Searcher: &streamer{Searcher: searcher},
+		Searcher: streamer,
 		RPC:      true,
 		Top:      web.Top,
 	})
@@ -273,7 +294,13 @@ func newZoekt(t *testing.T, repo *zoekt.Repository, files map[string]struct {
 		t.Fatal(err)
 	}
 
-	ts := httptest.NewServer(h)
+	s := grpc.NewServer()
+	grpcServer := zoektgrpc.NewServer(streamer)
+	webproto.RegisterWebserverServiceServer(s, grpcServer)
+
+	handler := internalgrpc.MultiplexHandlers(s, h)
+
+	ts := httptest.NewServer(handler)
 	t.Cleanup(ts.Close)
 
 	return ts.Listener.Addr().String()

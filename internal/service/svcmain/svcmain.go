@@ -35,12 +35,11 @@ type Config struct {
 	AfterConfigure func()
 }
 
-// Main is called from the `main` function of the `sourcegraph-oss` and
-// `sourcegraph` commands.
+// Main is called from the `main` function of `cmd/sourcegraph`.
 //
 // args is the commandline arguments (usually os.Args).
 func Main(services []sgservice.Service, config Config, args []string) {
-	// Unlike other sourcegraph binaries we expect Sourcegraph App to be run
+	// Unlike other sourcegraph binaries we expect Cody App to be run
 	// by a user instead of deployed to a cloud. So adjust the default output
 	// format before initializing log.
 	if _, ok := os.LookupEnv(log.EnvLogFormat); !ok && deploy.IsApp() {
@@ -62,7 +61,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 
 	app := cli.NewApp()
 	app.Name = filepath.Base(args[0])
-	app.Usage = "The Sourcegraph app"
+	app.Usage = "The Cody app"
 	app.Version = version.Version()
 	app.Flags = []cli.Flag{
 		&cli.PathFlag{

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"sort"
 	"strconv"
@@ -36,17 +37,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.1.7")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.1.8")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.1.7")
+	latestReleaseKubernetesBuild = newPingResponse("5.1.8")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.1.7")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.1.8")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -67,30 +68,28 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
-// HandlerWithLog creates an HTTP handler that responds with information about
-// software updates for Sourcegraph. Using the given logger, a scoped logger is
-// created and the handler that is returned uses the logger internally.
-func HandlerWithLog(logger log.Logger) (http.HandlerFunc, error) {
-	logger = logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
-
-	var pubsubClient pubsub.TopicClient
-	if pubSubPingsTopicID == "" {
-		pubsubClient = pubsub.NewNoopTopicClient()
-	} else {
-		var err error
-		pubsubClient, err = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
-		if err != nil {
-			return nil, errors.Errorf("create Pub/Sub client: %v", err)
-		}
+// ForwardHandler returns a handler that forwards the request to
+// https://pings.sourcegraph.com.
+func ForwardHandler() (http.HandlerFunc, error) {
+	remote, err := url.Parse(defaultUpdateCheckURL)
+	if err != nil {
+		return nil, errors.Errorf("parse default update check URL: %v", err)
 	}
+
+	// If remote has a path, the proxy server will always append an unnecessary "/" to the path.
+	remotePath := remote.Path
+	remote.Path = ""
+	proxy := httputil.NewSingleHostReverseProxy(remote)
 	return func(w http.ResponseWriter, r *http.Request) {
-		HandlePingRequest(logger, pubsubClient, w, r)
+		r.Host = remote.Host
+		r.URL.Path = remotePath
+		proxy.ServeHTTP(w, r)
 	}, nil
 }
 
-// HandlePingRequest handles the ping requests and responds with information
-// about software updates for Sourcegraph.
-func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
+// Handle handles the ping requests and responds with information about software
+// updates for Sourcegraph.
+func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)
@@ -137,7 +136,7 @@ func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w htt
 		return
 	}
 
-	// Sourcegraph App: We always send back a ping response (rather than StatusNoContent) because
+	// Cody App: We always send back a ping response (rather than StatusNoContent) because
 	// the user's instance may have unseen notification messages.
 	if deploy.IsDeployTypeApp(pr.DeployType) {
 		if hasUpdate {
@@ -214,7 +213,7 @@ type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
 	DeployType           string          `json:"deployType"`
-	Os                   string          `json:"os,omitempty"` // Only used in Sourcegraph App
+	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
 	DependencyVersions   json.RawMessage `json:"dependencyVersions,omitempty"`
 	AuthProviders        []string        `json:"auth,omitempty"`
@@ -251,11 +250,11 @@ type pingRequest struct {
 	TosAccepted                   bool            `json:"tosAccepted,omitempty"`
 	TotalUsers                    int32           `json:"totalUsers,omitempty"`
 	TotalOrgs                     int32           `json:"totalOrgs,omitempty"`
-	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Sourcegraph App
+	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Cody App
 	HasRepos                      bool            `json:"repos,omitempty"`
 	EverSearched                  bool            `json:"searched,omitempty"`
 	EverFindRefs                  bool            `json:"refs,omitempty"`
-	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
+	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`

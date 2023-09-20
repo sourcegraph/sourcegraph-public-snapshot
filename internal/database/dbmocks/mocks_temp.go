@@ -15061,6 +15061,10 @@ type MockDB struct {
 	// TeamsFunc is an instance of a mock function object controlling the
 	// behavior of the method Teams.
 	TeamsFunc *DBTeamsFunc
+	// TelemetryEventsExportQueueFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// TelemetryEventsExportQueue.
+	TelemetryEventsExportQueueFunc *DBTelemetryEventsExportQueueFunc
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *DBTemporarySettingsFunc
@@ -15369,6 +15373,11 @@ func NewMockDB() *MockDB {
 		},
 		TeamsFunc: &DBTeamsFunc{
 			defaultHook: func() (r0 database.TeamStore) {
+				return
+			},
+		},
+		TelemetryEventsExportQueueFunc: &DBTelemetryEventsExportQueueFunc{
+			defaultHook: func() (r0 database.TelemetryEventsExportQueueStore) {
 				return
 			},
 		},
@@ -15704,6 +15713,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Teams")
 			},
 		},
+		TelemetryEventsExportQueueFunc: &DBTelemetryEventsExportQueueFunc{
+			defaultHook: func() database.TelemetryEventsExportQueueStore {
+				panic("unexpected invocation of MockDB.TelemetryEventsExportQueue")
+			},
+		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: func() database.TemporarySettingsStore {
 				panic("unexpected invocation of MockDB.TemporarySettings")
@@ -15925,6 +15939,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		TeamsFunc: &DBTeamsFunc{
 			defaultHook: i.Teams,
+		},
+		TelemetryEventsExportQueueFunc: &DBTelemetryEventsExportQueueFunc{
+			defaultHook: i.TelemetryEventsExportQueue,
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
@@ -21440,6 +21457,106 @@ func (c DBTeamsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBTeamsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBTelemetryEventsExportQueueFunc describes the behavior when the
+// TelemetryEventsExportQueue method of the parent MockDB instance is
+// invoked.
+type DBTelemetryEventsExportQueueFunc struct {
+	defaultHook func() database.TelemetryEventsExportQueueStore
+	hooks       []func() database.TelemetryEventsExportQueueStore
+	history     []DBTelemetryEventsExportQueueFuncCall
+	mutex       sync.Mutex
+}
+
+// TelemetryEventsExportQueue delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDB) TelemetryEventsExportQueue() database.TelemetryEventsExportQueueStore {
+	r0 := m.TelemetryEventsExportQueueFunc.nextHook()()
+	m.TelemetryEventsExportQueueFunc.appendCall(DBTelemetryEventsExportQueueFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// TelemetryEventsExportQueue method of the parent MockDB instance is
+// invoked and the hook queue is empty.
+func (f *DBTelemetryEventsExportQueueFunc) SetDefaultHook(hook func() database.TelemetryEventsExportQueueStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// TelemetryEventsExportQueue method of the parent MockDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBTelemetryEventsExportQueueFunc) PushHook(hook func() database.TelemetryEventsExportQueueStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBTelemetryEventsExportQueueFunc) SetDefaultReturn(r0 database.TelemetryEventsExportQueueStore) {
+	f.SetDefaultHook(func() database.TelemetryEventsExportQueueStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBTelemetryEventsExportQueueFunc) PushReturn(r0 database.TelemetryEventsExportQueueStore) {
+	f.PushHook(func() database.TelemetryEventsExportQueueStore {
+		return r0
+	})
+}
+
+func (f *DBTelemetryEventsExportQueueFunc) nextHook() func() database.TelemetryEventsExportQueueStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBTelemetryEventsExportQueueFunc) appendCall(r0 DBTelemetryEventsExportQueueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBTelemetryEventsExportQueueFuncCall
+// objects describing the invocations of this function.
+func (f *DBTelemetryEventsExportQueueFunc) History() []DBTelemetryEventsExportQueueFuncCall {
+	f.mutex.Lock()
+	history := make([]DBTelemetryEventsExportQueueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBTelemetryEventsExportQueueFuncCall is an object that describes an
+// invocation of method TelemetryEventsExportQueue on an instance of MockDB.
+type DBTelemetryEventsExportQueueFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.TelemetryEventsExportQueueStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBTelemetryEventsExportQueueFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBTelemetryEventsExportQueueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

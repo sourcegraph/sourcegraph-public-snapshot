@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -94,7 +95,9 @@ func TestDoRequest(t *testing.T) {
 				}
 			}
 
-			resp, err := DoRequest(ctx, logger, http.DefaultClient, req, auther)
+			resp, err := DoRequest(ctx, logger, http.DefaultClient, req, auther, func(r *http.Request) (*http.Response, error) {
+				return http.DefaultClient.Do(r)
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

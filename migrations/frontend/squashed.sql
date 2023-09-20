@@ -3230,6 +3230,7 @@ CREATE TABLE lsif_indexes (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     requested_envvars text[],
+    enqueuer_user_id integer DEFAULT 0 NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3284,7 +3285,8 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.local_steps,
     u.should_reindex,
     u.requested_envvars,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.enqueuer_user_id
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
@@ -4675,6 +4677,13 @@ CREATE SEQUENCE teams_id_seq
 
 ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
 
+CREATE TABLE telemetry_events_export_queue (
+    id text NOT NULL,
+    "timestamp" timestamp with time zone NOT NULL,
+    payload_pb bytea NOT NULL,
+    exported_at timestamp with time zone
+);
+
 CREATE TABLE temporary_settings (
     id integer NOT NULL,
     user_id integer NOT NULL,
@@ -5759,6 +5768,9 @@ ALTER TABLE ONLY team_members
 ALTER TABLE ONLY teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY telemetry_events_export_queue
+    ADD CONSTRAINT telemetry_events_export_queue_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_pkey PRIMARY KEY (id);
 
@@ -6104,6 +6116,8 @@ CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
+
+CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree (((enqueuer_user_id > 0)) DESC, queued_at DESC, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
 
 CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id);
 

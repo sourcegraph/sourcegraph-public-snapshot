@@ -116,7 +116,7 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 	email := strings.ToLower(data.EmailAddress)
 
 	return &extsvc.PublicAccountData{
-		DisplayName: &data.DisplayName,
-		Login:       &email,
+		DisplayName: data.DisplayName,
+		Login:       email,
 	}, nil
 }

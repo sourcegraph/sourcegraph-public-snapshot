@@ -70,6 +70,10 @@
 
 - [How to set up Cody Gateway locally](cody_gateway.md)
 
+## Telemetry Gateway
+
+- [How to set up Telemetry Gateway locally](telemetry_gateway.md)
+
 ## Windows support
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).

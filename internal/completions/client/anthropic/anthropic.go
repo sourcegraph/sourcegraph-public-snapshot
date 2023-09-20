@@ -93,7 +93,7 @@ func (a *anthropicClient) Stream(
 }
 
 func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	prompt, err := getPrompt(requestParams.Messages)
+	prompt, err := GetPrompt(requestParams.Messages)
 	if err != nil {
 		return nil, err
 	}

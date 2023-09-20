@@ -20,7 +20,7 @@ public class URLBuilder {
       @NotNull String relativePath,
       @Nullable LogicalPosition start,
       @Nullable LogicalPosition end) {
-    return ConfigUtil.getSourcegraphUrl(project)
+    return ConfigUtil.getServerPath(project).getUrl()
         + "-/editor"
         + "?remote_url="
         + URLEncoder.encode(remoteUrl, StandardCharsets.UTF_8)
@@ -51,7 +51,7 @@ public class URLBuilder {
       @Nullable String remoteUrl,
       @Nullable String remoteBranchName) {
     String url =
-        ConfigUtil.getSourcegraphUrl(project)
+        ConfigUtil.getServerPath(project).getUrl()
             + "-/editor"
             + "?"
             + buildVersionParams()
@@ -78,7 +78,7 @@ public class URLBuilder {
         (codeHost != null && repoName != null)
             ? "repo:^" + escapeRegexChars(codeHost + "/" + repoName) + "$"
             : null;
-    return ConfigUtil.getSourcegraphUrl(project)
+    return ConfigUtil.getServerPath(project).getUrl()
         + "/search"
         + "?patternType=literal"
         + "&q="
@@ -131,7 +131,7 @@ public class URLBuilder {
       @NotNull String path,
       @Nullable LogicalPosition start,
       @Nullable LogicalPosition end) {
-    return ConfigUtil.getSourcegraphUrl(project)
+    return ConfigUtil.getServerPath(project).getUrl()
         + repoUrl
         + (commit != null ? "@" + commit : "")
         + "/-/blob/"
