@@ -19,7 +19,7 @@ func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns map[string]strin
 }
 
 func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
-	var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
+	var verbose = env.LogLevel == "dbug" || env.LogLevel == "info"
 	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "frontend")
