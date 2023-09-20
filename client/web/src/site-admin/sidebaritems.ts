@@ -29,6 +29,10 @@ const analyticsGroup: SiteAdminSideBarGroup = {
             exact: true,
         },
         {
+            label: 'Custom',
+            to: '/site-admin/analytics/custom',
+        },
+        {
             label: 'Search',
             to: '/site-admin/analytics/search',
         },
