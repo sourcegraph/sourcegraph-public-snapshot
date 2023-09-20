@@ -5,6 +5,8 @@ import classNames from 'classnames'
 import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
+import type { RateLimiterState } from './backend'
+
 import styles from '../../site-admin/WebhookInformation.module.scss'
 
 interface ExternalServiceInformationProps {

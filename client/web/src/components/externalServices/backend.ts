@@ -372,3 +372,5 @@ export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
         url: string
     }
 }
+
+export type RateLimiterState = NonNullable<ExternalServiceFields['rateLimiterState']>
