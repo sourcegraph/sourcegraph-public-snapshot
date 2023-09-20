@@ -195,7 +195,6 @@ func (r *globalRateLimiter) waitn(ctx context.Context, n int, requestTime time.T
 		getTokensScript,
 		connection,
 		keys.BucketKey, keys.LastReplenishmentTimestampKey, keys.RateKey, keys.ReplenishmentIntervalSecondsKey, keys.BurstKey,
-		requestTime.Unix(),
 		maxWaitTime,
 		int32(fallbackRateLimit),
 		int32(time.Hour/time.Second),
@@ -319,7 +318,6 @@ var (
 // bucket_quota_key: the key in Redis that stores how many tokens the bucket should refill in a `bucket_replenishment_interval` period of time, e.g. v2:rate_limiters:github.com:api_tokens:config:bucket_quota.
 // bucket_replenishment_interval_key: the key in Redis that stores how often (in seconds), the bucket should be replenished bucket_quota tokens, e.g. v2:rate_limiters:github.com:api_tokens:config:bucket_replenishment_interval_seconds.
 // burst: the amount of tokens the bucket can hold, always bucketMaxCapacity right now.
-// current_time: current time (seconds since epoch).
 // max_time_to_wait_for_token: the maximum amount of time (in seconds) the requester is willing to wait before acquiring/using a token.
 //
 //go:embed globallimitergettokens.lua

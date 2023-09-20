@@ -3,12 +3,13 @@ local last_replenishment_timestamp_key = KEYS[2]
 local bucket_rate_key = KEYS[3]
 local bucket_replenishment_interval_key = KEYS[4]
 local burst_key = KEYS[5]
-local current_time = tonumber(ARGV[1])
-local max_time_to_wait_for_tokens = tonumber(ARGV[2])
-local default_rate = tonumber(ARGV[3])
-local default_replenishment_interval = tonumber(ARGV[4])
-local default_burst = tonumber(ARGV[5])
-local tokens_to_grant = tonumber(ARGV[6])
+local max_time_to_wait_for_tokens = tonumber(ARGV[1])
+local default_rate = tonumber(ARGV[2])
+local default_replenishment_interval = tonumber(ARGV[3])
+local default_burst = tonumber(ARGV[4])
+local tokens_to_grant = tonumber(ARGV[5])
+
+local current_time = redis.call('TIME')[1]
 
 -- Ensure the bucket burst capacity is configured. Otherwise,
 -- fall back to the provided default.
