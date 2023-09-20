@@ -64,7 +64,7 @@ const additionalProps = {
     } as AuthenticatedUser,
     toggleCodeMonitorEnabled: sinon.fake(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
-    isSourcegraphApp: false,
+    isCodyApp: false,
 }
 
 const additionalPropsShortList = {

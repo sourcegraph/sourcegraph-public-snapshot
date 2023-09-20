@@ -35,14 +35,14 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
 
-    // Sourcegraph app specific route (cody/app settings page)
+    // Cody app specific route (cody/app settings page)
     // This route won't be available for any non-app deploy types.
     // See userAreaHeaderNavItems in client/web/src/enterprise/user/navitems.ts
     // for more context on user settings page.
     {
         path: 'app-settings/*',
         render: props => <AppSettingsArea telemetryService={props.telemetryService} />,
-        condition: context => context.isSourcegraphApp,
+        condition: context => context.isCodyApp,
     },
 
     // Redirect from previous /users/:username/subscriptions -> /users/:username/settings/subscriptions.

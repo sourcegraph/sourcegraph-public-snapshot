@@ -13,7 +13,7 @@ func Symbols() *monitoring.Dashboard {
 		grpcServiceName = "symbols.v1.SymbolsService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("symbols", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "symbols",

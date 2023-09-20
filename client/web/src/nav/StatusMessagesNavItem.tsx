@@ -172,7 +172,7 @@ const STATUS_MESSAGES_POLL_INTERVAL = 10000
 
 interface Props {
     disablePolling?: boolean
-    isSourcegraphApp?: boolean
+    isCodyApp?: boolean
 }
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
@@ -273,7 +273,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key="no-repositories"
                                 title="No repositories"
                                 message="Connect a code host to connect repositories to Sourcegraph."
-                                linkTo={props.isSourcegraphApp ? '/user/app-settings/local-repositories' : '/setup'}
+                                linkTo={props.isCodyApp ? '/user/app-settings/local-repositories' : '/setup'}
                                 linkText="Setup code hosts"
                                 linkOnClick={toggleIsOpen}
                                 entryType="info"
@@ -342,7 +342,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 })}
             </>
         )
-    }, [data, props.isSourcegraphApp])
+    }, [data, props.isCodyApp])
 
     return (
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>

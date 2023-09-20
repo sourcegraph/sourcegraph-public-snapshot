@@ -36,7 +36,7 @@
       "examples": ["pretty-host-name/{repo}"]
     },
     "root": {
-      "description": "The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as [\"src-serve-local\"].",
+      "description": "The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as [\"src-serve-local\"].",
       "type": "string",
       "default": "",
       "examples": ["path/to/my/repos"]
