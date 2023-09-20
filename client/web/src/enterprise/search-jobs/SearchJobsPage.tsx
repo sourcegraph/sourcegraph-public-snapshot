@@ -405,9 +405,9 @@ const SearchJob: FC<SearchJobProps> = props => {
                         telemetryService.log('SearchJobsResultDownloadClick', {}, {})
                     }}
                 >
-                <Icon svgPath={mdiDownload} aria-hidden={true} />
-                Download
-            </DownloadFileButton>
+                    <Icon svgPath={mdiDownload} aria-hidden={true} />
+                    Download
+                </DownloadFileButton>
             )}
         </li>
     )
