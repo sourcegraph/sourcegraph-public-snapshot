@@ -5,8 +5,6 @@ import classNames from 'classnames'
 import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { RateLimiterState } from './backend'
-
 import styles from '../../site-admin/WebhookInformation.module.scss'
 
 interface ExternalServiceInformationProps {
@@ -46,7 +44,7 @@ export const RateLimiterStateInfo: FC<{ rateLimiterState: RateLimiterState }> = 
             ) : (
                 <td>
                     <Tooltip content={rateLimiterDebug}>
-                        <span>{(rateLimiterState.limit / rateLimiterState.interval).toFixed(2)} requests per hour</span>
+                        <span>{(rateLimiterState.limit / rateLimiterState.interval).toFixed(2)} requests per second</span>
                     </Tooltip>
                 </td>
             )}

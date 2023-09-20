@@ -713,10 +713,17 @@ func TestExternalServices(t *testing.T) {
 			Label:  "Read with rate limiter state",
 			Query: `
 			{
-				externalServices() {
+				externalServices {
 					nodes {
 						id
-						rateLimiterState
+						rateLimiterState {
+							burst
+							currentCapacity
+							infinite
+							interval
+							lastReplenishment
+							limit
+						}
 					}
 				}
 			}
@@ -731,7 +738,7 @@ func TestExternalServices(t *testing.T) {
 								"burst": 10,
 								"currentCapacity": 0,
 								"infinite": false,
-								"interval": 1,
+								"interval": 3600,
 								"lastReplenishment": "1970-01-01T00:00:00Z",
 								"limit": 10
 							}
@@ -742,7 +749,7 @@ func TestExternalServices(t *testing.T) {
 								"burst": 10,
 								"currentCapacity": 0,
 								"infinite": false,
-								"interval": 1,
+								"interval": 3600,
 								"lastReplenishment": "1970-01-01T00:00:00Z",
 								"limit": 10
 							}
@@ -753,7 +760,7 @@ func TestExternalServices(t *testing.T) {
 								"burst": 10,
 								"currentCapacity": 0,
 								"infinite": false,
-								"interval": 1,
+								"interval": 3600,
 								"lastReplenishment": "1970-01-01T00:00:00Z",
 								"limit": 10
 							}
@@ -764,7 +771,7 @@ func TestExternalServices(t *testing.T) {
 								"burst": 10,
 								"currentCapacity": 0,
 								"infinite": false,
-								"interval": 1,
+								"interval": 3600,
 								"lastReplenishment": "1970-01-01T00:00:00Z",
 								"limit": 10
 							}
@@ -775,7 +782,7 @@ func TestExternalServices(t *testing.T) {
 								"burst": 10,
 								"currentCapacity": 0,
 								"infinite": false,
-								"interval": 1,
+								"interval": 3600,
 								"lastReplenishment": "1970-01-01T00:00:00Z",
 								"limit": 10
 							}

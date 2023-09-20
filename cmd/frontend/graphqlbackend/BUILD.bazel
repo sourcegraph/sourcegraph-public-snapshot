@@ -126,6 +126,7 @@ go_library(
         "product_license_info.go",
         "product_subscription_status.go",
         "rate_limit.go",
+        "ratelimiter.go",
         "rbac.go",
         "recorded_commands.go",
         "repositories.go",

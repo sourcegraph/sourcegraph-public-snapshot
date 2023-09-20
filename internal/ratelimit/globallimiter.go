@@ -380,22 +380,22 @@ func (e UnexpectedRateLimitReturnError) Error() string {
 
 type GlobalLimiterInfo struct {
 	// CurrentCapacity is the current number of tokens in the bucket.
-	CurrentCapacity int `json:"currentCapacity"`
+	CurrentCapacity int
 	// Burst is the maximum number of allowed burst.
-	Burst int `json:"burst"`
+	Burst int
 	// Limit is the number of maximum allowed requests per interval. If the limit is
 	// infinite, Limit will be -1 and Infinite will be true.
-	Limit int `json:"limit"`
+	Limit int
 	// Interval is the interval over which the number of requests can be made.
 	// For example: Limit: 3600, Interval: hour means 3600 requests per hour,
 	// expressed internally as 1/s.
-	Interval time.Duration `json:"interval"`
+	Interval time.Duration
 	// LastReplenishment is the time the bucket has been last replenished. Replenishment
 	// only happens when borrowed from the bucket.
-	LastReplenishment time.Time `json:"lastReplenishment"`
+	LastReplenishment time.Time
 	// Infinite is true if Limit is infinite. This is required since infinity cannot
 	// be marshalled in JSON.
-	Infinite bool `json:"infinite"`
+	Infinite bool
 }
 
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,

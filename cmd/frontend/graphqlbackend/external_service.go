@@ -129,21 +129,18 @@ func (r *externalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
 }
 
-func (r *externalServiceResolver) RateLimiterState(ctx context.Context) (JSONValue, error) {
+func (r *externalServiceResolver) RateLimiterState(ctx context.Context) (*rateLimiterStateResolver, error) {
 	info, err := ratelimit.GetGlobalLimiterState(ctx)
 	if err != nil {
-		return JSONValue{}, errors.Wrap(err, "getting rate limiter state")
+		return nil, errors.Wrap(err, "getting rate limiter state")
 	}
 
 	state, ok := info[r.externalService.URN()]
 	if !ok {
-		return JSONValue{}, errors.Errorf("no rate limiter state for %s", r.externalService.URN())
+		return nil, nil
 	}
 
-	// Convert to per hour
-	state.Interval = state.Interval / time.Hour
-
-	return JSONValue{Value: state}, nil
+	return &rateLimiterStateResolver{state: state}, nil
 }
 
 func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, error) {

@@ -46,6 +46,14 @@ export const externalServiceFragment = gql`
         config
         warning
         lastSyncError
+        rateLimiterState {
+            currentCapacity
+            burst
+            limit
+            interval
+            lastReplenishment
+            infinite
+        }
         repoCount
         lastSyncAt
         nextSyncAt
@@ -190,7 +198,14 @@ export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         id
         kind
         displayName
-        rateLimiterState
+        rateLimiterState {
+            currentCapacity
+            burst
+            limit
+            interval
+            lastReplenishment
+            infinite
+        }
         config
         warning
         lastSyncError
@@ -323,7 +338,6 @@ export const getExternalService = (
     }
     const node: ExternalServiceFieldsWithConfig = data
     node.parsedConfig = parse(node.config) as ExternalServiceFieldsWithConfig['parsedConfig']
-    node.rateLimiterState = node.rateLimiterState as ExternalServiceFieldsWithConfig['rateLimiterState']
     return node
 }
 
@@ -352,19 +366,9 @@ export interface GitHubAppDetails {
     installationID: number
 }
 
-export interface RateLimiterState {
-    currentCapacity: number
-    burst: number
-    limit: number
-    interval: number
-    lastReplenishment: Date
-    infinite: boolean
-}
-
 export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
     parsedConfig?: {
         gitHubAppDetails?: GitHubAppDetails
         url: string
     }
-    rateLimiterState?: RateLimiterState
 }
