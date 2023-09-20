@@ -3,7 +3,6 @@ package connections
 import (
 	"context"
 	"database/sql"
-	"os"
 
 	"github.com/sourcegraph/log"
 

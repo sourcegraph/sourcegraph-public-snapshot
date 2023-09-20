@@ -2,7 +2,6 @@ package migration
 
 import (
 	"database/sql"
-	"os"
 	"strings"
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
