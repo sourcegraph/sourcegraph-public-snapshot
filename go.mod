@@ -104,7 +104,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.3
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
-	github.com/getsentry/sentry-go v0.22.0
+	github.com/getsentry/sentry-go v0.24.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
 	github.com/go-enry/go-enry/v2 v2.8.4
@@ -123,7 +123,7 @@ require (
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-github/v43 v43.0.0
 	github.com/google/go-querystring v1.1.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.7.1
 	github.com/gorilla/mux v1.8.0
@@ -187,7 +187,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20230711093019-40c57b632cca
+	github.com/sourcegraph/log v0.0.0-20230918165208-4a174e4ec4cf
 	github.com/sourcegraph/run v0.12.0
 	github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -232,12 +232,12 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/automaxprocs v1.5.2
 	go.uber.org/ratelimit v0.2.0
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.12.0
 	golang.org/x/net v0.14.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.11.0
+	golang.org/x/sys v0.12.0
 	golang.org/x/time v0.3.0
 	// golang.org/x/tools should not be upgraded until https://github.com/bazelbuild/bazel-gazelle/issues/1579
 	// is resolved.
@@ -413,7 +413,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/charmbracelet/glamour v0.5.0 // indirect
-	github.com/cockroachdb/errors v1.10.0
+	github.com/cockroachdb/errors v1.11.1
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5
 	github.com/containerd/typeurl v1.0.2 // indirect
@@ -542,7 +542,7 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
-	github.com/rogpeppe/go-internal v1.10.0 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/rs/cors v1.9.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -581,7 +581,7 @@ require (
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	golang.org/x/mod v0.12.0
 	golang.org/x/term v0.11.0 // indirect
-	golang.org/x/text v0.12.0
+	golang.org/x/text v0.13.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.57.0
