@@ -67,7 +67,7 @@ func TestDecomposePerforceRemoteURL(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.cloneURL, func(t *testing.T) {
 			remoteURL, _ := vcs.ParseURL(test.cloneURL)
-			username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
+			username, password, host, depot, _, err := decomposePerforceRemoteURL(remoteURL)
 			if err != nil {
 				t.Fatal(err)
 			}
