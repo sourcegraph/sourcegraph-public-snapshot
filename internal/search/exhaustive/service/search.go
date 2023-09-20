@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type NewSearcher interface {
@@ -67,7 +68,7 @@ type NewSearcher interface {
 // a SearchQuery, but this makes it harder to make changes to search going
 // forward for what should be rare errors.
 type SearchQuery interface {
-	RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpecs, error)
+	RepositoryRevSpecs(context.Context) *iterator.Iterator[types.RepositoryRevSpecs]
 
 	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpecs) ([]types.RepositoryRevision, error)
 
@@ -274,9 +275,11 @@ type searcherFake struct {
 	repoRevs []types.RepositoryRevision
 }
 
-func (s searcherFake) RepositoryRevSpecs(ctx context.Context) ([]types.RepositoryRevSpecs, error) {
+func (s searcherFake) RepositoryRevSpecs(ctx context.Context) *iterator.Iterator[types.RepositoryRevSpecs] {
 	if err := isSameUser(ctx, s.userID); err != nil {
-		return nil, err
+		iterator.New(func() ([]types.RepositoryRevSpecs, error) {
+			return nil, err
+		})
 	}
 
 	seen := map[types.RepositoryRevSpecs]bool{}
@@ -288,7 +291,7 @@ func (s searcherFake) RepositoryRevSpecs(ctx context.Context) ([]types.Repositor
 		seen[r.RepositoryRevSpecs] = true
 		repoRevSpecs = append(repoRevSpecs, r.RepositoryRevSpecs)
 	}
-	return repoRevSpecs, nil
+	return iterator.From(repoRevSpecs)
 }
 
 func (s searcherFake) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
