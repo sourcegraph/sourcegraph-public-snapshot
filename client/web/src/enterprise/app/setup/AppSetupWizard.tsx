@@ -101,7 +101,6 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
     const { services: presentServices, addRepositories, loaded } = useLocalExternalServices()
     const navigate = useNavigate()
 
-    /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
         if (loaded) {
             // ~/Library/Application Support/com.sourcegraph.cody/vscode.json
@@ -135,8 +134,11 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
                 })
                 .catch(() => {})
         }
+        // NOTE(naman): we are updating the `presentServices` state in the above function
+        // and we want to run this effect only once when the `loaded` state is updated.
+
+        /* eslint-disable-next-line react-hooks/exhaustive-deps */
     }, [loaded])
-    /* eslint-enable react-hooks/exhaustive-deps */
 
     if (status !== 'loaded') {
         return null
