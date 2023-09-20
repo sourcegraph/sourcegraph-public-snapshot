@@ -112,6 +112,16 @@ func (r *siteAnalyticsResolver) CodeInsights(ctx context.Context, args *struct {
 	return &adminanalytics.CodeInsights{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
 
+/* Custom */
+
+func (r *siteAnalyticsResolver) Custom(ctx context.Context, args *struct {
+	DateRange *string
+	Grouping  *string
+	Events    []string
+}) *adminanalytics.Custom {
+	return &adminanalytics.Custom{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, Events: args.Events, DB: r.db, Cache: r.cache}
+}
+
 /* All event names */
 
 func (r *siteAnalyticsResolver) AllEventNames(ctx context.Context) ([]*string, error) {

@@ -10,6 +10,7 @@ go_library(
         "codeintel.go",
         "codeintelbylanguage.go",
         "codeinteltoprepositories.go",
+        "custom.go",
         "extensions.go",
         "fetcher.go",
         "notebooks.go",
