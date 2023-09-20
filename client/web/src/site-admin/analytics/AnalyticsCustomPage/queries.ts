@@ -25,7 +25,13 @@ export const CUSTOM_STATISTICS = gql`
 `
 
 export const CUSTOM_USERS_CONNECTION = gql`
-    query CustomUsersConnection($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!, $events: [String!]!, $first: Int, $after: String) {
+    query CustomUsersConnection(
+        $dateRange: AnalyticsDateRange!
+        $grouping: AnalyticsGrouping!
+        $events: [String!]!
+        $first: Int
+        $after: String
+    ) {
         site {
             analytics {
                 custom(dateRange: $dateRange, grouping: $grouping, events: $events) {
@@ -51,7 +57,6 @@ export const CUSTOM_USERS_CONNECTION = gql`
         }
     }
 `
-
 
 export const ALL_EVENT_NAMES = gql`
     query AllEventNames {

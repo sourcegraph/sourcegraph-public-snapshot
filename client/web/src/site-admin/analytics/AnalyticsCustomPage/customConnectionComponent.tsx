@@ -1,18 +1,22 @@
 import React from 'react'
-import { format, parseISO } from 'date-fns'
 
 import { mdiDownload } from '@mdi/js'
+import { format, parseISO } from 'date-fns'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { AnchorLink, Button, ErrorAlert, H2, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../../components/FilteredConnection/ui'
-import { AnalyticsUserActivity, CustomUsersConnectionResult, CustomUsersConnectionVariables } from '../../../graphql-operations'
+import {
+    AnalyticsUserActivity,
+    CustomUsersConnectionResult,
+    CustomUsersConnectionVariables,
+} from '../../../graphql-operations'
 import { IResult } from '../useChartFilters'
-import { UserNode } from './userNode'
 
 import { CUSTOM_USERS_CONNECTION } from './queries'
+import { UserNode } from './userNode'
 
 import styles from './userNode.module.scss'
 
@@ -24,7 +28,7 @@ const DEFAULT_FIRST = 15
 
 export const AnalyticsCustomConnectionComponent: React.FunctionComponent<Props> = (props: Props) => {
     const { dateRange, debouncedSearchText, grouping } = props
-    const queryVariables =  {
+    const queryVariables = {
         dateRange: dateRange.value,
         grouping: grouping.value,
         events: debouncedSearchText,
@@ -74,17 +78,19 @@ export const AnalyticsCustomConnectionComponent: React.FunctionComponent<Props> 
                         <li className="list-group-item px-0 py-2 font-weight-bold">
                             <div className={styles.node}>
                                 <div className={styles.user}>User</div>
-                                {connection && connection.nodes[0].periods.map(period => {
-                                    return <div className={styles.period} key={period.date}>{format(parseISO(period.date), "dd MMM")}</div>
-                                })}
+                                {connection &&
+                                    connection.nodes[0].periods.map(period => {
+                                        return (
+                                            <div className={styles.period} key={period.date}>
+                                                {format(parseISO(period.date), 'dd MMM')}
+                                            </div>
+                                        )
+                                    })}
                                 <div className={styles.period}>Total</div>
                             </div>
                         </li>
                         {(connection?.nodes || []).map(node => (
-                            <UserNode
-                                node={node}
-                                key={node.userID}
-                            />
+                            <UserNode node={node} key={node.userID} />
                         ))}
                     </ul>
                 )}

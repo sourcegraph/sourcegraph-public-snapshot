@@ -20,12 +20,16 @@ interface Props extends Pick<IResult, 'dateRange' | 'aggregation' | 'grouping'> 
 
 export const AnalyticsCustomChartComponent: React.FunctionComponent<Props> = (props: Props) => {
     const { dateRange, aggregation, debouncedSearchText, grouping } = props
-    const queryVariables =  {
+    const queryVariables = {
         dateRange: dateRange.value,
         grouping: grouping.value,
-        events: debouncedSearchText
+        events: debouncedSearchText,
     }
-    const { data: chartData, error: chartError, loading: chartLoading } = useQuery<CustomStatisticsResult, CustomStatisticsVariables>(CUSTOM_STATISTICS, { variables: queryVariables }) 
+    const {
+        data: chartData,
+        error: chartError,
+        loading: chartLoading,
+    } = useQuery<CustomStatisticsResult, CustomStatisticsVariables>(CUSTOM_STATISTICS, { variables: queryVariables })
     const activities = useMemo(() => {
         if (!chartData) {
             return []
@@ -34,10 +38,7 @@ export const AnalyticsCustomChartComponent: React.FunctionComponent<Props> = (pr
         const activities: Series<StandardDatum>[] = [
             {
                 id: 'custom-actions',
-                name:
-                    aggregation.selected === 'count'
-                        ? 'Total actions'
-                        : 'Unique users doing the actions',
+                name: aggregation.selected === 'count' ? 'Total actions' : 'Unique users doing the actions',
                 color: 'var(--orange)',
                 data: users.nodes.map(
                     node => ({

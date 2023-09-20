@@ -100,6 +100,6 @@ export function useChartFilters(props: IProps): IResult {
             onChange: value => {
                 setData({ events: value })
             },
-        }
+        },
     }
 }
