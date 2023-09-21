@@ -119,29 +119,37 @@ JavaScript, TypeScript, PHP, Python, Java, C/C++, C#, Ruby, Go, SQL, Swift, Obje
 
 ### What are embeddings for?
 
-Embeddings are one of the many ways Sourcegraph uses to retrieve relevant code to feed the large language model as context. Embeddings / vector search are complementary to other strategies. While it matches really well semantically ("what is this code about, what does it do?"), it drops syntax and other important precise matching info. Sourcegraph's overall approach is to blend results from multiple sources to provide the best answer possible.
+Embeddings help Sourcegraph retrieve relevant code to feed the Large Language Model as context. Embeddings, often associated with vector search, complement other strategies in the code retrieval process.
 
-### When using embeddings, are permissions enforced? Does Cody get fed code that the users doesn't have access to?
+While embeddings excel in semantic matching — determining "what is this code about" and "what does it do" — they may not capture syntax and other specific matching details as effectively. Sourcegraph's approach involves getting the best results from various sources to deliver the most accurate and comprehensive answers possible.
 
-Permissions are enforced when using embeddings. Today, Sourcegraph only uses embeddings search on a single repo, first checking that the users has access.
+### Do embeddings enforce permissions? Does Cody receive code that users don't have access to?
 
-In the future, here are the steps that Sourcegraph will follow:
+When using embeddings, permissions are enforced to ensure Cody does not receive code the user cannot access. Currently, Sourcegraph uses embeddings search for a single repository, with a prior check to confirm user access.
 
-- determine which repo you have access to
-- query embeddings for each of those repo
-- pick the best results and send it back
+In the future, the process will involve the following steps:
 
-### I scheduled a one-off embeddings job but it is not showing up in the list of jobs. What happened?
+- Determine which repositories the user has access to
+- Query embeddings for each of these repositories
+- Select the most relevant results and provide them to the user
 
-There can be several reasons why a job is not showing up in the list of jobs:
+This approach safeguards data privacy and ensures that Cody's responses are based on code accessible to the user.
 
-- The repository is already queued or being processed
-- A job for the same repository and the same revision already completed successfully
-- Another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
+### Why isn't my scheduled embedding job listed?
+
+There can be several reasons why your scheduled one-off embedding job isn't appearing in the job list:
+
+- The repository is already in the queue or currently being processed
+- The system has successfully completed a job for the same repository and revision
+- Another job for the same repository is in the queue, scheduled within the [`embeddings.MinimumInterval`](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
 
 ### How do I stop a running embeddings job?
 
-Jobs in state _QUEUED_ or _PROCESSING_ can be canceled by admins from the **Cody > Embeddings Jobs** page. To cancel a job, click on the _Cancel_ button of the job you want to cancel. The job will be marked for cancellation. Note that, depending on the state of the job, it might take a few seconds or minutes for the job to actually be canceled.
+A running embeddings job with the state `QUEUED` or `PROCESSING` can be stopped by admins from the **Cody > Embeddings Jobs** page. To do so:
+
+- Click on the "Cancel" button associated with the job you wish to terminate
+- The job will then be tagged for cancellation. Please note that the time required for the job to be fully canceled may vary depending on its current state, ranging from a few seconds to a few minutes
+
 
 ### What are the reasons files are skipped?
 
