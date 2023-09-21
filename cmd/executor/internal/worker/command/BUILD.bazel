@@ -18,6 +18,7 @@ go_library(
         "//cmd/executor/internal/util",
         "//cmd/executor/internal/worker/cmdlogger",
         "//cmd/executor/internal/worker/files",
+        "//internal/docker",
         "//internal/executor/types",
         "//internal/metrics",
         "//internal/observation",
