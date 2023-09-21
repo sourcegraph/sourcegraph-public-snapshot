@@ -7,6 +7,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import {
     Button,
     Icon,
+    H3,
     Popover,
     PopoverContent,
     PopoverTail,
@@ -64,41 +65,41 @@ export const EventNamesInputSection = ({ label, value, onChange }: Props): JSX.E
 
     return (
         <div className="container">
-            <h3>{label}</h3>
+            <H3>{label}</H3>
             <div className="row d-flex">
                 <TextArea
                     id="event-names-input"
                     className={classNames('flex-grow-1 m-0', styles.textarea)}
                     value={value}
-                    onChange={useCallback(e => onChange(e.target.value), [])}
+                    onChange={useCallback(event => onChange(event.target.value), [onChange])}
                 />
                 <AddEventNamePopover
                     eventNames={allEventNamesResults.data?.site.analytics.allEventNames || []}
-                    onSelect={(e: string) => onChange(value.length > 0 ? value + ', ' + e : e)}
+                    onSelect={(selectedValue: string) =>
+                        onChange(value.length > 0 ? value + ', ' + selectedValue : selectedValue)
+                    }
                 />
             </div>
             <div className="row mt-2">
-                {buttons.map(b => {
-                    return (
-                        <Tooltip key={b.value} content={b.description} placement="top">
-                            <Button
-                                key={b.value}
-                                value={b.value}
-                                onClick={() => {
-                                    onChange(b.value)
-                                    return b.onClick ? b.onClick(b.value) : undefined
-                                }}
-                                outline={true}
-                                variant="secondary"
-                                display="inline"
-                                size="sm"
-                                className="mr-1"
-                            >
-                                {b.display}
-                            </Button>
-                        </Tooltip>
-                    )
-                })}
+                {buttons.map(b => (
+                    <Tooltip key={b.value} content={b.description} placement="top">
+                        <Button
+                            key={b.value}
+                            value={b.value}
+                            onClick={() => {
+                                onChange(b.value)
+                                return b.onClick ? b.onClick(b.value) : undefined
+                            }}
+                            outline={true}
+                            variant="secondary"
+                            display="inline"
+                            size="sm"
+                            className="mr-1"
+                        >
+                            {b.display}
+                        </Button>
+                    </Tooltip>
+                ))}
             </div>
         </div>
     )
@@ -109,28 +110,26 @@ interface PopoverProps {
     onSelect: (e: string) => void
 }
 
-const AddEventNamePopover = ({ eventNames, onSelect }: PopoverProps): JSX.Element => {
-    return (
-        <Popover>
-            <PopoverTrigger as={Button} variant="primary" aria-label="Add an event">
-                <Icon svgPath={mdiMagnifyPlus} size={16} />
-            </PopoverTrigger>
+const AddEventNamePopover = ({ eventNames, onSelect }: PopoverProps): JSX.Element => (
+    <Popover>
+        <PopoverTrigger as={Button} variant="primary" aria-label="Add an event">
+            <Icon svgPath={mdiMagnifyPlus} size="sm" />
+        </PopoverTrigger>
 
-            <PopoverContent position={Position.bottom} className="d-flex flex-column">
-                {eventNames.map(e =>
-                    e ? (
-                        <Button
-                            key={e}
-                            onClick={_ => {
-                                onSelect(e)
-                            }}
-                        >
-                            {e}
-                        </Button>
-                    ) : undefined
-                )}
-            </PopoverContent>
-            <PopoverTail size="sm" />
-        </Popover>
-    )
-}
+        <PopoverContent position={Position.bottom} className="d-flex flex-column">
+            {eventNames.map(eventName =>
+                eventName ? (
+                    <Button
+                        key={eventName}
+                        onClick={() => {
+                            onSelect(eventName)
+                        }}
+                    >
+                        {eventName}
+                    </Button>
+                ) : undefined
+            )}
+        </PopoverContent>
+        <PopoverTail size="sm" />
+    </Popover>
+)

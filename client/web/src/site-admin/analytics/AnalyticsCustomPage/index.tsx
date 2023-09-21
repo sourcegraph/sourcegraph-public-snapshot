@@ -15,7 +15,7 @@ export const AnalyticsCustomPage: React.FunctionComponent<{}> = () => {
     const { dateRange, aggregation, events, grouping } = useChartFilters({ name: 'Custom', aggregation: 'uniqueUsers' })
     const debouncedSearchText = useDebounce(events.value, 300)
         .split(',')
-        .map(e => e.trim())
+        .map(eventNames => eventNames.trim())
 
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsCustom')

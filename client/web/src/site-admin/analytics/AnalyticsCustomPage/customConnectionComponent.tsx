@@ -78,14 +78,11 @@ export const AnalyticsCustomConnectionComponent: React.FunctionComponent<Props> 
                         <li className="list-group-item px-0 py-2 font-weight-bold">
                             <div className={styles.node}>
                                 <div className={styles.user}>User</div>
-                                {connection &&
-                                    connection.nodes[0].periods.map(period => {
-                                        return (
-                                            <div className={styles.period} key={period.date}>
-                                                {format(parseISO(period.date), 'dd MMM')}
-                                            </div>
-                                        )
-                                    })}
+                                {connection?.nodes[0].periods.map(period => (
+                                    <div className={styles.period} key={period.date}>
+                                        {format(parseISO(period.date), 'dd MMM')}
+                                    </div>
+                                ))}
                                 <div className={styles.period}>Total</div>
                             </div>
                         </li>
