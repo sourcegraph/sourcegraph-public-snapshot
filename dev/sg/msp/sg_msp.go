@@ -363,7 +363,7 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 
 	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
 	if err != nil {
-		return errors.Wrapf(err, "env %q: sync Terraform Cloud workspace", env.ID)
+		return errors.Wrap(err, "sync Terraform Cloud workspace")
 	}
 	std.Out.WriteSuccessf("Prepared Terraform Cloud workspaces for environment %q", env.ID)
 	var summary strings.Builder
