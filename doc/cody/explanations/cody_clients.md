@@ -59,7 +59,7 @@ This represents the _current availability_. Notes on future availability and fea
 
 Cody is accessible via the web interface for Sourcegraph Enterprise in 2 ways:
 
-- The "Cody AI" tab in the web app: Use the chat window to ask Cody questions or request Cody fix/analyze/write code snippets.
+- The "Cody" tab in the web app: Use the chat window to ask Cody questions or request Cody fix/analyze/write code snippets.
 - In the Sourcegraph blob view: Use the "Ask Cody" sidebar to ask Cody questions. Or, double-click on a symbol in the blob view to get a list of Cody commands including explaining code, translating code language, or providing code smells.
 
 [cody-app]: ../overview/app/index.md

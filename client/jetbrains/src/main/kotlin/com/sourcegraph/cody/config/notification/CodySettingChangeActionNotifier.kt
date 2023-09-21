@@ -7,7 +7,7 @@ interface CodySettingChangeActionNotifier {
     @JvmStatic
     val TOPIC =
         Topic.create(
-            "Sourcegraph Cody + Code Search: Cody AI settings have changed",
+            "Sourcegraph Cody + Code Search: Cody settings have changed",
             CodySettingChangeActionNotifier::class.java)
   }
 

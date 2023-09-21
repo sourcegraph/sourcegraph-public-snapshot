@@ -133,7 +133,7 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
                   image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${theme}.png`,
               }
             : {
-                  title: 'Try Cody AI assist on this repo',
+                  title: 'Try Cody on this repository',
                   useCases: [
                       'Click the Ask Cody button above and to the right of this banner',
                       'Ask Cody a question like “Explain the structure of this repository”',
@@ -142,12 +142,12 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
               }
         : type === 'blob'
         ? {
-              title: 'Try Cody AI assist on this file',
+              title: 'Try Cody on this file',
               useCases: ['Select code in the file below', 'Select an action with Cody widget'],
               image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${theme}.png`,
           }
         : {
-              title: 'Try Cody AI assist on this repo',
+              title: 'Try Cody on this repository',
               useCases: [
                   'Click the Ask Cody button above and to the right of this banner',
                   'Ask Cody a question like “Explain the structure of this repository”',
