@@ -133,6 +133,11 @@
         }
     }
 
+    &-avatar {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
     &-actions {
         display: flex;
         gap: 0.5rem;
