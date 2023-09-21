@@ -121,9 +121,10 @@ const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
                  */}
                 {!loading && isRecordingEnabled === false && (
                     <Alert variant="info" className="mt-3">
-                        <small className="mb-0">Command recording isn't enabled for this repository.</small>{' '}
-                        <small className="mb-0">
-                            Visit <Link to="/help/admin/repo/recording">the docs</Link> to learn how to enable command recording.
+                        <small>Command recording isn't enabled for this repository.</small>{' '}
+                        <small>
+                            Visit <Link to="/help/admin/repo/recording">the docs</Link> to learn how to enable command
+                            recording.
                         </small>
                     </Alert>
                 )}
