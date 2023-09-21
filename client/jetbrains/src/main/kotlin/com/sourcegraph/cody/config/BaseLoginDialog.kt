@@ -24,10 +24,14 @@ abstract class BaseLoginDialog(
   protected val loginPanel = CodyLoginPanel(executorFactory, isAccountUnique)
 
   private var _login = ""
+  private var _displayName: String? = null
   private var _token = ""
 
   val login: String
     get() = _login
+
+  val displayName: String?
+    get() = _displayName
 
   val token: String
     get() = _token
@@ -63,10 +67,11 @@ abstract class BaseLoginDialog(
 
     startGettingToken()
     loginPanel
-        .acquireLoginAndToken(emptyProgressIndicator)
+        .acquireDetailsAndToken(emptyProgressIndicator)
         .completionOnEdt(modalityState) { finishGettingToken() }
-        .successOnEdt(modalityState) { (login, token) ->
-          _login = login
+        .successOnEdt(modalityState) { (details, token) ->
+          _login = details.username
+          _displayName = details.displayName
           _token = token
 
           close(OK_EXIT_CODE, true)

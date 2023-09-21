@@ -21,10 +21,7 @@ abstract class Account {
   final override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is Account) return false
-
-    if (id != other.id) return false
-
-    return true
+    return id == other.id
   }
 
   final override fun hashCode(): Int {

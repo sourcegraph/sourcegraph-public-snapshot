@@ -42,8 +42,8 @@ func (c *Config) Load() {
 	c.Events.PubSub.TopicID = c.GetOptional("TELEMETRY_GATEWAY_EVENTS_PUBSUB_TOPIC_ID",
 		"The topic ID for the Pub/Sub.")
 
-	c.OpenTelemetry.TracePolicy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
-	c.OpenTelemetry.GCPProjectID = c.GetOptional("CODY_GATEWAY_OTEL_GCP_PROJECT_ID", "Google Cloud Traces project ID.")
+	c.OpenTelemetry.TracePolicy = policy.TracePolicy(c.Get("TELEMETRY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
+	c.OpenTelemetry.GCPProjectID = c.GetOptional("TELEMETRY_GATEWAY_OTEL_GCP_PROJECT_ID", "Google Cloud Traces project ID.")
 	if c.OpenTelemetry.GCPProjectID == "" {
 		c.OpenTelemetry.GCPProjectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	}

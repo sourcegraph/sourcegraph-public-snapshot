@@ -127,7 +127,7 @@ sealed class SourcegraphApiRequestExecutor {
       val statusLine = "${connection.responseCode} ${connection.responseMessage}"
       val errorText = getErrorText(connection)
       LOG.debug(
-          "Request: ${connection.requestMethod} ${connection.url} : Error ${statusLine} body:\n${errorText}")
+          "Request: ${connection.requestMethod} ${connection.url} : Error $statusLine body:\n${errorText}")
 
       throw when (connection.responseCode) {
         HttpURLConnection.HTTP_UNAUTHORIZED,
