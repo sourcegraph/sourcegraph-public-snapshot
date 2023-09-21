@@ -200,11 +200,11 @@ func TestMiddleware(t *testing.T) {
 	// Mock user
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.ExternalAccount.ServiceType == "saml" && op.ExternalAccount.ServiceID == idpServer.IDP.MetadataURL.String() && op.ExternalAccount.ClientID == "http://example.com/.auth/saml/metadata" && op.ExternalAccount.AccountID == mockedExternalID {
-			return mockedUserID, "", nil
+			return false, mockedUserID, "", nil
 		}
-		return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+		return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 	}
 	defer func() { auth.MockGetAndSaveUser = nil }()
 

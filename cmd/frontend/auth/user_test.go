@@ -396,7 +396,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
+						_, userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
 
 						if userID != c.expUserID {
 							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
@@ -465,7 +465,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
-		_, _, err := GetAndSaveUser(
+		_, _, _, err := GetAndSaveUser(
 			ctx,
 			db,
 			GetAndSaveUserOp{
@@ -588,7 +588,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			if _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
+			if _, _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
 				t.Fatal(err)
 			}
 			if user.DisplayName != test.wantDisplayName {

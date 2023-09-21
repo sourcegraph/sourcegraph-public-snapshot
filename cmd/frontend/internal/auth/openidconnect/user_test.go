@@ -43,14 +43,14 @@ func TestAllowSignup(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+			auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 				require.Equal(t, test.shouldAllowSignup, op.CreateIfNotExist)
 				require.True(
 					t,
 					strings.HasPrefix(op.UserProps.Username, test.usernamePrefix),
 					"The username %q does not have prefix %q", op.UserProps.Username, test.usernamePrefix,
 				)
-				return 0, "", nil
+				return false, 0, "", nil
 			}
 			p := &Provider{
 				config: schema.OpenIDConnectAuthProvider{
@@ -61,7 +61,7 @@ func TestAllowSignup(t *testing.T) {
 				},
 				oidc: &oidcProvider{},
 			}
-			_, _, err := getOrCreateUser(
+			_, _, _, err := getOrCreateUser(
 				context.Background(),
 				dbmocks.NewStrictMockDB(),
 				p,
