@@ -160,19 +160,21 @@ Uptime is the percentage of total possible minutes Sourcegraph was available dur
 
 A Severity 0 - Emergency is defined by the following criteria:
 
-- Instance is completely down, unavailable or unresponsive for all users
-- Web UI showing 4xx or 5xx errors on every page
-- All users are unable to login
-- A security related incident that poses risk / exposure
+- The Sourcegraph instance is entirely unavailable or unresponsive for all users. This means the service is inaccessible, and users cannot use any features
+- Sourcegraph's web user interface displays 4XX or 5XX HTTP error codes on every page. These errors indicate a fundamental problem with the service
+- All users are unable to log in to the Sourcegraph instance. Authentication is not functioning, preventing user access
+- A security-related incident poses a significant risk or exposure to the system or data. This may include vulnerabilities, breaches, or other security issues that demand immediate attention to protect the instance and its users
 
 #### What is not a Sev 0 - Emergency?
 
-- A single user is unable to login
-- Performance is slower than usual
-- Partial or delayed repository sync
+A Severity 0 - Emergency typically does not include the following situations:
 
->NOTE: For customers with custom support agreements: Enterprise Plus and Elite customers should refer to their contracts if they have custom service-level agreements.
+- If only one user is experiencing login issues while most users can still access the system
+- Performance is slower than usual
+- Any issues with repository synchronization
+
+>NOTE: Custom support agreements apply to Enterprise Plus and Elite customers. Please consult your contract for details regarding custom service-level agreements.
 
 ## Support on-call
 
-OpsGenie on-call protocol alerts a CS leader at any time, too: use the Slack command: `/genie alert [alert message] for customer-support` … and this will trigger a page to a member of the leadership team, any time, any day.
+OpsGenie on-call protocol also alerts a CS leader at any time. Use the Slack command: `/genie alert [alert message] for customer-support,` which will trigger a page to a leadership team member any day.
