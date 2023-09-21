@@ -174,7 +174,3 @@ A Severity 0 - Emergency typically does not include the following situations:
 - Any issues with repository synchronization
 
 >NOTE: Custom support agreements apply to Enterprise Plus and Elite customers. Please consult your contract for details regarding custom service-level agreements.
-
-## Support on-call
-
-OpsGenie on-call protocol also alerts a CS leader at any time. Use the Slack command: `/genie alert [alert message] for customer-support,` which will trigger a page to a leadership team member any day.
