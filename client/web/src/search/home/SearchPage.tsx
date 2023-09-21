@@ -1,24 +1,19 @@
 import type { FC } from 'react'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, Form, H3, H2, Input, Label, LoadingSpinner, Modal, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { ExternalServicesTotalCountResult } from '../../graphql-operations'
-// import { SearchPageContent, getShouldShowAddCodeHostWidget } from '../../storm/pages/SearchPage/SearchPageContent'
-import { getShouldShowAddCodeHostWidget } from '../../storm/pages/SearchPage/SearchPageContent'
-import { GetStarted } from '../../tour/components/GetStarted/GetStarted'
+import { SearchPageContent, getShouldShowAddCodeHostWidget } from '../../storm/pages/SearchPage/SearchPageContent'
 
 export interface SearchPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchPage: FC<SearchPageProps> = props => {
-    // const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
-    return <GetStarted />
-
-    // return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
+    const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
+    return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
 }
 
 const EXTERNAL_SERVICES_TOTAL_COUNT = gql`
