@@ -85,7 +85,7 @@ class SelectOptionPopupUI(
     get() = mySearchField
 
   private fun executeCommand() {
-    val selectedValue = myResultsList.selectedValue as String ?: return
+    val selectedValue = (myResultsList.selectedValue ?: return) as String
     runOnSelect.accept(selectedValue)
     mySearchField.text = ""
     searchFinishedHandler.run()
@@ -212,6 +212,7 @@ class SelectOptionPopupUI(
     return DefaultListCellRenderer()
   }
 
+  @Deprecated("Deprecated in Java")
   override fun createTopLeftPanel(): JPanel {
     val myTextFieldTitle = JLabel("Select option")
     val topPanel: JPanel = NonOpaquePanel(BorderLayout())
@@ -237,6 +238,7 @@ class SelectOptionPopupUI(
     return topPanel
   }
 
+  @Deprecated("Deprecated in Java")
   override fun createSettingsPanel(): JPanel {
     return JPanel()
   }
