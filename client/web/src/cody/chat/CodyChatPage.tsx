@@ -159,7 +159,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
-            <PageTitle title="Cody AI Chat" />
+            <PageTitle title="Cody chat" />
             {!isSourcegraphDotCom && !isCTADismissed && !isCodyApp && (
                 <MarketingBlock
                     wrapperClassName="mb-5"
