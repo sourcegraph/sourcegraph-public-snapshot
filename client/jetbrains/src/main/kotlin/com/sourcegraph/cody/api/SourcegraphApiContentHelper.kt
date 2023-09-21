@@ -6,9 +6,8 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JavaType
-import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.PropertyNamingStrategy
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -26,19 +25,18 @@ object SourcegraphApiContentHelper {
   private val jackson: ObjectMapper =
       jacksonObjectMapper()
           .genericConfig()
-          .setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+          .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
 
   private val gqlJackson: ObjectMapper =
       jacksonObjectMapper()
           .genericConfig()
-          .setPropertyNamingStrategy(PropertyNamingStrategy.LOWER_CAMEL_CASE)
+          .setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE)
 
   private fun ObjectMapper.genericConfig(): ObjectMapper =
       this.setDateFormat(SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX"))
           .setTimeZone(TimeZone.getDefault())
           .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
           .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-          .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
           .setSerializationInclusion(JsonInclude.Include.NON_NULL)
           .setVisibility(
               VisibilityChecker.Std(

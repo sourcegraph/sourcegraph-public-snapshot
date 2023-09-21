@@ -209,3 +209,10 @@ For more information on what to do next, we recommend the following resources:
   <a class="card text-left" href="./../quickstart"><b>Cody Quickstart</b><p>This guide recommends how to use Cody once you have installed the extension in your VS Code editor.</p></a>
   <a class="card text-left" href="troubleshooting"><b>Troubleshooting with Cody</b><p>Learn how you can troubleshoot and debug common development issues with Cody.</p></a>
 </div>
+
+Yes, we support the following cloud development environments:
+
+- vscode.dev and GitHub Codespaces (install from the VS Code extension marketplace)
+- Any editor supporting the [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai), including:
+  - Gitpod ([blog post](https://www.gitpod.io/blog/boosting-developer-productivity-unleashing-the-power-of-sourcegraph-cody-in-gitpod))
+  - Coder and `code-server` (install from the [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai))

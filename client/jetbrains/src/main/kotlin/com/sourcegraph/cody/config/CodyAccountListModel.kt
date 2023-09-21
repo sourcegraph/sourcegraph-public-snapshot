@@ -66,8 +66,13 @@ class CodyAccountListModel(private val project: Project) :
   private fun getOldToken(account: CodyAccount) =
       CodyAuthenticationManager.getInstance().getTokenForAccount(account)
 
-  override fun addAccount(server: SourcegraphServerPath, login: String, token: String) {
-    val account = CodyAccount.create(login, server)
+  override fun addAccount(
+      server: SourcegraphServerPath,
+      login: String,
+      displayName: String?,
+      token: String
+  ) {
+    val account = CodyAccount.create(login, displayName, server)
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)

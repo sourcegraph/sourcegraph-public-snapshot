@@ -31,7 +31,9 @@ class CodyAutocompleteStatusService : CodyAutocompleteStatusListener, Disposable
   private fun updateCodyStatusBarIcons() {
     val action = Runnable {
       val openProjects = ProjectManager.getInstance().openProjects
-      openProjects.forEach { it.takeIf { !it.isDisposed }?.let { CodyStatusBarWidget.update(it) } }
+      openProjects.forEach { project ->
+        project.takeIf { !it.isDisposed }?.let { CodyStatusBarWidget.update(it) }
+      }
     }
     val application = ApplicationManager.getApplication()
     if (application.isDispatchThread) {

@@ -35,7 +35,7 @@ abstract class BaseAddAccountWithTokenAction : DumbAwareAction() {
 
     dialog.setServer(defaultServer)
     if (dialog.showAndGet()) {
-      accountsHost.addAccount(dialog.server, dialog.login, dialog.token)
+      accountsHost.addAccount(dialog.server, dialog.login, dialog.displayName, dialog.token)
     }
   }
 }
