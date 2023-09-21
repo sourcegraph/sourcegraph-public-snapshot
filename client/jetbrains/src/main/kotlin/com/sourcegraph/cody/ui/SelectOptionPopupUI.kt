@@ -190,7 +190,7 @@ class SelectOptionPopupUI(
           myListRenderingAlarm.addRequest(
               {
                 addListDataListener(model)
-                myResultsList.setModel(model)
+                myResultsList.model = model
                 model.allContentsChanged()
               },
               150,

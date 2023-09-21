@@ -180,7 +180,7 @@ fun <A : Account, Cred> Row.customAccountsPanel(
                   val editAccount = JMenuItem("Edit Account")
                   editAccount.addActionListener { model.editAccount(list, list.selectedValue) }
                   menu.add(editAccount)
-                  menu.show(list, e.getPoint().x, e.getPoint().y)
+                  menu.show(list, e.point.x, e.point.y)
                 }
               }
             }
