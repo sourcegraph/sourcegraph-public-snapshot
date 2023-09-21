@@ -137,7 +137,7 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, host, depot,
 		if err == nil && len(streams) > 0 {
 			for _, stream := range streams {
 				if stream.Type != perforce.Virtual {
-					cmd.Args = append(cmd.Args, "--branch", stream.Stream)
+					cmd.Args = append(cmd.Args, "--branch", stream.Name)
 				}
 			}
 		}
