@@ -65,7 +65,7 @@
         <!-- Cody -->
         <toolWindow
             id="Cody"
-            icon="/icons/codyLogoSm.svg"
+            icon="/icons/codyLogoMonochromatic.svg"
             anchor="left"
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
