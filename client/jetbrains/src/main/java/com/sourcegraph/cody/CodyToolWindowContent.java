@@ -22,7 +22,6 @@ import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.ui.components.AnActionLink;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
@@ -34,23 +33,24 @@ import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.RecipeInfo;
-import com.sourcegraph.cody.auth.ui.SignInWithSourcegraphAction;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.chat.ChatScrollPane;
 import com.sourcegraph.cody.chat.ChatUIConstants;
+import com.sourcegraph.cody.chat.CodyOnboardingGuidancePanel;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
+import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.CodyAccount;
+import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
-import com.sourcegraph.cody.ui.HtmlViewer;
-import com.sourcegraph.cody.ui.UnderlinedActionLink;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.telemetry.GraphQlLogger;
@@ -62,7 +62,6 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -72,6 +71,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.builtInWebServer.BuiltInServerOptions;
 
 public class CodyToolWindowContent implements UpdatableChat {
+  public static final String ONBOARDING_PANEL = "onboardingPanel";
+  public static final int CHAT_PANEL_INDEX = 0;
+  public static final int SIGN_IN_PANEL_INDEX = 1;
+  public static final int ONBOARDING_PANEL_INDEX = 2;
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   public static final String SING_IN_WITH_SOURCEGRAPH_PANEL = "singInWithSourcegraphPanel";
   private static final int CHAT_TAB_INDEX = 0;
@@ -90,6 +93,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
+  private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -176,11 +180,24 @@ public class CodyToolWindowContent implements UpdatableChat {
 
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
-    JPanel singInWithSourcegraphPanel = createSignInWithSourcegraphPanel();
-    JPanel appNotRunningPanel = createAppNotRunningPanel();
-    allContentPanel.add(tabbedPane, "tabbedPane");
-    allContentPanel.add(singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
-    allContentPanel.add(appNotRunningPanel, "appNotRunningPanel");
+    SignInWithSourcegraphPanel singInWithSourcegraphPanel = new SignInWithSourcegraphPanel();
+    singInWithSourcegraphPanel.addMainButtonActionListener(
+        e -> {
+          int port =
+              ApplicationManager.getApplication()
+                  .getService(BuiltInServerOptions.class)
+                  .getEffectiveBuiltInServerPort();
+          BrowserUtil.browse(
+              ConfigUtil.DOTCOM_URL
+                  + "user/settings/tokens/new/callback"
+                  + "?requestFrom=JETBRAINS"
+                  + "&port="
+                  + port);
+          updateVisibilityOfContentPanels();
+        });
+    allContentPanel.add(tabbedPane, "tabbedPane", CHAT_PANEL_INDEX);
+    allContentPanel.add(
+        singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL, SIGN_IN_PANEL_INDEX);
     allContentLayout.show(allContentPanel, SING_IN_WITH_SOURCEGRAPH_PANEL);
     updateVisibilityOfContentPanels();
     // Add welcome message
@@ -296,6 +313,32 @@ public class CodyToolWindowContent implements UpdatableChat {
       isChatVisible = false;
       return;
     }
+    CodyAccount activeAccount = codyAuthenticationManager.getActiveAccount(project);
+    if (!CodyApplicationSettings.getInstance().isOnboardingGuidanceDismissed()) {
+      String displayName =
+          Optional.ofNullable(activeAccount).map(CodyAccount::getDisplayName).orElse(null);
+      CodyOnboardingGuidancePanel newCodyOnboardingGuidancePanel =
+          new CodyOnboardingGuidancePanel(displayName);
+      newCodyOnboardingGuidancePanel.addMainButtonActionListener(
+          e -> {
+            CodyApplicationSettings.getInstance().setOnboardingGuidanceDismissed(true);
+            updateVisibilityOfContentPanels();
+          });
+      if (displayName != null) {
+        if (codyOnboardingGuidancePanel != null
+            && !displayName.equals(codyOnboardingGuidancePanel.getOriginalDisplayName()))
+          try {
+            allContentPanel.remove(ONBOARDING_PANEL_INDEX);
+          } catch (Throwable ex) {
+            // ignore because panel was not created before
+          }
+      }
+      codyOnboardingGuidancePanel = newCodyOnboardingGuidancePanel;
+      allContentPanel.add(codyOnboardingGuidancePanel, ONBOARDING_PANEL, ONBOARDING_PANEL_INDEX);
+      allContentLayout.show(allContentPanel, ONBOARDING_PANEL);
+      isChatVisible = false;
+      return;
+    }
     if (LocalAppManager.isPlatformSupported()
         && codyAuthenticationManager.getActiveAccountType(project) == AccountType.LOCAL_APP) {
       if (!LocalAppManager.isLocalAppRunning()) {
@@ -311,82 +354,11 @@ public class CodyToolWindowContent implements UpdatableChat {
     }
   }
 
-  @RequiresEdt
-  private @NotNull JPanel createSignInWithSourcegraphPanel() {
-    JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
-    jEditorPane.setText(
-        "<html><body><h2>Welcome to Cody</h2>"
-            + "<p>Understand and write code faster with an AI assistant</p>"
-            + "</body></html>");
-    JButton signInWithSourcegraphButton = createMainButton("Sign in for free with Sourcegraph.com");
-    signInWithSourcegraphButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
-    signInWithSourcegraphButton.addActionListener(
-        e -> {
-          int port =
-              ApplicationManager.getApplication()
-                  .getService(BuiltInServerOptions.class)
-                  .getEffectiveBuiltInServerPort();
-          BrowserUtil.browse(
-              ConfigUtil.DOTCOM_URL
-                  + "user/settings/tokens/new/callback"
-                  + "?requestFrom=JETBRAINS"
-                  + "&port="
-                  + port);
-          updateVisibilityOfContentPanels();
-        });
-    CodyOnboardingPanel codyOnboardingPanel =
-        new CodyOnboardingPanel(jEditorPane, signInWithSourcegraphButton);
-    JPanel signInWithAnEnterpriseInstance = createPanelWithSignInWithAnEnterpriseInstance();
-    codyOnboardingPanel.add(signInWithAnEnterpriseInstance);
-    return codyOnboardingPanel;
-  }
-
-  private JPanel createPanelWithSignInWithAnEnterpriseInstance() {
-    AnActionLink signInWithAnEnterpriseInstance =
-        new UnderlinedActionLink(
-            "Sign in with an Enterprise Instance", new SignInWithSourcegraphAction(""));
-    signInWithAnEnterpriseInstance.setAlignmentX(Component.CENTER_ALIGNMENT);
-    JPanel panelWithSettingsLink = new JPanel(new BorderLayout());
-    panelWithSettingsLink.setBorder(JBUI.Borders.empty(20, 0));
-    JPanel linkPanel = new JPanel(new GridBagLayout());
-    linkPanel.add(signInWithAnEnterpriseInstance);
-    panelWithSettingsLink.add(linkPanel, BorderLayout.PAGE_START);
-    return panelWithSettingsLink;
-  }
-
-  @RequiresEdt
-  private @NotNull JPanel createAppNotRunningPanel() {
-
-    JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
-    jEditorPane.setText(
-        "<html><body><h2>Cody App Not Running</h2>"
-            + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code.</p><"
-            + "/body></html>");
-    JButton runCodyAppButton = createMainButton("Open Cody App");
-    runCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
-    runCodyAppButton.addActionListener(
-        e -> {
-          LocalAppManager.runLocalApp();
-          updateVisibilityOfContentPanels();
-        });
-    return new CodyOnboardingPanel(jEditorPane, runCodyAppButton);
-  }
-
   @NotNull
   private JButton createRecipeButton(@NotNull String text) {
     JButton button = new JButton(text);
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
-    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
-    button.setUI(buttonUI);
-    return button;
-  }
-
-  @NotNull
-  private static JButton createMainButton(@NotNull String text) {
-    JButton button = new JButton(text);
-    button.setMaximumSize(new Dimension(Short.MAX_VALUE, button.getPreferredSize().height));
-    button.setAlignmentX(Component.CENTER_ALIGNMENT);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
     button.setUI(buttonUI);
     return button;
