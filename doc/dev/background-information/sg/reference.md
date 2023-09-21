@@ -1718,6 +1718,34 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+## sg managed-services-platform
+
+EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform.
+
+WARNING: This is currently still an experimental project.
+To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)
+
+MSP commands are currently build-flagged to avoid increasing 'sg' binary sizes. To install a build of 'sg' that includes 'sg msp', run:
+
+	go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false
+
+MSP commands should then be available under 'sg msp --help'.
+
+```sh
+# Create a service specification
+$ sg msp init $SERVICE
+
+# Provision Terraform Cloud workspaces
+$ sg msp tfc sync $SERVICE $ENVIRONMENT
+
+# Generate Terraform manifests
+$ sg msp generate $SERVICE $ENVIRONMENT
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg help
 
 Get help and docs about sg.
