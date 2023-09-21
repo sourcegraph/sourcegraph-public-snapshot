@@ -12,9 +12,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -281,22 +284,27 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 // period of time.
 func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
 	logger = logger.Scoped("HandleSignin", "sign in request handler")
+	recorder := telemetryrecorder.NewBestEffort(logger, db)
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
 
+		ctx := r.Context()
 		var user types.User
 
 		signInResult := database.SecurityEventNameSignInAttempted
-		logSignInEvent(r, db, &user, &signInResult)
+		recordSignInSecurityEvent(r, db, &user, &signInResult)
 
 		// We have more failure scenarios and ONLY one successful scenario. By default,
 		// assume a SignInFailed state so that the deferred logSignInEvent function call
 		// will log the correct security event in case of a failure.
 		signInResult = database.SecurityEventNameSignInFailed
+		telemetrySignInResult := telemetry.ActionFailed
 		defer func() {
-			logSignInEvent(r, db, &user, &signInResult)
+			recordSignInSecurityEvent(r, db, &user, &signInResult)
+			recorder.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 
@@ -309,8 +317,6 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 			http.Error(w, "Could not decode request body", http.StatusBadRequest)
 			return
 		}
-
-		ctx := r.Context()
 
 		// Validate user. Allow login by both email and username (for convenience).
 		u, err := getByEmailOrUsername(ctx, db, creds.Email)
@@ -354,16 +360,23 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 			return
 		}
 
-		// Write the session cookie
-		actor := sgactor.Actor{
+		// We are now an authenticated actor
+		act := sgactor.Actor{
 			UID: user.ID,
 		}
-		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
+
+		// Make sure we're in the context of our newly signed in user
+		ctx = actor.WithActor(ctx, &act)
+
+		// Write the session cookie
+		if err := session.SetActor(w, r, &act, 0, user.CreatedAt); err != nil {
 			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
+		// Update the events we record
 		signInResult = database.SecurityEventNameSignInSucceeded
+		telemetrySignInResult = telemetry.ActionSucceeded
 	}
 }
 
@@ -446,7 +459,7 @@ func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) h
 	}
 }
 
-func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
+func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
 	event := &database.SecurityEvent{
 		Name:            *name,
@@ -459,7 +472,6 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 }
 
