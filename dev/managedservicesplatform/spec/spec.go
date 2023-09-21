@@ -26,25 +26,6 @@ type Spec struct {
 	Environments []EnvironmentSpec `json:"environments"`
 }
 
-func (s Spec) Validate() []error {
-	var errs []error
-	errs = append(errs, s.Service.Validate()...)
-	errs = append(errs, s.Build.Validate()...)
-	for _, env := range s.Environments {
-		errs = append(errs, env.Validate()...)
-	}
-	return errs
-}
-
-func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
-	for _, e := range s.Environments {
-		if e.ID == id {
-			return &e
-		}
-	}
-	return nil
-}
-
 // Open is a shortcut for opening a spec, validating it, and unmarshalling the
 // data as a MSP spec.
 func Open(specPath string) (*Spec, error) {
@@ -65,6 +46,16 @@ func Parse(data []byte) (*Spec, error) {
 		return nil, errors.Append(nil, validationErrs...)
 	}
 	return &s, nil
+}
+
+func (s Spec) Validate() []error {
+	var errs []error
+	errs = append(errs, s.Service.Validate()...)
+	errs = append(errs, s.Build.Validate()...)
+	for _, env := range s.Environments {
+		errs = append(errs, env.Validate()...)
+	}
+	return errs
 }
 
 // GetEnvironment retrieves the environment with the given ID, returning nil if
