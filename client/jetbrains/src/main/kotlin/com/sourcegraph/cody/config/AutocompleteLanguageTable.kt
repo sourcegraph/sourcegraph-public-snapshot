@@ -24,7 +24,7 @@ class AutocompleteLanguageTable : ListTableWithButtons<LanguageEntry>() {
   override fun createListModel(): ListTableModel<LanguageEntry> {
     val model =
         ListTableModel(
-            arrayOf<ColumnInfo<*, *>>(LanguageCheckboxColumn(this), LanguageEntryColumn()),
+            arrayOf<ColumnInfo<*, *>>(LanguageCheckboxColumn(this), LanguageEntryColumn(this)),
             listOf<LanguageEntry>(),
             1,
             SortOrder.ASCENDING)
