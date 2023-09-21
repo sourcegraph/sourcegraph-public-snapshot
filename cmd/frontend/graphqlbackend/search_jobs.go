@@ -38,7 +38,7 @@ type CreateSearchJobArgs struct {
 type SearchJobResolver interface {
 	ID() graphql.ID
 	Query() string
-	State() string
+	State(ctx context.Context) string
 	Creator(ctx context.Context) (*UserResolver, error)
 	CreatedAt() gqlutil.DateTime
 	StartedAt(ctx context.Context) *gqlutil.DateTime

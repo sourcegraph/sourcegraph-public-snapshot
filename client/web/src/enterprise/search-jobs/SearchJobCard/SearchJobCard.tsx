@@ -42,7 +42,7 @@ export const SearchJobCard: FC<SearchJobCardProps> = props => {
             <tr className={styles.row}>
                 <td className={styles.label}>Author</td>
                 <td className={styles.creator}>
-                    <UserAvatar user={searchJob.creator!} />
+                    <UserAvatar user={searchJob.creator!} className={styles.avatar} />
                     {searchJob.creator?.displayName ?? searchJob.creator?.username}
                 </td>
             </tr>

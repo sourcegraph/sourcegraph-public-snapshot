@@ -412,7 +412,7 @@ func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	// * yyyy.mm.dd+$BUILDNUM.$COMMIT
 	// * yyyy.mm.dd-insiders+$BUILDNUM.$COMMIT
 	//
-	// We do not follow the Sourcegraph enterprise versioning scheme, because Sourcegraph App is
+	// We do not follow the Sourcegraph enterprise versioning scheme, because Cody App is
 	// released much more frequently than the enterprise versions by nature of being a desktop
 	// app.
 	//

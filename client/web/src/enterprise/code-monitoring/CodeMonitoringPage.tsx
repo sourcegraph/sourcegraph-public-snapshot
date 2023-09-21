@@ -37,7 +37,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> 
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     fetchCodeMonitors?: typeof _fetchCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     // For testing purposes only
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
@@ -48,7 +48,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     fetchCodeMonitors = _fetchCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const userHasCodeMonitors = useObservable(
         useMemo(
@@ -106,7 +106,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
     const showLogsTab =
-        useExperimentalFeatures(features => features.showCodeMonitoringLogs) && authenticatedUser && !isSourcegraphApp
+        useExperimentalFeatures(features => features.showCodeMonitoringLogs) && authenticatedUser && !isCodyApp
 
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
@@ -114,7 +114,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 actions={
                     authenticatedUser &&
-                    !isSourcegraphApp && (
+                    !isCodyApp && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
                         </Button>
@@ -136,7 +136,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 <div className="d-flex flex-column">
                     <div className="code-monitoring-page-tabs mb-4">
                         <div className="nav nav-tabs">
-                            {!isSourcegraphApp && (
+                            {!isCodyApp && (
                                 <div className="nav-item">
                                     <Link
                                         to=""
@@ -190,10 +190,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted
-                            authenticatedUser={authenticatedUser}
-                            isSourcegraphApp={isSourcegraphApp}
-                        />
+                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} isCodyApp={isCodyApp} />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}

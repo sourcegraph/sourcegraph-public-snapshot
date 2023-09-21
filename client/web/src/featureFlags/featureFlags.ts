@@ -30,6 +30,7 @@ export type FeatureFlagName =
     | 'own-analytics'
     | 'enable-simple-search'
     | 'end-user-onboarding'
+    | 'admin-onboarding'
 
 interface OrgFlagOverride {
     orgID: string

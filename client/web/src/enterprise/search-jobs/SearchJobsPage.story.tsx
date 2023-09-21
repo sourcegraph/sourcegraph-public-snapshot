@@ -1,17 +1,17 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
 import {
-    GetUsersListResult,
-    GetUsersListVariables,
+    type GetUsersListResult,
+    type GetUsersListVariables,
     SearchJobsOrderBy,
-    SearchJobsResult,
+    type SearchJobsResult,
     SearchJobState,
-    SearchJobsVariables,
+    type SearchJobsVariables,
 } from '../../graphql-operations'
 
 import { SEARCH_JOBS_QUERY, SearchJobsPage } from './SearchJobsPage'
@@ -33,8 +33,10 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
     request: {
         query: getDocumentNode(SEARCH_JOBS_QUERY),
         variables: {
-            first: 20,
+            first: 15,
             after: null,
+            last: null,
+            before: null,
             query: '',
             userIDs: [],
             states: [],
@@ -55,6 +57,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.QUEUED,
                         query: 'repo:sourcegraph/* insights rev:asdf',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 200,
@@ -78,6 +81,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.PROCESSING,
                         query: 'repo:sourcegraph/* batch-changes rev:asdf',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 145,
@@ -101,6 +105,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.FAILED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -124,6 +129,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.ERRORED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -147,6 +153,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.COMPLETED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -165,9 +172,11 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                 ],
                 totalCount: 5,
                 pageInfo: {
-                    __typename: 'PageInfo',
+                    __typename: 'BidirectionalPageInfo',
                     hasNextPage: false,
                     endCursor: null,
+                    startCursor: null,
+                    hasPreviousPage: false,
                 },
             },
         },

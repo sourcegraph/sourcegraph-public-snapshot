@@ -7,7 +7,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
+        "//internal/trace",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_pubsub//:pubsub",
         "@org_golang_google_api//option",
     ],

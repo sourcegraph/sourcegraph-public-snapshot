@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -42,6 +43,7 @@ func init() {
 	// Override no-op implementation with our real implementation.
 	Command.Hidden = false
 	Command.Action = nil
+	// All 'sg msp ...' subcommands
 	Command.Subcommands = []*cli.Command{
 		{
 			Name:        "init",
@@ -55,6 +57,7 @@ func init() {
 					Value:   "services",
 				},
 			},
+			Before: msprepo.UseManagedServicesRepo,
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 1 {
 					return errors.New("exactly 1 argument required: service ID")
@@ -125,8 +128,9 @@ func init() {
 		},
 		{
 			Name:        "generate",
-			ArgsUsage:   "<service spec file> <environment ID>",
+			ArgsUsage:   "<service ID> <environment ID>",
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
+			Before:      msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "output",
@@ -142,14 +146,12 @@ func init() {
 			},
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 2 {
-					return errors.New("exactly 2 arguments required: service spec file and environment ID")
+					return errors.New("exactly 2 arguments required: service ID and environment ID")
 				}
 
 				// Load specification
-				serviceSpecPath, err := getYAMLPathArg(c, 0)
-				if err != nil {
-					return err
-				}
+				serviceSpecPath := msprepo.ServiceYAMLPath(c.Args().First())
+
 				serviceSpecData, err := os.ReadFile(serviceSpecPath)
 				if err != nil {
 					return err
@@ -205,11 +207,12 @@ func init() {
 			Name:        "terraform-cloud",
 			Aliases:     []string{"tfc"},
 			Description: "Manage Terraform Cloud workspaces for a service",
+			Before:      msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
 				{
 					Name:        "sync",
 					Description: "Create or update all required Terraform Cloud workspaces for a service",
-					ArgsUsage:   "<service spec file>",
+					ArgsUsage:   "<service ID>",
 					Flags: []cli.Flag{
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
@@ -223,10 +226,12 @@ func init() {
 						},
 					},
 					Action: func(c *cli.Context) error {
-						serviceSpecPath, err := getYAMLPathArg(c, 0)
-						if err != nil {
-							return err
+						serviceID := c.Args().First()
+						if serviceID == "" {
+							return errors.New("argument service is required")
 						}
+						serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+
 						serviceSpecData, err := os.ReadFile(serviceSpecPath)
 						if err != nil {
 							return err
@@ -354,12 +359,4 @@ func init() {
 			},
 		},
 	}
-}
-
-func getYAMLPathArg(c *cli.Context, n int) (string, error) {
-	v := c.Args().Get(n)
-	if strings.HasSuffix(v, ".yaml") || strings.HasSuffix(v, ".yml") {
-		return v, nil
-	}
-	return v, errors.Newf("expected argument %d %q to be a path to a YAML file", n, v)
 }

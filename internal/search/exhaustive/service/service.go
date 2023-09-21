@@ -326,6 +326,8 @@ func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *ty
 			stats.Failed += int32(count)
 		case types.JobStateProcessing, types.JobStateErrored, types.JobStateQueued:
 			stats.InProgress += int32(count)
+		case types.JobStateCanceled:
+			stats.InProgress = 0
 		default:
 			return nil, errors.Newf("unknown job state %q", state)
 		}

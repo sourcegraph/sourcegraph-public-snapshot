@@ -20,7 +20,7 @@ interface Props extends UserAreaRouteContext {
 
 export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user'> {
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
@@ -41,7 +41,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
      */
     const path = useMemo(
         () =>
-            props.isSourcegraphApp
+            props.isCodyApp
                 ? { text: 'Settings' }
                 : {
                       text: (
@@ -57,7 +57,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
                       ),
                       icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
                   },
-        [props.user, props.isSourcegraphApp]
+        [props.user, props.isCodyApp]
     )
 
     const filteredNavItems = navItems.filter(({ condition = () => true }) => condition(props))
@@ -67,7 +67,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
             <div className="container">
                 <PageHeader
                     className="mb-3"
-                    actions={props.isSourcegraphApp && <Link to="/site-admin/configuration">Advanced settings</Link>}
+                    actions={props.isCodyApp && <Link to="/site-admin/configuration">Advanced settings</Link>}
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
