@@ -5,13 +5,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
 
 type SignOutURL struct {
@@ -32,21 +34,27 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 	ssoSignOutHandler = f
 }
 
-func serveSignOutHandler(db database.DB) http.HandlerFunc {
+func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
+	logger = logger.Scoped("signOut", "signout handler")
+	recorder := telemetryrecorder.NewBestEffort(logger, db)
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		logSignOutEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
+		ctx := r.Context()
+		recordSecurityEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
 
 		// Invalidate all user sessions first
 		// This way, any other signout failures should not leave a valid session
 		var err error
 		if err = session.InvalidateSessionCurrentUser(w, r, db); err != nil {
-			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed, err)
-			log15.Error("serveSignOutHandler", "err", err)
+			recordSecurityEvent(r, db, database.SecurityEventNameSignOutFailed, err)
+			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionFailed, nil)
+			logger.Error("serveSignOutHandler", log.Error(err))
 		}
 
 		if err = session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
-			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed, err)
-			log15.Error("serveSignOutHandler", "err", err)
+			recordSecurityEvent(r, db, database.SecurityEventNameSignOutFailed, err)
+			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionFailed, nil)
+			logger.Error("serveSignOutHandler", log.Error(err))
 		}
 
 		auth.SetSignOutCookie(w)
@@ -56,15 +64,16 @@ func serveSignOutHandler(db database.DB) http.HandlerFunc {
 		}
 
 		if err == nil {
-			logSignOutEvent(r, db, database.SecurityEventNameSignOutSucceeded, nil)
+			recordSecurityEvent(r, db, database.SecurityEventNameSignOutSucceeded, nil)
+			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionSucceeded, nil)
 		}
 
 		http.Redirect(w, r, "/search", http.StatusSeeOther)
 	}
 }
 
-// logSignOutEvent records an event into the security event log.
-func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEventName, err error) {
+// recordSecurityEvent records an event into the security event log.
+func recordSecurityEvent(r *http.Request, db database.DB, name database.SecurityEventName, err error) {
 	ctx := r.Context()
 	a := actor.FromContext(ctx)
 
@@ -90,16 +99,4 @@ func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEven
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
-
-	logEvent := &database.Event{
-		Name:            string(name),
-		URL:             r.URL.Host,
-		UserID:          uint32(a.UID),
-		AnonymousUserID: "backend",
-		Argument:        marshalled,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	}
-
-	db.EventLogs().Insert(ctx, logEvent)
 }
