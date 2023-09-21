@@ -351,10 +351,10 @@ const SearchJob: FC<SearchJobProps> = props => {
                     onClick={() => {
                         telemetryService.log('SearchJobsResultViewLogsClick', {}, {})
                     }}
-                    >
-                        View logs
-                    </DownloadFileButton>
-                </Tooltip>
+                >
+                    View logs
+                </DownloadFileButton>
+            </Tooltip>
 
             <span className={styles.jobActions}>
                 <Tooltip content="Rerun search job">
