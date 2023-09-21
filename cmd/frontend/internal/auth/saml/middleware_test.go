@@ -23,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -171,6 +172,7 @@ func TestMiddleware(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	defer licensing.TestingSkipFeatureChecks()()
+	globals.SetExternalURL(&url.URL{Scheme: "http", Host: "anotherexample.com"})
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
