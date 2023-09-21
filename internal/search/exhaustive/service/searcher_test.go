@@ -6,7 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -17,15 +23,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	types2 "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/zoekt"
-	"golang.org/x/exp/slices"
 )
+
+func TestBackendFake(t *testing.T) {
+	testNewSearcher(t, context.Background(), NewSearcherFake(), newSearcherTestCase{
+		Query:        "1@rev1 1@rev2 2@rev3",
+		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
+		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
+		WantCSV: autogold.Expect(`repo,revspec,revision
+1,spec,rev1
+1,spec,rev2
+2,spec,rev3
+`),
+	})
+}
+
+type newSearcherTestCase struct {
+	Query        string
+	WantRefSpecs string
+	WantRepoRevs string
+	WantCSV      autogold.Value
+}
 
 func TestFromSearchClient(t *testing.T) {
 	repoMocks := []repoMock{{
@@ -64,47 +89,47 @@ func TestFromSearchClient(t *testing.T) {
 		Query:        "content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
-		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,HEAD,commitfoo0,
-2,bar2,HEAD,commitbar0,
-`,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
+content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,
+content,bar2,commitbar0,/bar2@commitbar0,,/bar2@commitbar0/-/blob/,
+`),
 	})
 
 	do("repo", newSearcherTestCase{
 		Query:        "repo:foo content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD}",
-		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,HEAD,commitfoo0,
-`,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
+content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,
+`),
 	})
 
 	do("rev", newSearcherTestCase{
 		Query:        "repo:foo rev:dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,dev1,commitfoo1,
-`,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
+content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
+`),
 	})
 
 	do("glob", newSearcherTestCase{
 		Query:        "repo:foo rev:*refs/heads/dev* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*}",
 		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
-		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,dev1,commitfoo1,
-1,foo1,dev2,commitfoo2,
-`,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
+content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
+content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,
+`),
 	})
 
 	do("notglob", newSearcherTestCase{
 		Query:        "repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*:*!refs/heads/dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev2}",
-		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,dev2,commitfoo2,
-`,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
+content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,
+`),
 	})
 
 	do("nomatchglob", newSearcherTestCase{
@@ -120,9 +145,9 @@ func TestFromSearchClient(t *testing.T) {
 		Query:        "repo:foo rev:dev1:missing content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,dev1,commitfoo1,
-`,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
+content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
+`),
 	})
 }
 
@@ -270,4 +295,38 @@ func mockSearcher(t *testing.T, repoMocks []repoMock) *endpoint.Map {
 		searcher.MockSearchFilesInRepo = nil
 	})
 	return endpoint.Static("test")
+}
+
+func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher, tc newSearcherTestCase) {
+	assert := require.New(t)
+
+	userID := int32(1)
+	ctx = actor.WithActor(ctx, actor.FromMockUser(userID))
+
+	searcher, err := newSearcher.NewSearch(ctx, userID, tc.Query)
+	assert.NoError(err)
+
+	// Test RepositoryRevSpecs
+	refSpecs, err := searcher.RepositoryRevSpecs(ctx)
+	assert.NoError(err)
+	assert.Equal(tc.WantRefSpecs, joinStringer(refSpecs))
+
+	// Test ResolveRepositoryRevSpec
+	var repoRevs []types2.RepositoryRevision
+	for _, refSpec := range refSpecs {
+		repoRevsPart, err := searcher.ResolveRepositoryRevSpec(ctx, refSpec)
+		assert.NoError(err)
+		repoRevs = append(repoRevs, repoRevsPart...)
+	}
+	assert.Equal(tc.WantRepoRevs, joinStringer(repoRevs))
+
+	// Test Search
+	var csv csvBuffer
+	for _, repoRev := range repoRevs {
+		err := searcher.Search(ctx, repoRev, &csv)
+		assert.NoError(err)
+	}
+	if tc.WantCSV != nil {
+		tc.WantCSV.Equal(t, csv.buf.String())
+	}
 }

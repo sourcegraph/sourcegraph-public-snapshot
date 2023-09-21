@@ -1,6 +1,9 @@
 package service
 
 import (
+	"net/url"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -8,10 +11,20 @@ import (
 type matchCSVWriter struct {
 	w         CSVWriter
 	headerTyp string
+	host      *url.URL
+}
+
+func newMatchCSVWriter(w CSVWriter) (*matchCSVWriter, error) {
+	externalURL := conf.Get().ExternalURL
+	u, err := url.Parse(externalURL)
+	if err != nil {
+		return nil, err
+	}
+	return &matchCSVWriter{w: w, host: u}, nil
 }
 
 func (w *matchCSVWriter) Write(match result.Match) error {
-	// TODO match logic used by the webapp to convert
+	// TODO compare to logic used by the webapp to convert
 	// results into csv. See
 	// client/web/src/search/results/export/searchResultsExport.ts
 
@@ -27,12 +40,25 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 	if ok, err := w.writeHeader("content"); err != nil {
 		return err
 	} else if ok {
-		if err := w.w.WriteHeader("Match type", "Repository", "Repository external URL", "File path", "File URL", "Path matches [path [start end]]", "Chunk matches [line [start end]]"); err != nil {
+		if err := w.w.WriteHeader(
+			"Match type",
+			"Repository",
+			"Revision",
+			"Repository external URL",
+			"File path",
+			"File URL",
+			"Chunk matches [line [start end]]",
+		); err != nil {
 			return err
 		}
 	}
 
-	//key := m.Key()
+	repoURL := *w.host
+	repoURL.Path = "/" + string(fm.Repo.Name) + "@" + string(fm.CommitID)
+
+	fileURL := *w.host
+	fileURL.Path = fm.File.URLAtCommit().Path
+
 	return w.w.WriteRow(
 		// Match type
 		"content",
@@ -40,20 +66,21 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 		// Repository
 		string(fm.Repo.Name),
 
+		// Revision
+		string(fm.CommitID),
+
 		// Repository external URL
-		"", // TODO
+		repoURL.String(),
 
 		// File path
 		fm.Path,
 
 		// File URL
-		"", // TODO
+		fileURL.String(),
 
-		// Path matches [path [start end]]
-		"",
-
-		// Chunk matches [line [start end]]
-		"")
+		// Chunk matches
+		fm.ChunkMatches.String(),
+	)
 }
 
 func (w *matchCSVWriter) writeHeader(typ string) (bool, error) {

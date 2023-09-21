@@ -1,6 +1,7 @@
 package result
 
 import (
+	"fmt"
 	"net/url"
 	"path"
 	"strings"
@@ -23,11 +24,22 @@ type File struct {
 }
 
 func (f *File) URL() *url.URL {
+	return f.url(false)
+}
+
+func (f *File) URLAtCommit() *url.URL {
+	return f.url(true)
+}
+
+func (f *File) url(atCommit bool) *url.URL {
 	var urlPath strings.Builder
 	urlPath.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
 	urlPath.WriteRune('/')
 	urlPath.WriteString(string(f.Repo.Name))
-	if f.InputRev != nil && len(*f.InputRev) > 0 {
+	if atCommit {
+		urlPath.WriteRune('@')
+		urlPath.WriteString(string(f.CommitID))
+	} else if f.InputRev != nil && len(*f.InputRev) > 0 {
 		urlPath.WriteRune('@')
 		urlPath.WriteString(*f.InputRev)
 	}
@@ -259,6 +271,22 @@ func (hs ChunkMatches) AsLineMatches() []*LineMatch {
 		res = append(res, h.AsLineMatches()...)
 	}
 	return res
+}
+
+func (hs ChunkMatches) String() string {
+	var builder strings.Builder
+	for _, h := range hs {
+		builder.WriteString("[")
+		builder.WriteString(fmt.Sprintf("%q", h.ContentStart.Line))
+		for i, r := range h.Ranges {
+			builder.WriteString(fmt.Sprintf("[%d,%d]", r.Start, r.End))
+			if i < len(h.Ranges)-1 {
+				builder.WriteString(" ")
+			}
+		}
+		builder.WriteString("]")
+	}
+	return builder.String()
 }
 
 func (hs ChunkMatches) MatchCount() int {

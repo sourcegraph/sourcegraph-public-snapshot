@@ -174,8 +174,9 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 
 	var mu sync.Mutex     // serialize writes to w
 	var writeRowErr error // capture if w.Write fails
-	matchWriter := matchCSVWriter{
-		w: w,
+	matchWriter, err := newMatchCSVWriter(w)
+	if err != nil {
+		return err
 	}
 
 	// TODO currently ignoring returned Alert
