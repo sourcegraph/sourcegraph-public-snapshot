@@ -19,6 +19,9 @@ import {
     LoadingSpinner,
     ErrorAlert,
     Button,
+    Alert,
+    Code,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
@@ -112,10 +115,17 @@ const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
         <>
             {error && <ErrorAlert error={error} />}
             <div aria-label="recorded commands">
+                {/*
+                    We explicitly check is `isRecordingEnabled` is false because when fetching this field
+                    from the API, `isRecordingEnabled` will be undefined and we don't want to display this
+                    instruction until we're certain the repository isn't configured for recording.
+                 */}
                 {!loading && isRecordingEnabled === false && (
-                    <div>
-                        <Text className="my-2">Command recording isn't enabled for this repository.</Text>
-                    </div>
+                    <Alert variant="info" className="my-2">
+                        <small className="mb-0">Command recording isn't enabled for this repository.</small>
+                        {' '}
+                        <small className="mb-0">To enable command recording, you'll need to set the <Code>gitRecorder</Code> configuration to your <Link to="/site-admin/configuration">site config</Link> and add this repository to <Code>gitRecorder.repos</Code>.</small>
+                    </Alert>
                 )}
                 {!loading && recordedCommands.length === 0 && isRecordingEnabled && (
                     <Text className="my-2">No recorded commands yet.</Text>
