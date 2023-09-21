@@ -20,7 +20,6 @@ import {
     ErrorAlert,
     Button,
     Alert,
-    Code,
     Link,
 } from '@sourcegraph/wildcard'
 
@@ -121,12 +120,10 @@ const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
                     instruction until we're certain the repository isn't configured for recording.
                  */}
                 {!loading && isRecordingEnabled === false && (
-                    <Alert variant="info" className="my-2">
+                    <Alert variant="info" className="mt-3">
                         <small className="mb-0">Command recording isn't enabled for this repository.</small>{' '}
                         <small className="mb-0">
-                            To enable command recording, you'll need to set the <Code>gitRecorder</Code> configuration
-                            to your <Link to="/site-admin/configuration">site config</Link> and add this repository to{' '}
-                            <Code>gitRecorder.repos</Code>.
+                            Visit <Link to="/help/admin/repo/recording">the docs</Link> to learn how to enable command recording.
                         </small>
                     </Alert>
                 )}
