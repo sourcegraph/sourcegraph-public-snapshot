@@ -33,6 +33,7 @@ const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
+const SpongeLogsArea = lazyComponent(() => import('./spongelogs/SpongeLogsArea'), 'SpongeLogsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
 const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
@@ -100,6 +101,10 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.Teams,
         element: <LegacyRoute render={props => <TeamsArea {...props} />} />,
+    },
+    {
+        path: PageRoutes.SpongeLogs,
+        element: <LegacyRoute render={props => <SpongeLogsArea {...props} />} />,
     },
     {
         path: PageRoutes.Organizations,

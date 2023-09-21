@@ -25,6 +25,7 @@ export enum PageRoutes {
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
     GetCody = '/get-cody',
+    SpongeLogs = '/sponge-logs/*',
 }
 
 export enum EnterprisePageRoutes {
