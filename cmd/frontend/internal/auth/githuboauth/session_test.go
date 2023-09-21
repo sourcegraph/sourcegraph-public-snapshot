@@ -387,7 +387,7 @@ func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
 	errorMessage := "could not create new user account, license limit has been reached"
 
 	// We just want to make sure that we end up getting to the signup part
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.CreateIfNotExist {
 			// We should not get here as we should hit the second email address
 			// before trying again with creation enabled.

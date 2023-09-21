@@ -250,7 +250,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		}
 		// Mock the second email address matching
 		if op.UserProps.Email == "secondary@example.com" {
-			return 1, "", nil
+			return false, 1, "", nil
 		}
 		return false, 0, "no match", errors.New("no match")
 	}
