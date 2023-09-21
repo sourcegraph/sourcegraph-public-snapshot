@@ -34,7 +34,7 @@ func UpdateComposeManifests(ctx context.Context, registry Registry, path string,
 		}
 
 		checked++
-		newComposeFile, innerErr := updateComposeFileBis(ctx, registry, op, composeFile)
+		newComposeFile, innerErr := updateComposeFile(registry, op, composeFile)
 		if innerErr != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func UpdateComposeManifests(ctx context.Context, registry Registry, path string,
 
 }
 
-func updateComposeFileBis(ctx context.Context, registry Registry, op UpdateOperation, b []byte) ([]byte, error) {
+func updateComposeFile(registry Registry, op UpdateOperation, b []byte) ([]byte, error) {
 	var compose map[string]any
 	if err := yaml.Unmarshal(b, &compose); err != nil {
 		return nil, err

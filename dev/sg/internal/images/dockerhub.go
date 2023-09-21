@@ -6,8 +6,12 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 
+	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/opencontainers/go-digest"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/docker"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,17 +26,20 @@ type DockerHub struct {
 	host     string
 	org      string
 	cache    repositoryCache
+	once     sync.Once
 }
 
 // NewDockerHub creates a new DockerHub API client.
 func NewDockerHub(org, username, password string) *DockerHub {
-	return &DockerHub{
+	d := &DockerHub{
 		username: username,
 		password: password,
 		host:     "index.docker.io",
 		org:      org,
 		cache:    repositoryCache{},
 	}
+
+	return d
 }
 
 func (r *DockerHub) Host() string {
@@ -43,9 +50,36 @@ func (r *DockerHub) Org() string {
 	return r.org
 }
 
+func (r *DockerHub) tryLoadingCredsFromStore() error {
+	dockerCredentials := &credentials.Credentials{
+		ServerURL: "https://registry.hub.docker.com/v2",
+	}
+
+	creds, err := docker.GetCredentialsFromStore(dockerCredentials.ServerURL)
+	if err != nil {
+		std.Out.WriteWarningf("Registry credentials are not provided and could not be retrieved from docker config.")
+		std.Out.WriteWarningf("You will be using anonymous requests and may be subject to rate limiting by Docker Hub.")
+		return errors.Wrapf(err, "cannot load docker creds from store")
+	}
+
+	r.username = creds.Username
+	r.password = creds.Secret
+	return nil
+}
+
 // loadToken gets the access-token to reach DockerHub for that specific repo,
 // by performing a basic auth first.
 func (r *DockerHub) loadToken(repo string) (string, error) {
+	var err error
+	r.once.Do(func() {
+		if r.username == "" || r.password == "" {
+			err = r.tryLoadingCredsFromStore()
+		}
+	})
+	if err != nil {
+		return "", err
+	}
+
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://auth.docker.io/token?service=registry.docker.io&scope=repository:%s/%s:pull", r.org, repo), nil)
 	if err != nil {
 		return "", err

@@ -72,7 +72,10 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 			}
 		}
 
-		valuesFileString = strings.ReplaceAll(valuesFileString, r.Tag(), newRef.Tag())
+		oldRaw := fmt.Sprintf("%s@%s", r.Tag(), r.digest)
+		newRaw := fmt.Sprintf("%s@%s", newRef.Tag(), newRef.digest)
+
+		valuesFileString = strings.ReplaceAll(valuesFileString, oldRaw, newRaw)
 	}
 
 	if err := os.WriteFile(valuesFilePath, []byte(valuesFileString), 0644); err != nil {

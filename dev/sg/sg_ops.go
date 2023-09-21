@@ -29,6 +29,7 @@ var opsCommand = &cli.Command{
 
 var OpsUpdateImagesCommand = &cli.Command{
 	Name:      "update-images",
+	Usage:     "Update images across a sourcegraph/deploy-sourcegraph/* manifests",
 	ArgsUsage: "<dir>",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -190,6 +191,7 @@ func _opsUpdateImages(
 		}
 
 		if pintag != "" {
+			std.Out.WriteNoticef("pinning images to tag %q", pintag)
 			// We're pinning a tag.
 			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
 				if !images.IsSourcegraph(r) || shouldSkip(r) {
@@ -204,6 +206,7 @@ func _opsUpdateImages(
 				return newR, nil
 			}
 		} else {
+			std.Out.WriteNoticef("updating images to latest")
 			// We're updating to the latest found tag.
 			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
 				if !images.IsSourcegraph(r) || shouldSkip(r) {
