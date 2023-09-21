@@ -98,7 +98,7 @@ td:first-child {
 
 <p class="subtitle">This document explains the Sourcegraph's default contractual Service Level Agreements.</p>
 
-Our service level agreements (SLAs) are designed for products that are generally available and exclude [beta and experimental features](/admin/beta_and_experimental_features). SLA response times indicate how quickly we aim to provide an initial response to your inquiries or concerns. Our team will resolve all issues as quickly as possible. However, it's important to understand that SLA times differ from guaranteed resolution times.
+Our service level agreements (SLAs) are designed for products that are generally available and exclude [beta and experimental features](/admin/beta_and_experimental_features.md). SLA response times indicate how quickly we aim to provide an initial response to your inquiries or concerns. Our team will resolve all issues as quickly as possible. However, it's important to understand that SLA times differ from guaranteed resolution times.
 
 While we always strive to respond to your issues as quickly as possible, our SLAs are specifically applicable from Monday through Friday.
 
