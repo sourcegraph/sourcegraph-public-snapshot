@@ -355,6 +355,8 @@ commands:
       PINGS_PUBSUB_PROJECT_ID: 'telligentsourcegraph'
       PINGS_PUBSUB_TOPIC_ID: 'server-update-checks-test'
       HUBSPOT_ACCESS_TOKEN: ''
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: "127.0.0.1:7011"
     watch:
       - lib
       - internal
