@@ -36,6 +36,15 @@ func (s Spec) Validate() []error {
 	return errs
 }
 
+func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
+	for _, e := range s.Environments {
+		if e.ID == id {
+			return &e
+		}
+	}
+	return nil
+}
+
 // Open is a shortcut for opening a spec, validating it, and unmarshalling the
 // data as a MSP spec.
 func Open(specPath string) (*Spec, error) {
