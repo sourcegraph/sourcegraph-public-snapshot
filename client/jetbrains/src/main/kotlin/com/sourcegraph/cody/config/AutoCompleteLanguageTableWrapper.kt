@@ -7,9 +7,9 @@ import javax.swing.JPanel
 /** Wrapper to be used with JetBrains Kotlin UI DSL */
 class AutoCompleteLanguageTableWrapper(private val languageTable: AutocompleteLanguageTable) :
     JPanel(BorderLayout()) {
+  private val tableComponent = languageTable.component
 
   init {
-    val tableComponent = languageTable.component
     val customHeightDiff = 120
     val customPreferredSize =
         Dimension(
@@ -25,5 +25,12 @@ class AutoCompleteLanguageTableWrapper(private val languageTable: AutocompleteLa
 
   fun setBlacklistedLanguageIds(blacklistedIds: List<String>) {
     languageTable.setBlacklistedLanguageIds(blacklistedIds)
+  }
+
+  override fun setEnabled(enabled: Boolean) {
+    super.setEnabled(enabled)
+    tableComponent.isEnabled = enabled
+    tableComponent.components.forEach { it.isEnabled = enabled }
+    languageTable.isEnabled = enabled
   }
 }
