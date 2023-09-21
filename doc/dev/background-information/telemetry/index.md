@@ -12,14 +12,25 @@ There are currently two ways to log product telemetry:
 
 All usages of old telemetry mechanisms should be migrated to the new framework.
 
+- [Why a new framework and APIs?](#why-a-new-framework-and-apis)
 - [Event lifecycle](#event-lifecycle)
 - [Recording events](#recording-events)
   - [Backend services](#backend-services)
   - [Clients](#clients)
 - [Exporting events](#exporting-events)
-- [Sensitive attributes](#sensitive-attributes)
+  - [Sensitive attributes](#sensitive-attributes)
   - [Exported event schema](#exported-event-schema)
-  - [Export architecture](#export-architecture)
+- [Enabling telemetry export](#enabling-telemetry-export)
+
+## Why a new framework and APIs?
+
+The new telemetry framework and API aims to address the following issues:
+
+- The existing `event_logs` parameters are arbitrarily shaped - to provide stronger guarantees against accidentally exporting sensitive data, the new APIs enforce stricter requirements - see [recording events](#recording-events) for more details.
+- The shape of existing `event_logs` have grown organically over time without a clear structured schema.
+  Callsites must construct full events on their own, and we cannot easily prune event objects of potentially [sensitive attributes](#sensitive-attributes) before export.
+
+Events recorded in the new framework and APIs are still translated into the existing `event_logs` table for admin analytics on a best-effort basis - see [event lifecycle](#event-lifecycle) for more details.
 
 ## Event lifecycle
 
@@ -33,6 +44,9 @@ In general, the lifecycle of an event in the new system looks like this:
 4. Periodically, events are [exported from the cache](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/export/export.go) and exported to Sourcegraph's Telemetry Gateway service, which forwards it to our data warehouse - see [exporting events](#exporting-events).
 
 ## Recording events
+
+Note that recording APIs are intentionally stricter and have a smaller surface area than [the full events we end up exporting](#exported-event-schema).
+This is to help prevent accidental export of sensitive data, and to make it clear what properties should be injected in a uniform manner instead of being constructed ad-hoc by callers - see [event lifecycle](#event-lifecycle) for details.
 
 ### Backend services
 
@@ -99,3 +113,14 @@ The full event schema that ends up getting exported is defined in [`telemetrygat
   }
 }
 ```
+
+## Enabling telemetry export
+
+> NOTE: Telemetry export is currently experimental, and disabled by default.
+
+Telemetry export can be enabled by making the following configuration changes:
+
+- Set environment variable `TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR="https://telemetry-gateway.sourcegraph.com:443"`
+- Enable feature flag `telemetry-export` on the entire instance, or on a subset of users that you want to export telemetry for
+
+Our defaults for the above may change in the future.
