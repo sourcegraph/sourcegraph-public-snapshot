@@ -1,10 +1,10 @@
 package spec
 
 import (
-	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
-	// and nicer formatting. We use this in Sourcegraph Cloud as well.
 	"os"
 
+	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
+	// and nicer formatting. We use this in Sourcegraph Cloud as well.
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -69,6 +69,7 @@ func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
 	return nil
 }
 
+// MarshalYAML marshals the spec to YAML using our YAML library of choice.
 func (s Spec) MarshalYAML() ([]byte, error) {
 	return yaml.Marshal(s)
 }
