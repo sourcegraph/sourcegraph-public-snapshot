@@ -66,11 +66,11 @@ class CodyLoginPanel(
   }
 
   private fun validateCustomRequestHeaders(field: JTextField): ValidationInfo? {
-    if (field.getText().isEmpty()) {
+    if (field.text.isEmpty()) {
       return null
     }
     val pairs: Array<String> =
-        field.getText().split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        field.text.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
     if (pairs.size % 2 != 0) {
       return ValidationInfo("Must be a comma-separated list of string pairs", field)
     }

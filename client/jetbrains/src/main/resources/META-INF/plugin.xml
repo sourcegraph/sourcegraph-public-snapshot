@@ -77,8 +77,6 @@
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
 
-        <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
-
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
                                 implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>

@@ -156,8 +156,8 @@ class SettingsMigration : Activity {
                   requestExecutorFactory.create(accessToken), progressIndicator, server)
             }
           }
-          .successOnEdt(progressIndicator.modalityState) {
-            it.fold(onSuccess) {
+          .successOnEdt(progressIndicator.modalityState) { accountDetailsResult ->
+            accountDetailsResult.fold(onSuccess) {
               LOG.warn("Unable to load user details for '${server.url}' account", it)
             }
           }

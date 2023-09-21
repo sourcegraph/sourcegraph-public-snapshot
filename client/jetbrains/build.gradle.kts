@@ -192,11 +192,10 @@ tasks {
     ideVersions.set(listOf("2022.1", "2022.2", "2022.3", "2023.1", "2023.2"))
     val skippedFailureLevels =
         EnumSet.of(
-            FailureLevel.DEPRECATED_API_USAGES, // TODO: remove deprecated API calls
+            FailureLevel.DEPRECATED_API_USAGES,
+            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
             FailureLevel.EXPERIMENTAL_API_USAGES,
-            FailureLevel.INTERNAL_API_USAGES, // TODO: remove internal API calls
-            FailureLevel.NOT_DYNAMIC,
-            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES) // TODO: remove to-be-removed API calls
+            FailureLevel.NOT_DYNAMIC)
     failureLevel.set(EnumSet.complementOf(skippedFailureLevels))
   }
 
