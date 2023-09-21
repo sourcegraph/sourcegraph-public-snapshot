@@ -140,7 +140,7 @@ func TestMakeRawEvent(t *testing.T) {
 				func() string { return tc.name },
 				tc.event.Feature,
 				tc.event.Action,
-				tc.event.Parameters)
+				&tc.event.Parameters)
 
 			protodata, err := protojson.Marshal(got)
 			require.NoError(t, err)

@@ -33,7 +33,7 @@ func TestToEventLogs(t *testing.T) {
 			expectEventLogs: autogold.Expect(`[
   {
     "ID": 0,
-    "Name": "V2:.",
+    "Name": ".",
     "URL": "",
     "UserID": 0,
     "AnonymousUserID": "",
@@ -61,7 +61,7 @@ func TestToEventLogs(t *testing.T) {
 			expectEventLogs: autogold.Expect(`[
   {
     "ID": 0,
-    "Name": "V2:.",
+    "Name": ".",
     "URL": "",
     "UserID": 0,
     "AnonymousUserID": "",
@@ -120,7 +120,7 @@ func TestToEventLogs(t *testing.T) {
 			expectEventLogs: autogold.Expect(`[
   {
     "ID": 0,
-    "Name": "V2:CodeSearch.Search",
+    "Name": "CodeSearch.Search",
     "URL": "sourcegraph.com/foobar",
     "UserID": 1234,
     "AnonymousUserID": "anonymous",
