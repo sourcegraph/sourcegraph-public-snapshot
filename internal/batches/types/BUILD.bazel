@@ -73,10 +73,10 @@ go_test(
     ],
     embed = [":types"],
     deps = [
+        "//cmd/frontend/globals",
         "//internal/batches/sources/azuredevops",
         "//internal/batches/sources/bitbucketcloud",
         "//internal/batches/sources/gerrit",
-        "//internal/conf",
         "//internal/database",
         "//internal/executor",
         "//internal/extsvc",

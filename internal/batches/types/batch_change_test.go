@@ -26,7 +26,7 @@ func TestBatchChange_URL(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		globals.SetExternalURL(&u.URL{Scheme: "https", Host: "sourcegraph.test"})
+		globals.SetExternalURL(&url.URL{Scheme: "https", Host: "sourcegraph.test"})
 		url, err := bc.URL(
 			ctx,
 			"foo",
