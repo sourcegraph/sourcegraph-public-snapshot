@@ -95,13 +95,13 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 		CreateIfNotExist:    p.config.AllowSignup == nil || *p.config.AllowSignup,
 	})
 	if err != nil {
-		go hubspotutil.SyncUser(email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-			AnonymousUserID: anonymousUserID,
-			FirstSourceURL:  firstSourceURL,
-			LastSourceURL:   lastSourceURL,
-		})
 		return nil, safeErrMsg, err
 	}
+	go hubspotutil.SyncUser(email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+		AnonymousUserID: anonymousUserID,
+		FirstSourceURL:  firstSourceURL,
+		LastSourceURL:   lastSourceURL,
+	})
 	return actor.FromUser(userID), "", nil
 }
 
