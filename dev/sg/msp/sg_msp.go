@@ -341,7 +341,7 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 	}
 
 	if c.Bool("delete") {
-		std.Out.Promptf("Deleting workspaces for environment %q - are you sure? (y/N) ", deployEnv.ID)
+		std.Out.Promptf("Deleting workspaces for environment %q - are you sure? (y/N) ", env.ID)
 		var input string
 		if _, err := fmt.Scan(&input); err != nil {
 			return err
