@@ -94,7 +94,7 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 				newRepo, err := f.op(f.registry, r)
 				if err != nil {
 					if errors.Is(err, ErrNoUpdateNeeded) {
-						std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", oldImage)))
+						std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", oldImage)))
 						return nil
 					} else {
 						return err

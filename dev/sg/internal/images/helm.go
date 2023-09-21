@@ -55,7 +55,7 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 		r, err := ParseRepository(img)
 		if err != nil {
 			if errors.Is(err, ErrNoUpdateNeeded) {
-				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", img)))
+				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", img)))
 				continue
 			} else {
 				return err
@@ -65,7 +65,7 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 		newRef, err := op(registry, r)
 		if err != nil {
 			if errors.Is(err, ErrNoUpdateNeeded) {
-				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", r.Ref())))
+				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", r.Ref())))
 				return nil
 			} else {
 				return errors.Wrapf(err, "couldn't update image %s", img)

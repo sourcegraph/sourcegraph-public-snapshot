@@ -44,18 +44,23 @@ var OpsUpdateImagesCommand = &cli.Command{
 		},
 		&cli.StringFlag{
 			Name:    "docker-username",
-			Aliases: []string{"cr-username"},
+			Aliases: []string{"cr-username"}, // deprecated
 			Usage:   "dockerhub username",
 		},
 		&cli.StringFlag{
 			Name:    "docker-password",
-			Aliases: []string{"cr-password"},
+			Aliases: []string{"cr-password"}, // deprecated
 			Usage:   "dockerhub password",
 		},
 		&cli.StringFlag{
 			Name:  "registry",
 			Usage: "Sets the registry we want images to update to, public or internal.",
 			Value: "public",
+		},
+		&cli.StringFlag{
+			Name:    "skip",
+			Aliases: []string{"skip-images"}, // deprecated
+			Usage:   "List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'",
 		},
 	},
 	Action: func(ctx *cli.Context) error {
@@ -78,6 +83,7 @@ var OpsUpdateImagesCommand = &cli.Command{
 			ctx.String("pin-tag"),
 			ctx.String("docker-username"),
 			ctx.String("docker-password"),
+			strings.Split(ctx.String("skip"), ","),
 		)
 	},
 }
@@ -143,7 +149,16 @@ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
 	},
 }
 
-func _opsUpdateImages(ctx context.Context, path string, registryType string, deploymentType string, pintag string, dockerUsername, dockerPassword string) error {
+func _opsUpdateImages(
+	ctx context.Context,
+	path string,
+	registryType string,
+	deploymentType string,
+	pintag string,
+	dockerUsername string,
+	dockerPassword string,
+	skipImages []string,
+) error {
 	{
 		// Select the registry we're going to work with.
 		var registry images.Registry
@@ -165,10 +180,19 @@ func _opsUpdateImages(ctx context.Context, path string, registryType string, dep
 		// Keep track of the tags we updated, they should all be the same one after performing the update.
 		foundTags := []string{}
 
+		shouldSkip := func(r *images.Repository) bool {
+			for _, img := range skipImages {
+				if r.Name() == img {
+					return true
+				}
+			}
+			return false
+		}
+
 		if pintag != "" {
 			// We're pinning a tag.
 			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
-				if !images.IsSourcegraph(r) {
+				if !images.IsSourcegraph(r) || shouldSkip(r) {
 					return nil, images.ErrNoUpdateNeeded
 				}
 
@@ -182,7 +206,7 @@ func _opsUpdateImages(ctx context.Context, path string, registryType string, dep
 		} else {
 			// We're updating to the latest found tag.
 			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
-				if !images.IsSourcegraph(r) {
+				if !images.IsSourcegraph(r) || shouldSkip(r) {
 					return nil, images.ErrNoUpdateNeeded
 				}
 

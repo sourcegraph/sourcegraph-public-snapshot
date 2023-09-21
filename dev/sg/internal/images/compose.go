@@ -99,7 +99,7 @@ func updateComposeFileBis(ctx context.Context, registry Registry, op UpdateOpera
 			r, err := ParseRepository(originalImage)
 			if err != nil {
 				if errors.Is(err, ErrNoUpdateNeeded) {
-					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", originalImage)))
+					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", originalImage)))
 					return nil
 				} else {
 					return nil
@@ -109,7 +109,7 @@ func updateComposeFileBis(ctx context.Context, registry Registry, op UpdateOpera
 			newR, err := op(registry, r)
 			if err != nil {
 				if errors.Is(err, ErrNoUpdateNeeded) {
-					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q, not a Sourcegraph service.", r.Ref())))
+					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q.", r.Ref())))
 					return nil
 				} else {
 					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("error on %q: %v", originalImage, err)))
