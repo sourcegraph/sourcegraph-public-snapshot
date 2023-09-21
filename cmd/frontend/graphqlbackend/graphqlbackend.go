@@ -754,6 +754,9 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		teamIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return teamByID(ctx, db, id)
 		},
+		spongeLogIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return spongeLogByID(ctx, db, id)
+		},
 		outboundWebhookIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return OutboundWebhookByID(ctx, db, id)
 		},

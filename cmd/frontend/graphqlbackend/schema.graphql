@@ -10725,3 +10725,20 @@ type CodeHost implements Node {
     """
     externalServices(first: Int = 50, after: String): ExternalServiceConnection!
 }
+
+type SpongeLog implements Node {
+    """
+    ID of the Sponge log.
+    """
+    id: ID!
+
+    """
+    Text of the log that was uploaded
+    """
+    log: String!
+
+    """
+    If present a reference to an interpreter to help display the log.
+    """
+    interpreter: String
+}

@@ -347,6 +347,11 @@ func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToSpongeLog() (*SpongeLogResolver, bool) {
+	n, ok := r.Node.(*SpongeLogResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToRole() (RoleResolver, bool) {
 	n, ok := r.Node.(RoleResolver)
 	return n, ok
