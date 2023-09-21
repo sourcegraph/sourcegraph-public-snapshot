@@ -150,31 +150,31 @@ A running embeddings job with the state `QUEUED` or `PROCESSING` can be stopped 
 - Click on the "Cancel" button associated with the job you wish to terminate
 - The job will then be tagged for cancellation. Please note that the time required for the job to be fully canceled may vary depending on its current state, ranging from a few seconds to a few minutes
 
+### Why are files skipped?
 
-### What are the reasons files are skipped?
+Files may be skipped for the following reasons:
 
-Files are skipped for the following reasons:
-
-- The file is too large (1 MB)
+- The file size exceeds 1 MB
 - The file path matches an [exclusion pattern](./explanations/code_graph_context.md#excluding-files-from-embeddings)
-- We have already generated more than [`embeddings.maxCodeEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) embeddings for the repo.
+- The repository has already reached the maximum limit for generated embeddings, as specified by [`embeddings.maxCodeEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated)
 
 ## Third party dependencies
 
 ### What is the default `sourcegraph` provider for completions and embeddings?
 
-The default `"provider": "sourcegraph"` for completions and embeddings is the [Sourcegraph Cody Gateway](./explanations/cody_gateway.md). Cody Gateway provides Sourcegraph enterprise instances access to completions and embeddings using third-party services like Anthropic and OpenAI.
+The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./explanations/cody_gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
 
-### What third-party cloud services does Cody depend on today?
+### What third-party cloud services does Cody depend on?
 
-- Cody has one third-party dependency, which is Anthropic's Claude API. In the config, this can be replaced with OpenAI API.
-- Cody can optionally use OpenAI to generate embeddings, that are then used to improve the quality of its context snippets, but this is not required.
+Cody relies on one primary third-party dependency, i.e., Anthropic's Claude API. Users can use this with the OpenAI API configuration.
 
-The above is also the case even when using [the default `sourcegraph` provider, Cody Gateway](./explanations/cody_gateway.md), which uses the same third-party providers.
+Additionally, Cody can optionally use OpenAI for generating embeddings, enhancing the quality of its context snippets, although this is not mandatory.
 
-### What's the retention policy for Anthropic/OpenAI?
+It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./explanations/cody_gateway.md), which uses the same third-party providers.
 
-See our [terms](https://about.sourcegraph.com/terms/cody-notice).
+### What is the retention policy for Anthropic and OpenAI?
+
+Please refer to this [terms and conditions](https://about.sourcegraph.com/terms/cody-notice) for details regarding the retention policy for data managed by Anthropic and OpenAI.
 
 ### Can I use my own API keys?
 
