@@ -30,10 +30,8 @@ class EditCodebaseContextAction(val project: Project) : AbstractAction("Cody Con
       if (repoName.isNotEmpty()) {
         try {
           val server = CodyAgent.getInitializedServer(project).get(1, TimeUnit.SECONDS)
-          val id = server.getRepoId(GetRepoID(repoName)).get(4, TimeUnit.SECONDS)
-          if (id == null) {
-            return ValidationInfo("Repository $repoName does not exist", gitURL)
-          }
+          server.getRepoId(GetRepoID(repoName)).get(4, TimeUnit.SECONDS)
+              ?: return ValidationInfo("Repository $repoName does not exist", gitURL)
         } catch (e: Exception) {
           logger.warn("failed to validate git url", e)
           return null

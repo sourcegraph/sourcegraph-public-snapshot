@@ -28,6 +28,7 @@ export interface StepComponentProps extends TelemetryProps {
     baseURL: string
     className?: string
     isCodyApp: boolean
+    setStepId?: (stepId: string) => void
 }
 
 export interface StepConfiguration {
@@ -166,10 +167,11 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     contentContainerClass?: string
     isCodyApp: boolean
+    setStepId?: (stepId: string) => void
 }
 
 export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
-    const { contentContainerClass, className, telemetryService, isCodyApp, ...attributes } = props
+    const { contentContainerClass, className, telemetryService, isCodyApp, setStepId, ...attributes } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
@@ -182,6 +184,7 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
                         element={
                             <Component
                                 baseURL={path}
+                                setStepId={setStepId}
                                 className={classNames(contentContainerClass, styles.content)}
                                 telemetryService={telemetryService}
                                 isCodyApp={isCodyApp}

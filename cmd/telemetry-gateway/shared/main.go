@@ -94,7 +94,7 @@ func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTeleme
 	}
 
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
-	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
+	// we run without conf which means Sourcegraph tracing is not enabled.
 	shutdownTracing, err := maybeEnableTracing(ctx,
 		logger.Scoped("tracing", "OpenTelemetry tracing"),
 		config, res)

@@ -69,7 +69,6 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 			expectedErr: errors.New("missing query"),
 		},
 
-		// TODO(keegancsmith) for some reason we don't let users recreate searches.
 		{
 			name: "Search already exists",
 			setup: func(ctx context.Context, s *store.Store) error {
@@ -83,7 +82,6 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 				InitiatorID: userID,
 				Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob_exists",
 			},
-			expectedErr: nil,
 		},
 
 		// Security tests

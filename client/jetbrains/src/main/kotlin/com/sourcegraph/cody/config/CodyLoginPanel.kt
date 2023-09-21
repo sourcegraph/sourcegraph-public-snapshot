@@ -66,11 +66,11 @@ class CodyLoginPanel(
   }
 
   private fun validateCustomRequestHeaders(field: JTextField): ValidationInfo? {
-    if (field.getText().isEmpty()) {
+    if (field.text.isEmpty()) {
       return null
     }
     val pairs: Array<String> =
-        field.getText().split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        field.text.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
     if (pairs.size % 2 != 0) {
       return ValidationInfo("Must be a comma-separated list of string pairs", field)
     }
@@ -94,9 +94,9 @@ class CodyLoginPanel(
     currentUi.setBusy(busy)
   }
 
-  fun acquireLoginAndToken(
+  fun acquireDetailsAndToken(
       progressIndicator: ProgressIndicator
-  ): CompletableFuture<Pair<String, String>> {
+  ): CompletableFuture<Pair<CodyAccountDetails, String>> {
     setBusy(true)
     tokenAcquisitionError = null
 
@@ -104,7 +104,7 @@ class CodyLoginPanel(
     val executor = currentUi.createExecutor()
 
     return service<ProgressManager>()
-        .submitIOTask(progressIndicator) { currentUi.acquireLoginAndToken(server, executor, it) }
+        .submitIOTask(progressIndicator) { currentUi.acquireDetailsAndToken(server, executor, it) }
         .completionOnEdt(progressIndicator.modalityState) { setBusy(false) }
         .errorOnEdt(progressIndicator.modalityState) { setError(it) }
   }

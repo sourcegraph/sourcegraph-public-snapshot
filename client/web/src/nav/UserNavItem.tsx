@@ -24,6 +24,7 @@ import {
     Select,
     Icon,
     ProductStatusBadge,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -115,7 +116,10 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
                                     {isCodyApp ? (
-                                        <Icon svgPath={mdiCogOutline} aria-hidden={true} />
+                                        <>
+                                            <Icon svgPath={mdiCogOutline} aria-hidden={true} />
+                                            <Text className="mb-0 ml-1">Settings</Text>
+                                        </>
                                     ) : (
                                         <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     )}
@@ -138,7 +142,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </>
                             ) : null}
                             <MenuLink as={Link} to={isCodyApp ? '/user/app-settings' : authenticatedUser.settingsURL!}>
-                                Settings
+                                {isCodyApp ? 'Local Repositories' : 'Settings'}
                             </MenuLink>
                             {!isCodyApp && (
                                 <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
