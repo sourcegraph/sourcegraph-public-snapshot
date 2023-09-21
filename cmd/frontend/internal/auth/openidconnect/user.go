@@ -8,6 +8,8 @@ import (
 	"github.com/coreos/go-oidc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -24,7 +26,7 @@ type ExternalAccountData struct {
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
 // authenticated actor if successful; otherwise it returns a friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix string) (_ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix, anonymousUserID, firstSourceURL, lastSourceURL string) (_ *actor.Actor, safeErrMsg string, err error) {
 	if userInfo.Email == "" {
 		return nil, "Only users with an email address may authenticate to Sourcegraph.", errors.New("no email address in claims")
 	}
@@ -95,6 +97,11 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *
 	if err != nil {
 		return nil, safeErrMsg, err
 	}
+	go hubspotutil.SyncUser(email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+		AnonymousUserID: anonymousUserID,
+		FirstSourceURL:  firstSourceURL,
+		LastSourceURL:   lastSourceURL,
+	})
 	return actor.FromUser(userID), "", nil
 }
 
