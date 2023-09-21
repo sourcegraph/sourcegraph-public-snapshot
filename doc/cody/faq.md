@@ -115,16 +115,25 @@ See our [terms](https://about.sourcegraph.com/terms/cody-notice).
 
 ### Can I use my own API keys?
 
-Yes!
+Yes! you can use your own API keys.
 
 ### Can I use with my Cloud IDE?
 
-Yes, we support the following cloud development environments, Gitpod and GitHub Codespaces.
+Yes, Cody supports the following cloud development environments:
 
-- [Gitpod instructions](https://www.gitpod.io/blog/boosting-developer-productivity-unleashing-the-power-of-sourcegraph-cody-in-gitpod)
-- GitHub Codespaces
-  - Open Codespaces
-  - Install Cody AI by Sourcegraph
-  - Copy the url in the browser, e.g. `vscode://sourcegraph.cody-ai...`
-  - Open the Command Pallet <kbd>⌘ cmd/ctrl</kbd>+<kbd>shift</kbd>+<kbd>p</kbd> 
-    - Choose `Developer: Open URL` and paste the URL, then press <kbd>return</kbd>/<kbd>enter</kbd>
+#### vscode.dev and GitHub Codespaces
+
+You can install from the VS Code extension marketplace. To do so:
+
+- Open Codespaces
+- Install Cody AI by Sourcegraph
+- Copy the URL in the browser, for example, `vscode://sourcegraph.cody-ai...`
+- Open the Command Pallet <kbd>⌘ Cmd/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
+- Choose `Developer: Open URL` and paste the URL, then press <kbd>return</kbd>/<kbd>Enter</kbd>
+
+#### Editors supporting the Open VSX Registry
+
+Any editor supporting the [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai), including:
+
+- [Gitpod](https://www.gitpod.io/blog/boosting-developer-productivity-unleashing-the-power-of-sourcegraph-cody-in-gitpod)
+- Coder and `code-server` (you can install from the [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai))
