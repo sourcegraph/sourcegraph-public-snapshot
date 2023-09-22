@@ -20,12 +20,8 @@ open class AutocompleteActionHandler : EditorActionHandler() {
         hasAnyAutocompleteItems(project, caret)
   }
 
-  private fun hasAnyAutocompleteItems(project: Project, caret: Caret) =
-      if (CodyAgent.isConnected(project)) {
-        getAgentAutocompleteItem(caret) != null
-      } else {
-        AutocompleteText.atCaret(caret).isPresent
-      }
+  private fun hasAnyAutocompleteItems(project: Project, caret: Caret): Boolean =
+      CodyAgent.isConnected(project) && getAgentAutocompleteItem(caret) != null
 
   /**
    * Returns the autocompletion item for the first inlay of type `CodyAutocompleteElementRenderer`
