@@ -236,7 +236,7 @@ func TestMiddleware(t *testing.T) {
 
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
-			Redirect:   "/redirect?signin=",
+			Redirect:   "/redirect",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
 		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
@@ -270,7 +270,8 @@ func TestMiddleware(t *testing.T) {
 		}
 		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, state.Redirect, resp.Header.Get("Location"))
+		wantRedirect = fmt.Sprintf(`%s?signin=`, state.Redirect)
+		assert.Equal(t, wantRedirect, resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
 	})
 
