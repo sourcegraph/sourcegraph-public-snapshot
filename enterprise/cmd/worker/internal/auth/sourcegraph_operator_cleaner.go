@@ -70,15 +70,16 @@ type sourcegraphOperatorCleanHandler struct {
 	lifecycleDuration time.Duration
 }
 
-// Handle hard deletes expired Sourcegraph Operator user accounts based on the
-// configured lifecycle duration every minute. It skips users that have external
-// accounts connected other than service type "sourcegraph-operator".
+// Handle updates user accounts with Sourcegraph Operator ("sourcegraph-operator")
+// external accounts based on the configured lifecycle duration every minute such
+// that when the external account has exceeded the lifecycle duration:
+//
+// - if the account has no other external accounts, we delete it
+// - if the account has other external accounts, we make sure they are not a site admin
+// - if the account is a SOAP service account, we don't change it
+//
+// See test cases for details.
 func (h *sourcegraphOperatorCleanHandler) Handle(ctx context.Context) error {
-	// We must get external account ID, then query again for the data, since
-	// the UserExternalAccounts is the only way to easily access account data.
-	// We use MAX to make it look like an aggregated value. This is OK because
-	// this query only asks for users with exactly 1 external account so the value
-	// is the same regardless of the aggregation.
 	q := sqlf.Sprintf(`
 SELECT user_id
 FROM users
