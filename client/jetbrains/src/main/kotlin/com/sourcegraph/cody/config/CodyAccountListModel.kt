@@ -73,6 +73,9 @@ class CodyAccountListModel(private val project: Project) :
       token: String
   ) {
     val account = CodyAccount.create(login, displayName, server)
+    if (accountsListModel.isEmpty) {
+      activeAccount = account
+    }
     accountsListModel.add(account)
     newCredentials[account] = token
     notifyCredentialsChanged(account)

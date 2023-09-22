@@ -45,9 +45,11 @@ import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.AccountsHostProjectHolder;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
+import com.sourcegraph.cody.config.CodyPersistentAccountsHost;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
@@ -184,6 +186,8 @@ public class CodyToolWindowContent implements UpdatableChat {
     SignInWithSourcegraphPanel singInWithSourcegraphPanel = new SignInWithSourcegraphPanel();
     singInWithSourcegraphPanel.addMainButtonActionListener(
         e -> {
+          AccountsHostProjectHolder.getInstance(project)
+              .setAccountsHost(new CodyPersistentAccountsHost(project));
           int port =
               ApplicationManager.getApplication()
                   .getService(BuiltInServerOptions.class)
