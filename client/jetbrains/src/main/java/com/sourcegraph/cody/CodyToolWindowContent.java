@@ -31,6 +31,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.RecipeInfo;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
@@ -44,9 +45,11 @@ import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.config.AccountType;
+import com.sourcegraph.cody.config.AccountsHostProjectHolder;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
+import com.sourcegraph.cody.config.CodyPersistentAccountsHost;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
@@ -183,6 +186,8 @@ public class CodyToolWindowContent implements UpdatableChat {
     SignInWithSourcegraphPanel singInWithSourcegraphPanel = new SignInWithSourcegraphPanel();
     singInWithSourcegraphPanel.addMainButtonActionListener(
         e -> {
+          AccountsHostProjectHolder.getInstance(project)
+              .setAccountsHost(new CodyPersistentAccountsHost(project));
           int port =
               ApplicationManager.getApplication()
                   .getService(BuiltInServerOptions.class)
@@ -539,6 +544,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         .executeOnPooledThread(
             () -> {
               Chat chat = new Chat();
+              CodyAgentManager.tryRestartingAgentIfNotRunning(project);
               if (CodyAgent.isConnected(project)) {
                 try {
                   chat.sendMessageViaAgent(
@@ -556,8 +562,8 @@ public class CodyToolWindowContent implements UpdatableChat {
                 this.addMessageToChat(
                     ChatMessage.createAssistantMessage(
                         "Cody is not able to reply at the moment. "
-                            + "This is a bug, please report an issue to the sourcegraph/sourcegraph "
-                            + "repository and try to include relevant context from idea.log if possible."));
+                            + "This is a bug, please report an issue to https://github.com/sourcegraph/sourcegraph/issues/new?template=jetbrains.md "
+                            + "and include as many details as possible to help troubleshoot the problem."));
                 this.finishMessageProcessing();
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
