@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.ui.lang
 
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.ui.AnActionButtonRunnable
