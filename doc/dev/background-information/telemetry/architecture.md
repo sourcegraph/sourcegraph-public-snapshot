@@ -15,7 +15,8 @@ See [testing events](#testing-events) for a summary of how to observe your event
 Once [recorded](./index.md#recording-events), telemetry events are stored in two places:
 
 1. The structured `event_logs` table, for use in [admin analytics](../../../admin/analytics.md), translated from the [Telemetry Gateway format](./index.md#exported-event-schema) on a best-effort basis.
-2. The unstructured `telemetry_events_export_queue` table, which stores raw event payloads in Protobuf wire format for export.
+2. The unstructured `telemetry_events_export_queue` table, which stores raw event payloads in Protobuf wire format for [export](#exporting-events).
+   1. This table only retains events until they are marked as exported. Once exported, they are pruned after the duration specified by `TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION`.
 
 The "tee" store, including the translation from Telemetry Gateway event schema to the `event_logs` table, is implemented in [`internal/telemetry/teestore`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/teestore).
 
@@ -39,3 +40,5 @@ It exposes a gRPC API defined in [`telemetrygateway/v1`](https://github.com/sour
 From the gRPC API, the Telemetry Gateway constructs raw JSON events to publish to a designated Pub/Sub topic that eventually makes its way into BigQuery.
 
 Also see [How to set up Telemetry Gateway locally](../../how-to/telemetry_gateway.md).
+
+For details about live Telemetry Gateway deployments, refer to [the handbook Telemetry Gateway page](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/telemetry-gateway/).

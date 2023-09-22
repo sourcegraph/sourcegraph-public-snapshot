@@ -123,22 +123,40 @@ The full event schema that ends up getting exported is defined in [`telemetrygat
 
 ## Testing events
 
-In summary, when testing your events in the new telemetry framework:
+In summary, when adding your events in the new telemetry framework, you can verify events are being recorded by:
 
-1. You can [see your events stored directly in `event_logs`](./architecture.md#storing-events) after recording.
-2. You can see the raw payloads that the Telemetry Gateway ends up publishing in logs when [running Telemetry Gateway locally](../../how-to/telemetry_gateway.md).
+1. [Checking your events stored directly in `event_logs`](./architecture.md#storing-events) after recording.
+2. Observing the raw payloads that the Telemetry Gateway ends up publishing in logs when [running Telemetry Gateway locally](../../how-to/telemetry_gateway.md).
+
+Note that the internal queue table, 
 
 In integration and unit tests, you can also provide a mocked [telemetry recording](#recording-events) implementation to assert that various events are recorded as expected.
-For example, in the backend:
+For example, in the backend, you can use package `internal/telemetry/telemetrytest`:
 
 ```go
-type mockStore struct {
-  // ...
-}
+import (
+  "context"
+  "testing"
 
-func TestDoMyThing(t *testing.T) {
-  m := &mockStore{}
-  recorder := telemetry.NewRecorder(m)
+  "github.com/stretchr/testify/require"
+
+  "github.com/sourcegraph/sourcegraph/internal/telemetry"
+  "github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
+)
+
+func TestRecorder(t *testing.T) {
+  store := telemetrytest.NewMockEventsStore()
+  recorder := telemetry.NewEventRecorder(store)
+
+  err := recorder.Record(context.Background(), "Feature", "Action", nil)
+  require.NoError(t, err)
+
+  // stored once
+  require.Len(t, store.StoreEventsFunc.History(), 1)
+  // called with 1 event
+  require.Len(t, store.StoreEventsFunc.History()[0].Arg1, 1)
+  // stored event has 1 event
+  require.Equal(t, "Feature", store.StoreEventsFunc.History()[0].Arg1[0].Feature)
 }
 ```
 

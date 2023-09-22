@@ -30,7 +30,6 @@ You can increase the frequency of exports to monitor behaviour closer to real-ti
 ```yaml
 env:
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL: "10s"
-  TELEMETRY_GATEWAY_EXPORTER_EXPORTED_EVENTS_RETENTION: "5m"
 ```
 
 In development, a gRPC interface is enabled for Telemetry Gateway as well at `http://127.0.0.1:10085/debug/grpcui/`.
@@ -44,3 +43,5 @@ In local development, you can configure Sourcegraph to export to this test deplo
 env:
   TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: "https://telemetry-gateway.sgdev.org:443"
 ```
+
+For details about live Telemetry Gateway deployments, refer to [the handbook Telemetry Gateway page](https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/telemetry-gateway/).
