@@ -53,7 +53,7 @@ func ServeSearchJobLogs(svc *service.Service) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%d.log\"", filename(jobID)))
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.log\"", filename(jobID)))
 
 		err = svc.WriteSearchJobLogs(r.Context(), w, int64(jobID))
 		if err != nil {
