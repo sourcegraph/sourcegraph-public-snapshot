@@ -63,6 +63,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	// modified.
 	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami", "dani"}
 	wantAdmins := []string{"logan", "jordan", "cami"}
+	wantNonSOAPUsers := []string{"logan", "morgan", "cris", "dani"}
 
 	_, err := db.Users().Create(
 		ctx,
@@ -192,10 +193,19 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 
 		got := make([]string, 0, len(users))
 		gotAdmins := make([]string, 0, len(users))
+		gotNonSOAPUsers := make([]string, 0, len(users))
 		for _, u := range users {
 			got = append(got, u.Username)
 			if u.SiteAdmin {
 				gotAdmins = append(gotAdmins, u.Username)
+			}
+			ext, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+				UserID:      u.ID,
+				ServiceType: auth.SourcegraphOperatorProviderType,
+			})
+			require.NoError(t, err)
+			if len(ext) == 0 {
+				gotNonSOAPUsers = append(gotNonSOAPUsers, u.Username)
 			}
 		}
 
@@ -203,8 +213,11 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		slices.Sort(got)
 		slices.Sort(wantAdmins)
 		slices.Sort(gotAdmins)
+		slices.Sort(wantNonSOAPUsers)
+		slices.Sort(gotNonSOAPUsers)
 
 		assert.Equal(t, wantNotDeleted, got, "want not deleted")
 		assert.Equal(t, wantAdmins, gotAdmins, "want admins")
+		assert.Equal(t, wantNonSOAPUsers, gotNonSOAPUsers, "want SOAP")
 	})
 }
