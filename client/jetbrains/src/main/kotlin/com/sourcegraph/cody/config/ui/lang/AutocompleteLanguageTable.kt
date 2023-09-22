@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.ui.lang
 
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.ui.AnActionButtonRunnable
@@ -12,14 +12,17 @@ import javax.swing.SortOrder
  * language entries under the hood.
  */
 class AutocompleteLanguageTable : ListTableWithButtons<LanguageEntry>() {
-  init {
-    setValues(LanguageEntry.getRegisteredLanguageEntries())
-  }
-
   var isEnabled: Boolean = true
 
   /** Use this rather than the component directly when working with JetBrains Kotlin UI DSL */
-  val wrapperComponent: AutoCompleteLanguageTableWrapper = AutoCompleteLanguageTableWrapper(this)
+  val wrapperComponent: AutocompleteLanguageTableWrapper = AutocompleteLanguageTableWrapper(this)
+
+  init {
+    setValues(LanguageEntry.getRegisteredLanguageEntries())
+    tableView.columnModel.columns.asIterator().forEach {
+      it.headerRenderer = LanguageNameCellRenderer(this)
+    }
+  }
 
   override fun createListModel(): ListTableModel<LanguageEntry> {
     val model =

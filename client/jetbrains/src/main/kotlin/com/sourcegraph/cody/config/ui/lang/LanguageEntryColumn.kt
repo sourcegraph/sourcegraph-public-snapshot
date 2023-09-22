@@ -1,6 +1,5 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.ui.lang
 
-import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.ColumnInfo
 import java.util.*
 import javax.swing.table.TableCellRenderer
@@ -10,12 +9,7 @@ class LanguageEntryColumn(private val languageTable: AutocompleteLanguageTable) 
   override fun getCustomizedRenderer(
       o: LanguageEntry?,
       renderer: TableCellRenderer?
-  ): TableCellRenderer {
-    // the language entry shouldn't ever in fact be a null here
-    val label = JBLabel(o?.language?.displayName ?: "Unknown")
-    label.isEnabled = languageTable.isEnabled
-    return TableCellRenderer { _, _, _, _, _, _ -> label }
-  }
+  ): TableCellRenderer = LanguageNameCellRenderer(languageTable, o?.language?.displayName)
 
   override fun valueOf(languageEntry: LanguageEntry): String {
     return languageEntry.language.displayName

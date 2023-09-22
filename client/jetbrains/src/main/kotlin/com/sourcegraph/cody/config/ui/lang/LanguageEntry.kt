@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.ui.lang
 
 import com.intellij.lang.Language
 import com.sourcegraph.config.ConfigUtil

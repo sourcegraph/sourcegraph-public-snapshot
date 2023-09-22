@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.ui.lang
 
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.ui.ColumnInfo
