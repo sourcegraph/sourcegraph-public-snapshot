@@ -14,7 +14,7 @@ This provides visibility into git operations performed by Sourcegraph on a repos
 
 To enable command recording:
 
-1. Go to Site Admin > Site Configuration
+- Go to Site Admin > Site Configuration
 2. Add a `gitRecorder` object to the configuration object
 
 ```json
