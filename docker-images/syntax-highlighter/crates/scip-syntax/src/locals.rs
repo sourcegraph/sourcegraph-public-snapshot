@@ -282,7 +282,7 @@ pub fn parse_tree<'a>(
     let mut definitions = vec![];
     let mut references = vec![];
 
-    for m in cursor.matches(&config.query, root_node, source_bytes) {
+    for query_match in cursor.matches(&config.query, root_node, source_bytes) {
         let mut node = None;
 
         let mut scope = None;
@@ -290,7 +290,7 @@ pub fn parse_tree<'a>(
         let mut reference = None;
         let mut scope_modifier = None;
 
-        for capture in m.captures {
+        for capture in query_match.captures {
             let capture_name = match capture_names.get(capture.index as usize) {
                 Some(capture_name) => capture_name,
                 None => continue,
@@ -303,7 +303,7 @@ pub fn parse_tree<'a>(
                 definition = Some(capture_name);
 
                 // Handle scope modifiers
-                let properties = config.query.property_settings(m.pattern_index);
+                let properties = config.query.property_settings(query_match.pattern_index);
                 for prop in properties {
                     if &(*prop.key) == "scope" {
                         match prop.value.as_deref() {
@@ -447,7 +447,7 @@ mod test {
 
     #[test]
     fn test_can_do_go() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -459,7 +459,7 @@ mod test {
 
     #[test]
     fn test_can_do_nested_locals() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -471,7 +471,7 @@ mod test {
 
     #[test]
     fn test_can_do_functions() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
@@ -483,7 +483,7 @@ mod test {
 
     #[test]
     fn test_can_do_perl() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 

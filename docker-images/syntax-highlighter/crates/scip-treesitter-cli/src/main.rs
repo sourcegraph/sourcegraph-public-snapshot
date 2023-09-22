@@ -1,8 +1,9 @@
-use std::{env, path::Path};
+use std::{collections::HashMap, env, path::Path};
 
-use scip_syntax::get_symbols;
+use scip::types::Occurrence;
+use scip_syntax::{get_locals, get_symbols};
+use scip_treesitter::types::PackedRange;
 use scip_treesitter_languages::parsers::BundledParser;
-use sg_syntax::treesitter_index;
 
 pub fn write_message_to_file<P>(
     path: P,
@@ -61,12 +62,44 @@ pub fn main() {
     };
 
     for filename in filenames {
-        let contents = std::fs::read(filename).unwrap().to_vec();
-        let result = get_symbols(&p, &contents).unwrap();
-        index.documents.push(result);
+        let contents = std::fs::read(filename).unwrap();
+        let string = String::from_utf8(contents.clone()).unwrap();
+        let lines: HashMap<i32, &str> = (0..).into_iter().zip(string.split("\n")).collect();
+        let mut document = get_symbols(&p, &contents).unwrap();
+        let locals = get_locals(&p, &contents);
+
+        match locals {
+            Some(Ok(occurrences)) => {
+                for occ in occurrences {
+
+                    println!("{:?}", extract(&lines, &occ));
+                    document.occurrences.push(occ);
+                    // let range = PackedRange::from_vec(&occ.range).unwrap();
+
+                    // let line = lines.get(&range.start_line).unwrap();
+                    // let label = &line[range.start_col as usize..range.end_col as usize];
+
+                    // println!("{line}: {occ} {label}");
+                    // document.occurrences.push(occ);
+                }
+            }
+            _ => {}
+        }
+
+        // println!("{:?}", locals);
+        index.documents.push(document);
     }
 
     let out_name = args.out.unwrap_or("index.scip".to_string());
 
     write_message_to_file(directory.join(out_name), index).expect("to write the file");
+}
+
+fn extract(lines: &HashMap<i32, &str>, occ: &Occurrence) -> Option<String> {
+    let range = PackedRange::from_vec(&occ.range)?;
+
+    let line = lines.get(&range.start_line)?;
+    let label = &line[range.start_col as usize..range.end_col as usize];
+
+    return Some(label.to_string());
 }

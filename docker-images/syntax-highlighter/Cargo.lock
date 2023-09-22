@@ -1784,6 +1784,7 @@ dependencies = [
  "protobuf",
  "scip",
  "scip-syntax",
+ "scip-treesitter",
  "scip-treesitter-languages",
  "sg-syntax",
 ]
