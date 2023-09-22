@@ -70,11 +70,13 @@ type UserExternalAccountsStore interface {
 
 	ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error)
 
-	// Update updates the data associated with the external account.
-	// On a successful update, the updated external account is returned.
+	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
+	// association with the external account already exist).
 	//
-	// If the external account does not exist, it returns an error.
-	Update(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
+	// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
+	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
+	// CreateUserAndSave for that.
+	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
 
 	// UpsertSCIMData updates the external account data for the given user's SCIM account.
 	// It looks up the existing user based on its ID, then sets its account ID and data.
@@ -134,7 +136,7 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
 }
 
-func (s *userExternalAccountsStore) Update(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (*extsvc.Account, error) {
+func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (*extsvc.Account, error) {
 	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
 	if err != nil {
 		return nil, err
@@ -246,7 +248,7 @@ AND deleted_at IS NULL
 	}
 
 	// Update the external account (it exists).
-	_, err = tx.Update(ctx, spec, data)
+	_, err = tx.LookupUserAndSave(ctx, spec, data)
 	if err != nil {
 		return err
 	}
