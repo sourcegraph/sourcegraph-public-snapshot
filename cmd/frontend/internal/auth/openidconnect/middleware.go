@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -322,7 +323,17 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	if err = userInfo.Claims(&claims); err != nil {
 		log15.Warn("OpenID Connect auth: could not parse userInfo claims.", "error", err)
 	}
-	actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix)
+
+	getCookie := func(name string) string {
+		c, err := r.Cookie(name)
+		if err != nil {
+			return ""
+		}
+		return c.Value
+	}
+	anonymousId, _ := cookie.AnonymousUID(r)
+	actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+
 	if err != nil {
 		return nil,
 			safeErrMsg,

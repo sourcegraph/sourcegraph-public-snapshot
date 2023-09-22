@@ -24,4 +24,10 @@ public interface Icons {
     Icon CodyAutocompleteDisabled =
         IconLoader.getIcon("/icons/codyLogoMonochromaticMuted.svg", Icons.class);
   }
+
+  interface Onboarding {
+    Icon Autocomplete = IconLoader.getIcon("/icons/onboarding/autocomplete.svg", Icons.class);
+    Icon Chat = IconLoader.getIcon("/icons/onboarding/chat.svg", Icons.class);
+    Icon Commands = IconLoader.getIcon("/icons/onboarding/commands.svg", Icons.class);
+  }
 }

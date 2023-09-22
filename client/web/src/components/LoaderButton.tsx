@@ -1,8 +1,10 @@
-import { forwardRef, ReactNode } from 'react'
+import { forwardRef, type ReactNode } from 'react'
 
 import classNames from 'classnames'
 
 import { LoadingSpinner, Button, type ButtonProps } from '@sourcegraph/wildcard'
+
+import styles from './LoaderButton.module.scss'
 
 export interface LoaderButtonProps extends ButtonProps {
     loading?: boolean
@@ -23,7 +25,7 @@ export const LoaderButton = forwardRef<HTMLButtonElement, LoaderButtonProps>((pr
             {loading ? (
                 <>
                     <LoadingSpinner />
-                    {alwaysShowLabel && <span className="ml-1">{label}</span>}
+                    {alwaysShowLabel && <span className={styles.loadingContent}>{label}</span>}
                 </>
             ) : icon ? (
                 <>

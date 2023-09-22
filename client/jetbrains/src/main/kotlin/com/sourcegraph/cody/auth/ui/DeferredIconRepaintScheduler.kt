@@ -34,10 +34,7 @@ class DeferredIconRepaintScheduler {
       iconHeight: Int,
       alwaysSchedule: Boolean
   ) {
-    val actualTarget = request.getActualTarget()
-    if (actualTarget == null) {
-      return
-    }
+    val actualTarget = request.getActualTarget() ?: return
     val component = request.component
     if (!alwaysSchedule && component == actualTarget) {
       component.repaint(request.x, request.y, iconWidth, iconHeight)
