@@ -46,6 +46,7 @@ const (
 	routeRepoStats               = "repo-stats"
 	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
+	routeSearchJobs              = "search-jobs"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
 	routeWelcome                 = "welcome"
@@ -157,6 +158,7 @@ func newRouter() *mux.Router {
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
+	r.PathPrefix("/search-jobs").Methods("GET").Name(routeSearchJobs)
 	r.PathPrefix("/setup").Methods("GET").Name(routeSetup)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
