@@ -12,6 +12,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams;
 import com.sourcegraph.cody.autocomplete.render.*;
@@ -186,6 +187,9 @@ public class CodyAutocompleteManager {
       @NotNull TextDocument textDocument,
       @NotNull InlineCompletionTriggerKind triggerKind,
       @NotNull CancellationToken cancellationToken) {
+    if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+      CodyAgentManager.tryRestartingAgentIfNotRunning(project);
+    }
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     if (!isAgentAutocomplete) {
