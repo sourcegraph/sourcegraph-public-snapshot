@@ -147,6 +147,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	if err != nil {
 		return nil, errors.Errorf("create request counter: %v", err)
 	}
+	errorCounter.Add(context.Background(), 0) // Add a zero value to ensure the metric is visible to scrapers.
 	meter := &updatecheck.Meter{
 		RequestCounter:          requestCounter,
 		RequestHasUpdateCounter: requestHasUpdateCounter,
