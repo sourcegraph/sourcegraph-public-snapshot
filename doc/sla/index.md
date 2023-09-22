@@ -94,9 +94,11 @@ td:first-child {
 }
 </style>
 
-# Service Level Agreements (SLAs)
+# SLAs and Premium Support
 
-<p class="subtitle">This document explains the Sourcegraph's default contractual Service Level Agreements.</p>
+<p class="subtitle">This document explains the Sourcegraph's default contractual Service Level Agreements and Premium Support Offerings.</p>
+
+## Service Level Agreements (SLAs)
 
 Our service level agreements (SLAs) are designed for products that are generally available and exclude [beta and experimental features](../admin/beta_and_experimental_features.md). SLA response times indicate how quickly we aim to provide an initial response to your inquiries or concerns. Our team will resolve all issues as quickly as possible. However, it's important to understand that SLA times differ from guaranteed resolution times.
 
@@ -104,7 +106,7 @@ While we always strive to respond to your issues as quickly as possible, our SLA
 
 The following policy applies to both our cloud-based (managed instance) and on-premise/self-hosted Sourcegraph customers:
 
-## For enterprise plans
+### For enterprise plans
 
 | Severity level | Description | Response time | Support availability |
 | -------------- | ----------- | ------------- | -------------------- |
@@ -113,7 +115,7 @@ The following policy applies to both our cloud-based (managed instance) and on-p
 | 2 | Medium impact: Core features are unavailable or somewhat slowed; workaround exists | Within eight business hours of identifying the issue | 24x5 (Monday-Friday) |
 | 3 | Minimal impact: Questions or clarifications regarding features, documentation, or deployments | Within two business days of identifying the issue | 24x5 (Monday-Friday) |
 
-## For enterprise Starter plans
+### For enterprise Starter plans
 
 | Severity level | Description | Response time | Support availability |
 | -------------- | ----------- | ------------- | -------------------- |
@@ -124,11 +126,11 @@ The following policy applies to both our cloud-based (managed instance) and on-p
 
 >NOTE: Premium support with enhanced SLAs can be added to your Enterprise plans as an add-on. Our business hours, defined as Sunday 2 PM PST to Friday 5 PM PST, align with our 24x5 support coverage.
 
-## Sourcegraph cloud SLA (managed instance)
+### Sourcegraph cloud SLA (managed instance)
 
 >NOTE: Effective: November 14, 2022 — Sourcegraph gives customers a 99.5% uptime commitment on the Business and Enterprise plans.
 
-### Downtime
+#### Downtime
 
 Downtime is the total number of minutes when the Sourcegraph Cloud instance was unavailable during a calendar month. Sourcegraph calculates unavailability using server monitoring software to assess server-side error rates, ping test outcomes, web server evaluations, TCP port examinations, and website tests.
 
@@ -142,11 +144,11 @@ The following items are not considered as part of downtime:
 - External network problems beyond our reasonable control, including connectivity issues involving the client's Internet Service Provider (ISP), Cloudflare, or Google Cloud Platform
 - Maintenance activities are conducted during Scheduled Downtime.
 
-### Scheduled downtime
+#### Scheduled downtime
 
 Scheduled downtime is occasionally required to maintain the proper functioning of your Sourcegraph Cloud instance. In case of such a scheduled downtime, we will provide you with a minimum of 48 hours' advance notice. Please note that the total scheduled downtime will be at most 10 hours in a quarter.
 
-### Uptime commitment
+#### Uptime commitment
 
 Uptime is the percentage of total possible minutes Sourcegraph was available during a calendar month. Our commitment is to maintain at least 99.5% uptime. You can calculate your uptime by using the following formula:
 
@@ -154,9 +156,9 @@ Uptime is the percentage of total possible minutes Sourcegraph was available dur
 [(total minutes in month - Downtime) / total minutes in month] > 99.5%
 ```
 
-### Sev 0 - Emergency support scope
+#### Sev 0 - Emergency support scope
 
-#### What constitutes a Sev 0 - Emergency?
+##### What constitutes a Sev 0 - Emergency?
 
 A Severity 0 - Emergency is defined by the following criteria:
 
@@ -165,7 +167,7 @@ A Severity 0 - Emergency is defined by the following criteria:
 - All users are unable to log in to the Sourcegraph instance. Authentication is not functioning, preventing user access
 - A security-related incident poses a significant risk or exposure to the system or data. This may include vulnerabilities, breaches, or other security issues that demand immediate attention to protect the instance and its users
 
-#### What is not a Sev 0 - Emergency?
+##### What is not a Sev 0 - Emergency?
 
 A Severity 0 - Emergency typically does not include the following situations:
 
@@ -174,3 +176,35 @@ A Severity 0 - Emergency typically does not include the following situations:
 - Any issues with repository synchronization
 
 >NOTE: Custom support agreements apply to Enterprise Plus and Elite customers. Please consult your contract for details regarding custom service-level agreements.
+
+## Sourcegraph Premium Support
+
+### Benefits of Premium Support
+
+Purchasing Premium Support provides several of the following services beyond those provided by Sourcegraph's enterprise or enterprise starter support models:
+- Accelerated Service Level Agreements (SLAs) - Accelerated triaging and queue priority lead to reduced times to resolution.
+- Elevated Support Expertise - Two named, dedicated senior support engineers possessing deep knowledge and understanding of your specific organization’s setup and tech stack with the ability to assist in the resolution of issues that arise.
+- Heightened Support via Slack - Faster response times and closer collaboration through direct access to Sourcegraph experts with closer connection to end users and administrators.
+- More Proactive Collaboration - Hands-on technical guidance to ensure successful migrations, upgrades, and maintenance; early access to new features; quarterly insights reports.
+
+### Premium Support SLAs
+
+Premium Support SLAs gives customers access to our Support team 24x7 for Severity 0 and 1 issues that critically impact your instance and ability to use Sourcegraph.
+
+First response times remain the same according to our SLAs. However, Emergency and Severe Impact issues are supported 24x7 with Premium Support (versus 24x5 without Premium Support).  
+
+This service is provided for all GA products Sourcegraph offers and not for any Experimental or Beta features (see here for more details).
+
+>NOTE: This package includes access to Slack Support & Slack Account Management
+
+### Dedicated Support
+
+Access to named senior support engineers that will have knowledge of your infrastructure and can help reduce the time needed to triage, diagnose and resolve an issue in your instance.
+
+>NOTE: This package includes access to Slack Support & Slack Account Management
+
+### Slack Support & Slack Account Management
+
+Slack Support provides access to creating tickets directly from Slack allowing customers to resolve tickets directly from a familiar interface and allows for greater collaboration between Support and customers.
+
+Slack Account Management allows customers to have direct access to their Account team including their Technical Advisor (if applicable) and can help resolve any non-technical issues or questions that come up.
