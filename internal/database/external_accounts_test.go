@@ -39,12 +39,12 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userID, err := db.UserExternalAccounts().LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+	lookedUpUserID, err := db.UserExternalAccounts().LookupUserAndSave(ctx, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if userID != user.ID {
-		t.Errorf("got %d, want %d", userID, user.ID)
+	if lookedUpUserID != user.ID {
+		t.Errorf("got %d, want %d", lookedUpUserID, user.ID)
 	}
 }
 
@@ -477,7 +477,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Update should encrypt the accountData correctly
+	// LookupUserAndSave should encrypt the accountData correctly
 	userID, err := store.LookupUserAndSave(ctx, spec, accountData)
 	if err != nil {
 		t.Fatal(err)

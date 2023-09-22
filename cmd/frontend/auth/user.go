@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,7 +62,7 @@ type GetAndSaveUserOp struct {
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
+func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (bool, int32, string, error) {
 	if MockGetAndSaveUser != nil {
 		return MockGetAndSaveUser(ctx, op)
 	}
@@ -69,7 +70,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	externalAccountsStore := db.UserExternalAccounts()
 	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
 
-	userID, userSaved, extAcctSaved, safeErrMsg, err := getAndSaveUser(ctx, db, op)
+	res, err := getAndSaveUser(ctx, db, op)
 	if err != nil {
 		const eventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
@@ -80,16 +81,16 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 				sglog.Error(err),
 			)
 		}
-		return newUserCreated, 0, safeErrMsg, err
+		return false, 0, err.SafeError(), err
 	}
 
 	// Update user properties, if they've changed
-	if !userSaved {
+	if !res.UserSaved {
 		// Update user in our DB if their profile info changed on the issuer. (Except username and
 		// email, which the user is somewhat likely to want to control separately on Sourcegraph.)
-		user, err := db.Users().GetByID(ctx, userID)
+		user, err := db.Users().GetByID(ctx, res.UserID)
 		if err != nil {
-			return newUserCreated, 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
+			return false, 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
 		}
 		var userUpdate database.UserUpdate
 		if user.DisplayName == "" && op.UserProps.DisplayName != "" {
@@ -100,78 +101,90 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 		if userUpdate != (database.UserUpdate{}) {
 			if err := db.Users().Update(ctx, user.ID, userUpdate); err != nil {
-				return newUserCreated, 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
+				return false, 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
 			}
 		}
 	}
 
 	// Create/update the external account and ensure it's associated with the user ID
-	if !extAcctSaved {
-		err := externalAccountsStore.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
+	if !res.ExternalAccountSaved {
+		err := externalAccountsStore.AssociateUserAndSave(ctx, res.UserID, op.ExternalAccount, op.ExternalAccountData)
 		if err != nil {
-			return newUserCreated, 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
+			return false, 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
 
 		// Schedule a permission sync, since this is probably a new external account for the user
 		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
-			UserIDs:           []int32{userID},
+			UserIDs:           []int32{res.UserID},
 			Reason:            database.ReasonExternalAccountAdded,
-			TriggeredByUserID: userID,
+			TriggeredByUserID: res.UserID,
 		})
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
+			UserID: res.UserID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
 			logger.Error(
 				"failed to grant user pending permissions",
-				sglog.Int32("userID", userID),
+				sglog.Int32("userID", res.UserID),
 				sglog.Error(err),
 			)
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
 		}
 	}
 
-	return userSaved, userID, "", nil
+	return res.UserSaved, res.UserID, "", nil
 }
 
-func getUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, bool, string, error) {
+func getUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (getUserResult, *getAndSaveUserError) {
+	var res getUserResult
+	var err getAndSaveUserError
 	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-		return actor.UID, false, "", nil
+		res.UserID = actor.UID
+		return res, nil
 	}
 
-	userID, err := db.UserExternalAccounts().LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
-	if err != nil {
+	res.UserID, err.Err = db.UserExternalAccounts().LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
+	if err.Err != nil {
 		// If it's any error other than "not found", return it
-		if !errcode.IsNotFound(err) {
-			return 0, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", err
+		if !errcode.IsNotFound(err.Err) {
+			err.SafeErr = "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help."
+			return res, &err
 		}
 		// Otherwise, check if we should look up by username
 		if op.LookUpByUsername {
-			user, err := db.Users().GetByUsername(ctx, op.UserProps.Username)
-			if err != nil {
-				return 0, false, "Unexpected error looking up the Sourcegraph user by username. Ask a site admin for help.", err
+			var user *types.User
+			user, err.Err = db.Users().GetByUsername(ctx, op.UserProps.Username)
+			if err.Err != nil {
+				err.SafeErr = "Unexpected error looking up the Sourcegraph user by username. Ask a site admin for help."
+				return res, &err
 			}
 
-			return user.ID, false, "", nil
+			res.UserID = user.ID
+			return res, nil
 		}
 
 		// If not, try to get the user by verified email
 		if op.UserProps.EmailIsVerified {
-			user, err := db.Users().GetByVerifiedEmail(ctx, op.UserProps.Email)
-			if err != nil {
-				if !errcode.IsNotFound(err) {
-					return 0, false, "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.", err
+			var user *types.User
+			user, err.Err = db.Users().GetByVerifiedEmail(ctx, op.UserProps.Email)
+			if err.Err != nil {
+				if !errcode.IsNotFound(err.Err) {
+					err.SafeErr = "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help."
+					return res, &err
 				}
-				return 0, false, fmt.Sprintf("User account with verified email %q does not exist. Ask a site admin to create your account and then verify your email.", op.UserProps.Email), err
+				err.SafeErr = fmt.Sprintf("User account with verified email %q does not exist. Ask a site admin to create your account and then verify your email.", op.UserProps.Email)
+				return res, &err
 			}
 
-			return user.ID, false, "", nil
+			res.UserID = user.ID
+			return res, nil
 		}
 	}
 
-	return userID, true, "", nil
+	res.ExternalAccountSaved = true
+	return res, nil
 }
 
 func createUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, string, error) {
@@ -180,8 +193,6 @@ func createUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32
 		SourcegraphOperator: op.ExternalAccount.ServiceType == auth.SourcegraphOperatorProviderType,
 	}
 
-	// Fourth and finally, create a new user account and return it.
-	//
 	// If CreateIfNotExist is true, create the new user, regardless of whether the
 	// email was verified or not.
 	//
@@ -259,26 +270,49 @@ func createUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32
 	return user.ID, "", nil
 }
 
-func getAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, bool, bool, string, error) {
-	newUser := false
+type getUserResult struct {
+	UserID               int32
+	ExternalAccountSaved bool
+}
 
-	userID, extAcctSaved, safeErr, err := getUser(ctx, db, op)
+type getAndSaveUserResult struct {
+	getUserResult
+	UserSaved bool
+}
+
+type getAndSaveUserError struct {
+	Err     error
+	SafeErr string
+}
+
+func (e *getAndSaveUserError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *getAndSaveUserError) SafeError() string {
+	return e.SafeErr
+}
+
+func getAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (getAndSaveUserResult, *getAndSaveUserError) {
+	var res getAndSaveUserResult
+	var err *getAndSaveUserError
+	res.getUserResult, err = getUser(ctx, db, op)
 	if err != nil {
-		if !errcode.IsNotFound(err) {
-			return 0, false, false, safeErr, err
+		if !errcode.IsNotFound(err.Err) {
+			return res, err
 		}
 
 		if !op.CreateIfNotExist {
-			return 0, false, false, safeErr, err
+			return res, err
 		}
 
-		userID, safeErr, err = createUser(ctx, db, op)
-		if err != nil {
-			return 0, false, false, safeErr, err
+		res.UserID, err.SafeErr, err.Err = createUser(ctx, db, op)
+		if err.Err != nil {
+			return res, err
 		}
-		extAcctSaved = true
-		newUser = true
+		res.ExternalAccountSaved = true
+		res.UserSaved = true
 	}
 
-	return userID, newUser, extAcctSaved, "", nil
+	return res, nil
 }
