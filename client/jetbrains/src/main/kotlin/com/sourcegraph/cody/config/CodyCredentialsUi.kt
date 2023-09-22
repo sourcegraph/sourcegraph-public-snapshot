@@ -17,11 +17,11 @@ internal abstract class CodyCredentialsUi {
 
   abstract fun createExecutor(): SourcegraphApiRequestExecutor
 
-  abstract fun acquireLoginAndToken(
+  abstract fun acquireDetailsAndToken(
       server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
       indicator: ProgressIndicator
-  ): Pair<String, String>
+  ): Pair<CodyAccountDetails, String>
 
   abstract fun handleAcquireError(error: Throwable): ValidationInfo
 

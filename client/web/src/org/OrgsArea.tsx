@@ -33,7 +33,7 @@ export interface Props
 
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**

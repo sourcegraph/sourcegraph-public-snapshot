@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "authbearer",
+    srcs = ["authbearer.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authbearer",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/errors"],
+)

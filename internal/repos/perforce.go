@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -45,10 +46,19 @@ func newPerforceSource(svc *types.ExternalService, c *schema.PerforceConnection)
 	}, nil
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
+// CheckConnection tests the code host connection to make sure it works.
+// For Perforce, it uses the host (p4.port), username (p4.user) and password (p4.passwd)
+// from the code host configuration.
 func (s PerforceSource) CheckConnection(ctx context.Context) error {
+	// since CheckConnection is called from the frontend, we can't rely on the `p4` executable
+	// being available, so we need to make an RPC call to `gitserver`, where it is available.
+	// Use what is for us a "no-op" `p4` command that should always succeed.
+	gclient := gitserver.NewClient()
+	rc, _, err := gclient.P4Exec(ctx, s.config.P4Port, s.config.P4User, s.config.P4Passwd, "users")
+	if err != nil {
+		return errors.Wrap(err, "Unable to connect to the Perforce server")
+	}
+	rc.Close()
 	return nil
 }
 
@@ -87,11 +97,14 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 // composePerforceCloneURL composes a clone URL for a Perforce depot based on
 // given information. e.g.
 // perforce://ssl:111.222.333.444:1666//Sourcegraph/
-func composePerforceCloneURL(host, depot string) string {
+func composePerforceCloneURL(host, depot, username, password string) string {
 	cloneURL := url.URL{
 		Scheme: "perforce",
 		Host:   host,
 		Path:   depot,
+	}
+	if username != "" && password != "" {
+		cloneURL.User = url.UserPassword(username, password)
 	}
 	return cloneURL.String()
 }
@@ -103,7 +116,7 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 	name := strings.Trim(depot, "/")
 	urn := s.svc.URN()
 
-	cloneURL := composePerforceCloneURL(s.config.P4Port, depot)
+	cloneURL := composePerforceCloneURL(s.config.P4Port, depot, "", "")
 
 	return &types.Repo{
 		Name: reposource.PerforceRepoName(

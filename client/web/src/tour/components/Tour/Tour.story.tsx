@@ -32,6 +32,7 @@ export const AuthenticatedDefault: React.FunctionComponent<React.PropsWithChildr
         id="TourStorybook"
         tasks={authenticatedTasks}
         variant="horizontal"
+        defaultSnippets={{}}
     />
 )
 
@@ -50,6 +51,7 @@ export const AuthenticatedWithCompletedSteps: React.FunctionComponent<React.Prop
             id="TourStorybook"
             tasks={authenticatedTasks}
             variant="horizontal"
+            defaultSnippets={{}}
         />
     </MockTemporarySettings>
 )
@@ -69,6 +71,7 @@ export const AuthenticatedWithCompletedTask: React.FunctionComponent<React.Props
             id="TourStorybook"
             tasks={authenticatedTasks}
             variant="horizontal"
+            defaultSnippets={{}}
         />
     </MockTemporarySettings>
 )

@@ -20,9 +20,10 @@ import (
 )
 
 func FromSearchClient(client client.SearchClient) NewSearcher {
-	return newSearcherFunc(func(ctx context.Context, q string) (SearchQuery, error) {
-		// TODO adjust NewSearch API to enforce the user passing in a user id.
-		// IE do not rely on ctx actor since that could easily lead to a bug.
+	return newSearcherFunc(func(ctx context.Context, userID int32, q string) (SearchQuery, error) {
+		if err := isSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
 
 		// TODO this hack is an ugly workaround to get the plan and jobs to
 		// get into a shape we like. it will break in bad ways but works for
@@ -50,20 +51,15 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 		}
 
 		return searchQuery{
+			userID:     userID,
 			exhaustive: exhaustive,
 			clients:    client.JobClients(),
 		}, nil
 	})
 }
 
-// TODO maybe reuse for the fake
-type newSearcherFunc func(context.Context, string) (SearchQuery, error)
-
-func (f newSearcherFunc) NewSearch(ctx context.Context, q string) (SearchQuery, error) {
-	return f(ctx, q)
-}
-
 type searchQuery struct {
+	userID     int32
 	exhaustive jobutil.Exhaustive
 	clients    job.RuntimeClients
 }
@@ -71,13 +67,23 @@ type searchQuery struct {
 // TODO make this an iterator return since the result could be large and the
 // underlying infra already relies on iterators
 func (s searchQuery) RepositoryRevSpecs(ctx context.Context) ([]types.RepositoryRevSpecs, error) {
+	if err := isSameUser(ctx, s.userID); err != nil {
+		return nil, err
+	}
+
 	var repoRevSpecs []types.RepositoryRevSpecs
 	it := s.exhaustive.RepositoryRevSpecs(ctx, s.clients)
 	for it.Next() {
 		repoRev := it.Current()
 		var revspecs []string
 		for _, rev := range repoRev.Revs {
-			revspecs = append(revspecs, rev.String())
+			revStr := rev.String()
+			// avoid storing empty string since our DB expects non-empty
+			// string + this is easier to read in the DB.
+			if revStr == "" {
+				revStr = "HEAD"
+			}
+			revspecs = append(revspecs, revStr)
 		}
 		repoRevSpecs = append(repoRevSpecs, types.RepositoryRevSpecs{
 			Repository:         repoRev.Repo.ID,
@@ -96,6 +102,10 @@ func (s searchQuery) RepositoryRevSpecs(ctx context.Context) ([]types.Repository
 }
 
 func (s searchQuery) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
+	if err := isSameUser(ctx, s.userID); err != nil {
+		return nil, err
+	}
+
 	repoPagerRepoRevSpec, err := s.toRepoRevSpecs(ctx, repoRevSpec)
 	if err != nil {
 		return nil, err
@@ -146,6 +156,10 @@ func (s searchQuery) toRepoRevSpecs(ctx context.Context, repoRevSpec types.Repos
 }
 
 func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevision, w CSVWriter) error {
+	if err := isSameUser(ctx, s.userID); err != nil {
+		return err
+	}
+
 	repo, err := s.minimalRepo(ctx, repoRev.Repository)
 	if err != nil {
 		return err

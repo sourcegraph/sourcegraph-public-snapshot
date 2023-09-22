@@ -1,4 +1,20 @@
 import isAbsoluteURL from 'is-absolute-url'
+import { memoize, noop } from 'lodash'
+import { type Subscriber, type Subscription, fromEvent, of } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import {
+    LATEST_VERSION,
+    type MessageHandlers,
+    type SearchMatch,
+    messageHandlers,
+    search,
+    switchAggregateSearchResults,
+    observeMessages,
+    type SearchEvent,
+} from '@sourcegraph/shared/src/search/stream'
+
+import { SearchPatternType } from '../../../graphql-operations'
 
 /**
  * Returns a new URL w/ tour state tracking query parameters. This is used to show/hide tour task info box.
@@ -28,4 +44,64 @@ export const parseURIMarkers = (searchParameters: string): { isTour: boolean; st
     const isTour = parameters.has('tour')
     const stepId = parameters.get('stepId')
     return { isTour, stepId }
+}
+
+const noopHandler = <T extends SearchEvent>(
+    type: T['type'],
+    eventSource: EventSource,
+    _observer: Subscriber<SearchEvent>
+): Subscription => fromEvent(eventSource, type).subscribe(noop)
+
+const firstMatchMessageHandlers: MessageHandlers = {
+    ...messageHandlers,
+    matches: (type, eventSource, observer) =>
+        observeMessages(type, eventSource).subscribe(data => {
+            observer.next(data)
+            // Once we observer the first `matches` event, complete the stream and close the event source.
+            observer.complete()
+            eventSource.close()
+        }),
+    progress: noopHandler,
+    filters: noopHandler,
+    alert: noopHandler,
+}
+
+/**
+ * Initiates a streaming search, stop at the first `matches` event, and aggregate the results.
+ */
+const fetchStreamSuggestions = memoize(
+    (query: string, sourcegraphURL?: string): Promise<SearchMatch[]> =>
+        search(
+            of(query),
+            {
+                version: LATEST_VERSION,
+                patternType: SearchPatternType.standard,
+                caseSensitive: false,
+                trace: undefined,
+                sourcegraphURL,
+            },
+            firstMatchMessageHandlers
+        )
+            .pipe(
+                switchAggregateSearchResults,
+                map(suggestions => suggestions.results)
+            )
+            .toPromise(),
+    (query, sourcegraphURL) => `${query}|${sourcegraphURL}`
+)
+
+/**
+ * Executes the a "restricted" version of the provided query to determine whether
+ * the query returns results or not.
+ */
+export function isQuerySuccessful(query: string): Promise<boolean> {
+    let dynamicQuery = `${query} timeout:3s count:1`
+
+    if (!query.includes('type:')) {
+        dynamicQuery += ' select:content'
+    }
+
+    return fetchStreamSuggestions(dynamicQuery)
+        .then(results => results.length > 0)
+        .catch(() => false)
 }

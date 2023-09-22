@@ -25,7 +25,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
       lateinit var enableCodyCheckbox: Cell<JBCheckBox>
-      group("Cody AI") {
+      group("Cody") {
         row {
           enableCodyCheckbox =
               checkBox("Enable Cody")
@@ -48,6 +48,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
       }
 
       group("Autocomplete") {
+        lateinit var enableAutocompleteCheckbox: Cell<JBCheckBox>
         row {
           val enableCustomAutocompleteColor =
               checkBox("Custom color for completions")
@@ -61,12 +62,14 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
               .visibleIf(enableCustomAutocompleteColor.selected)
         }
         row {
-          checkBox("Automatically trigger completions")
-              .enabledIf(enableCodyCheckbox.selected)
-              .bindSelected(settingsModel::isCodyAutocompleteEnabled)
+          enableAutocompleteCheckbox =
+              checkBox("Automatically trigger completions")
+                  .enabledIf(enableCodyCheckbox.selected)
+                  .bindSelected(settingsModel::isCodyAutocompleteEnabled)
         }
         row {
           autocompleteLanguageTable()
+              .enabledIf(enableAutocompleteCheckbox.selected)
               .horizontalAlign(HorizontalAlign.FILL)
               .bind(
                   AutoCompleteLanguageTableWrapper::getBlacklistedLanguageIds,

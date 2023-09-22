@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonShortcuts
 import com.intellij.openapi.keymap.KeymapUtil
+import com.intellij.ui.ClientProperty
 import com.intellij.ui.LayeredIcon
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.ToolbarDecorator
@@ -50,8 +51,7 @@ private fun <A : Account, Cred, R> create(
         val decoratorRenderer = listCellRendererFactory()
         cellRenderer = decoratorRenderer
         JListHoveredRowMaterialiser.install(this, listCellRendererFactory())
-        UIUtil.putClientProperty(
-            this, UIUtil.NOT_IN_HIERARCHY_COMPONENTS, listOf(decoratorRenderer))
+        ClientProperty.put(this, UIUtil.NOT_IN_HIERARCHY_COMPONENTS, listOf(decoratorRenderer))
 
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         addMouseListener(listElementMouseListener(this, model))
@@ -180,7 +180,7 @@ fun <A : Account, Cred> Row.customAccountsPanel(
                   val editAccount = JMenuItem("Edit Account")
                   editAccount.addActionListener { model.editAccount(list, list.selectedValue) }
                   menu.add(editAccount)
-                  menu.show(list, e.getPoint().x, e.getPoint().y)
+                  menu.show(list, e.point.x, e.point.y)
                 }
               }
             }

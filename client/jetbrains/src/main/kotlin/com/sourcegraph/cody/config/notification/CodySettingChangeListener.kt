@@ -3,10 +3,10 @@ package com.sourcegraph.cody.config.notification
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
-import com.sourcegraph.cody.CodyAgentProjectListener
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils
 import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
@@ -32,10 +32,10 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
 
             if (context.newCodyEnabled) {
               // Starting the agent is idempotent, so it's OK if we call startAgent multiple times.
-              CodyAgentProjectListener.startAgent(project)
+              CodyAgentManager.startAgent(project)
             } else {
               // Stopping the agent is idempotent, so it's OK if we call stopAgent multiple times.
-              CodyAgentProjectListener.stopAgent(project)
+              CodyAgentManager.stopAgent(project)
             }
 
             // clear autocomplete suggestions if freshly disabled

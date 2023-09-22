@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Highlights
+
+### Merged PRs
+
+## [3.1.0]
+
 The Cody functionality of this plugin remains **experimental**. Don't hesitate to report
 a [new issue](https://github.com/sourcegraph/sourcegraph/issues/new/?title=JetBrains:) on GitHub if you encounter
 problems.

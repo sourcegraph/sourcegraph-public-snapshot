@@ -68,7 +68,7 @@ Once there is a release candidate available:
   pnpm run release release:promote-candidate <tag>
   ```
 - [ ] Ensure that the pipeline for the `v$MAJOR.$MINOR.$PATCH` tag has passed: [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
-- [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
+- [ ] Wait for the `$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
 - [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes/release-sourcegraph-$MAJOR.$MINOR.$PATCH)):
   ```sh
   pnpm run release release:stage

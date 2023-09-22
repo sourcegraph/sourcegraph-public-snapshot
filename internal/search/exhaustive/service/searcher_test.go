@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/zoekt"
 	"golang.org/x/exp/slices"
 )
@@ -61,20 +62,20 @@ func TestFromSearchClient(t *testing.T) {
 
 	do("global", newSearcherTestCase{
 		Query:        "content",
-		WantRefSpecs: "RepositoryRevSpec{1@} RepositoryRevSpec{2@}",
-		WantRepoRevs: "RepositoryRevision{1@} RepositoryRevision{2@}",
+		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
+		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,,,
-2,bar2,,,
+1,foo1,HEAD,commitfoo0,
+2,bar2,HEAD,commitbar0,
 `,
 	})
 
 	do("repo", newSearcherTestCase{
 		Query:        "repo:foo content",
-		WantRefSpecs: "RepositoryRevSpec{1@}",
-		WantRepoRevs: "RepositoryRevision{1@}",
+		WantRefSpecs: "RepositoryRevSpec{1@HEAD}",
+		WantRepoRevs: "RepositoryRevision{1@HEAD}",
 		WantCSV: `repo_id,repo_name,revision,commit,path
-1,foo1,,,
+1,foo1,HEAD,commitfoo0,
 `,
 	})
 
@@ -168,7 +169,10 @@ func mockGitserver(repoMocks []repoMock) *gitserver.MockClient {
 			return "", err
 		}
 		if spec == "" {
-			spec = "HEAD"
+			// Normally in search we treat the empty string has HEAD. In our
+			// case we want to ensure we are explicit so will fail if this
+			// happens.
+			return "", errors.New("empty spec used instead of HEAD")
 		}
 		for branch, commit := range repo.Branches {
 			if spec == branch || spec == commit {

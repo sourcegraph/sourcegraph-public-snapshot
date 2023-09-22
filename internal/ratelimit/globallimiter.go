@@ -73,7 +73,7 @@ func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
 	// of redis that only supports a subset of commands that are not sufficient
 	// for our redis-based global rate limiter.
 	// Technically, other installations could use this limiter too, but it's undocumented
-	// and should really not be used. The intended use is for Sourcegraph App.
+	// and should really not be used. The intended use is for Cody App.
 	// In the unlucky case that we are NOT in App and cannot get a proper redis
 	// connection, we will fall back to an in-memory implementation as well to
 	// prevent the instance from breaking entirely. Note that the limits may NOT

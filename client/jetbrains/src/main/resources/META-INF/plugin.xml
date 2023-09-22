@@ -65,8 +65,8 @@
         <!-- Cody -->
         <toolWindow
             id="Cody"
-            icon="/icons/codyLogoSm.svg"
-            anchor="left"
+            icon="/icons/codyLogoMonochromatic.svg"
+            anchor="right"
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
@@ -76,8 +76,6 @@
         <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.CodyToolWindowContent"/>
-
-        <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
 
         <!-- status bar -->
         <statusBarWidgetFactory order="first" id="cody.statusBarWidget"

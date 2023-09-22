@@ -76,6 +76,7 @@ export interface TemporarySettingsSchema {
     'app.codyStandalonePage.selectedRepo': string
     'cody.contextCallout.dismissed': boolean
     'admin.hasDismissedCodeHostPrivacyWarning': boolean
+    'admin.hasCompletedLicenseCheck': boolean
     'simple.search.toggle': boolean
 }
 

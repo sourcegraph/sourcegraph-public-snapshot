@@ -72,6 +72,9 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
+				"anonymous-user-id-123",
+				"https://example.com/",
+				"https://example.com/",
 			)
 			require.NoError(t, err)
 		})
