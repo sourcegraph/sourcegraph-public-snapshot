@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import type { Omit } from 'utility-types'
 
-import { LazyQueryInput } from '@sourcegraph/branded'
-import type { QueryState } from '@sourcegraph/shared/src/search'
 import {
     Container,
     PageHeader,
@@ -22,7 +20,7 @@ import {
 
 import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { type Scalars, SearchPatternType } from '../graphql-operations'
+import type { Scalars } from '../graphql-operations'
 import type { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
@@ -93,12 +91,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
-    const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
-
-    useEffect(() => {
-        setValues(values => ({ ...values, query: queryState.query }))
-    }, [queryState.query])
-
     return (
         <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader className="mb-3">
@@ -118,19 +110,14 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                         label="Description"
                         autoFocus={true}
                     />
-                    <Label className={classNames('w-100 form-group', styles.label)}>
-                        <div className="mb-2">Query</div>
-
-                        <LazyQueryInput
-                            className={classNames('form-control', styles.queryInput)}
-                            patternType={SearchPatternType.standard}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                            caseSensitive={false}
-                            queryState={queryState}
-                            onChange={setQueryState}
-                            preventNewLine={true}
-                        />
-                    </Label>
+                    <Input
+                        name="query"
+                        required={true}
+                        value={query}
+                        onChange={createInputChangeHandler('query')}
+                        className={classNames('form-group', styles.label)}
+                        label="Query"
+                    />
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}

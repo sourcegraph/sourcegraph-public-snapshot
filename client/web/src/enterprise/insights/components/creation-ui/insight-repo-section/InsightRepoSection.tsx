@@ -14,13 +14,12 @@ import LinkExternalIcon from 'mdi-react/OpenInNewIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { EditorHint, QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
+import { EditorHint, QueryChangeSource } from '@sourcegraph/shared/src/search'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
     Code,
     Label,
-    InputElement,
     InputErrorMessage,
     InputDescription,
     InputStatus,
@@ -31,6 +30,7 @@ import {
     getDefaultInputProps,
     getDefaultInputStatus,
     getDefaultInputError,
+    Input,
 } from '@sourcegraph/wildcard'
 
 import type {
@@ -38,7 +38,7 @@ import type {
     InsightRepositoriesCountVariables,
 } from '../../../../../graphql-operations'
 import type { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
+import { getRepoQueryPreview, RepositoriesField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'
 
 import styles from './InsightRepoSection.module.scss'
@@ -203,8 +203,6 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
     )
 }
 
-const EMPTY_QUERY_STATA: QueryState = { query: '' }
-
 interface SmartSearchQueryRepoFieldProps {
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
     label?: string
@@ -212,9 +210,11 @@ interface SmartSearchQueryRepoFieldProps {
     'aria-labelledby'?: string
 }
 
-function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): ReactElement {
-    const { repoQuery, label, 'aria-labelledby': ariaLabelledby } = props
-
+function SmartSearchQueryRepoField({
+    repoQuery,
+    label,
+    'aria-labelledby': ariaLabelledby,
+}: SmartSearchQueryRepoFieldProps): ReactElement {
     const { value, onChange, disabled, ...attributes } = repoQuery.input
 
     // We have to have mutable value here for the disabled state in order to prevent
@@ -229,13 +229,13 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
         onChange({ query: nextQueryValue, hint: EditorHint.Focus })
     }
 
-    const handleOnChange = (queryState: QueryState): void => {
-        if (queryState.query !== value.query && !disabledRefValue.current) {
-            onChange({ query: queryState.query, changeSource: QueryChangeSource.userInput })
+    const handleOnChange = (query: string): void => {
+        if (query !== value.query && !disabledRefValue.current) {
+            onChange({ query, changeSource: QueryChangeSource.userInput })
         }
     }
 
-    const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const queryValue = disabled ? '' : value.query
     const previewQuery = value.query ? getRepoQueryPreview(value.query) : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
@@ -250,14 +250,13 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     </span>
                 )}
 
-                <InputElement
-                    as={MonacoField}
-                    queryState={queryState}
+                <Input
+                    value={queryValue}
                     status={fieldStatus}
                     placeholder="Example: repo:sourcegraph/*"
                     aria-labelledby={ariaLabelledby ?? 'search-repo-query'}
                     className={styles.repoInput}
-                    onChange={handleOnChange}
+                    onChange={event => handleOnChange(event.currentTarget.value)}
                     disabled={disabled}
                     aria-busy={fieldStatus === InputStatus.loading}
                     aria-invalid={!!repoQuery.meta.error}

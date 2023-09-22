@@ -4,12 +4,10 @@ import { mdiCheck, mdiRadioboxBlank, mdiHelpCircle, mdiOpenInNew } from '@mdi/js
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { LazyQueryInput } from '@sourcegraph/branded'
-import type { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip, Input } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -84,7 +82,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<
 )
 
 export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<TriggerAreaProps>> = ({
-    query,
+    query: parentQuery,
     onQueryChange,
     triggerCompleted,
     setTriggerCompleted,
@@ -122,10 +120,10 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
         [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
     )
 
-    const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
+    const [query, setQuery] = useState(parentQuery || '')
 
     useEffect(() => {
-        const value = queryState.query
+        const value = query
         const tokens = scanSearchQuery(value)
 
         const isValidQuery = !!value && tokens.type === 'success'
@@ -178,36 +176,36 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
         setHasRepoFilter(hasRepoFilter)
         setHasPatternTypeFilter(hasPatternTypeFilter)
         setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
-    }, [queryState.query])
+    }, [query])
 
     const completeForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
             closeCard()
             setTriggerCompleted(true)
-            onQueryChange(`${queryState.query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
+            onQueryChange(`${query}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [closeCard, setTriggerCompleted, onQueryChange, queryState.query, hasPatternTypeFilter]
+        [closeCard, setTriggerCompleted, onQueryChange, query, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
         event => {
             event.preventDefault()
             closeCard()
-            setQueryState({ query })
+            setQuery(parentQuery)
         },
-        [closeCard, query]
+        [closeCard, parentQuery]
     )
 
     const derivedInputClassName = useMemo(() => {
-        if (!queryState.query) {
+        if (!query) {
             return ''
         }
         if (isTriggerQueryComplete) {
             return 'is-valid'
         }
         return 'is-invalid'
-    }, [isTriggerQueryComplete, queryState.query])
+    }, [isTriggerQueryComplete, query])
 
     return (
         <>
@@ -221,32 +219,20 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                     <span className="mt-4">Search query</span>
                     <div>
                         <div className={classNames(styles.queryInput, 'my-2')}>
-                            <div
-                                className={classNames(
-                                    'form-control',
-                                    styles.queryInputField,
-                                    `test-${derivedInputClassName}`
-                                )}
+                            <Input
+                                className="flex-1"
+                                inputClassName={classNames(`test-${derivedInputClassName}`, 'test-trigger-input')}
+                                required={true}
+                                value={query}
+                                onChange={event => {
+                                    setQuery(event.target.value)
+                                }}
+                                autoFocus={true}
                                 data-testid="trigger-query-edit"
-                            >
-                                <LazyQueryInput
-                                    className="test-trigger-input"
-                                    patternType={SearchPatternType.standard}
-                                    isSourcegraphDotCom={isSourcegraphDotCom}
-                                    caseSensitive={false}
-                                    queryState={queryState}
-                                    onChange={setQueryState}
-                                    preventNewLine={true}
-                                    autoFocus={true}
-                                />
-                            </div>
+                            />
                             <div className={styles.queryInputPreviewLink}>
                                 <Link
-                                    to={`/search?${buildSearchURLQuery(
-                                        queryState.query,
-                                        SearchPatternType.standard,
-                                        false
-                                    )}`}
+                                    to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="test-preview-link"

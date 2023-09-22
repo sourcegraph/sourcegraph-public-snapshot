@@ -5,17 +5,16 @@ import { useNavigate } from 'react-router-dom'
 import { type Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/branded'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import {
-    type Scalars,
-    type SearchContextInput,
-    type SearchContextRepositoryRevisionsInput,
-    SearchPatternType,
-    type SearchContextFields,
+import type {
+    Scalars,
+    SearchContextInput,
+    SearchContextRepositoryRevisionsInput,
+    SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import type { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
@@ -151,7 +150,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     const [contextType, setContextType] = useState<ContextType>(
         searchContext ? (searchContext.query.length > 0 ? 'dynamic' : 'static') : 'dynamic'
     )
-    const [queryState, setQueryState] = useState<QueryState>({ query: searchContext?.query || props.query || '' })
+    const [query, setQuery] = useState(searchContext?.query || props.query || '')
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
@@ -184,7 +183,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
             return (
                 name.length > 0 ||
                 description.length > 0 ||
-                queryState.query.length > 0 ||
+                query.length > 0 ||
                 visibility !== 'public' ||
                 selectedNamespace.type !== 'user' ||
                 hasRepositoriesConfigChanged
@@ -193,11 +192,11 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
         return (
             searchContext.name !== name ||
             searchContext.description !== description ||
-            searchContext.query !== queryState.query ||
+            searchContext.query !== query ||
             searchContextVisibility(searchContext) !== visibility ||
             hasRepositoriesConfigChanged
         )
-    }, [description, name, searchContext, selectedNamespace, visibility, queryState, hasRepositoriesConfigChanged])
+    }, [description, name, searchContext, selectedNamespace, visibility, query, hasRepositoriesConfigChanged])
 
     const parseRepositories = useCallback(
         (): Observable<RepositoriesParseResult> =>
@@ -274,10 +273,10 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 map(repositories => ({ input: { ...partialInput, query: '' }, repositories }))
                             )
                         }
-                        if (queryState.query.trim().length === 0) {
+                        if (query.trim().length === 0) {
                             return throwError(new Error('Search query has to be non-empty.'))
                         }
-                        return of({ input: { ...partialInput, query: queryState.query }, repositories: [] })
+                        return of({ input: { ...partialInput, query }, repositories: [] })
                     }),
                     switchMap(({ input, repositories }) =>
                         onSubmit(searchContext?.id, input, repositories).pipe(
@@ -297,7 +296,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                 parseRepositories,
                 name,
                 description,
-                queryState,
+                query,
                 visibility,
                 selectedNamespace,
                 navigate,
@@ -430,16 +429,15 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             onChange={() => setContextType('dynamic')}
                             label={<>Search query</>}
                         />
-                        <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
-                            <LazyQueryInput
-                                patternType={SearchPatternType.regexp}
-                                isSourcegraphDotCom={isSourcegraphDotCom}
-                                caseSensitive={true}
-                                queryState={queryState}
-                                onChange={setQueryState}
-                                preventNewLine={false}
-                            />
-                        </div>
+                        <Input
+                            inputClassName={styles.searchContextFormQuery}
+                            value={query}
+                            required={true}
+                            onChange={event => {
+                                setQuery(event.target.value)
+                            }}
+                            data-testid="search-context-dynamic-query"
+                        />
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>
                             <small>
                                 Valid filters: <SyntaxHighlightedSearchQuery query="repo" />,{' '}
