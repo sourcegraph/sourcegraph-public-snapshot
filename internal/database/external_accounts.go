@@ -74,13 +74,11 @@ type UserExternalAccountsStore interface {
 
 	ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error)
 
-	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
-	// association with the external account already exist).
+	// Update updates the data associated with the external account.
+	// On a successful update, the user ID associated with the external account is returned.
 	//
-	// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
-	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
-	// CreateUserAndSave for that.
-	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
+	// If the external account does not exist, it returns an error.
+	Update(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
 
 	// UpsertSCIMData updates the external account data for the given user's SCIM account.
 	// It looks up the existing user based on its ID, then sets its account ID and data.
@@ -140,12 +138,13 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
 }
 
-func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
+func (s *userExternalAccountsStore) Update(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (*extsvc.Account, error) {
 	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
+	var acct extsvc.Account
 	err = s.Handle().QueryRowContext(ctx, `
 UPDATE user_external_accounts
 SET
@@ -160,12 +159,16 @@ AND service_id = $2
 AND client_id = $3
 AND account_id = $4
 AND deleted_at IS NULL
-RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID).Scan(&userID)
+RETURNING id, user_id, service_type, service_id, client_id, account_id, created_at, updated_at, encryption_key_id
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID).Scan(&acct.ID, &acct.UserID,
+			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+			&acct.CreatedAt, &acct.UpdatedAt,
+			&keyID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
-	return userID, err
+
+	return &acct, err
 }
 
 func (s *userExternalAccountsStore) UpsertSCIMData(ctx context.Context, userID int32, accountID string, data extsvc.AccountData) (err error) {
