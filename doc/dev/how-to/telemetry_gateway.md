@@ -8,9 +8,12 @@ It exposes a gRPC API defined in [`telemetrygateway/v1`](https://github.com/sour
 
 To learn more about the Sourcegraph's new Telemetry framework, refer to [the telemetry documentation](../background-information/telemetry/index.md).
 
+> NOTE: In the Sourcegraph application, the [new events being exported using `internal/telemetry`](../background-information/telemetry/index.md) are sometimes loosely referred to as "V2", as it supersedes the existing mechanisms of writing directly to the `event_logs` database table.
+> The *Telemetry Gateway* schema, however, is `telemetrygateway/v1`, as it is the first iteration of the service's API.
+
 ## Running Telemetry Gateway locally
 
-Exports of Telemetry V2 events to a local Telemetry Gateway instance is enabled in as part of `sg start` and `sg start dotcom`.
+Exports of [telemetry events](../background-information/telemetry/index.md) to a local Telemetry Gateway instance is enabled in as part of `sg start` and `sg start dotcom`.
 By default, the local Telemetry Gateway instance will simply log any events it receives.
 
 You can increase the frequency of exports by setting the following in `sg.config.yaml`:
