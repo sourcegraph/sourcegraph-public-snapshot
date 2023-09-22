@@ -29,7 +29,8 @@ AS $$
         -- used to calculate top of window
         SELECT MAX(queued_at) AS newest
         FROM lsif_indexes
-        WHERE state IN ('queued', 'errored')
+        -- change to IN ('queued', 'errored') if we want to include errored jobs
+        WHERE state = 'queued'
         LIMIT 1
     ),
     newest_in_window AS NOT MATERIALIZED (
@@ -37,7 +38,8 @@ AS $$
         SELECT DISTINCT ON (repository_id) *
         FROM lsif_indexes
         WHERE
-            state IN ('queued', 'errored')
+            -- change to IN ('queued', 'errored') if we want to include errored jobs
+            state = 'queued'
             AND enqueuer_user_id = 0
             AND queued_at BETWEEN
                 (SELECT newest - lookback_window FROM newest_queued) AND
@@ -50,7 +52,8 @@ AS $$
         SELECT DISTINCT ON (repository_id) *
         FROM lsif_indexes l1
         WHERE
-            state IN ('queued', 'errored')
+            -- change to IN ('queued', 'errored') if we want to include errored jobs
+            state = 'queued'
             AND enqueuer_user_id = 0
             AND queued_at < (SELECT newest - lookback_window FROM newest_queued)
             AND NOT EXISTS (
@@ -70,7 +73,8 @@ AS $$
         FROM lsif_indexes
         WHERE
             enqueuer_user_id > 0
-            AND state IN ('queued', 'errored')
+            -- change to IN ('queued', 'errored') if we want to include errored jobs
+            AND state = 'queued'
     ),
     final_candidates AS NOT MATERIALIZED (
         -- merge them all together, with a priority marker for ordering
