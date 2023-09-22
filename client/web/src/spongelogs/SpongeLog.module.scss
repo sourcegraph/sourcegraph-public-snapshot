@@ -1,0 +1,41 @@
+.table-wrapper {
+    overflow: scroll;
+    flex-grow: 1;
+    width: 100vw;
+    height: 100vh;
+}
+
+.table {
+    position: relative;
+}
+
+.table td {
+    position: relative;
+}
+
+.table thead tr > th {
+    background: #ccc;
+    position: sticky;
+    z-index: 2;
+    top: 0;
+}
+
+.table thead tr > :first-child {
+    z-index: 3;
+    left: 0;
+    top: 0;
+}
+
+.table tbody tr > :first-child {
+    background: #ddd;
+    position: sticky;
+    z-index: 1;
+    left: 0;
+}
+
+:global(.elapsed) {
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 0.75rem;
+}

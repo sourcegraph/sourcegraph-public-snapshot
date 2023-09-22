@@ -1,4 +1,4 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 

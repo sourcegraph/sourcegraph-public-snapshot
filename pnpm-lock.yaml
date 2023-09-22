@@ -398,6 +398,9 @@ importers:
       react-sticky-box:
         specifier: 1.0.2
         version: 1.0.2(react@18.1.0)
+      react-table:
+        specifier: ^7.8.0
+        version: 7.8.0(react@18.1.0)
       react-visibility-sensor:
         specifier: ^5.1.1
         version: 5.1.1(react-dom@18.1.0)(react@18.1.0)
@@ -825,6 +828,9 @@ importers:
       '@types/react-resizable':
         specifier: ^3.0.2
         version: 3.0.2
+      '@types/react-table':
+        specifier: ^7.7.14
+        version: 7.7.14
       '@types/recharts':
         specifier: 1.8.23
         version: 1.8.23
@@ -13134,6 +13140,12 @@ packages:
 
   /@types/react-resizable@3.0.2:
     resolution: {integrity: sha512-4rHjZDQmSpFqRlNzlcnF5tpOG5fBcMuDlvD+qT3XHAJLKGx/FC3iDQ9li9tHW53ecWwZzHTPCGvz5vNWQN+v/Q==}
+    dependencies:
+      '@types/react': 18.0.8
+    dev: true
+
+  /@types/react-table@7.7.14:
+    resolution: {integrity: sha512-TYrv7onCiakaG1uAu/UpQ9FojNEt/4/ht87EgJQaEGFoWV606ZLWUZAcUHzMxgc3v1mywP1cDyz3qB4ho3hWOw==}
     dependencies:
       '@types/react': 18.0.8
     dev: true
@@ -29457,6 +29469,14 @@ packages:
       react: 18.1.0
       refractor: 3.6.0
     dev: true
+
+  /react-table@7.8.0(react@18.1.0):
+    resolution: {integrity: sha512-hNaz4ygkZO4bESeFfnfOft73iBUj8K5oKi1EcSHPAibEydfsX2MyU6Z8KCr3mv3C9Kqqh71U+DhZkFvibbnPbA==}
+    peerDependencies:
+      react: ^16.8.3 || ^17.0.0-0 || ^18.0.0
+    dependencies:
+      react: 18.1.0
+    dev: false
 
   /react-test-renderer@17.0.2(react@18.1.0):
     resolution: {integrity: sha512-yaQ9cB89c17PUb0x6UfWRs7kQCorVdHlutU1boVPEsB8IDZH6n9tHxMacc3y0JoXOJUsZb/t/Mb8FUWMKaM7iQ==}

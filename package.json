@@ -346,9 +346,11 @@
     "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8",
     "yaml": "^2.2.1",
-    "yauzl": "^2.10.0"
+    "yauzl": "^2.10.0",
+    "@types/react-table": "^7.7.14"
   },
   "dependencies": {
+    "react-table": "^7.8.0",
     "@apollo/client": "^3.8.0-alpha.7",
     "@codemirror/autocomplete": "^6.1.0",
     "@codemirror/commands": "^6.0.1",
