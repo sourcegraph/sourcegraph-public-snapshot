@@ -19,7 +19,7 @@ class AutocompleteLanguageTable : ListTableWithButtons<LanguageEntry>() {
   var isEnabled: Boolean = true
 
   /** Use this rather than the component directly when working with JetBrains Kotlin UI DSL */
-  val wrapperComponent: AutoCompleteLanguageTableWrapper = AutoCompleteLanguageTableWrapper(this)
+  val wrapperComponent: AutocompleteLanguageTableWrapper = AutocompleteLanguageTableWrapper(this)
 
   override fun createListModel(): ListTableModel<LanguageEntry> {
     val model =

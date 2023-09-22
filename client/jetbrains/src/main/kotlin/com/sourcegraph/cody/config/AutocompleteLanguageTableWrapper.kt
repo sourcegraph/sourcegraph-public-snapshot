@@ -5,7 +5,7 @@ import java.awt.Dimension
 import javax.swing.JPanel
 
 /** Wrapper to be used with JetBrains Kotlin UI DSL */
-class AutoCompleteLanguageTableWrapper(private val languageTable: AutocompleteLanguageTable) :
+class AutocompleteLanguageTableWrapper(private val languageTable: AutocompleteLanguageTable) :
     JPanel(BorderLayout()) {
   private val tableComponent = languageTable.component
 

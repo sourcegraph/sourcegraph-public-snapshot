@@ -8,7 +8,7 @@ import com.intellij.ui.ColorPanel
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.sourcegraph.cody.config.AutoCompleteLanguageTableWrapper
+import com.sourcegraph.cody.config.AutocompleteLanguageTableWrapper
 import com.sourcegraph.cody.config.AutocompleteLanguageTable
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.SettingsModel
@@ -72,8 +72,8 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
               .enabledIf(enableAutocompleteCheckbox.selected)
               .horizontalAlign(HorizontalAlign.FILL)
               .bind(
-                  AutoCompleteLanguageTableWrapper::getBlacklistedLanguageIds,
-                  AutoCompleteLanguageTableWrapper::setBlacklistedLanguageIds,
+                  AutocompleteLanguageTableWrapper::getBlacklistedLanguageIds,
+                  AutocompleteLanguageTableWrapper::setBlacklistedLanguageIds,
                   settingsModel::blacklistedLanguageIds.toMutableProperty())
         }
       }
