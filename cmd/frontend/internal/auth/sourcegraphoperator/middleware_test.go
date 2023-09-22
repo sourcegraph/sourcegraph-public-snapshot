@@ -236,7 +236,7 @@ func TestMiddleware(t *testing.T) {
 
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
-			Redirect:   "/redirect",
+			Redirect:   "/redirect?signin=",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
 		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
