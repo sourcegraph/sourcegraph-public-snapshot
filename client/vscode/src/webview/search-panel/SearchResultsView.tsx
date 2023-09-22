@@ -366,6 +366,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                                 state={context.searchResults?.state || 'loading'}
                                 onSearchAgain={onSearchAgain}
                                 showTrace={false}
+                                telemetryService={platformContext.telemetryService}
                             />
                         }
                         allExpanded={allExpanded}

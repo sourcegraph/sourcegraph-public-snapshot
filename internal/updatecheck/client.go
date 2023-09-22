@@ -275,6 +275,17 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(codeInsightsUsage)
 }
 
+func getAndMarshalSearchJobsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSearchJobsUsageJSON")
+
+	searchJobsUsage, err := usagestats.GetSearchJobsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(searchJobsUsage)
+}
+
 func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
@@ -522,6 +533,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		SearchOnboarding:              []byte("{}"),
 		ExtensionsUsage:               []byte("{}"),
 		CodeInsightsUsage:             []byte("{}"),
+		SearchJobsUsage:               []byte("{}"),
 		CodeInsightsCriticalTelemetry: []byte("{}"),
 		CodeMonitoringUsage:           []byte("{}"),
 		NotebooksUsage:                []byte("{}"),
@@ -632,6 +644,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 	if err != nil {
 		logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+	}
+
+	r.SearchJobsUsage, err = getAndMarshalSearchJobsUsageJSON(ctx, db)
+	if err != nil {
+		logFuncWarn("getAndMarshalSearchJobsUsageJSON failed", log.Error(err))
 	}
 
 	r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
