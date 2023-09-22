@@ -13,6 +13,7 @@ build --test_env=PATH
 
 # Needed for DB in CI
 build --test_env=PGUSER=postgres
+build --test_env=PGPASSWORD=postgres
 build --test_env=PGSSLMODE
 build --test_env=PGDATABASE=postgres
 
