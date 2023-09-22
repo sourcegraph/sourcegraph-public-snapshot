@@ -50,17 +50,19 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 
 	// Create test users:
 	//   1. logan, who has no external accounts and is a site admin (will not be changed)
+	//      (like a customer site admin)
 	//   2. morgan, who is an expired SOAP user but has more external accounts (will be demoted)
+	//      (like a Sourcegraph teammate who used SOAP via Entitle, and has an external account)
 	//   3. jordan, who is a SOAP user that has not expired (will not be changed)
-	//   4. riley, who is an expired SOAP user (will be deleted)
+	//   4. riley, who is an expired SOAP user with no external accounts (will be deleted)
 	//   5. cris, who has a non-SOAP external account and is not a site admin (will not be changed)
-	//   6. cami, who is an expired SOAP user on the permanent accounts list
-	//      (is a service account, will not be touched)
+	//   6. cami, who is an expired SOAP user and is a service account (will not be changed)
+	//   7. dani, who has no external accounts and is not a site admin (will not be changed)
 	// In all of the above, SOAP users are also made site admins.
 	// The lists below indicate who will and will not be deleted or otherwise
 	// modified.
-	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami"}
-	wantAdmins := []string{"jordan", "logan", "cris", "cami"}
+	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami", "dani"}
+	wantAdmins := []string{"logan", "jordan", "cami"}
 
 	_, err := db.Users().Create(
 		ctx,
@@ -174,6 +176,13 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, cami.ID, true))
 
+	_, err = db.Users().Create(ctx, database.NewUser{
+		Username:        "dani",
+		Email:           "dani@example.com",
+		EmailIsVerified: true,
+	})
+	require.NoError(t, err)
+
 	t.Run("handle with cleanup", func(t *testing.T) {
 		err = handler.Handle(ctx)
 		require.NoError(t, err)
@@ -195,7 +204,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		slices.Sort(wantAdmins)
 		slices.Sort(gotAdmins)
 
-		assert.Equal(t, wantNotDeleted, got)
-		assert.Equal(t, wantAdmins, gotAdmins)
+		assert.Equal(t, wantNotDeleted, got, "want not deleted")
+		assert.Equal(t, wantAdmins, gotAdmins, "want admins")
 	})
 }
