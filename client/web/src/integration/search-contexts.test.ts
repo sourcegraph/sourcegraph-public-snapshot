@@ -48,7 +48,6 @@ describe('Search contexts', () => {
             user: {
                 experimentalFeatures: {
                     showSearchContext: true,
-                    searchQueryInput: 'v1',
                 },
             },
         }),
@@ -95,7 +94,7 @@ describe('Search contexts', () => {
     })
 
     test('Unavailable search context should remain in the query and disable the search context dropdown with default context', async () => {
-        const { waitForInput, applySettings } = getSearchQueryInputConfig('codemirror6')
+        const { waitForInput, applySettings } = getSearchQueryInputConfig('experimental-search-input')
 
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,

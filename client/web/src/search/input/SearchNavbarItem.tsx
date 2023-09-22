@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
-import { SearchBox, Toggles } from '@sourcegraph/branded'
+import { Toggles } from '@sourcegraph/branded'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -13,10 +13,8 @@ import { Form } from '@sourcegraph/wildcard'
 import type { AuthenticatedUser } from '../../auth'
 import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { type NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
-import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import { LazyExperimentalSearchInput } from './LazyExperimentalSearchInput'
-import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends SettingsCascadeProps,
@@ -52,10 +50,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
-    const [experimentalQueryInput] = useExperimentalQueryInput()
-
-    const { recentSearches } = useRecentSearches()
-
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
@@ -78,75 +72,42 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef.current()
     }, [])
 
-    // TODO (#48103): Remove/simplify when new search input is released
-    if (experimentalQueryInput) {
-        return (
-            <Form
-                className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
-                onSubmit={onSubmit}
-            >
-                <LazyExperimentalSearchInput
-                    visualMode="compact"
-                    telemetryService={props.telemetryService}
-                    patternType={searchPatternType}
-                    interpretComments={false}
-                    queryState={queryState}
-                    onChange={setQueryState}
-                    onSubmit={onSubmit}
-                    isLightTheme={props.isLightTheme}
-                    platformContext={props.platformContext}
-                    authenticatedUser={props.authenticatedUser}
-                    fetchSearchContexts={props.fetchSearchContexts}
-                    getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    submitSearch={submitSearchOnChange}
-                    selectedSearchContextSpec={props.selectedSearchContextSpec}
-                    className="flex-grow-1"
-                >
-                    <Toggles
-                        patternType={searchPatternType}
-                        caseSensitive={searchCaseSensitivity}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        searchMode={searchMode}
-                        setSearchMode={setSearchMode}
-                        settingsCascade={props.settingsCascade}
-                        navbarSearchQuery={queryState.query}
-                        submitSearch={submitSearchOnChange}
-                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                    />
-                </LazyExperimentalSearchInput>
-            </Form>
-        )
-    }
-
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
             onSubmit={onSubmit}
         >
-            <SearchBox
-                {...props}
-                autoFocus={false}
-                showSearchContext={props.searchContextsEnabled}
-                showSearchContextManagement={true}
-                caseSensitive={searchCaseSensitivity}
-                setCaseSensitivity={setSearchCaseSensitivity}
+            <LazyExperimentalSearchInput
+                visualMode="compact"
+                telemetryService={props.telemetryService}
                 patternType={searchPatternType}
-                setPatternType={setSearchPatternType}
-                searchMode={searchMode}
-                setSearchMode={setSearchMode}
+                interpretComments={false}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
-                submitSearchOnToggle={submitSearchOnChange}
-                submitSearchOnSearchContextChange={submitSearchOnChange}
-                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
-                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                hideHelpButton={false}
-                showSearchHistory={true}
-                recentSearches={recentSearches}
-            />
+                isLightTheme={props.isLightTheme}
+                platformContext={props.platformContext}
+                authenticatedUser={props.authenticatedUser}
+                fetchSearchContexts={props.fetchSearchContexts}
+                getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
+                isSourcegraphDotCom={props.isSourcegraphDotCom}
+                submitSearch={submitSearchOnChange}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                className="flex-grow-1"
+            >
+                <Toggles
+                    patternType={searchPatternType}
+                    caseSensitive={searchCaseSensitivity}
+                    setPatternType={setSearchPatternType}
+                    setCaseSensitivity={setSearchCaseSensitivity}
+                    searchMode={searchMode}
+                    setSearchMode={setSearchMode}
+                    settingsCascade={props.settingsCascade}
+                    navbarSearchQuery={queryState.query}
+                    submitSearch={submitSearchOnChange}
+                    structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                />
+            </LazyExperimentalSearchInput>
         </Form>
     )
 }

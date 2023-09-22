@@ -5,15 +5,13 @@ import classNames from 'classnames'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import type { QueryState } from '@sourcegraph/shared/src/search'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { GettingStartedTour } from '../../../tour/GettingStartedTour'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
@@ -35,7 +33,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
-    const [experimentalQueryInput] = useExperimentalQueryInput()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -48,18 +45,9 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         // Because the current and the new search input handle the context: selector differently
         // we need properly "translate" the queries when switching between the both versions
         if (selectedSearchContextSpec) {
-            setQueryState(state => {
-                if (experimentalQueryInput) {
-                    return { query: appendContextFilter(state.query, selectedSearchContextSpec) }
-                }
-                const contextFilter = getGlobalSearchContextFilter(state.query)?.filter
-                if (contextFilter) {
-                    return { query: omitFilter(state.query, contextFilter) }
-                }
-                return state
-            })
+            setQueryState(state => ({ query: appendContextFilter(state.query, selectedSearchContextSpec) }))
         }
-    }, [experimentalQueryInput, selectedSearchContextSpec])
+    }, [selectedSearchContextSpec])
 
     const defaultSimpleSearchToggle = true
     const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)

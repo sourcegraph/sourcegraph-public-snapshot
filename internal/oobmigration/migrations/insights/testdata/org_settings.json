@@ -1269,8 +1269,5 @@
     "step": {
       "weeks": 2
     }
-  },
-  "experimentalFeatures": {
-    "editor":"codemirror6"
   }
 }

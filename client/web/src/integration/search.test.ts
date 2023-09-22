@@ -116,7 +116,6 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
 }
 
 const queryInputSelectors: Record<SearchQueryInput, string> = {
-    codemirror6: '[data-testid="searchbox"] .test-query-input',
     'experimental-search-input': '.test-experimental-search-input',
 }
 
@@ -396,7 +395,7 @@ describe('Search', () => {
     })
 
     describe('Search button', () => {
-        const { waitForInput, applySettings } = getSearchQueryInputConfig('codemirror6')
+        const { waitForInput, applySettings } = getSearchQueryInputConfig('experimental-search-input')
 
         beforeEach(() => {
             testContext.overrideGraphQL({
@@ -407,7 +406,7 @@ describe('Search', () => {
 
         test('Clicking search button executes search', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-            const editor = await waitForInput(driver, queryInputSelectors.codemirror6)
+            const editor = await waitForInput(driver, queryInputSelectors['experimental-search-input'])
             await editor.focus()
             await driver.page.keyboard.type(' hello')
 

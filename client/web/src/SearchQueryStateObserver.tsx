@@ -6,10 +6,8 @@ import { first } from 'rxjs/operators'
 
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 import { getQueryStateFromLocation } from './search'
-import { useExperimentalQueryInput } from './search/useExperimentalSearchInput'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 
 export const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
@@ -29,8 +27,6 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
 
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
     selectedSearchContextSpecRef.current = selectedSearchContextSpec
-
-    const [enableExperimentalSearchInput] = useExperimentalQueryInput()
 
     // Create `locationSubject` once on mount. New values are provided in the `useEffect` hook.
 
@@ -65,18 +61,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
                     setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec.spec)
                 }
 
-                // TODO (#48103): Remove/simplify when new search input is released
-                const processedQuery =
-                    !enableExperimentalSearchInput &&
-                    parsedSearchURLAndContext.searchContextSpec &&
-                    searchContextsEnabled
-                        ? omitFilter(
-                              parsedSearchURLAndContext.query,
-                              parsedSearchURLAndContext.searchContextSpec.filter
-                          )
-                        : parsedSearchURLAndContext.query
-
-                setQueryStateFromURL(parsedSearchURLAndContext, processedQuery)
+                setQueryStateFromURL(parsedSearchURLAndContext, parsedSearchURLAndContext.query)
             }
         })
 
@@ -86,7 +71,6 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
         platformContext,
         searchContextsEnabled,
         selectedSearchContextSpecRef,
-        enableExperimentalSearchInput,
         setSelectedSearchContextSpec,
     ])
 

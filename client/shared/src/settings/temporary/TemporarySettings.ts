@@ -58,10 +58,6 @@ export interface TemporarySettingsSchema {
      */
     'search.input.usedExamples': string[]
     'search.input.usedInlineHistory': boolean
-    // This is a temporary (no pun intended) setting to allow users to easily
-    // switch been the current and the new search input. It's only used when
-    // the feature flag `"searchQueryInput": "experimental"` is set.
-    'search.input.experimental': boolean
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode

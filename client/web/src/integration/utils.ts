@@ -136,7 +136,7 @@ export const percySnapshotWithVariants = async (
     await percySnapshot(page, `${name} - light theme`)
 }
 
-type Editor = 'monaco' | 'codemirror6' | 'experimental-search-input'
+type Editor = 'experimental-search-input'
 
 export interface EditorAPI {
     name: Editor
@@ -171,74 +171,21 @@ export interface EditorAPI {
 }
 
 const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAPI> = {
-    monaco: (driver: Driver, rootSelector: string) => {
-        const inputSelector = `${rootSelector} textarea`
+    'experimental-search-input': (driver: Driver, rootSelector: string) => {
         // Selector to use to wait for the editor to be complete loaded
-        const readySelector = `${rootSelector} .view-lines`
-        const completionSelector = `${rootSelector} .suggest-widget.visible`
-        const completionLabelSelector = `${completionSelector} span`
+        const completionSelector = `${rootSelector} [role="grid"]`
+        const completionLabelSelector = `${completionSelector} .test-option-label`
+        const cm6RootSelector = `${rootSelector} .test-query-input`
+        const cm6ReadySelector = `${cm6RootSelector} .cm-line`
 
         const api: EditorAPI = {
-            name: 'monaco',
+            name: 'experimental-search-input',
             async waitForIt(options) {
-                await driver.page.waitForSelector(readySelector, options)
+                await driver.page.waitForSelector(cm6ReadySelector, options)
             },
             async focus() {
                 await api.waitForIt()
-                await driver.page.click(rootSelector)
-            },
-            getValue() {
-                return driver.page.evaluate(
-                    (inputSelector: string) => document.querySelector<HTMLTextAreaElement>(inputSelector)?.value,
-                    inputSelector
-                )
-            },
-            replace(newText: string, method = 'type') {
-                return driver.replaceText({
-                    selector: rootSelector,
-                    newText,
-                    enterTextMethod: method,
-                    selectMethod: 'keyboard',
-                })
-            },
-            async append(newText: string, method = 'type') {
-                await api.focus()
-                return driver.enterText(method, newText)
-            },
-            async waitForSuggestion(suggestion?: string) {
-                await driver.page.waitForSelector(completionSelector)
-                if (suggestion !== undefined) {
-                    await driver.findElementWithText(suggestion, {
-                        selector: completionLabelSelector,
-                        wait: { timeout: 5000 },
-                    })
-                }
-            },
-            async selectSuggestion(suggestion: string) {
-                await driver.page.waitForSelector(completionSelector)
-                await driver.findElementWithText(suggestion, {
-                    action: 'click',
-                    selector: completionLabelSelector,
-                    wait: { timeout: 5000 },
-                })
-            },
-        }
-        return api
-    },
-    codemirror6: (driver: Driver, rootSelector: string) => {
-        // Selector to use to wait for the editor to be complete loaded
-        const readySelector = `${rootSelector} .cm-line`
-        const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
-        const completionLabelSelector = `${completionSelector} .cm-completionLabel`
-
-        const api: EditorAPI = {
-            name: 'codemirror6',
-            async waitForIt(options) {
-                await driver.page.waitForSelector(readySelector, options)
-            },
-            async focus() {
-                await api.waitForIt()
-                await driver.page.click(readySelector)
+                await driver.page.click(cm6ReadySelector)
             },
             getValue() {
                 return driver.page.evaluate((selector: string) => {
@@ -265,7 +212,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
             },
             replace(newText: string, method = 'type') {
                 return driver.replaceText({
-                    selector: rootSelector,
+                    selector: cm6RootSelector,
                     newText,
                     enterTextMethod: method,
                     selectMethod: 'selectall',
@@ -275,37 +222,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                 await api.focus()
                 return driver.enterText(method, newText)
             },
-            async waitForSuggestion(suggestion?: string) {
-                await driver.page.waitForSelector(completionSelector)
-                if (suggestion !== undefined) {
-                    await driver.findElementWithText(suggestion, {
-                        selector: completionLabelSelector,
-                        wait: { timeout: 5000 },
-                    })
-                }
-                // It seems CodeMirror needs some additional time before it
-                // recognizes events on the suggestions element (such as
-                // selecting a suggestion via the Tab key)
-                await driver.page.waitForTimeout(100)
-            },
-            async selectSuggestion(suggestion: string) {
-                await driver.page.waitForSelector(completionSelector)
-                await driver.findElementWithText(suggestion, {
-                    action: 'click',
-                    selector: completionLabelSelector,
-                    wait: { timeout: 5000 },
-                })
-            },
-        }
-        return api
-    },
-    'experimental-search-input': (driver: Driver, rootSelector: string) => {
-        // Selector to use to wait for the editor to be complete loaded
-        const completionSelector = `${rootSelector} [role="grid"]`
-        const completionLabelSelector = `${completionSelector} .test-option-label`
-
-        const api = {
-            ...editors.codemirror6(driver, `${rootSelector} .test-query-input`),
             async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
                 if (suggestion !== undefined) {
@@ -356,7 +272,7 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
     return api
 }
 
-export type SearchQueryInput = Extract<Editor, 'codemirror6' | 'experimental-search-input'>
+export type SearchQueryInput = Extract<Editor, 'experimental-search-input'>
 interface SearchQueryInputAPI {
     /**
      * The name of the currently used query input implementation. Can be used to dynamically generate
@@ -367,15 +283,9 @@ interface SearchQueryInputAPI {
     applySettings: (settings?: Settings) => Settings
 }
 
-const searchInputNames: SearchQueryInput[] = ['codemirror6', 'experimental-search-input']
+const searchInputNames: SearchQueryInput[] = ['experimental-search-input']
 
 const searchInputConfigs: Record<SearchQueryInput, SearchQueryInputAPI> = {
-    codemirror6: {
-        name: 'codemirror6',
-        waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),
-        applySettings: (settings = {}) =>
-            merge(settings, { experimentalFeatures: { searchQueryInput: 'v1' } } satisfies Settings),
-    },
     'experimental-search-input': {
         name: 'experimental-search-input',
         waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),

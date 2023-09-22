@@ -6,7 +6,12 @@ import type {
 } from '@sourcegraph/shared/src/search'
 import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
-import type { IEditor } from './LazyQueryInput'
+/**
+ * Minimal interface for external interaction with the editor.
+ */
+interface IEditor {
+    focus(): void
+}
 
 /**
  * Props that the Monaco and CodeMirror implementation have in common.

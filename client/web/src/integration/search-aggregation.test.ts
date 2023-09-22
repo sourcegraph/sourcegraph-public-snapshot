@@ -189,7 +189,6 @@ describe('Search aggregation', () => {
                                     contents: JSON.stringify({
                                         experimentalFeatures: {
                                             searchResultsAggregations: true,
-                                            searchQueryInput: 'v1',
                                         },
                                     }),
                                 },

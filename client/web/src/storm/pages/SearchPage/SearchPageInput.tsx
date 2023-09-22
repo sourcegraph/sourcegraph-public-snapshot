@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { SearchBox, Toggles } from '@sourcegraph/branded'
+import { Toggles } from '@sourcegraph/branded'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
     type CaseSensitivityProps,
@@ -22,20 +22,11 @@ import { Notices } from '../../../global/Notices'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { submitSearch } from '../../../search/helpers'
 import { LazyExperimentalSearchInput } from '../../../search/input/LazyExperimentalSearchInput'
-import { useRecentSearches } from '../../../search/input/useRecentSearches'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
 import { SimpleSearch } from './SimpleSearch'
 
 import styles from './SearchPageInput.module.scss'
-
-// We want to prevent autofocus by default on devices with touch as their only input method.
-// Touch only devices result in the onscreen keyboard not showing until the input loses focus and
-// gets focused again by the user. The logic is not fool proof, but should rule out majority of cases
-// where a touch enabled device has a physical keyboard by relying on detection of a fine pointer with hover ability.
-const isTouchOnlyDevice =
-    !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
 const queryStateSelector = (
     state: NavbarQueryState
@@ -60,11 +51,9 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         isSourcegraphDotCom,
         telemetryService,
         platformContext,
-        searchContextsEnabled,
         settingsCascade,
         selectedSearchContextSpec: dynamicSearchContextSpec,
         fetchSearchContexts,
-        setSelectedSearchContextSpec,
     } = useLegacyContext_onlyInStormRoutes()
 
     const selectedSearchContextSpec = hardCodedSearchContextSpec || dynamicSearchContextSpec
@@ -74,9 +63,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
 
     const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const [experimentalQueryInput] = useExperimentalQueryInput()
-
-    const { recentSearches } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -91,23 +77,11 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     patternType,
                     caseSensitive,
                     searchMode,
-                    // In the new query input, context is either omitted (-> global)
-                    // or explicitly specified.
-                    selectedSearchContextSpec: experimentalQueryInput ? undefined : selectedSearchContextSpec,
                     ...parameters,
                 })
             }
         },
-        [
-            queryState.query,
-            selectedSearchContextSpec,
-            navigate,
-            location,
-            patternType,
-            caseSensitive,
-            searchMode,
-            experimentalQueryInput,
-        ]
+        [queryState.query, selectedSearchContextSpec, navigate, location, patternType, caseSensitive, searchMode]
     )
     const submitSearchOnChangeRef = useRef(submitSearchOnChange)
     useEffect(() => {
@@ -129,8 +103,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [setQueryState]
     )
 
-    // TODO (#48103): Remove/simplify when new search input is released
-    const input = experimentalQueryInput ? (
+    const input = (
         <LazyExperimentalSearchInput
             telemetryService={telemetryService}
             patternType={patternType}
@@ -162,36 +135,8 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
         </LazyExperimentalSearchInput>
-    ) : (
-        <SearchBox
-            platformContext={platformContext}
-            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-            fetchSearchContexts={fetchSearchContexts}
-            selectedSearchContextSpec={selectedSearchContextSpec}
-            setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-            telemetryService={telemetryService}
-            authenticatedUser={authenticatedUser}
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            settingsCascade={settingsCascade}
-            searchContextsEnabled={searchContextsEnabled}
-            showSearchContext={searchContextsEnabled}
-            showSearchContextManagement={true}
-            caseSensitive={caseSensitive}
-            patternType={patternType}
-            setPatternType={setSearchPatternType}
-            setCaseSensitivity={setSearchCaseSensitivity}
-            searchMode={searchMode}
-            setSearchMode={setSearchMode}
-            queryState={queryState}
-            onChange={setQueryState}
-            onSubmit={onSubmit}
-            autoFocus={!isTouchOnlyDevice}
-            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
-            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-            showSearchHistory={true}
-            recentSearches={recentSearches}
-        />
     )
+
     return (
         <div>
             <div className="d-flex flex-row flex-shrink-past-contents">

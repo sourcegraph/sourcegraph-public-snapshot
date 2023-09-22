@@ -309,10 +309,8 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,
-    editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
     isInitialized: true,
-    searchQueryInput: 'experimental',
 }
 
 /**

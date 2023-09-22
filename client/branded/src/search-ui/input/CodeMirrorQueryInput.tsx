@@ -1,32 +1,24 @@
-import React, { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { type RefObject, useEffect, useMemo, useRef } from 'react'
 
-import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
+import { closeCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { EditorSelection, type Extension, Prec, Compartment, EditorState } from '@codemirror/state'
-import { EditorView, type ViewUpdate, keymap, placeholder as placeholderExtension } from '@codemirror/view'
+import { EditorSelection, type Extension, Prec, Compartment } from '@codemirror/state'
+import { EditorView, type ViewUpdate, keymap } from '@codemirror/view'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     EditorHint,
     QueryChangeSource,
     type QueryState,
     type SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, singleLine } from './codemirror'
 import { decorateActiveFilter, filterPlaceholder } from './codemirror/active-filter'
 import { queryDiagnostic } from './codemirror/diagnostics'
-import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
 import { parseInputAsQuery, setQueryParseOptions } from './codemirror/parsedQuery'
 import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { tokenInfo } from './codemirror/token-info'
@@ -54,218 +46,6 @@ export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
      * search history.
      */
     onSelectSearchFromHistory?: () => void
-}
-
-/**
- * This component provides a drop-in replacement for MonacoQueryInput. It
- * creates the appropriate extensions and event handlers for the provided props.
- *
- * Deliberate differences compared to MonacoQueryInput:
- * - Filters are "highlighted" when the cursor is at their position
- * - Shift+Enter won't insert a new line if 'preventNewLine' is true (default)
- * - Not supplying 'onSubmit' and setting 'preventNewLine' to false will result
- * in a new line being added when Enter is pressed
- */
-export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInputFacadeProps> = ({
-    patternType,
-    selectedSearchContextSpec,
-    queryState,
-    onChange,
-    onSubmit,
-    autoFocus,
-    onFocus,
-    onBlur,
-    isSourcegraphDotCom,
-    onEditorCreated,
-    interpretComments,
-    className,
-    preventNewLine = true,
-    placeholder,
-    editorOptions,
-    ariaLabel = 'Search query',
-    ariaLabelledby,
-    ariaInvalid,
-    ariaBusy,
-    tabIndex = 0,
-    searchHistory,
-    onSelectSearchFromHistory,
-    // Used by the VSCode extension (which doesn't use this component directly,
-    // but added for future compatibility)
-    fetchStreamSuggestions = defaultFetchStreamSuggestions,
-    onCompletionItemSelected,
-}) => {
-    // We use both, state and a ref, for the editor instance because we need to
-    // re-run some hooks when the editor changes but we also need a stable
-    // reference that doesn't change across renders (and some hooks should only
-    // run when a prop changes, not the editor).
-    const [editor, setEditor] = useState<EditorView | undefined>()
-    const editorReference = useRef<EditorView | null>(null)
-    const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
-    const navigate = useNavigate()
-
-    const editorCreated = useCallback(
-        (editor: EditorView) => {
-            setEditor(editor)
-            editorReference.current = editor
-            onEditorCreated?.(editor)
-        },
-        [onEditorCreated]
-    )
-
-    const autocompletion = useMemo(
-        () =>
-            createDefaultSuggestions({
-                fetchSuggestions: query =>
-                    fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
-                isSourcegraphDotCom,
-                navigate,
-            }),
-        [isSourcegraphDotCom, navigate, fetchStreamSuggestions, selectedSearchContextSpec]
-    )
-
-    const extensions = useMemo(() => {
-        const extensions: Extension[] = [
-            EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
-            callbacksField,
-            autocompletion,
-        ]
-
-        if (ariaLabelledby) {
-            extensions.push(EditorView.contentAttributes.of({ 'aria-labelledby': ariaLabelledby }))
-        }
-
-        if (ariaInvalid) {
-            extensions.push(EditorView.contentAttributes.of({ 'aria-invalid': ariaInvalid }))
-        }
-
-        if (ariaBusy) {
-            extensions.push(EditorView.contentAttributes.of({ 'aria-busy': ariaBusy }))
-        }
-
-        if (tabIndex !== 0) {
-            extensions.push(EditorView.contentAttributes.of({ tabIndex: tabIndex.toString() }))
-        }
-
-        if (preventNewLine) {
-            // NOTE: If a submit handler is assigned to the query input then the pressing
-            // enter won't insert a line break anyway. In that case, this extensions ensures
-            // that line breaks are stripped from pasted input.
-            extensions.push(singleLine)
-        } else {
-            // Automatically enable line wrapping in multi-line mode
-            extensions.push(EditorView.lineWrapping)
-        }
-
-        if (placeholder) {
-            // Passing a DOM element instead of a string makes the CodeMirror
-            // extension set aria-hidden="true" on the placeholder, which is
-            // what we want.
-            const element = document.createElement('span')
-            element.append(document.createTextNode(placeholder))
-            extensions.push(placeholderExtension(element))
-        }
-
-        if (editorOptions?.readOnly) {
-            extensions.push(EditorView.editable.of(false))
-        }
-
-        if (searchHistory) {
-            extensions.push(searchHistoryFacet.of(searchHistory))
-        }
-
-        if (onSelectSearchFromHistory) {
-            extensions.push(
-                EditorState.transactionExtender.of(transaction => {
-                    if (transaction.isUserEvent(HISTORY_USER_EVENT)) {
-                        onSelectSearchFromHistory()
-                    }
-                    return null
-                })
-            )
-        }
-        return extensions
-    }, [
-        ariaLabel,
-        ariaLabelledby,
-        ariaInvalid,
-        ariaBusy,
-        tabIndex,
-        autocompletion,
-        placeholder,
-        preventNewLine,
-        editorOptions,
-        searchHistory,
-        onSelectSearchFromHistory,
-    ])
-
-    // Update callback functions via effects. This avoids reconfiguring the
-    // whole editor when a callback changes.
-    useEffect(() => {
-        if (editor) {
-            setCallbacks(editor, {
-                onChange,
-                onSubmit,
-                onFocus,
-                onBlur,
-                onCompletionItemSelected,
-            })
-        }
-    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected])
-
-    // Always focus the editor on 'selectedSearchContextSpec' change
-    useOnValueChanged(selectedSearchContextSpec, () => {
-        if (selectedSearchContextSpec && selectedSearchContextSpec) {
-            editorReference.current?.focus()
-        }
-    })
-
-    // Focus the editor if the autoFocus prop is truthy
-    useEffect(() => {
-        if (editor && autoFocus) {
-            editor.focus()
-        }
-    }, [editor, autoFocus])
-
-    useUpdateEditorFromQueryState(editorReference, queryState, startCompletion)
-
-    // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
-    // are storing the editor in a ref so that `globalFocus` is stable.
-    const globalFocus = useCallback(() => {
-        if (editorReference.current && !!document.activeElement && !isInputElement(document.activeElement)) {
-            editorReference.current.focus()
-        }
-    }, [editorReference])
-
-    return (
-        <>
-            <CodeMirrorQueryInput
-                onEditorCreated={editorCreated}
-                patternType={patternType}
-                interpretComments={interpretComments}
-                value={queryState.query}
-                className={className}
-                extensions={extensions}
-            />
-            {focusSearchBarShortcut?.keybindings.map((keybinding, index) => (
-                <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
-            ))}
-        </>
-    )
-}
-
-/**
- * Helper hook to run the function whenever the provided changes
- * (but only after the initial render)
- */
-function useOnValueChanged<T = unknown>(value: T, func: () => void): void {
-    const previousValue = useRef(value)
-
-    useEffect(() => {
-        if (previousValue.current !== value) {
-            func()
-            previousValue.current = value
-        }
-    }, [value, func])
 }
 
 const EMPTY: any[] = []
