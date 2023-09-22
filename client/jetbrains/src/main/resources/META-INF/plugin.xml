@@ -24,6 +24,7 @@
         <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectSettings"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.notification.AccountSettingChangeListener"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.notification.CodySettingChangeListener"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.AccountsHostProjectHolder"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
