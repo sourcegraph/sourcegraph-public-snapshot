@@ -80,7 +80,12 @@ export const enterpriseRoutes: RouteObject[] = [
         path: EnterprisePageRoutes.SearchJobs,
         element: (
             <LegacyRoute
-                render={props => <SearchJob isAdmin={props.authenticatedUser?.siteAdmin ?? false} />}
+                render={props => (
+                    <SearchJob
+                        isAdmin={props.authenticatedUser?.siteAdmin ?? false}
+                        telemetryService={props.telemetryService}
+                    />
+                )}
                 condition={isSearchJobsEnabled}
             />
         ),
