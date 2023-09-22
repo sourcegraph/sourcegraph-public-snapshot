@@ -21,7 +21,6 @@ export type FeatureFlagName =
     | 'enable-ownership-panels'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
-    | 'sentinel'
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
