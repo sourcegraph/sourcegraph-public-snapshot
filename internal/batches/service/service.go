@@ -1427,7 +1427,7 @@ func (s *Service) ExportChangesets(ctx context.Context, batchChangeID int64, ids
 }
 
 func (s *Service) generateChangesetExportData(ctx context.Context, changesets btypes.Changesets) ([][]string, error) {
-	var header = []string{"Title", "Review State", "State", "External URL", "Verfied", "Check State"}
+	var header = []string{"Title", "Review State", "State", "External URL", "Verified", "Check State"}
 	var rows = make([][]string, 0, len(changesets)+1)
 
 	rows = append(rows, header)

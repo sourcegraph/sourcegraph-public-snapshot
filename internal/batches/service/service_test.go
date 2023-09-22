@@ -3198,9 +3198,48 @@ changesetTemplate:
 	})
 
 	t.Run("ExportChangesets", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
 		t.Run("non-existent batch change", func(t *testing.T) {
 			_, _, err := svc.ExportChangesets(ctx, 10203042, []int64{})
 			require.Error(t, err, "batch change does not exist")
+		})
+
+		t.Run("success", func(t *testing.T) {
+			expected := `Title,Review State,State,External URL,Verified,Check State
+,CHANGES_REQUESTED,PROCESSING,,false,
+,,PROCESSING,,true,PASSED
+`
+
+			changeset1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+				Repo:                rs[0].ID,
+				PublicationState:    btypes.ChangesetPublicationStatePublished,
+				BatchChange:         batchChange.ID,
+				ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+			})
+			changeset2 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+				Repo:               rs[1].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				CommitVerified:     true,
+				ExternalCheckState: btypes.ChangesetCheckStatePassed,
+			})
+
+			bc, out, err := svc.ExportChangesets(ctx, batchChange.ID, []int64{
+				changeset1.ID,
+				changeset2.ID,
+			})
+			require.NoError(t, err)
+			require.Equal(t, bc.ID, batchChange.ID)
+			require.Equal(t, expected, out)
 		})
 	})
 }
