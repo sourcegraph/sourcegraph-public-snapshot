@@ -78,7 +78,7 @@ export function emptyFilterValue(filter: Filter): Diagnostic[] {
 // Returns the first nonempty diagnostic for a filter, or nothing otherwise. We return
 // the only the first so that we don't overwhelm the the user with multiple diagnostics
 // for a single filter.
-export function checkFilter(filter: Filter): Diagnostic[] {
+function checkFilter(filter: Filter): Diagnostic[] {
     const checks: FilterCheck[] = [validFilterValue, emptyFilterValue]
     return checks.map(check => check(filter)).find(value => value.length !== 0) || []
 }

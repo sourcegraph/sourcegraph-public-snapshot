@@ -794,7 +794,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
  * Returns true for filter values that have regexp values, e.g., repo, file.
  * Excludes FilterType.content because that depends on the pattern kind.
  */
-export const hasRegexpValue = (field: string): boolean => {
+ const hasRegexpValue = (field: string): boolean => {
     const fieldName = field.startsWith('-') ? field.slice(1) : field
     switch (fieldName.toLocaleLowerCase()) {
         case 'repo':
