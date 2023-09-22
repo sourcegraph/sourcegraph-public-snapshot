@@ -271,7 +271,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 
 	// Filter by query.
 	if args.Query != "" {
-		conds = append(conds, sqlf.Sprintf("sj.query LIKE %s", "%"+args.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+args.Query+"%"))
 	}
 
 	// Filter by state.
