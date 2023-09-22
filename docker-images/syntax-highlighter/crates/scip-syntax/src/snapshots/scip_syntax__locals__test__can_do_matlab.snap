@@ -1,0 +1,208 @@
+---
+source: crates/scip-syntax/src/locals.rs
+expression: dumped
+---
+  % Copyright (c) 2021-2022, The MathWorks, Inc.
+  % All rights reserved.
+  % Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+  % 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+  % 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+  % 3. In all cases, the software is, and all modifications and derivatives of the software shall be, licensed to you solely for use in conjunction with MathWorks products and service offerings. 
+  % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+  function setupPythonIfNeeded()
+//         ^^^^^^^^^^^^^^^^^^^ definition local 1
+      %setupPythonIfNeeded Check if python is installed and configured.  If it's
+      %not, download and install it
+  
+      % Python setup is only supported in R2019a (ver 9.6) and later 
+      if verLessThan('matlab','9.6')
+          error("setupPythonIfNeeded:unsupportedVersion","Only version R2019a and later are supported")
+      end        
+  
+      % Check if MATLAB has python set up
+      pythonInfo = pyenv;
+//    ^^^^^^^^^^ definition local 2
+      
+      if pythonInfo.Version ~= ""
+//       ^^^^^^^^^^ reference local 2
+          % It's set up: return
+          return
+      end
+      
+      % Python is not set up, but it might be installed.  Check to see if it
+      % is installed in any standard locations
+      pythonVersionToLookFor = getSupportedPythonVersions();
+//    ^^^^^^^^^^^^^^^^^^^^^^ definition local 3
+      
+      % Check for python executable in user directory (default install)
+      pythonExecutable = locatePythonInstallations(getUserPythonDir(),pythonVersionToLookFor);
+//    ^^^^^^^^^^^^^^^^ definition local 4
+//                                                                    ^^^^^^^^^^^^^^^^^^^^^^ reference local 3
+      
+      if pythonExecutable == ""
+//       ^^^^^^^^^^^^^^^^ reference local 4
+          % Check for python executable in program files directory (all user install)
+          pythonExecutable = locatePythonInstallations(getProgramFilesDir(),pythonVersionToLookFor);
+//        ^^^^^^^^^^^^^^^^ reference local 4
+//                                                                          ^^^^^^^^^^^^^^^^^^^^^^ reference local 3
+  
+          if pythonExecutable == ""
+//           ^^^^^^^^^^^^^^^^ reference local 4
+              % Trigger an install here
+              
+              filename = "python-3.9.7-amd64.exe";
+//            ^^^^^^^^ definition local 6
+              downloadPath = fullfile(tempdir,filename);
+//            ^^^^^^^^^^^^ definition local 7
+//                                            ^^^^^^^^ reference local 6
+              installEXEPath = websave(downloadPath,"https://www.python.org/ftp/python/3.9.7/" + filename);
+//            ^^^^^^^^^^^^^^ definition local 8
+//                                     ^^^^^^^^^^^^ reference local 7
+//                                                                                               ^^^^^^^^ reference local 6
+              status = system(installEXEPath);
+//            ^^^^^^ definition local 9
+//                            ^^^^^^^^^^^^^^ reference local 8
+              if status ~= 0
+//               ^^^^^^ reference local 9
+                  error("setupPythonIfNeeded:pythonNotInstalled",'Could not install python.  <a href="https://www.python.org/ftp/python/3.9.7/python-3.9.7-amd64.exe">Download and install version 3.9</a>')
+              end
+              pythonExecutable = locatePythonInstallations(getUserPythonDir(),pythonVersionToLookFor);
+//            ^^^^^^^^^^^^^^^^ reference local 4
+//                                                                            ^^^^^^^^^^^^^^^^^^^^^^ reference local 3
+              if pythonExecutable == ""
+//               ^^^^^^^^^^^^^^^^ reference local 4
+                  pythonExecutable = locatePythonInstallations(getProgramFilesDir(),pythonVersionToLookFor);
+//                ^^^^^^^^^^^^^^^^ reference local 4
+//                                                                                  ^^^^^^^^^^^^^^^^^^^^^^ reference local 3
+                  if pythonExecutable == ""
+//                   ^^^^^^^^^^^^^^^^ reference local 4
+                      error("setupPythonIfNeeded:pythonNotInstalled",'Could not install python.  <a href="https://www.python.org/ftp/python/3.9.7/python-3.9.7-amd64.exe">Download and install version 3.9</a>')
+                  end
+              end
+          end
+      end
+      
+      pythonInfo = pyenv('Version', pythonExecutable);
+//    ^^^^^^^^^^ reference local 2
+//                                  ^^^^^^^^^^^^^^^^ reference local 4
+  
+      if pythonInfo.Version == ""
+//       ^^^^^^^^^^ reference local 2
+          % Python was not set up correctly
+          error("setupPythonIfNeeded:unableToSetPythonVersion","Could not configure python for use.  See ""Configure Your System to Use Python"" in MATLAB documentation.")
+      end
+      
+      function pythonVersion = getSupportedPythonVersions()
+//             ^^^^^^^^^^^^^ definition local 12
+//                             ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition local 13
+          % It would be better to get this info from the internet somewhere,
+          % but for now....
+          % This is based on
+          % https://www.mathworks.com/content/dam/mathworks/mathworks-dot-com/support/sysreq/files/python-compatibility.pdf
+          versionInfo = ver('matlab');
+//        ^^^^^^^^^^^ definition local 14
+          MATLABrelease = extract(string(versionInfo.Release),alphanumericBoundary + alphanumericsPattern + alphanumericBoundary);
+//        ^^^^^^^^^^^^^ definition local 15
+//                                       ^^^^^^^^^^^ reference local 14
+          switch MATLABrelease
+//               ^^^^^^^^^^^^^ reference local 15
+              case "R2023a"
+                  pythonVersion = ["3.8";"3.9";"3.10"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2022b"
+                  pythonVersion = ["3.8";"3.9";"3.10"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2022a"
+                  pythonVersion = ["3.8";"3.9"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2021b"
+                  pythonVersion = ["3.7";"3.8";"3.9"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2021a"
+                  pythonVersion = ["3.7";"3.8"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2020b"
+                  pythonVersion = ["3.6";"3.7";"3.8"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2020a"
+                  pythonVersion = ["3.6";"3.7"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2019b"
+                  pythonVersion = ["3.6";"3.7"];
+//                ^^^^^^^^^^^^^ reference local 12
+              case "R2019a"
+                  pythonVersion = ["3.5";"3.6";"3.7"];
+//                ^^^^^^^^^^^^^ reference local 12
+              otherwise
+                  % Lets assume 3.9 will work for a while
+                  pythonVersion = "3.9";
+//                ^^^^^^^^^^^^^ reference local 12
+          end
+      end
+  
+      function pythonDir = getUserPythonDir()
+//             ^^^^^^^^^ definition local 26
+//                         ^^^^^^^^^^^^^^^^ definition local 27
+          [status, localAppDataPath] = system("echo %LOCALAPPDATA%");
+//                 ^^^^^^^^^^^^^^^^ reference local 28
+          if status ~= 0
+              error("setupPythonIfNeeded:cantGetProgramFiles","Cannot retreive location of user directory.")
+          end
+          localAppDataPath = strtrim(string(localAppDataPath));
+//        ^^^^^^^^^^^^^^^^ definition local 28
+//                                          ^^^^^^^^^^^^^^^^ reference local 28
+          pythonDir = fullfile(localAppDataPath,"Programs","Python");
+//        ^^^^^^^^^ reference local 26
+//                             ^^^^^^^^^^^^^^^^ reference local 28
+  
+      end
+  
+      function pythonDir = getProgramFilesDir()
+//             ^^^^^^^^^ definition local 30
+//                         ^^^^^^^^^^^^^^^^^^ definition local 31
+          [status, programFilesPath] = system("echo %PROGRAMFILES%");
+//                 ^^^^^^^^^^^^^^^^ reference local 32
+          if status ~= 0
+              error("setupPythonIfNeeded:cantGetProgramFiles","Cannot retreive location of program files directory.")
+          end
+          programFilesPath = strtrim(string(programFilesPath));
+//        ^^^^^^^^^^^^^^^^ definition local 32
+//                                          ^^^^^^^^^^^^^^^^ reference local 32
+          pythonDir = fullfile(programFilesPath,"Python");
+//        ^^^^^^^^^ reference local 30
+//                             ^^^^^^^^^^^^^^^^ reference local 32
+      end
+  
+      function pythonExecutable = locatePythonInstallations(pythonDir,pythonVersionToLookFor)
+//             ^^^^^^^^^^^^^^^^ definition local 34
+//                                ^^^^^^^^^^^^^^^^^^^^^^^^^ definition local 35
+//                                                          ^^^^^^^^^ definition local 36
+//                                                                    ^^^^^^^^^^^^^^^^^^^^^^ definition local 37
+          % sort the version numbers and transform to directory names, newest
+          % to oldest
+          pythonVersion = sortrows(split(pythonVersionToLookFor,"."),[1 2],'descend');
+//        ^^^^^^^^^^^^^ definition local 38
+//                                       ^^^^^^^^^^^^^^^^^^^^^^ reference local 37
+          pythonDirNames = "Python" + pythonVersion(:,1) + pythonVersion(:,2);
+//        ^^^^^^^^^^^^^^ definition local 39
+//                                    ^^^^^^^^^^^^^ reference local 38
+//                                                         ^^^^^^^^^^^^^ reference local 38
+          pythonExecutable = "";
+//        ^^^^^^^^^^^^^^^^ reference local 34
+          for iDir = 1:numel(pythonDirNames)
+//                           ^^^^^^^^^^^^^^ reference local 39
+              % Go through supported releases, see if there's a python.exe at each location, going from
+              % latest release
+              pythonExecutable = fullfile(pythonDir,pythonDirNames(iDir),"python.exe");
+//            ^^^^^^^^^^^^^^^^ reference local 34
+//                                        ^^^^^^^^^ reference local 36
+//                                                  ^^^^^^^^^^^^^^ reference local 39
+              if exist(pythonExecutable,'file')
+//                     ^^^^^^^^^^^^^^^^ reference local 34
+                  return
+              end
+          end
+      end
+  end
+

@@ -91,9 +91,15 @@ impl<'a> Scope<'a> {
             &(reference.range.start_line, reference.range.start_col),
             |r| (r.range.start_line, r.range.start_col),
         ) {
-            Ok(_) => {
-                // self.children[idx].insert_reference(reference);
-                todo!("I'm not sure what to do yet, think more now");
+            Ok(idx) => {
+                let child = &self.children[idx];
+                if child.range.end_line == reference.range.end_line
+                    && child.range.end_col == reference.range.end_col
+                {
+                    todo!("I'm not sure what to do yet, think more now (is a scope with the same range being recorded twice?)");
+                }
+
+                self.children[idx].insert_reference(reference);
             }
             Err(idx) => match idx {
                 0 => self
@@ -146,11 +152,18 @@ impl<'a> Scope<'a> {
 
     pub fn into_occurrences(&mut self, hint: usize) -> Vec<Occurrence> {
         let mut occs = Vec::with_capacity(hint);
-        self.rec_into_occurrences(&mut 0, &mut occs);
+        self.rec_into_occurrences(&mut 0, &mut occs, &mut HashMap::default());
         occs
     }
 
-    fn rec_into_occurrences(&self, id: &mut usize, occurrences: &mut Vec<Occurrence>) {
+    fn rec_into_occurrences(
+        &self,
+        id: &mut usize,
+        occurrences: &mut Vec<Occurrence>,
+        declarations_above: &mut HashMap<&str, usize>,
+    ) {
+        let mut declarations_above = declarations_above.clone();
+
         // TODO: I'm a little sad about this.
         //  We could probably make this a runtime option, where `self` has a `sorted` value
         //  that decides whether we need to or not. But on a huge file, this made no difference.
@@ -160,16 +173,51 @@ impl<'a> Scope<'a> {
         for definition in values {
             *id += 1;
 
-            let symbol = format_symbol(Symbol::new_local(*id));
-            let symbol_roles = scip::types::SymbolRole::Definition.value();
+            let symbol = match definition.definition_strength {
+                DefinitionStrength::Strong => {
+                    let symbol = format_symbol(Symbol::new_local(*id));
+                    declarations_above.insert(definition.identifier, *id);
+                    let symbol_roles = scip::types::SymbolRole::Definition.value();
 
-            occurrences.push(scip::types::Occurrence {
-                range: definition.node.to_scip_range(),
-                symbol: symbol.clone(),
-                symbol_roles,
-                // syntax_kind: todo!(),
-                ..Default::default()
-            });
+                    occurrences.push(scip::types::Occurrence {
+                        range: definition.node.to_scip_range(),
+                        symbol: symbol.clone(),
+                        symbol_roles,
+                        // syntax_kind: todo!(),
+                        ..Default::default()
+                    });
+
+                    symbol
+                }
+                DefinitionStrength::Weak => {
+                    if let Some(above) = declarations_above.get(definition.identifier) {
+                        let symbol = format_symbol(Symbol::new_local(*above));
+
+                        occurrences.push(scip::types::Occurrence {
+                            range: definition.node.to_scip_range(),
+                            symbol: symbol.clone(),
+                            // syntax_kind: todo!(),
+                            ..Default::default()
+                        });
+
+                        continue;
+                    } else {
+                        let symbol = format_symbol(Symbol::new_local(*id));
+                        declarations_above.insert(definition.identifier, *id);
+                        let symbol_roles = scip::types::SymbolRole::Definition.value();
+
+                        occurrences.push(scip::types::Occurrence {
+                            range: definition.node.to_scip_range(),
+                            symbol: symbol.clone(),
+                            symbol_roles,
+                            // syntax_kind: todo!(),
+                            ..Default::default()
+                        });
+
+                        symbol
+                    }
+                }
+            };
 
             if let Some(references) = self.references.get(definition.identifier) {
                 for reference in references {
@@ -188,7 +236,7 @@ impl<'a> Scope<'a> {
 
         self.children
             .iter()
-            .for_each(|c| c.rec_into_occurrences(id, occurrences));
+            .for_each(|c| c.rec_into_occurrences(id, occurrences, &mut declarations_above));
     }
 
     fn occurrences_for_children(
@@ -197,8 +245,11 @@ impl<'a> Scope<'a> {
         symbol: &str,
         occurrences: &mut Vec<Occurrence>,
     ) {
-        if self.definitions.contains_key(def.identifier) {
-            return;
+        if let Some(def) = self.definitions.get(def.identifier) {
+            match def.definition_strength {
+                DefinitionStrength::Strong => return,
+                DefinitionStrength::Weak => {}
+            }
         }
 
         if let Some(references) = self.references.get(def.identifier) {
@@ -251,6 +302,13 @@ pub enum ScopeModifier {
     Global,
 }
 
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum DefinitionStrength {
+    #[default]
+    Strong,
+    Weak,
+}
+
 #[derive(Debug)]
 pub struct Definition<'a> {
     pub group: &'a str,
@@ -258,6 +316,7 @@ pub struct Definition<'a> {
     pub node: Node<'a>,
     pub range: PackedRange,
     pub scope_modifier: ScopeModifier,
+    pub definition_strength: DefinitionStrength,
 }
 
 #[derive(Debug)]
@@ -280,6 +339,7 @@ pub fn parse_tree<'a>(
 
     let mut scopes = vec![];
     let mut definitions = vec![];
+    // let mut weak_definitions = vec![];
     let mut references = vec![];
 
     for m in cursor.matches(&config.query, root_node, source_bytes) {
@@ -289,6 +349,7 @@ pub fn parse_tree<'a>(
         let mut definition = None;
         let mut reference = None;
         let mut scope_modifier = None;
+        let mut definition_strength = None;
 
         for capture in m.captures {
             let capture_name = match capture_names.get(capture.index as usize) {
@@ -302,7 +363,7 @@ pub fn parse_tree<'a>(
                 assert!(definition.is_none(), "only one definition per match");
                 definition = Some(capture_name);
 
-                // Handle scope modifiers
+                // Handle modifiers
                 let properties = config.query.property_settings(m.pattern_index);
                 for prop in properties {
                     if &(*prop.key) == "scope" {
@@ -312,6 +373,16 @@ pub fn parse_tree<'a>(
                             Some("local") => scope_modifier = Some(ScopeModifier::Local),
                             // TODO: Should probably error instead
                             Some(other) => panic!("unknown scope-testing: {}", other),
+                            None => {}
+                        }
+                    } else if &(*prop.key) == "strength" {
+                        match prop.value.as_deref() {
+                            Some("strong") => {
+                                definition_strength = Some(DefinitionStrength::Strong)
+                            }
+                            Some("weak") => definition_strength = Some(DefinitionStrength::Weak),
+                            // TODO: Should probably error instead
+                            Some(other) => panic!("unknown definition strength: {}", other),
                             None => {}
                         }
                     }
@@ -341,12 +412,15 @@ pub fn parse_tree<'a>(
             };
 
             let scope_modifier = scope_modifier.unwrap_or_default();
+            let definition_strength = definition_strength.unwrap_or_default();
+
             definitions.push(Definition {
                 range: node.into(),
                 group,
                 identifier,
                 node,
                 scope_modifier,
+                definition_strength,
             });
         } else if let Some(group) = reference {
             let identifier = match node.utf8_text(source_bytes) {
@@ -485,6 +559,18 @@ mod test {
     fn test_can_do_perl() -> Result<()> {
         let mut config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
+        let doc = parse_file_for_lang(&mut config, source_code)?;
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_do_matlab() -> Result<()> {
+        let mut config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
+        let source_code = include_str!("../testdata/locals.m");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
