@@ -42,6 +42,7 @@ class CodyAgent(private val project: Project) : Disposable {
   private val firstConnection = AtomicBoolean(true)
   private var listeningToJsonRpc: Future<Void?> = CompletableFuture.completedFuture(null)
   private var agentProcess: Process? = null
+
   fun initialize() {
     if ("true" != System.getProperty("cody-agent.enabled", "true")) {
       logger.info("Cody agent is disabled due to system property '-Dcody-agent.enabled=false'")
@@ -164,6 +165,7 @@ class CodyAgent(private val project: Project) : Disposable {
     var logger = Logger.getInstance(CodyAgent::class.java)
     private val PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains")
     @JvmField val executorService = Executors.newCachedThreadPool()
+
     @JvmStatic
     fun getClient(project: Project): CodyAgentClient {
       return project.getService(CodyAgent::class.java).client
