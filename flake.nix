@@ -4,15 +4,15 @@
   inputs = {
     nixpkgs.url = "nixpkgs/nixpkgs-unstable";
     # separate nixpkgs pin for more stable changes to binaries we build
-    nixpkgs-bins.url = "github:NixOS/nixpkgs/e78d25df6f1036b3fa76750ed4603dd9d5fe90fc";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/e78d25df6f1036b3fa76750ed4603dd9d5fe90fc";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-bins, flake-utils }:
+  outputs = { self, nixpkgs, nixpkgs-stable, flake-utils }:
     let
-      xcompileTargets = with nixpkgs-bins.lib.systems.examples; {
-        "aarch64-darwin" = nixpkgs-bins.legacyPackages.aarch64-darwin.pkgsx86_64Darwin;
-        "x86_64-darwin" = import nixpkgs-bins { system = "x86_64-darwin"; crossSystem = aarch64-darwin; };
+      xcompileTargets = with nixpkgs-stable.lib.systems.examples; {
+        "aarch64-darwin" = nixpkgs-stable.legacyPackages.aarch64-darwin.pkgsx86_64Darwin;
+        "x86_64-darwin" = import nixpkgs-stable { system = "x86_64-darwin"; crossSystem = aarch64-darwin; };
       };
       inherit (import ./dev/nix/util.nix { inherit (nixpkgs) lib; }) xcompilify;
     in
@@ -20,7 +20,7 @@
       (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pkgsBins = nixpkgs-bins.legacyPackages.${system};
+          pkgsBins = nixpkgs-stable.legacyPackages.${system};
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
           pkgsX = xcompileTargets.${system} or null;
         in
