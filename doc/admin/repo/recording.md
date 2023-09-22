@@ -44,7 +44,7 @@ Recorded commands include information like start time, duration, exit status, co
 
 Command recording provides visibility into Sourcegraph's interactions with repositories without requiring modifications to Sourcegraph's core Git operations.
 
-### Potential Risks
+### Potential risks
 
 Depending on the number of repositories and size of the recording set, enabling command recording could result in increased disk usage in Redis. 
 
