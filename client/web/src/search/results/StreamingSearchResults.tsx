@@ -445,6 +445,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
                                 isSearchJobsEnabled={isSearchJobsEnabled()}
+                                telemetryService={props.telemetryService}
                             />
                         }
                     />
