@@ -3011,7 +3011,10 @@ changesetTemplate:
 			})
 
 			assert.NoError(t, err)
-			assert.Empty(t, bulkOperations)
+			expectedBulkOperations := []string{"EXPORT"}
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
 		})
 
 		t.Run("imported changesets", func(t *testing.T) {
@@ -3075,7 +3078,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{}
+			expectedBulkOperations := []string{"EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -3118,7 +3121,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"EXPORT", "COMMENT", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
