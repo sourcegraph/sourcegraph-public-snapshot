@@ -79,7 +79,7 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 		fileURL.String(),
 
 		// Chunk matches
-		fm.ChunkMatches.String(),
+		fm.ChunkMatches.FormatCSV(),
 	)
 }
 

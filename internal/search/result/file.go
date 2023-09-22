@@ -273,18 +273,26 @@ func (hs ChunkMatches) AsLineMatches() []*LineMatch {
 	return res
 }
 
-func (hs ChunkMatches) String() string {
+// FormatCSV returns a string representation of ChunkMatches which matches the
+// download format of the search results page. See searchResultsExport.ts for
+// comparison.
+func (hs ChunkMatches) FormatCSV() string {
 	var builder strings.Builder
-	for _, h := range hs {
-		builder.WriteString("[")
-		builder.WriteString(fmt.Sprintf("%q", h.ContentStart.Line))
-		for i, r := range h.Ranges {
-			builder.WriteString(fmt.Sprintf("[%d,%d]", r.Start, r.End))
-			if i < len(h.Ranges)-1 {
+	for i, h := range hs {
+		builder.WriteString("[") // start of chunk
+		builder.WriteString(fmt.Sprintf("%d ", h.ContentStart.Line))
+		builder.WriteString("[") //	start of lines
+		for j, r := range h.Ranges {
+			builder.WriteString(fmt.Sprintf("[%d, %d]", r.Start.Column, r.End.Column))
+			if j < len(h.Ranges)-1 {
 				builder.WriteString(" ")
 			}
 		}
-		builder.WriteString("]")
+		builder.WriteString("]") // end of lines
+		builder.WriteString("]") // end of chunk
+		if i < len(hs)-1 {
+			builder.WriteString("; ")
+		}
 	}
 	return builder.String()
 }

@@ -182,6 +182,47 @@ func TestConvertMatches(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("FormatCSV", func(t *testing.T) {
+		cases := []struct {
+			input  ChunkMatches
+			output string
+		}{
+			{
+				input: ChunkMatches{{
+					Content:      "foo bar bas",
+					ContentStart: Location{Line: 1},
+					Ranges: Ranges{
+						// bar
+						{
+							Start: Location{Column: 4},
+							End:   Location{Column: 7},
+						},
+						// as
+						{
+							Start: Location{Column: 9},
+							End:   Location{Column: 11},
+						},
+					},
+				}, {
+					Content:      "banana apple",
+					ContentStart: Location{Line: 4},
+					// apple
+					Ranges: Ranges{{
+						Start: Location{Column: 7},
+						End:   Location{Column: 13},
+					}},
+				}},
+				output: "[1 [[4, 7] [9, 11]]]; [4 [[7, 13]]]",
+			},
+		}
+
+		for _, tc := range cases {
+			t.Run("", func(t *testing.T) {
+				require.Equal(t, tc.output, tc.input.FormatCSV())
+			})
+		}
+	})
 }
 
 func TestChunkMatches_Limit(t *testing.T) {
