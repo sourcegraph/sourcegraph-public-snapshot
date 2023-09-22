@@ -1,3 +1,5 @@
+export * from './QueryInputField'
+export * from './QueryInputField2'
 export type { CodeMirrorQueryInputWrapperProps } from './CodeMirrorQueryInputWrapper'
 export { CodeMirrorQueryInputWrapper, QueryInputVisualMode } from './CodeMirrorQueryInputWrapper'
 export type {

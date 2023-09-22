@@ -272,6 +272,7 @@ const empty: any[] = []
 export enum QueryInputVisualMode {
     Standard = 'standard',
     Compact = 'compact',
+    Flush = 'flush',
 }
 
 export interface CodeMirrorQueryInputWrapperProps {
@@ -280,6 +281,7 @@ export interface CodeMirrorQueryInputWrapperProps {
     onSubmit: () => void
     isLightTheme: boolean
     interpretComments: boolean
+    showHistory?: boolean
     patternType: SearchPatternType
     placeholder: string
     suggestionSource?: Source
@@ -296,6 +298,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             onSubmit,
             isLightTheme,
             interpretComments,
+            showHistory = true,
             patternType,
             placeholder,
             suggestionSource,
@@ -442,12 +445,17 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                 ref={inputContainerRef}
                 className={classNames(styles.container, className, 'test-experimental-search-input', 'test-editor', {
                     [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
+                    [styles.containerFlush]: visualMode === QueryInputVisualMode.Flush,
                 })}
                 role="search"
                 data-editor="experimental-search-input"
             >
-                <div className={styles.focusContainer}>
-                    <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
+                <div
+                    className={classNames(styles.focusContainer, {
+                        [styles.focusContainerFlush]: visualMode === QueryInputVisualMode.Flush,
+                    })}
+                >
+                    {showHistory && <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />}
                     <div
                         ref={editorContainerRef}
                         className={classNames(styles.input, 'test-query-input', 'test-editor')}
@@ -455,17 +463,20 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     />
                     {!mode && children}
                 </div>
-                <div
-                    ref={setSuggestionsContainer}
-                    className={styles.suggestions}
-                    // eslint-disable-next-line react/forbid-dom-props
-                    style={{ paddingTop: height }}
-                />
+                {suggestionSource && (
+                    <div
+                        ref={setSuggestionsContainer}
+                        className={styles.suggestions}
+                        // eslint-disable-next-line react/forbid-dom-props
+                        style={{ paddingTop: height }}
+                    />
+                )}
                 <Shortcut ordered={['/']} onMatch={focus} />
             </div>
         )
     }
 )
+CodeMirrorQueryInputWrapper.displayName = 'CodeMirrorQueryInputWrapper'
 
 interface SearchModeSwitcherProps {
     mode: string | null

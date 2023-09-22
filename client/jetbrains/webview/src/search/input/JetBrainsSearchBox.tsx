@@ -5,13 +5,12 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
+import { QueryInputField2 } from '@sourcegraph/branded/src/search-ui/experimental'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { Search } from '../jetbrains-icons/Search'
 
 import { JetBrainsToggles, type JetBrainsTogglesProps } from './JetBrainsToggles'
 
@@ -80,65 +79,27 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     'flex-shrink-past-contents'
                 )}
             >
-                {props.searchContextsEnabled && props.showSearchContext && (
-                    <>
-                        <SearchContextDropdown
-                            authenticatedUser={props.authenticatedUser}
-                            // This is only used to render the CTA which we do not want on JetBrains
-                            isSourcegraphDotCom={false}
-                            searchContextsEnabled={props.searchContextsEnabled}
-                            showSearchContextManagement={props.showSearchContextManagement}
-                            setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            fetchSearchContexts={props.fetchSearchContexts}
-                            getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
-                            telemetryService={props.telemetryService}
-                            platformContext={props.platformContext}
-                            query={queryState.query}
-                            submitSearch={props.submitSearchOnSearchContextChange}
-                            className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
-                            menuClassName={styles.searchBoxContextMenu}
-                            onEscapeMenuClose={focusEditor}
-                            ignoreDefaultContextDoesNotExistError={true}
-                        />
-                        <div className={styles.searchBoxSeparator} />
-                    </>
-                )}
-                {/*
-                    To fix Rule: "region" (All page content should be contained by landmarks)
-                    Added role attribute to the following element to satisfy the rule.
-                */}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
-                    <div className={styles.searchBoxFocusContainerIcon}>
-                        <Search />
-                    </div>
-                    <LazyQueryInput
-                        preventNewLine={true}
-                        autoFocus={props.autoFocus}
-                        caseSensitive={props.caseSensitive}
-                        fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    <QueryInputField2
+                        patternType={props.patternType}
+                        value={props.queryState}
                         onChange={props.onChange}
                         onSubmit={props.onSubmit}
-                        patternType={props.patternType}
-                        queryState={props.queryState}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         className={styles.searchBoxInput}
-                        onEditorCreated={onEditorCreated}
-                        placeholder="Enter search query..."
-                    />
-                    <JetBrainsToggles
-                        patternType={props.patternType}
-                        setPatternType={props.setPatternType}
-                        caseSensitive={props.caseSensitive}
-                        setCaseSensitivity={props.setCaseSensitivity}
-                        settingsCascade={props.settingsCascade}
-                        submitSearch={props.submitSearchOnToggle}
-                        navbarSearchQuery={queryState.query}
-                        className={styles.searchBoxToggles}
-                        structuralSearchDisabled={props.structuralSearchDisabled}
-                        clearSearch={clearSearch}
-                    />
+                    >
+                        <JetBrainsToggles
+                            patternType={props.patternType}
+                            setPatternType={props.setPatternType}
+                            caseSensitive={props.caseSensitive}
+                            setCaseSensitivity={props.setCaseSensitivity}
+                            settingsCascade={props.settingsCascade}
+                            submitSearch={props.submitSearchOnToggle}
+                            navbarSearchQuery={queryState.query}
+                            className={styles.searchBoxToggles}
+                            structuralSearchDisabled={props.structuralSearchDisabled}
+                            clearSearch={clearSearch}
+                        />
+                    </QueryInputField2>
                 </div>
             </div>
         </div>
