@@ -386,17 +386,18 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Tooltip>
             </span>
 
-            {job.URL && (
+            <Tooltip content={!job.logURL ? 'Results are not available yet' : ''}>
                 <DownloadFileButton
-                    fileUrl={job.URL}
+                    fileUrl={job.URL ?? ''}
                     variant="secondary"
                     debounceTime={1000}
+                    disabled={job.URL === null}
                     className={styles.jobDownload}
                 >
                     <Icon svgPath={mdiDownload} aria-hidden={true} />
                     Download
                 </DownloadFileButton>
-            )}
+            </Tooltip>
         </li>
     )
 }
