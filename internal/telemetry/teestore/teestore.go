@@ -61,7 +61,7 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 			InsertID: nil, // not required on insert
 
 			// Identifiers
-			Name: fmt.Sprintf("V2:%s.%s", e.GetFeature(), e.GetAction()),
+			Name: fmt.Sprintf("%s.%s", e.GetFeature(), e.GetAction()),
 			Timestamp: func() time.Time {
 				if e.GetTimestamp() == nil {
 					return now()
