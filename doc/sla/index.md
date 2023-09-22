@@ -111,7 +111,7 @@ The following policy applies to both our cloud-based (managed instance) and on-p
 | 0 | Emergency: Total loss of service or security-related issue (includes POCs) | Within two business hours of identifying the issue | 24x5 (Monday-Friday) |
 | 1 | Severe impact: Service significantly limited for 60%+ of users; core features are unavailable or extremely slowed down with no acceptable workaround | Within four business hours of identifying the issue | 24x5 (Monday-Friday) |
 | 2 | Medium impact: Core features are unavailable or somewhat slowed; workaround exists | Within eight business hours of identifying the issue | 24x5 (Monday-Friday) |
-| 3 | Minimal impact: Questions or clarifications regarding features, documentation, or deployments | Within two business hours of identifying the issue | 24x5 (Monday-Friday) |
+| 3 | Minimal impact: Questions or clarifications regarding features, documentation, or deployments | Within two business days of identifying the issue | 24x5 (Monday-Friday) |
 
 ## For enterprise Starter plans
 
@@ -120,7 +120,7 @@ The following policy applies to both our cloud-based (managed instance) and on-p
 | 0 | Emergency: Total loss of service or security-related issue (includes POCs) | Within four business hours of identifying the issue | 24x5 (Monday-Friday) |
 | 1 | Severe impact: Service significantly limited for 60%+ of users; core features are unavailable or extremely slowed down with no acceptable workaround | Within six business hours of identifying the issue | 24x5 (Monday-Friday) |
 | 2 | Medium impact: Core features are unavailable or somewhat slowed; workaround exists | Within 16 business hours of identifying the issue | 24x5 (Monday-Friday) |
-| 3 | Minimal impact: Questions or clarifications regarding features, documentation, or deployments | Within three business hours of identifying the issue | 24x5 (Monday-Friday) |
+| 3 | Minimal impact: Questions or clarifications regarding features, documentation, or deployments | Within three business days of identifying the issue | 24x5 (Monday-Friday) |
 
 >NOTE: Premium support with enhanced SLAs can be added to your Enterprise plans as an add-on. Our business hours, defined as Sunday 2 PM PST to Friday 5 PM PST, align with our 24x5 support coverage.
 
@@ -174,7 +174,3 @@ A Severity 0 - Emergency typically does not include the following situations:
 - Any issues with repository synchronization
 
 >NOTE: Custom support agreements apply to Enterprise Plus and Elite customers. Please consult your contract for details regarding custom service-level agreements.
-
-## Support on-call
-
-OpsGenie on-call protocol also alerts a CS leader at any time. Use the Slack command: `/genie alert [alert message] for customer-support,` which will trigger a page to a leadership team member any day.
