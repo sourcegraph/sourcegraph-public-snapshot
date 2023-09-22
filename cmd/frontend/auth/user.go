@@ -69,132 +69,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 	externalAccountsStore := db.UserExternalAccounts()
 	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
 
-	newUserCreated, userID, userSaved, extAcctSaved, safeErrMsg, err := func() (bool, int32, bool, bool, string, error) {
-		// First, check if the user is already logged in. If so, return that user.
-		if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-			return false, actor.UID, false, false, "", nil
-		}
-
-		// Second, check if the user account already exists. If so, return that user.
-		extAcct, lookupByExternalErr := externalAccountsStore.Update(ctx, op.ExternalAccount, op.ExternalAccountData)
-		if lookupByExternalErr == nil {
-			return false, extAcct.UserID, false, true, "", nil
-		}
-		if !errcode.IsNotFound(lookupByExternalErr) {
-			return false, 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr
-		}
-
-		if op.LookUpByUsername {
-			user, getByUsernameErr := db.Users().GetByUsername(ctx, op.UserProps.Username)
-			if getByUsernameErr == nil {
-				return false, user.ID, false, false, "", nil
-			}
-			if !errcode.IsNotFound(getByUsernameErr) {
-				return false, 0, false, false, "Unexpected error looking up the Sourcegraph user by username. Ask a site admin for help.", getByUsernameErr
-			}
-			if !op.CreateIfNotExist {
-				return false, 0, false, false, fmt.Sprintf("User account with username %q does not exist. Ask a site admin to create your account.", op.UserProps.Username), getByUsernameErr
-			}
-		} else if op.UserProps.EmailIsVerified {
-			user, getByVerifiedEmailErr := db.Users().GetByVerifiedEmail(ctx, op.UserProps.Email)
-			if getByVerifiedEmailErr == nil {
-				return false, user.ID, false, false, "", nil
-			}
-			if !errcode.IsNotFound(getByVerifiedEmailErr) {
-				return false, 0, false, false, "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.", getByVerifiedEmailErr
-			}
-			if !op.CreateIfNotExist {
-				return false, 0, false, false, fmt.Sprintf("User account with verified email %q does not exist. Ask a site admin to create your account and then verify your email.", op.UserProps.Email), getByVerifiedEmailErr
-			}
-		}
-
-		// Third, return an error here if creating new users is disabled.
-		if !op.CreateIfNotExist {
-			return false, 0, false, false, "It looks like this is your first time signing in with this external identity. Sourcegraph couldn't link it to an existing user, because no verified email was provided. Ask your site admin to configure the auth provider to include the user's verified email on sign-in.", lookupByExternalErr
-		}
-
-		act := &sgactor.Actor{
-			SourcegraphOperator: op.ExternalAccount.ServiceType == auth.SourcegraphOperatorProviderType,
-		}
-
-		// Fourth and finally, create a new user account and return it.
-		//
-		// If CreateIfNotExist is true, create the new user, regardless of whether the
-		// email was verified or not.
-		//
-		// NOTE: It is important to propagate the correct context that carries the
-		// information of the actor, especially whether the actor is a Sourcegraph
-		// operator or not.
-		ctx = sgactor.WithActor(ctx, act)
-		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
-		switch {
-		case database.IsUsernameExists(err):
-			return false, 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
-		case errcode.PresentationMessage(err) != "":
-			return false, 0, false, false, errcode.PresentationMessage(err), err
-		case err != nil:
-			return false, 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
-		}
-		act.UID = user.ID
-
-		// Schedule a permission sync, since this is new user
-		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
-			UserIDs:           []int32{user.ID},
-			Reason:            database.ReasonUserAdded,
-			TriggeredByUserID: user.ID,
-		})
-
-		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: user.ID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}); err != nil {
-			logger.Error(
-				"failed to grant user pending permissions",
-				sglog.Int32("userID", user.ID),
-				sglog.Error(err),
-			)
-			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
-		}
-
-		const eventName = "ExternalAuthSignupSucceeded"
-		args, err := json.Marshal(map[string]any{
-			// NOTE: The conventional name should be "service_type", but keeping as-is for
-			// backwards capability.
-			"serviceType": op.ExternalAccount.ServiceType,
-		})
-		if err != nil {
-			logger.Error(
-				"failed to marshal JSON for event log argument",
-				sglog.String("eventName", eventName),
-				sglog.Error(err),
-			)
-			// OK to continue, we still want the event log to be created
-		}
-
-		// NOTE: It is important to propagate the correct context that carries the
-		// information of the actor, especially whether the actor is a Sourcegraph
-		// operator or not.
-		err = usagestats.LogEvent(
-			ctx,
-			db,
-			usagestats.Event{
-				EventName: eventName,
-				UserID:    act.UID,
-				Argument:  args,
-				Source:    "BACKEND",
-			},
-		)
-		if err != nil {
-			logger.Error(
-				"failed to log event",
-				sglog.String("eventName", eventName),
-				sglog.Error(err),
-			)
-		}
-
-		return true, user.ID, true, true, "", nil
-	}()
+	userID, userSaved, extAcctSaved, safeErrMsg, err := getAndSaveUser(ctx, db, op)
 	if err != nil {
 		const eventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
@@ -258,7 +133,154 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (n
 		}
 	}
 
-	return newUserCreated, userID, "", nil
+	return userSaved, userID, "", nil
+}
+
+func getUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, bool, string, error) {
+	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
+		return actor.UID, false, "", nil
+	}
+
+	extAcct, err := db.UserExternalAccounts().Update(ctx, op.ExternalAccount, op.ExternalAccountData)
+	if err != nil {
+		// If it's any error other than "not found", return it
+		if !errcode.IsNotFound(err) {
+			return 0, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", err
+		}
+		// Otherwise, check if we should look up by username
+		if op.LookUpByUsername {
+			user, err := db.Users().GetByUsername(ctx, op.UserProps.Username)
+			if err != nil {
+				return 0, false, "Unexpected error looking up the Sourcegraph user by username. Ask a site admin for help.", err
+			}
+
+			return user.ID, false, "", nil
+		}
+
+		// If not, try to get the user by verified email
+		if op.UserProps.EmailIsVerified {
+			user, err := db.Users().GetByVerifiedEmail(ctx, op.UserProps.Email)
+			if err != nil {
+				if !errcode.IsNotFound(err) {
+					return 0, false, "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.", err
+				}
+				return 0, false, fmt.Sprintf("User account with verified email %q does not exist. Ask a site admin to create your account and then verify your email.", op.UserProps.Email), err
+			}
+
+			return user.ID, false, "", nil
+		}
+	}
+
+	return extAcct.UserID, true, "", nil
+}
+
+func createUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, string, error) {
+	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
+	act := &sgactor.Actor{
+		SourcegraphOperator: op.ExternalAccount.ServiceType == auth.SourcegraphOperatorProviderType,
+	}
+
+	// Fourth and finally, create a new user account and return it.
+	//
+	// If CreateIfNotExist is true, create the new user, regardless of whether the
+	// email was verified or not.
+	//
+	// NOTE: It is important to propagate the correct context that carries the
+	// information of the actor, especially whether the actor is a Sourcegraph
+	// operator or not.
+	ctx = sgactor.WithActor(ctx, act)
+	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+	switch {
+	case database.IsUsernameExists(err):
+		return 0, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
+	case errcode.PresentationMessage(err) != "":
+		return 0, errcode.PresentationMessage(err), err
+	case err != nil:
+		return 0, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
+	}
+	act.UID = user.ID
+
+	// Schedule a permission sync, since this is new user
+	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+		UserIDs:           []int32{user.ID},
+		Reason:            database.ReasonUserAdded,
+		TriggeredByUserID: user.ID,
+	})
+
+	if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		UserID: user.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}); err != nil {
+		logger.Error(
+			"failed to grant user pending permissions",
+			sglog.Int32("userID", user.ID),
+			sglog.Error(err),
+		)
+		// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
+	}
+
+	const eventName = "ExternalAuthSignupSucceeded"
+	args, err := json.Marshal(map[string]any{
+		// NOTE: The conventional name should be "service_type", but keeping as-is for
+		// backwards capability.
+		"serviceType": op.ExternalAccount.ServiceType,
+	})
+	if err != nil {
+		logger.Error(
+			"failed to marshal JSON for event log argument",
+			sglog.String("eventName", eventName),
+			sglog.Error(err),
+		)
+		// OK to continue, we still want the event log to be created
+	}
+
+	// NOTE: It is important to propagate the correct context that carries the
+	// information of the actor, especially whether the actor is a Sourcegraph
+	// operator or not.
+	err = usagestats.LogEvent(
+		ctx,
+		db,
+		usagestats.Event{
+			EventName: eventName,
+			UserID:    act.UID,
+			Argument:  args,
+			Source:    "BACKEND",
+		},
+	)
+	if err != nil {
+		logger.Error(
+			"failed to log event",
+			sglog.String("eventName", eventName),
+			sglog.Error(err),
+		)
+	}
+
+	return user.ID, "", nil
+}
+
+func getAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, bool, bool, string, error) {
+	newUser := false
+
+	userID, extAcctSaved, safeErr, err := getUser(ctx, db, op)
+	if err != nil {
+		if !errcode.IsNotFound(err) {
+			return 0, false, false, safeErr, err
+		}
+
+		if !op.CreateIfNotExist {
+			return 0, false, false, safeErr, err
+		}
+
+		userID, safeErr, err = createUser(ctx, db, op)
+		if err != nil {
+			return 0, false, false, safeErr, err
+		}
+		extAcctSaved = true
+		newUser = true
+	}
+
+	return userID, newUser, extAcctSaved, "", nil
 }
 
 func GetUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, error) {

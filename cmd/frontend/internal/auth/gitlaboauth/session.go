@@ -38,6 +38,26 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventGitLabAuthFailed
 }
 
+func (s *sessionIssuerHelper) GetUser(ctx context.Context) (actr *actor.Actor, err error) {
+	gitLabUser, err := UserFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not read user from context")
+	}
+
+	if dc := conf.Get().Dotcom; dc != nil && dc.MinimumExternalAccountAge > 0 {
+		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
+		if gitLabUser.CreatedAt.After(earliestValidCreationDate) {
+			return nil, errors.New("user account too new")
+		}
+	}
+
+	login, err := auth.NormalizeUsername(gitLabUser.Username)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login))
+	}
+	return nil, nil
+}
+
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	gUser, err := UserFromContext(ctx)
 	if err != nil {

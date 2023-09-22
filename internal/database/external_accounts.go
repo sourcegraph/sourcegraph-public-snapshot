@@ -60,10 +60,6 @@ type UserExternalAccountsStore interface {
 	// If options are all zero values then it does nothing.
 	Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error
 
-	// ExecResult performs a query without returning any rows, but includes the
-	// result of the execution.
-	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
-
 	// Get gets information about the user external account.
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
 
@@ -75,7 +71,7 @@ type UserExternalAccountsStore interface {
 	ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error)
 
 	// Update updates the data associated with the external account.
-	// On a successful update, the user ID associated with the external account is returned.
+	// On a successful update, the updated external account is returned.
 	//
 	// If the external account does not exist, it returns an error.
 	Update(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (acct *extsvc.Account, err error)
@@ -161,9 +157,9 @@ AND account_id = $4
 AND deleted_at IS NULL
 RETURNING id, user_id, service_type, service_id, client_id, account_id, created_at, updated_at, encryption_key_id
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID).Scan(&acct.ID, &acct.UserID,
-			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&acct.CreatedAt, &acct.UpdatedAt,
-			&keyID)
+		&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+		&acct.CreatedAt, &acct.UpdatedAt,
+		&keyID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]any{spec}}
 	}
@@ -249,46 +245,10 @@ AND deleted_at IS NULL
 		return tx.Insert(ctx, userID, spec, data)
 	}
 
-	var encryptedAuthData, encryptedAccountData, keyID string
-	if data.AuthData != nil {
-		encryptedAuthData, keyID, err = data.AuthData.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return err
-		}
-	}
-	if data.Data != nil {
-		encryptedAccountData, keyID, err = data.Data.Encrypt(ctx, s.getEncryptionKey())
-		if err != nil {
-			return err
-		}
-	}
-
 	// Update the external account (it exists).
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
-UPDATE user_external_accounts
-SET
-	auth_data = %s,
-	account_data = %s,
-	encryption_key_id = %s,
-	updated_at = now(),
-	expired_at = NULL
-WHERE
-	service_type = %s
-AND service_id = %s
-AND client_id = %s
-AND account_id = %s
-AND user_id = %s
-AND deleted_at IS NULL
-`, encryptedAuthData, encryptedAccountData, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
+	_, err = tx.Update(ctx, spec, data)
 	if err != nil {
 		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{existingID}}
 	}
 	return nil
 }

@@ -30,6 +30,7 @@ type SessionData struct {
 }
 
 type SessionIssuerHelper interface {
+	// GetUser(ctx context.Context) (actr *actor.Actor, err error)
 	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
