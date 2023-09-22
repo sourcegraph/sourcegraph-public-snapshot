@@ -43,6 +43,8 @@ func init() {
 	// Override no-op implementation with our real implementation.
 	Command.Hidden = false
 	Command.Action = nil
+	// Trim description to just be the command description
+	Command.Description = commandDescription
 	// All 'sg msp ...' subcommands
 	Command.Subcommands = []*cli.Command{
 		{
