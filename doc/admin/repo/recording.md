@@ -46,7 +46,7 @@ Command recording provides visibility into Sourcegraph's interactions with repos
 
 ### Potential risks
 
-Depending on the number of repositories and size of the recording set, enabling command recording could result in increased disk usage in Redis. 
+Depending on the number of repositories and size of the recording set, enabling command recording could increase disk usage in Redis. 
 
 Since recorded commands are stored in Redis, setting the `size` to a very large number or enabling recording on many repositories could cause the Redis database to fill up quickly.
 
