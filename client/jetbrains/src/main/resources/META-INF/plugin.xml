@@ -252,7 +252,7 @@
         </group>
 
         <group id="Cody.Accounts.AddAccount">
-            <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In with Token to Sourcegraph"
+            <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In to Sourcegraph"
                     class="com.sourcegraph.cody.config.AddCodyAccountWithTokenAction"/>
             <action id="Cody.Accounts.AddCodyEnterpriseAccount"
                     text="Log In with Token to Sourcegraph Enterprise"
