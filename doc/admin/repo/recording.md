@@ -40,7 +40,7 @@ To enable command recording:
 
 Once enabled, site admins can view recorded commands for a repository via the repository's settings page in the Site Admin UI.
 
-Recorded commands include information like start time, duration, exit status, command executed, directory, and output. Sensitive information like usernames, passwords, tokens are automatically redacted from the command and output.
+Recorded commands include information like start time, duration, exit status, command executed, directory, and output. Sensitive information like usernames, passwords, and tokens are automatically redacted from the command and output.
 
 Command recording provides visibility into Sourcegraph's interactions with repositories without requiring modifications to Sourcegraph's core Git operations.
 
