@@ -41,11 +41,13 @@ class CodyAuthenticationManager internal constructor() {
   internal fun updateAccountToken(account: CodyAccount, newToken: String) =
       accountManager.updateAccount(account, newToken)
 
-  fun getActiveAccount(project: Project): CodyAccount? =
-      project.service<CodyProjectActiveAccountHolder>().account
+  fun getActiveAccount(project: Project): CodyAccount? {
+    return if (!project.isDisposed) project.service<CodyProjectActiveAccountHolder>().account
+    else null
+  }
 
   fun setActiveAccount(project: Project, account: CodyAccount?) {
-    project.service<CodyProjectActiveAccountHolder>().account = account
+    if (!project.isDisposed) project.service<CodyProjectActiveAccountHolder>().account = account
   }
 
   fun getActiveAccountType(project: Project): AccountType {
