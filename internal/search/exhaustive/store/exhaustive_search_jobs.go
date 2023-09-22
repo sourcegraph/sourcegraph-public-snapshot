@@ -189,6 +189,58 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 	return job, nil
 }
 
+// aggStateSubQuery returns a table of the form
+//
+// | agg_state  |
+// |------------|
+// | processing |
+const aggStateSubQuery = `
+		SELECT
+			CASE
+				WHEN processing > 0 THEN 'processing'
+				WHEN queued > 0 THEN 'queued'
+				WHEN failed > 0 THEN 'failed'
+				WHEN completed > 0 THEN 'completed'
+				ELSE ''
+			END
+		FROM (
+-- | processing | queued | failed | completed |
+-- |------------|--------|--------|-----------|
+-- | 2          | 3      | 1      | 8         |
+			SELECT
+			    -- transpose the table
+				max( CASE WHEN state = 'failed' THEN count END) AS failed,
+				max( CASE WHEN state = 'processing' THEN count END) AS processing,
+				max( CASE WHEN state = 'completed' THEN count END) AS completed,
+				max( CASE WHEN state = 'queued' THEN count END) AS queued
+			FROM (
+-- | state      | count |
+-- |------------|-------|
+-- | processing | 2     |
+-- | queued     | 3     |
+-- | failed     | 1     |
+-- | completed  | 8     |
+				SELECT
+					state,
+					count(*) AS count
+				FROM ((
+						SELECT state
+						FROM exhaustive_search_jobs ej
+						WHERE ej.id = exhaustive_search_jobs.id)
+					UNION ALL (
+						SELECT state
+						FROM exhaustive_search_repo_jobs
+						WHERE search_job_id = exhaustive_search_jobs.id)
+					UNION ALL (
+						SELECT rrj.state
+						FROM exhaustive_search_repo_revision_jobs rrj
+						JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
+						WHERE rj.search_job_id = exhaustive_search_jobs.id)
+					 ) AS sub1
+				GROUP BY
+					state) AS state_histogram) AS transposed_state_histogram
+`
+
 const getExhaustiveSearchJobQueryFmtStr = `
 SELECT %s FROM exhaustive_search_jobs
 WHERE (%s)
@@ -219,7 +271,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 
 	// Filter by query.
 	if args.Query != "" {
-		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+args.Query+"%"))
+		conds = append(conds, sqlf.Sprintf("sj.query LIKE %s", "%"+args.Query+"%"))
 	}
 
 	// Filter by state.
@@ -228,7 +280,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		for i, state := range args.States {
 			states[i] = sqlf.Sprintf("%s", strings.ToLower(state))
 		}
-		conds = append(conds, sqlf.Sprintf("state in (%s)", sqlf.Join(states, ",")))
+		conds = append(conds, sqlf.Sprintf("agg_state in (%s)", sqlf.Join(states, ",")))
 	}
 
 	// 🚨 SECURITY: Site admins see any job and may filter based on args.UserIDs.
@@ -267,6 +319,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 	q := sqlf.Sprintf(
 		listExhaustiveSearchJobsQueryFmtStr,
 		sqlf.Join(exhaustiveSearchJobColumns, ", "),
+		sqlf.Sprintf(aggStateSubQuery),
 		whereClause,
 	)
 
@@ -275,11 +328,11 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		q = pagination.AppendLimitToQuery(q)
 	}
 
-	return scanExhaustiveSearchJobs(s.Store.Query(ctx, q))
+	return scanExhaustiveSearchJobsList(s.Store.Query(ctx, q))
 }
 
 const listExhaustiveSearchJobsQueryFmtStr = `
-SELECT %s FROM exhaustive_search_jobs
+SELECT * FROM (SELECT %s, (%s) as agg_state FROM exhaustive_search_jobs) as outer_query
 %s -- whereClause
 `
 
@@ -450,4 +503,31 @@ func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, err
 	)
 }
 
-var scanExhaustiveSearchJobs = basestore.NewSliceScanner(scanExhaustiveSearchJob)
+// TODO: share code with above
+func scanExhaustiveSearchJobList(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
+	var job types.ExhaustiveSearchJob
+	// required field for the sync worker, but
+	// the value is thrown out here
+	var executionLogs *[]any
+
+	return &job, sc.Scan(
+		&job.ID,
+		&job.InitiatorID,
+		&job.State,
+		&job.Query,
+		&dbutil.NullString{S: &job.FailureMessage},
+		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.FinishedAt},
+		&dbutil.NullTime{Time: &job.ProcessAfter},
+		&job.NumResets,
+		&job.NumFailures,
+		&executionLogs,
+		&job.WorkerHostname,
+		&job.Cancel,
+		&job.CreatedAt,
+		&job.UpdatedAt,
+		&job.AggState,
+	)
+}
+
+var scanExhaustiveSearchJobsList = basestore.NewSliceScanner(scanExhaustiveSearchJobList)

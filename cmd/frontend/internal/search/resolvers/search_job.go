@@ -53,23 +53,10 @@ func (r *searchJobResolver) Query() string {
 }
 
 func (r *searchJobResolver) State(ctx context.Context) string {
-	// Once a search job has started processing, we have to look at the aggregate
-	// state of all sub-jobs to determine the state.
-	if r.Job.State == types.JobStateProcessing || r.Job.State == types.JobStateCompleted {
-		stats, statsErr := r.initStats(ctx)
-
-		if statsErr != nil || stats.Failed > 0 {
-			return types.JobStateFailed.ToGraphQL()
-		}
-
-		if stats.InProgress > 0 {
-			return types.JobStateProcessing.ToGraphQL()
-		}
-
-		return types.JobStateCompleted.ToGraphQL()
-	} else {
-		return r.Job.State.ToGraphQL()
+	if r.Job.AggState != "" {
+		return r.Job.AggState.ToGraphQL()
 	}
+	return r.Job.State.ToGraphQL()
 }
 
 func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {

@@ -20,6 +20,8 @@ type ExhaustiveSearchJob struct {
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
+
+	AggState JobState
 }
 
 func (j *ExhaustiveSearchJob) RecordID() int {
