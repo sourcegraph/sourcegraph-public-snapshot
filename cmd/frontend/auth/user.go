@@ -141,7 +141,7 @@ func getUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, b
 		return actor.UID, false, "", nil
 	}
 
-	extAcct, err := db.UserExternalAccounts().LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
+	userID, err := db.UserExternalAccounts().LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
 	if err != nil {
 		// If it's any error other than "not found", return it
 		if !errcode.IsNotFound(err) {
@@ -171,7 +171,7 @@ func getUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, b
 		}
 	}
 
-	return extAcct.UserID, true, "", nil
+	return userID, true, "", nil
 }
 
 func createUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, string, error) {
@@ -281,17 +281,4 @@ func getAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (i
 	}
 
 	return userID, newUser, extAcctSaved, "", nil
-}
-
-func GetUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (int32, error) {
-	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-		return actor.UID, nil
-	}
-
-	extAcct, err := db.UserExternalAccounts().LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
-	if err != nil {
-		return 0, err
-	}
-
-	return extAcct.UserID, err
 }
