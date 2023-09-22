@@ -81,7 +81,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (b
 				sglog.Error(err),
 			)
 		}
-		return false, 0, err.SafeError(), err
+		return false, 0, err.SafeError(), err.Err
 	}
 
 	// Update user properties, if they've changed
