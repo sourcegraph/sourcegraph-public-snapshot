@@ -2,24 +2,35 @@ package com.sourcegraph.cody.config.ui.lang
 
 import com.intellij.execution.util.ListTableWithButtons
 import com.intellij.ui.AnActionButtonRunnable
+import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.ColumnInfo
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.ListTableModel
 import java.util.stream.Collectors
 import javax.swing.SortOrder
+import javax.swing.table.TableCellRenderer
 
 /**
  * This table shows languages in whitelist format specifically for the UI. We actually blacklist
  * language entries under the hood.
  */
 class AutocompleteLanguageTable : ListTableWithButtons<LanguageEntry>() {
-  init {
-    setValues(LanguageEntry.getRegisteredLanguageEntries())
-  }
-
   var isEnabled: Boolean = true
 
   /** Use this rather than the component directly when working with JetBrains Kotlin UI DSL */
   val wrapperComponent: AutocompleteLanguageTableWrapper = AutocompleteLanguageTableWrapper(this)
+
+  init {
+    setValues(LanguageEntry.getRegisteredLanguageEntries())
+    tableView.columnModel.columns.asIterator().forEach {
+      it.headerRenderer = TableCellRenderer { _, value, _, _, _, _ ->
+        val headerLabel = JBLabel(value as? String ?: "")
+        headerLabel.border = JBUI.Borders.empty(0, 8)
+        headerLabel.isEnabled = isEnabled
+        headerLabel
+      }
+    }
+  }
 
   override fun createListModel(): ListTableModel<LanguageEntry> {
     val model =
