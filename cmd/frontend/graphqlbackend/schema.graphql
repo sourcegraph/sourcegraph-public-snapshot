@@ -10742,3 +10742,10 @@ type SpongeLog implements Node {
     """
     interpreter: String
 }
+
+extend type Query {
+    """
+    Get a single sponge log by UUID.
+    """
+    spongeLog(uuid: String!): SpongeLog
+}
