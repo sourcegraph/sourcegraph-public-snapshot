@@ -1,4 +1,6 @@
-# Event level data usage pipeline
+# DEPRECATED: Event level data usage pipeline
+
+> WARNING: **This process is deprecated.** To export Telemetry events from Sourcegraph instances, refer to the new [telemetry reference](./telemetry/index.md).
 
 This document outlines information about the ability to export raw user event data from Sourcegraph. This is limited
 to certain managed instances (cloud) where the customer has signed a corresponding data collection agreement.
