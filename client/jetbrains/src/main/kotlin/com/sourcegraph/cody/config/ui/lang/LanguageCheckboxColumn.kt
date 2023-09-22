@@ -1,12 +1,13 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.config.ui.lang
 
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.ui.ColumnInfo
 import javax.swing.JTable
 
-class LanguageCheckboxColumn : ColumnInfo<LanguageEntry, Boolean>("") {
+class LanguageCheckboxColumn(private val languageTable: AutocompleteLanguageTable) :
+    ColumnInfo<LanguageEntry, Boolean>("") {
   override fun isCellEditable(languageEntry: LanguageEntry): Boolean {
-    return true
+    return languageTable.isEnabled
   }
 
   override fun getColumnClass(): Class<*> {

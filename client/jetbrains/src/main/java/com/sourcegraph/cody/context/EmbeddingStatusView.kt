@@ -59,8 +59,8 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
     } else {
       setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
       CodyAgent.getInitializedServer(project)
-          .thenCompose { server: CodyAgentServer ->
-            server.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
+          .thenCompose { server: CodyAgentServer? ->
+            server?.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
           }
           .thenAccept { id: String? ->
             if (id != null) {

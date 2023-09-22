@@ -4,9 +4,8 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.ui.Messages
-import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
-import com.sourcegraph.cody.config.CodyPersistentAccountsHost
+import com.sourcegraph.cody.config.AccountsHostProjectHolder
 import com.sourcegraph.cody.config.CodyTokenCredentialsUi
 import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.config.ConfigUtil
@@ -62,30 +61,29 @@ class SaveAccessTokenHttpService : RestService() {
     val emptyProgressIndicator = EmptyProgressIndicator(modalityState)
 
     val project = getLastFocusedOrOpenedProject() ?: return
-    val accountsHost = CodyPersistentAccountsHost(project)
-    runCatching {
-          CodyTokenCredentialsUi.acquireDetails(
-              sourcegraphServerPath,
-              executor,
-              emptyProgressIndicator,
-              { login, server -> accountsHost.isAccountUnique(login, server) },
-              null)
-        }
-        .fold({ accountDetails ->
-          // Save account with login and token
-          accountsHost.addAccount(
-              sourcegraphServerPath,
-              accountDetails.username,
-              accountDetails.displayName,
-              accessToken)
-          CodyAgent.getServer(project)
-              ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
-        }) {
-          val validationInfo = CodyTokenCredentialsUi.handleError(it)
-          ApplicationManager.getApplication().invokeLater {
-            Messages.showErrorDialog(project, validationInfo.message, "Failed to sign in")
+    AccountsHostProjectHolder.useAccountsHost(project) { accountsHost ->
+      runCatching {
+            CodyTokenCredentialsUi.acquireDetails(
+                sourcegraphServerPath,
+                executor,
+                emptyProgressIndicator,
+                { login, server -> accountsHost.isAccountUnique(login, server) },
+                null)
           }
-        }
+          .fold({ accountDetails ->
+            // Save account with login and token
+            accountsHost.addAccount(
+                sourcegraphServerPath,
+                accountDetails.username,
+                accountDetails.displayName,
+                accessToken)
+          }) {
+            val validationInfo = CodyTokenCredentialsUi.handleError(it)
+            ApplicationManager.getApplication().invokeLater {
+              Messages.showErrorDialog(project, validationInfo.message, "Failed to sign in")
+            }
+          }
+    }
   }
 
   override fun getServiceName(): String {
