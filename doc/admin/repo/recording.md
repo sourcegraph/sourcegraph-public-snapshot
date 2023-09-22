@@ -50,6 +50,6 @@ Depending on the number of repositories and size of the recording set, enabling 
 
 Since recorded commands are stored in Redis, setting the `size` to a very large number or enabling recording on many repositories could cause the Redis database to fill up quickly.
 
-When Redis is full, it may start evicting data which can impact other parts of Sourcegraph that rely on Redis. Sourcegraph may experience degraded performance or instability.
+When Redis is full, it may start evicting data, impacting other parts of Sourcegraph that rely on Redis. Sourcegraph may experience degraded performance or instability.
 
 To avoid issues, we recommend proceeding with caution and starting with a smaller `size` and number of repositories first. Monitor your Redis memory usage over time and slowly increase the recording `size` and repositories. Tune the configuration based on your instance size and memory available.
