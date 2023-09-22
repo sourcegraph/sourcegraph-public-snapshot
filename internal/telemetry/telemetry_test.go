@@ -34,7 +34,7 @@ func TestRecorderEndToEnd(t *testing.T) {
 	t.Run("Record and BatchRecord", func(t *testing.T) {
 		assert.NoError(t, recorder.Record(ctx,
 			"Test", "Action1",
-			telemetry.EventParameters{
+			&telemetry.EventParameters{
 				Metadata: telemetry.EventMetadata{
 					"metadata": 1,
 				},
@@ -67,7 +67,7 @@ func TestRecorderEndToEnd(t *testing.T) {
 
 	t.Run("record without v1", func(t *testing.T) {
 		ctx := teestore.WithoutV1(ctx)
-		assert.NoError(t, recorder.Record(ctx, "Test", "Action1", telemetry.EventParameters{}))
+		assert.NoError(t, recorder.Record(ctx, "Test", "Action1", &telemetry.EventParameters{}))
 
 		telemetryEvents, err := db.TelemetryEventsExportQueue().ListForExport(ctx, 999)
 		require.NoError(t, err)
