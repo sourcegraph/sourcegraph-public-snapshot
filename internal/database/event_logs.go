@@ -112,6 +112,7 @@ type EventLogStore interface {
 	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
 	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
 
+	// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
 	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
