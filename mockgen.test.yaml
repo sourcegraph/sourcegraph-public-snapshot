@@ -398,3 +398,9 @@
   path: github.com/sourcegraph/sourcegraph/internal/redispool
   interfaces:
     - KeyValue
+- filename: internal/telemetry/telemetrytest/mocks.go
+  package: telemetrytest
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/telemetry
+      interfaces:
+        - EventsStore
