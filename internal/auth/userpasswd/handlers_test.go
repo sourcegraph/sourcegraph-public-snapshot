@@ -17,6 +17,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -144,7 +146,9 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	if testing.Verbose() {
 		logger = logtest.Scoped(t)
 	}
-	h := HandleSignIn(logger, db, lockout)
+	events := telemetry.NewBestEffortEventRecorder(logger,
+		telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+	h := HandleSignIn(logger, db, lockout, events)
 
 	// Normal authentication fail before lockout
 	{

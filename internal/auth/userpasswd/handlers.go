@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -282,9 +281,8 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 //
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
-func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
+func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, events *telemetry.BestEffortEventRecorder) http.HandlerFunc {
 	logger = logger.Scoped("HandleSignin", "sign in request handler")
-	recorder := telemetryrecorder.NewBestEffort(logger, db)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
@@ -304,7 +302,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		telemetrySignInResult := telemetry.ActionFailed
 		defer func() {
 			recordSignInSecurityEvent(r, db, &user, &signInResult)
-			recorder.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
+			events.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 
