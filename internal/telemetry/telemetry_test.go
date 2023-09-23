@@ -14,7 +14,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
 )
+
+func TestRecorder(t *testing.T) {
+	store := telemetrytest.NewMockEventsStore()
+	recorder := telemetry.NewEventRecorder(store)
+
+	err := recorder.Record(context.Background(), "Feature", "Action", nil)
+	require.NoError(t, err)
+
+	// stored once
+	require.Len(t, store.StoreEventsFunc.History(), 1)
+	// called with 1 event
+	require.Len(t, store.StoreEventsFunc.History()[0].Arg1, 1)
+	// stored event has 1 event
+	require.Equal(t, "Feature", store.StoreEventsFunc.History()[0].Arg1[0].Feature)
+}
 
 func TestRecorderEndToEnd(t *testing.T) {
 	var userID int32 = 123

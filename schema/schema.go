@@ -1692,8 +1692,6 @@ type OnboardingStep struct {
 	Info string `json:"info,omitempty"`
 	// Label description: Label of the step shown to the user
 	Label string `json:"label"`
-	// RequriredSteps description: Set this property if only a subset of steps are required for this task to complete.
-	RequriredSteps float64 `json:"requriredSteps,omitempty"`
 	// Tooltip description: More information about this step
 	Tooltip string `json:"tooltip,omitempty"`
 }
@@ -1701,6 +1699,8 @@ type OnboardingStep struct {
 // OnboardingTask description: An onboarding task
 type OnboardingTask struct {
 	Icon any `json:"icon,omitempty"`
+	// RequiredSteps description: Set this property if only a subset of steps are required for this task to complete.
+	RequiredSteps float64 `json:"requiredSteps,omitempty"`
 	// Steps description: Steps that need to be completed by the user
 	Steps []*OnboardingStep `json:"steps"`
 	// Title description: Title of this task
@@ -1709,7 +1709,8 @@ type OnboardingTask struct {
 
 // OnboardingTourConfiguration description: Configuration for a onboarding tour.
 type OnboardingTourConfiguration struct {
-	Tasks []*OnboardingTask `json:"tasks"`
+	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
+	Tasks           []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
