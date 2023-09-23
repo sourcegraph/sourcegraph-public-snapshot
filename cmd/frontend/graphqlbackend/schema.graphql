@@ -567,6 +567,35 @@ type Mutation {
     """
     logEvents(events: [Event!]): EmptyResponse
     """
+    Records an event.
+    """
+    recordEvent(
+        """
+        The name of the event.
+        """
+        feature: String!
+        """
+        The randomly generated unique user ID stored in a browser cookie.
+        """
+        action: String!
+        """
+        The first sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        source: TelemetryEventSourceInput
+        """
+        The last sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        parameters: TelemetryEventParametersInput
+        """
+        The URL when the event was logged.
+        """
+        marketingTracking: TelemetryEventMarketingTrackingInput!
+    ): EmptyResponse
+    """
+    Records a batch of events.
+    """
+    recordEvents(events: [Event!]): EmptyResponse
+    """
     All mutations that update settings (global, organization, and user settings) are under this field.
 
     Only the settings subject whose settings are being mutated (and site admins) may perform this mutation.
