@@ -1,3 +1,7 @@
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/content.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
 import { fromEvent, Subscription } from 'rxjs'
