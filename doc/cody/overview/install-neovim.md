@@ -126,7 +126,7 @@ td:first-child {
 
 The Cody extension by Sourcegraph enhances your coding experience in your IDE by providing intelligent code suggestions, context-aware completions, and advanced code analysis.
 
-This guide will walk you through the steps to install and set up the Cody within your Neovim environment.
+This guide will walk you through installing and setting up the Cody within your Neovim environment.
 
 <ul class="limg">
   <li>
@@ -179,17 +179,17 @@ Once you have installed the plugin, run `:checkhealth sg` to verify a successful
 
 ## Setting up with Sourcegraph instance
 
-To connect `sg.nvim` with Sourcegraph you need to follow these steps:
+To connect `sg.nvim` with Sourcegraph, you need to follow these steps:
 
 - Log in on your Sourcegraph instance
 - Go to **Settings > Access tokens** from the top right corner
 - Create your access token, and then run `:SourcegraphLogin` in your neovim editor after installation
-- Type in the link to your Sourcegraph instance (for example: https://sourcegraph.com)
+- Type in the link to your Sourcegraph instance (for example, https://sourcegraph.com)
 - Next, paste your generated access token
 
 An alternative way to this is to use the environment variables specified for [`src-cli`](https://github.com/sourcegraph/src-cli#log-into-your-sourcegraph-instance).
 
-At any point, you can run `:checkhealth sg` to ensure that you're logged in and connected to your Sourcegraph instance.
+At any point, you can run `:checkhealth sg` to ensure you're logged in and connected to your Sourcegraph instance.
 
 ## Features
 
