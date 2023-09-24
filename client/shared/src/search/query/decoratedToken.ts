@@ -1,4 +1,3 @@
-import type * as Monaco from 'monaco-editor'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import type {
     Alternative,
@@ -31,7 +30,7 @@ export type DecoratedToken = Token | MetaToken
 /**
  * A MetaToken defines a token that is associated with some language-specific metasyntax.
  */
-export type MetaToken =
+type MetaToken =
     | MetaRegexp
     | MetaStructural
     | MetaField
@@ -46,7 +45,7 @@ export type MetaToken =
 /**
  * Defines common properties for meta tokens.
  */
-export interface BaseMetaToken {
+interface BaseMetaToken {
     type: MetaToken['type']
     range: CharacterRange
     value: string
@@ -100,14 +99,14 @@ export enum MetaStructuralKind {
 /**
  * A token that is labeled and interpreted as a field, like "repo:" in the Sourcegraph language syntax.
  */
-export interface MetaField extends BaseMetaToken {
+interface MetaField extends BaseMetaToken {
     type: 'field'
 }
 
 /**
  * The ':' part of a filter like "repo:foo"
  */
-export interface MetaFilterSeparator extends BaseMetaToken {
+interface MetaFilterSeparator extends BaseMetaToken {
     type: 'metaFilterSeparator'
 }
 
@@ -171,7 +170,7 @@ export enum MetaSelectorKind {
     Commit = 'commit',
 }
 
-export enum MetaPathKind {
+enum MetaPathKind {
     Separator = 'Separator',
 }
 
@@ -179,14 +178,14 @@ export enum MetaPathKind {
  * Tokens that are meaningful in path patterns, like
  * path separators / or wildcards *.
  */
-export interface MetaPath {
+interface MetaPath {
     type: 'metaPath'
     range: CharacterRange
     kind: MetaPathKind
     value: string
 }
 
-export enum MetaPredicateKind {
+enum MetaPredicateKind {
     NameAccess = 'NameAccess',
     Dot = 'Dot',
     Parenthesis = 'Parenthesis',
@@ -463,7 +462,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
  * Returns true for filter values that have path-like values, i.e., values that typically
  * contain path separators like `/`.
  */
-export const hasPathLikeValue = (field: string): boolean => {
+const hasPathLikeValue = (field: string): boolean => {
     const fieldName = field.startsWith('-') ? field.slice(1) : field
     switch (fieldName.toLocaleLowerCase()) {
         case 'repo':
@@ -794,7 +793,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
  * Returns true for filter values that have regexp values, e.g., repo, file.
  * Excludes FilterType.content because that depends on the pattern kind.
  */
-export const hasRegexpValue = (field: string): boolean => {
+const hasRegexpValue = (field: string): boolean => {
     const fieldName = field.startsWith('-') ? field.slice(1) : field
     switch (fieldName.toLocaleLowerCase()) {
         case 'repo':
@@ -1284,44 +1283,3 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         className,
     }
 }
-
-const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
-    switch (token.type) {
-        case 'field':
-        case 'whitespace':
-        case 'keyword':
-        case 'comment':
-        case 'openingParen':
-        case 'closingParen':
-        case 'metaFilterSeparator':
-        case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
-            return {
-                startIndex: token.range.start,
-                scopes: token.type,
-            }
-        case 'metaPath':
-        case 'metaRevision':
-        case 'metaRegexp':
-        case 'metaStructural':
-        case 'metaPredicate':
-            // The scopes value is derived from the token type and its kind.
-            // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
-            return {
-                startIndex: token.range.start,
-                scopes: `${token.type}${token.kind}`,
-            }
-
-        default:
-            return {
-                startIndex: token.range.start,
-                scopes: 'identifier',
-            }
-    }
-}
-
-/**
- * Decorates tokens for contextual highlighting (e.g. for regexp metasyntax) and returns the tokens converted to Monaco token types.
- */
-export const getMonacoTokens = (tokens: Token[]): Monaco.languages.IToken[] =>
-    tokens.flatMap(token => decorate(token).map(decoratedToMonaco))
