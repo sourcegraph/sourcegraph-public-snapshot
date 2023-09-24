@@ -97,7 +97,7 @@
 
 </style>
 
-# Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Experimental</span>
+# Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Beta</span>
 
 <p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
 
@@ -131,7 +131,9 @@ Alternatively, you can also [Download and install the extension from the Jetbrai
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, Cody's icon appears in the side bar. When you click it, you're asked to configure and add your Sourcegraph Access Token that helps you connect to a Sourcegraph instance (either an enterprise instance or Sourcegraph.com).
+After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
+
+You can also override automatic “codebase detection” by manually setting up the codebase.
 
 ### For Sourcegraph enterprise users
 
@@ -142,6 +144,12 @@ Then, you select the option to `Use an enterprise instance` and you will paste y
 ### For Sourcegraph.com users
 
 Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll be taken to Sourcegraph.com, which will authenticate your extension.
+
+## Embeddings
+
+For **free** users, installing the JetBrains extension prompts installing the Cody app for better responses with embeddings. Enterprise users are guided to contact their admin for embeddings.
+
+You no longer need to log in again on the Cody app. Select the repositories during the app setup, and JetBrains gains context of those embeddings for a streamlined experience.
 
 ## Verifying the installation
 
@@ -162,6 +170,12 @@ The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts c
 - Summarize recent code changes
 - Detect code smells
 - Generate release notes
+
+## Autocomplete
+
+You can "enable/disable" the autocomplete feature and customize your language preferences in the footer. Autocomplete suggestions can be styled with customized colors, and you can reject them at any time with the **Escape** key.
+
+By default, the autocomplete feature is disabled for read-only files but is compatible with [IdeaVim](https://plugins.jetbrains.com/plugin/164-ideavim).
 
 ## Enable code graph context for context-aware answers (Optional)
 
