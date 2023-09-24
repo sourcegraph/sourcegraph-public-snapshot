@@ -175,7 +175,7 @@ use { 'sourcegraph/sg.nvim', run = 'nvim -l build/init.lua' }
 Plug 'sourcegraph/sg.nvim', { 'do': 'nvim -l build/init.lua' }
 ```
 
-Once you have installed the plugin, run `:checkhealth sg` to verify a successful installation.
+Once you have installed the plugin, run `:checkhealth sg` to verify a successful installation. Next, you are prompted to log in as a free user by connecting to your Sourcegraph.com account or using the enterprise instance.
 
 ## Setting up with Sourcegraph instance
 
