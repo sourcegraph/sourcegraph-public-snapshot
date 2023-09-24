@@ -11,12 +11,7 @@ import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import {
-    EditorHint,
-    QueryChangeSource,
-    type QueryState,
-    type SearchPatternTypeProps,
-} from '@sourcegraph/shared/src/search'
+import { EditorHint, QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
@@ -264,12 +259,9 @@ function useOnValueChanged<T = unknown>(value: T, func: () => void): void {
 
 const EMPTY: any[] = []
 
-interface CodeMirrorQueryInputProps extends SearchPatternTypeProps {
+interface CodeMirrorQueryInputProps
+    extends Pick<QueryInputProps<EditorView>, 'interpretComments' | 'onEditorCreated' | 'patternType' | 'className'> {
     value: string
-    onEditorCreated?: (editor: EditorView) => void
-    // Whether comments are parsed and highlighted
-    interpretComments?: boolean
-    className?: string
     extensions: Extension[]
 }
 
