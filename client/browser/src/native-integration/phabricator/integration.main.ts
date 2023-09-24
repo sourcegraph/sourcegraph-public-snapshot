@@ -1,3 +1,6 @@
+// Set globals first before any imports.
+import '../../config/page.entry'
+// Polyfill before other imports.
 import '@sourcegraph/shared/src/polyfills'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
