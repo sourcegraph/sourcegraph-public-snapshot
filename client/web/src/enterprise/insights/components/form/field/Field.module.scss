@@ -5,7 +5,7 @@
     padding: 0.5rem 0.75rem !important;
     background-image: none !important;
 
-    .monaco-field {
+    .field {
         background-position: right 0.75rem top 0.1rem !important;
     }
 }
@@ -50,7 +50,7 @@
     }
 }
 
-.monaco-field {
+.field {
     position: relative;
     display: flex;
     width: 100%;
@@ -59,11 +59,6 @@
 
     :global(.scroll-decoration) {
         display: none;
-    }
-
-    :global(.monaco-editor),
-    :global(.monaco-editor-background) {
-        background-color: var(--input-bg) !important;
     }
 
     &--without-field-styles {
