@@ -1,4 +1,7 @@
-// We want to polyfill first.
+// Set globals first before any imports.
+import '../../config/extension.entry'
+import '../../config/background.entry'
+// Polyfill before other imports.
 import '../../shared/polyfills'
 
 import type { Endpoint } from 'comlink'

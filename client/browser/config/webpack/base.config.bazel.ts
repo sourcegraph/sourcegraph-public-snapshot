@@ -14,11 +14,6 @@ import {
 
 export const browserWorkspacePath = path.resolve(process.cwd(), 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
-const contentEntry = path.resolve(browserSourcePath, 'config/content.entry.js')
-const backgroundEntry = path.resolve(browserSourcePath, 'config/background.entry.js')
-const optionsEntry = path.resolve(browserSourcePath, 'config/options.entry.js')
-const pageEntry = path.resolve(browserSourcePath, 'config/page.entry.js')
-const extensionEntry = path.resolve(browserSourcePath, 'config/extension.entry.js')
 
 const JS_OUTPUT_FOLDER = 'scripts'
 const CSS_OUTPUT_FOLDER = 'css'
@@ -32,27 +27,15 @@ export const config = {
     target: 'browserslist',
     entry: {
         // Browser extension
-        background: [
-            extensionEntry,
-            backgroundEntry,
-            path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.js'),
-        ],
-        inject: [
-            extensionEntry,
-            contentEntry,
-            path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.js'),
-        ],
-        options: [
-            extensionEntry,
-            optionsEntry,
-            path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.js'),
-        ],
+        background: path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.js'),
+        inject: path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.js'),
+        options: path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.js'),
         'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.js'),
 
         // Common native integration entry point (Gitlab, Bitbucket)
-        integration: [pageEntry, path.resolve(browserSourcePath, 'native-integration/integration.main.js')],
+        integration: path.resolve(browserSourcePath, 'native-integration/integration.main.js'),
         // Phabricator-only native integration entry point
-        phabricator: [pageEntry, path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.js')],
+        phabricator: path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.js'),
 
         // Styles
         style: path.join(browserSourcePath, 'app.scss'),
