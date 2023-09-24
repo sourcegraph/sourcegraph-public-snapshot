@@ -6,17 +6,22 @@ import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operatio
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link } from '@sourcegraph/wildcard'
 
-import styles from './MonacoPreviewLink.module.scss'
+import styles from './PreviewLink.module.scss'
 
-export interface MonacoPreviewLinkProps {
+interface PreviewLinkProps {
     query: string
     patternType: SearchPatternType
     tabIndex?: number
     className?: string
 }
 
-export const MonacoPreviewLink: FC<PropsWithChildren<MonacoPreviewLinkProps>> = props => {
-    const { query, patternType, tabIndex, className, children } = props
+export const PreviewLink: FC<PropsWithChildren<PreviewLinkProps>> = ({
+    query,
+    patternType,
+    tabIndex,
+    className,
+    children,
+}) => {
     const queryURL = useMemo(() => `/search?${buildSearchURLQuery(query, patternType, false)}`, [patternType, query])
 
     return (
