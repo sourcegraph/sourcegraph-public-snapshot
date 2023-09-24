@@ -1,4 +1,4 @@
-import React, { createContext, type InputHTMLAttributes, useContext, useMemo } from 'react'
+import React, { createContext, type InputHTMLAttributes, useContext } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -59,8 +59,6 @@ export const Field: React.FunctionComponent<FieldProps> = ({
 }) => {
     const { renderedWithinFocusContainer } = useContext(FieldContext)
 
-    const editorOptions = useMemo(() => ({ readOnly: disabled }), [disabled])
-
     return (
         <LazyQueryInput
             ariaLabelledby={ariaLabelledby}
@@ -78,7 +76,7 @@ export const Field: React.FunctionComponent<FieldProps> = ({
                 [styles.focusContainer]: !renderedWithinFocusContainer,
                 [styles.fieldWithoutFieldStyles]: renderedWithinFocusContainer,
             })}
-            editorOptions={editorOptions}
+            readOnly={disabled}
             autoFocus={autoFocus}
             onBlur={onBlur}
             tabIndex={tabIndex}

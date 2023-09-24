@@ -35,13 +35,7 @@ import type { QueryInputProps } from './QueryInput'
 import styles from './CodeMirrorQueryInput.module.scss'
 
 export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
-    /**
-     * Used to be compatible with MonacoQueryInput's interface, but we only
-     * support the `readOnly` flag.
-     */
-    editorOptions?: {
-        readOnly?: boolean
-    }
+    readOnly?: boolean
 
     /**
      * When provided the query input will allow the user to "cycle" through the
@@ -81,7 +75,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     className,
     preventNewLine = true,
     placeholder,
-    editorOptions,
+    readOnly,
     ariaLabel = 'Search query',
     ariaLabelledby,
     ariaInvalid,
@@ -165,7 +159,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
             extensions.push(placeholderExtension(element))
         }
 
-        if (editorOptions?.readOnly) {
+        if (readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
 
@@ -193,7 +187,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         autocompletion,
         placeholder,
         preventNewLine,
-        editorOptions,
+        readOnly,
         searchHistory,
         onSelectSearchFromHistory,
     ])
