@@ -33,12 +33,6 @@ export interface QueryInputProps
 
     preventNewLine?: boolean
 
-    /**
-     * NOTE: This is currently only used for Insights code through
-     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
-     *
-     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
-     */
     placeholder?: string
 
     ariaLabel?: string
