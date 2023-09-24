@@ -73,7 +73,7 @@
 
 </style>
 
-# Installing Cody in VS Code
+# Installing Cody in VS Code <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Beta</span>
 
 <p class="subtitle">Learn how to use Cody and its features with the VS Code editor.</p>
 
@@ -107,7 +107,7 @@ Alternatively, you can also [download and install the extension from the VS Code
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, Cody's icon appears in the side bar. When you click it, you're asked to either "Download the Cody App" or use "Other Sign In Options…" to connect to a Sourcegraph instance.
+After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
 
 You can connect either an enterprise instance or Sourcegraph.com via the following ways:
 
@@ -127,6 +127,12 @@ Then, you will paste your access token and instance address in to the Cody exten
 
 Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll be taken to Sourcegraph.com, which will authenticate your extension.
 
+## Embeddings
+
+For **free** users, installing the VS Code extension prompts installing the Cody app for better responses with embeddings. Enterprise users are guided to contact their admin for embeddings.
+
+You no longer need to log in again on the Cody app. Select the repositories during the app setup, and VS Code gains context of those embeddings for a streamlined experience.
+
 ## Verifying the installation
 
 Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected:
@@ -136,7 +142,17 @@ Once connected, click the Cody icon from the sidebar again, and a panel will ope
 
 ## Commands
 
-Cody also supports executing reusable prompts known as **Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions (like `Explain Selected Code` and `Generate Unit Tests` for example) with smart context-fetching anywhere in the editor.
+Cody also supports executing reusable prompts known as **Commands** from within the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai). They allow you to run predefined actions with smart context-fetching anywhere in the editor, like:
+
+- `/ask`: Asks a question
+- `/edit[instruction]`: Edits code
+- `/doc`: Generates code documentation
+- `explain`: Explains code
+- `test`: Generates unit tests
+- `smell`: Find code smells
+- `example-generate-readme (example)`: Generates a README.md file for the current directory
+- `commit-message-suggestion`: Commits your message suggestions to code
+- `reset`: Clears the Cody chat
 
 [Learn more about Commands here →](./../capabilities.md#commands)
 
