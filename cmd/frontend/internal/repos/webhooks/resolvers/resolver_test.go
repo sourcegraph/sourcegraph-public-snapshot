@@ -3,11 +3,14 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 
 	"github.com/google/uuid"
@@ -583,6 +586,8 @@ func TestGetWebhookWithURL(t *testing.T) {
 	invalidURL := "https://invalid.com/%+o"
 	webhookID := int32(1)
 	webhookIDMarshaled := marshalWebhookID(webhookID)
+	globals.SetExternalURL(&url.URL{Scheme: "https", Host: "testurl.com"})
+
 	conf.Mock(
 		&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -640,6 +645,8 @@ func TestGetWebhookWithURL(t *testing.T) {
 			},
 		},
 	)
+
+	globals.SetExternalURL(&url.URL{Scheme: "https", Host: "invalid.com/%+o"})
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "error if external URL invalid",
 		Context:        ctx,
@@ -650,7 +657,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 			{
 				Message: strings.Join([]string{
 					"could not parse site config external URL:",
-					` parse "https://invalid.com/%+o": invalid URL escape "%+o"`,
+					` parse "https://invalid.com%2F%25+o": invalid URL escape "%2F"`,
 				}, ""),
 				Path: []any{"node", "url"},
 			},

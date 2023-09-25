@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -65,7 +66,7 @@ To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow 
 `
 
 func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externalURL, err := url.Parse(globals.ExternalURLString())
 	if err != nil {
 		logger.Error("parsing external URL from site config", log.Error(err))
 		return
