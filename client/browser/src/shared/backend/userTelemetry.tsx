@@ -15,8 +15,8 @@ export const recordEvent = (
     event: {
         action: string
         feature: string
-        source?: TelemetryEventSourceInput | {}
-        parameters?: TelemetryEventParametersInput | {}
+        source: TelemetryEventSourceInput | {}
+        parameters: TelemetryEventParametersInput | {}
         marketingTracking?: TelemetryEventMarketingTrackingInput | {}
     },
     requestGraphQL: PlatformContext['requestGraphQL']
@@ -24,15 +24,15 @@ export const recordEvent = (
     requestGraphQL<recordEventResult>({
         request: gql`
             mutation recordEvent(
-                $action: String!
                 $feature: String!
+                $action: String!
                 $source: TelemetryEventSourceInput!
                 $parameters: TelemetryEventParametersInput!
-                $marketingTracking: TelemetryEventMarketingTrackingInput!
+                $marketingTracking: TelemetryEventMarketingTrackingInput
             ) {
                 recordEvent(
-                    action: $action
                     feature: $feature
+                    action: $action
                     source: $source
                     parameters: $parameters
                     marketingTracking: $marketingTracking

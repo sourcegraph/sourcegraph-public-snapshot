@@ -581,15 +581,15 @@ type Mutation {
         """
         The first sourcegraph URL visited by the user, stored in a browser cookie.
         """
-        source: TelemetryEventSourceInput
+        source: TelemetryEventSourceInput!
         """
         The last sourcegraph URL visited by the user, stored in a browser cookie.
         """
-        parameters: TelemetryEventParametersInput
+        parameters: TelemetryEventParametersInput!
         """
         The URL when the event was logged.
         """
-        marketingTracking: TelemetryEventMarketingTrackingInput!
+        marketingTracking: TelemetryEventMarketingTrackingInput
     ): EmptyResponse
     """
     Records a batch of events.
