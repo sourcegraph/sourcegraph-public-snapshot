@@ -83,8 +83,6 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 				if err != nil {
 					return err
 				}
-				// Parse it, it might not be a Sourcegraph image, in which case it needs to
-				// be skipped.
 				r, err := ParseRepository(oldImage)
 				if err != nil {
 					return err
