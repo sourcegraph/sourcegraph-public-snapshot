@@ -18,7 +18,7 @@ public class Event {
   @NotNull public Object argument;
 
   @Nullable public Object publicArgument;
-  @NotNull public String client;
+  @NotNull public final String client;
   @Nullable public String connectedSiteID;
   @Nullable public String hashedLicenseKey;
   @NotNull final String deviceID;
@@ -33,6 +33,7 @@ public class Event {
     this.url = url;
     this.source = "IDEEXTENSION";
     this.referrer = "JETBRAINS";
+    this.client = "JETBRAINS_CODY_EXTENSION";
     this.argument = new JsonObject();
     if (publicArgument != null) {
       this.publicArgument = publicArgument;
