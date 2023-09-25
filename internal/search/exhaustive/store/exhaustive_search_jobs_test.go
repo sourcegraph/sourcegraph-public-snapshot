@@ -396,8 +396,8 @@ func TestStore_AggregateStatus(t *testing.T) {
 	}
 }
 
-// createJobCascade creates a cascade of jobs (1 search job -> 1 repo job -> n
-// repo rev jobs) with proper references.
+// createJobCascade creates a cascade of jobs (1 search job -> n repo jobs -> m
+// repo rev jobs) with states as defined in stateCascade.
 //
 // This is a fairly large test helper, because don't want to start the worker
 // routines, but instead we want to create a snapshot of the state of the jobs
@@ -405,19 +405,19 @@ func TestStore_AggregateStatus(t *testing.T) {
 func createJobCascade(
 	t *testing.T,
 	ctx context.Context,
-	s *store.Store,
-	c stateCascade,
+	stor *store.Store,
+	casc stateCascade,
 ) (searchJobID int64) {
 	t.Helper()
 
 	searchJob := types.ExhaustiveSearchJob{
 		InitiatorID: actor.FromContext(ctx).UID,
 		Query:       "repo:job1",
-		WorkerJob:   types.WorkerJob{State: c.searchJob},
+		WorkerJob:   types.WorkerJob{State: casc.searchJob},
 	}
 
-	repoJobs := make([]types.ExhaustiveSearchRepoJob, len(c.repoJobs))
-	for i, r := range c.repoJobs {
+	repoJobs := make([]types.ExhaustiveSearchRepoJob, len(casc.repoJobs))
+	for i, r := range casc.repoJobs {
 		repoJobs[i] = types.ExhaustiveSearchRepoJob{
 			WorkerJob: types.WorkerJob{State: r},
 			RepoID:    1, // same repo for all tests
@@ -425,40 +425,38 @@ func createJobCascade(
 		}
 	}
 
-	repoRevJobs := make([]types.ExhaustiveSearchRepoRevisionJob, len(c.repoRevJobs))
-	for i, rr := range c.repoRevJobs {
+	repoRevJobs := make([]types.ExhaustiveSearchRepoRevisionJob, len(casc.repoRevJobs))
+	for i, rr := range casc.repoRevJobs {
 		repoRevJobs[i] = types.ExhaustiveSearchRepoRevisionJob{
 			WorkerJob: types.WorkerJob{State: rr},
 			Revision:  "HEAD",
 		}
 	}
 
-	// TODO (stefan): set state explicitly because it is not set by the store
-	// TODO (stefan): remove UNION ALL query
-	jobID, err := s.CreateExhaustiveSearchJob(ctx, searchJob)
+	jobID, err := stor.CreateExhaustiveSearchJob(ctx, searchJob)
 	require.NoError(t, err)
 	assert.NotZero(t, jobID)
 
-	err = s.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_jobs SET state = %s WHERE id = %s", c.searchJob, jobID))
+	err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_jobs SET state = %s WHERE id = %s", casc.searchJob, jobID))
 	require.NoError(t, err)
 
 	for i, r := range repoJobs {
 		r.SearchJobID = jobID
-		repoJobID, err := s.CreateExhaustiveSearchRepoJob(ctx, r)
+		repoJobID, err := stor.CreateExhaustiveSearchRepoJob(ctx, r)
 		require.NoError(t, err)
 		assert.NotZero(t, repoJobID)
 
-		err = s.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_jobs SET state = %s WHERE id = %s", c.repoJobs[i], repoJobID))
+		err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_jobs SET state = %s WHERE id = %s", casc.repoJobs[i], repoJobID))
 		require.NoError(t, err)
 
 		for j, rr := range repoRevJobs {
 			rr.SearchRepoJobID = repoJobID
-			repoRevJobID, err := s.CreateExhaustiveSearchRepoRevisionJob(ctx, rr)
+			repoRevJobID, err := stor.CreateExhaustiveSearchRepoRevisionJob(ctx, rr)
 			require.NoError(t, err)
 			assert.NotZero(t, repoRevJobID)
 			require.NoError(t, err)
 
-			err = s.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_revision_jobs SET state = %s WHERE id = %s", c.repoRevJobs[j], repoRevJobID))
+			err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_revision_jobs SET state = %s WHERE id = %s", casc.repoRevJobs[j], repoRevJobID))
 			require.NoError(t, err)
 		}
 	}
@@ -472,57 +470,4 @@ type stateCascade struct {
 	repoRevJobs []types.JobState
 }
 
-func setStateSearchJob(ctx context.Context, s *store.Store, id int64, state types.JobState) error {
-	return s.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_jobs SET state = %s WHERE id = %s", state, id))
-}
-
-//	type searchJobMinimal struct {
-//		ID        int64
-//		initiator int32
-//		query     string
-//		state     types.JobState
-//	}
-//
-//	func (j searchJobMinimal) toJob() types.ExhaustiveSearchJob {
-//		return types.ExhaustiveSearchJob{
-//			InitiatorID: j.initiator,
-//			Query:       j.query,
-//			WorkerJob:   types.WorkerJob{State: j.state},
-//		}
-//	}
-//
-//	type repoJobMinimal struct {
-//		state       types.JobState
-//		repoID      api.RepoID
-//		searchJobID int64
-//		refSpec     string
-//	}
-//
-//	func (j repoJobMinimal) toJob(searchJobID int64) types.ExhaustiveSearchRepoJob {
-//		return types.ExhaustiveSearchRepoJob{
-//			WorkerJob:   types.WorkerJob{State: j.state},
-//			RepoID:      j.repoID,
-//			SearchJobID: searchJobID,
-//			RefSpec:     j.refSpec,
-//		}
-//	}
-//
-//	type repoRevJobMinimal struct {
-//		state    types.JobState
-//		revision string
-//	}
-//
-//	func (j repoRevJobMinimal) toJob(repoJobID int64) types.ExhaustiveSearchRepoRevisionJob {
-//		return types.ExhaustiveSearchRepoRevisionJob{
-//			WorkerJob:       types.WorkerJob{State: j.state},
-//			SearchRepoJobID: repoJobID,
-//			Revision:        j.revision,
-//		}
-//	}
-//
-//	type jobCascade struct {
-//		searchJob  searchJobMinimal
-//		repoJobs   []repoJobMinimal
-//		repoRevJobs []repoRevJobMinimal
-//	}
 func intptr(s int) *int { return &s }
