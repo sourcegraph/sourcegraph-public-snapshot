@@ -2,6 +2,8 @@
 
 Command recording allows site admins to view all git operations executed on a repository. 
 
+![Recorded commands page](https://sourcegraphstatic.com/docs/images/admin/config/command_recording.png)
+
 When enabled, Sourcegraph will record metadata about all git commands run on a repository in Redis, including:
 
 - Command executed (with sensitive information redacted)
@@ -14,11 +16,14 @@ This provides visibility into git operations performed by Sourcegraph on a repos
 
 To enable command recording:
 
-- Go to Site Admin > Site Configuration
+- Go to [Site Admin > Site Configuration](../config/site_config.md)
 - Add a `gitRecorder` object to the configuration object
 
-```json
-"gitRecorder": {
+```jsonc
+{
+  // [...]
+
+  "gitRecorder": {
     // the amount of commands to record per repo  
     "size": 30,
   
@@ -36,6 +41,7 @@ To enable command recording:
       "ls-tree"
     ]
   }
+}
 ```
 
 Once enabled, site admins can view recorded commands for a repository via the repository's settings page in the Site Admin UI.
@@ -46,10 +52,10 @@ Command recording provides visibility into Sourcegraph's interactions with repos
 
 ### Potential risks
 
-Depending on the number of repositories and size of the recording set, enabling command recording could increase disk usage in Redis. 
+Enabling command recording will increase disk usage in Redis, potentially in a significant manner, depending on the number of repositories and the size of the recording set.
 
 Since recorded commands are stored in Redis, setting the `size` to a very large number or enabling recording on many repositories could cause the Redis database to fill up quickly.
 
-When Redis is full, it may start evicting data, impacting other parts of Sourcegraph that rely on Redis. Sourcegraph may experience degraded performance or instability.
+Depending on your configuration, Redis might evict data from the database when it is full, impacting other parts of Sourcegraph that rely on Redis. This could cause Sourcegraph to experience degraded performance or instability.
 
 To avoid issues, we recommend proceeding with caution and starting with a smaller `size` and number of repositories first. Monitor your Redis memory usage over time and slowly increase the recording `size` and repositories. Tune the configuration based on your instance size and memory available.
