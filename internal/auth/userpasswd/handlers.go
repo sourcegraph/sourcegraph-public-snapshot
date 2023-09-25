@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -289,7 +290,10 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, events 
 			return
 		}
 
-		ctx := r.Context()
+		// In this code, we still use legacy events (usagestats.LogBackendEvent),
+		// so do not tee events automatically.
+		// TODO: We should remove this in 5.3 entirely
+		ctx := teestore.WithoutV1(r.Context())
 		var user types.User
 
 		signInResult := database.SecurityEventNameSignInAttempted
@@ -471,6 +475,10 @@ func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
+
+	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
+	// context.
+	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 }
 
 func checkAccountLockout(store LockoutStore, user *types.User, event *database.SecurityEventName) {
