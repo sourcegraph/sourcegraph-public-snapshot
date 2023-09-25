@@ -101,14 +101,10 @@ func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service
 
 func normalize(orderBy string) string {
 	switch orderBy {
-	case "CREATED_AT":
-		return "created_at"
 	case "STATE":
 		return "agg_state"
-	case "QUERY":
-		return "query"
 	default:
-		return "created_at"
+		return strings.ToLower(orderBy)
 	}
 }
 
