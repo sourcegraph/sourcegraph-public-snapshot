@@ -9,8 +9,7 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRenderUtils
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatus
-import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService.Companion.notifyApplication
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CollectionUtil.Companion.diff
 import java.util.function.Consumer
@@ -55,13 +54,8 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
               val codyToolWindow = CodyToolWindowContent.getInstance(project)
               codyToolWindow.refreshPanelsVisibility()
             }
-            if (!context.newCodyEnabled) {
-              notifyApplication(CodyAutocompleteStatus.CodyDisabled)
-            } else if (!context.newCodyAutocompleteEnabled) {
-              notifyApplication(CodyAutocompleteStatus.AutocompleteDisabled)
-            } else {
-              notifyApplication(CodyAutocompleteStatus.Ready)
-            }
+
+            CodyAutocompleteStatusService.resetApplication(project)
 
             // Rerender autocompletions when custom autocomplete color changed
             // or when checkbox state changed
