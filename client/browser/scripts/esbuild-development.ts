@@ -50,24 +50,17 @@ const COMMON_BUILD_OPTIONS: esbuild.BuildOptions = {
     },
 }
 
-const MAIN_BUILD_OPTIONS: esbuild.BuildOptions = {
+const BUILD_OPTIONS: esbuild.BuildOptions = {
     ...COMMON_BUILD_OPTIONS,
-    entryPoints: config.entry,
+    entryPoints: { ...config.entry, extensionHostWorker: '../shared/src/api/extension/main.worker.ts' },
     format: 'cjs',
+    platform: 'browser',
     plugins: [stylePlugin, browserBuildStepsPlugin, buildTimerPlugin, experimentalNoticePlugin],
 }
 
-// TODO(sqs): might not be needed to have 2 builds...
-const WORKER_BUILD_OPTIONS: esbuild.BuildOptions = {
-    ...COMMON_BUILD_OPTIONS,
-    entryPoints: { extensionHostWorker: '../shared/src/api/extension/main.worker.ts' },
-    format: 'cjs',
-    platform: 'browser',
-}
-
 async function build(): Promise<void> {
-    const ctxs = [await esbuild.context(MAIN_BUILD_OPTIONS), await esbuild.context(WORKER_BUILD_OPTIONS)]
-    await Promise.all(ctxs.map(ctx => ctx.watch()))
+    const ctx = await esbuild.context(BUILD_OPTIONS)
+    await ctx.watch()
     signale.info('Watching...')
     await new Promise(() => {}) // wait forever
 }
