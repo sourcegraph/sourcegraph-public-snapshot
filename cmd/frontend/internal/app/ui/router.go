@@ -265,6 +265,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeHome).Handler(handler(db, serveHome(db)))
 	router.Get(routeThreads).Handler(brandedNoIndex("Threads"))
 	router.Get(routeInsights).Handler(brandedIndex("Insights"))
+	router.Get(routeSearchJobs).Handler(brandedIndex("Search Jobs"))
 	router.Get(routeSetup).Handler(brandedIndex("Setup"))
 	router.Get(routeBatchChanges).Handler(brandedIndex("Batch Changes"))
 	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
