@@ -491,13 +491,12 @@ func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) 
 	return jobs, nil
 }
 
-func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
-	var job types.ExhaustiveSearchJob
+func defaultScanTargets(job *types.ExhaustiveSearchJob) []any {
 	// required field for the sync worker, but
 	// the value is thrown out here
 	var executionLogs *[]any
 
-	return &job, sc.Scan(
+	return []any{
 		&job.ID,
 		&job.InitiatorID,
 		&job.State,
@@ -513,33 +512,25 @@ func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, err
 		&job.Cancel,
 		&job.CreatedAt,
 		&job.UpdatedAt,
+	}
+}
+
+func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
+	var job types.ExhaustiveSearchJob
+
+	return &job, sc.Scan(
+		defaultScanTargets(&job)...,
 	)
 }
 
-// TODO: share code with above
 func scanExhaustiveSearchJobList(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
 	var job types.ExhaustiveSearchJob
-	// required field for the sync worker, but
-	// the value is thrown out here
-	var executionLogs *[]any
 
 	return &job, sc.Scan(
-		&job.ID,
-		&job.InitiatorID,
-		&job.State,
-		&job.Query,
-		&dbutil.NullString{S: &job.FailureMessage},
-		&dbutil.NullTime{Time: &job.StartedAt},
-		&dbutil.NullTime{Time: &job.FinishedAt},
-		&dbutil.NullTime{Time: &job.ProcessAfter},
-		&job.NumResets,
-		&job.NumFailures,
-		&executionLogs,
-		&job.WorkerHostname,
-		&job.Cancel,
-		&job.CreatedAt,
-		&job.UpdatedAt,
-		&job.AggState,
+		append(
+			defaultScanTargets(&job),
+			&job.AggState,
+		)...,
 	)
 }
 
