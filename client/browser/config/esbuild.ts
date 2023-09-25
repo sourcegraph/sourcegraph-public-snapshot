@@ -9,14 +9,14 @@ import { buildTimerPlugin, experimentalNoticePlugin, stylePlugin } from '@source
 import { buildNpm } from '../scripts/build-npm'
 import * as tasks from '../scripts/tasks'
 
-import { browserWorkspacePath, config } from './webpack/base.config'
+import { entrypoints, browserWorkspacePath } from './buildCommon'
 
 /**
  * Returns the esbuild build options for the browser extension build.
  */
 export function esbuildBuildOptions(mode: 'dev' | 'prod'): esbuild.BuildOptions {
     return {
-        entryPoints: { ...config.entry, extensionHostWorker: '../shared/src/api/extension/main.worker.ts' },
+        entryPoints: { ...entrypoints, extensionHostWorker: '../shared/src/api/extension/main.worker.ts' },
         format: 'cjs',
         platform: 'browser',
         plugins: [

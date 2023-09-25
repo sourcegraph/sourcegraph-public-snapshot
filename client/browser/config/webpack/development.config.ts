@@ -4,7 +4,9 @@ import * as webpack from 'webpack'
 
 import { getCacheConfig } from '@sourcegraph/build-config'
 
-import { config as baseConfig, browserWorkspacePath } from './base.config'
+import { browserWorkspacePath } from '../buildCommon'
+
+import { config as baseConfig } from './base.config'
 import { generateBundleUID } from './utils'
 
 const { plugins, entry: entries, ...base } = baseConfig

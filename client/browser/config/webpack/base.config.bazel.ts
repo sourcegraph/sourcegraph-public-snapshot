@@ -12,8 +12,7 @@ import {
     getCSSModulesLoader,
 } from '@sourcegraph/build-config'
 
-export const browserWorkspacePath = path.resolve(process.cwd(), 'client/browser')
-const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
+import { browserWorkspacePath, entrypoints } from '../buildCommon'
 
 const JS_OUTPUT_FOLDER = 'scripts'
 const CSS_OUTPUT_FOLDER = 'css'
@@ -25,22 +24,7 @@ export const config = {
         children: true,
     },
     target: 'browserslist',
-    entry: {
-        // Browser extension
-        background: path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.js'),
-        inject: path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.js'),
-        options: path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.js'),
-        'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.js'),
-
-        // Common native integration entry point (Gitlab, Bitbucket)
-        integration: path.resolve(browserSourcePath, 'native-integration/integration.main.js'),
-        // Phabricator-only native integration entry point
-        phabricator: path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.js'),
-
-        // Styles
-        style: path.join(browserSourcePath, 'app.scss'),
-        'branded-style': path.join(browserSourcePath, 'branded.scss'),
-    },
+    entry: entrypoints,
     output: {
         path: path.join(browserWorkspacePath, 'build/dist/js'),
         filename: `${JS_OUTPUT_FOLDER}/[name].bundle.js`,

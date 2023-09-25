@@ -6,7 +6,6 @@ import type webpack from 'webpack'
 import { optimize } from 'webpack'
 
 import {
-    ROOT_PATH,
     getBabelLoader,
     getCSSLoaders,
     getProvidePlugin,
@@ -15,29 +14,13 @@ import {
     getBasicCSSLoader,
 } from '@sourcegraph/build-config'
 
-export const browserWorkspacePath = path.resolve(ROOT_PATH, 'client/browser')
-const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
+import { browserWorkspacePath, entrypoints } from '../buildCommon'
 
 const extensionHostWorker = /main\.worker\.ts$/
 
 export const config = {
     target: 'browserslist',
-    entry: {
-        // Browser extension
-        background: path.resolve(browserSourcePath, 'browser-extension/scripts/backgroundPage.main.ts'),
-        inject: path.resolve(browserSourcePath, 'browser-extension/scripts/contentPage.main.ts'),
-        options: path.resolve(browserSourcePath, 'browser-extension/scripts/optionsPage.main.tsx'),
-        'after-install': path.resolve(browserSourcePath, 'browser-extension/scripts/afterInstallPage.main.tsx'),
-
-        // Common native integration entry point (Gitlab, Bitbucket)
-        integration: path.resolve(browserSourcePath, 'native-integration/integration.main.ts'),
-        // Phabricator-only native integration entry point
-        phabricator: path.resolve(browserSourcePath, 'native-integration/phabricator/integration.main.ts'),
-
-        // Styles
-        style: path.join(browserSourcePath, 'app.scss'),
-        'branded-style': path.join(browserSourcePath, 'branded.scss'),
-    },
+    entry: entrypoints,
     output: {
         path: path.join(browserWorkspacePath, 'build/dist/js'),
         filename: '[name].bundle.js',
