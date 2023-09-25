@@ -24,12 +24,13 @@ public class Chat {
       @NotNull ChatMessage humanMessage,
       @NotNull String recipeId,
       @NotNull UpdatableChat chat,
-      @NotNull CancellationToken cancellationToken)
+      @NotNull CancellationToken token)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
+    client.onFinishedProcessing = chat::finishMessageProcessing;
     client.onChatUpdateMessageInProgress =
         (agentChatMessage) -> {
-          if (agentChatMessage.text == null || cancellationToken.isCancelled()) {
+          if (agentChatMessage.text == null) {
             return;
           }
 
@@ -60,19 +61,17 @@ public class Chat {
         .thenAcceptAsync(
             server -> {
               try {
-                server.recipesExecute(
-                    new ExecuteRecipeParams()
-                        .setId(recipeId)
-                        .setHumanChatInput(humanMessage.getText()));
+                CompletableFuture<Void> recipesExecuteFuture =
+                    server.recipesExecute(
+                        new ExecuteRecipeParams()
+                            .setId(recipeId)
+                            .setHumanChatInput(humanMessage.getText()));
+                token.onCancellationRequested(() -> recipesExecuteFuture.cancel(true));
               } catch (Exception ignored) {
                 // Ignore bugs in the agent when executing recipes
               }
             },
             CodyAgent.executorService)
         .get();
-    // TODO we need to move this finishMessageProcessing to be executed when the whole message
-    // processing is finished to make "stop generating" work. Ideally we need a signal from agent
-    // that it finished processing the message so we can call this method.
-    chat.finishMessageProcessing();
   }
 }
