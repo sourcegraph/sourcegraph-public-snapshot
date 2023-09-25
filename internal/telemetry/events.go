@@ -13,6 +13,7 @@ const (
 
 	FeatureSignIn  eventFeature = "signIn"
 	FeatureSignOut eventFeature = "signOut"
+	FeatureSignUp  eventFeature = "signUp"
 )
 
 // eventAction defines the action associated with an event. Values should
