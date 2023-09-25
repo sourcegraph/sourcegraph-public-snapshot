@@ -1,6 +1,7 @@
 import { writeFileSync } from 'fs'
 import path from 'path'
 
+import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin'
 import * as esbuild from 'esbuild'
 
 import {
@@ -66,6 +67,16 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         }),
         omitSlowDeps ? null : monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         buildTimerPlugin,
+        ENVIRONMENT_CONFIG.SENTRY_UPLOAD_SOURCE_MAPS
+            ? sentryEsbuildPlugin({
+                  org: ENVIRONMENT_CONFIG.SENTRY_ORGANIZATION,
+                  project: ENVIRONMENT_CONFIG.SENTRY_PROJECT,
+                  authToken: ENVIRONMENT_CONFIG.SENTRY_DOT_COM_AUTH_TOKEN,
+                  silent: true,
+                  release: { name: `frontend@${ENVIRONMENT_CONFIG.VERSION}` },
+                  sourcemaps: { assets: path.join(ENVIRONMENT_CONFIG.STATIC_ASSETS_PATH, 'scripts', '*.map') },
+              })
+            : null,
     ].filter(isDefined),
     define: {
         ...Object.fromEntries(
