@@ -57,12 +57,11 @@ func UpdateComposeManifests(ctx context.Context, registry Registry, path string,
 	}
 
 	return nil
-
 }
 
-func updateComposeFile(registry Registry, op UpdateOperation, b []byte) ([]byte, error) {
+func updateComposeFile(registry Registry, op UpdateOperation, fileContent []byte) ([]byte, error) {
 	var compose map[string]any
-	if err := yaml.Unmarshal(b, &compose); err != nil {
+	if err := yaml.Unmarshal(fileContent, &compose); err != nil {
 		return nil, err
 	}
 	services, ok := compose["services"].(map[string]any)
@@ -75,7 +74,7 @@ func updateComposeFile(registry Registry, op UpdateOperation, b []byte) ([]byte,
 		new      string
 	}
 
-	checks := pool.NewWithResults[*replace]().WithMaxGoroutines(10)
+	checks := pool.NewWithResults[*replace]().WithMaxGoroutines(10).WithErrors()
 	for name, entry := range services {
 		name := name
 		service, ok := entry.(map[string]any)
@@ -84,25 +83,25 @@ func updateComposeFile(registry Registry, op UpdateOperation, b []byte) ([]byte,
 			continue
 		}
 
-		checks.Go(func() *replace {
+		checks.Go(func() (*replace, error) {
 			imageField, set := service["image"]
 			if !set {
 				std.Out.Verbosef("%s: no image", name)
-				return nil
+				return nil, nil
 			}
 			originalImage, ok := imageField.(string)
 			if !ok {
 				std.Out.WriteWarningf("%s: invalid image", name)
-				return nil
+				return nil, nil
 			}
 
 			r, err := ParseRepository(originalImage)
 			if err != nil {
 				if errors.Is(err, ErrNoUpdateNeeded) {
 					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", originalImage)))
-					return nil
+					return nil, nil
 				} else {
-					return nil
+					return nil, err
 				}
 			}
 
@@ -110,9 +109,10 @@ func updateComposeFile(registry Registry, op UpdateOperation, b []byte) ([]byte,
 			if err != nil {
 				if errors.Is(err, ErrNoUpdateNeeded) {
 					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q.", r.Ref())))
-					return nil
+					return nil, nil
 				} else {
 					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("error on %q: %v", originalImage, err)))
+					return nil, err
 				}
 			}
 
@@ -120,22 +120,25 @@ func updateComposeFile(registry Registry, op UpdateOperation, b []byte) ([]byte,
 			return &replace{
 				original: originalImage,
 				new:      newR.Ref(),
-			}
+			}, nil
 		})
 	}
 
-	replaceOps := checks.Wait()
+	replaceOps, err := checks.Wait()
+	if err != nil {
+		return nil, err
+	}
 	var updates int
 	for _, r := range replaceOps {
 		if r == nil {
 			continue
 		}
-		b = bytes.ReplaceAll(b, []byte(r.original), []byte(r.new))
+		fileContent = bytes.ReplaceAll(fileContent, []byte(r.original), []byte(r.new))
 		updates++
 	}
 	if updates == 0 {
 		return nil, nil
 	}
 
-	return b, nil
+	return fileContent, nil
 }
