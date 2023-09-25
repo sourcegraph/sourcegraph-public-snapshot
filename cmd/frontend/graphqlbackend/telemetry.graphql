@@ -90,11 +90,11 @@ input TelemetryEventParametersInput {
 
     By default, this metadata is assumed to be unsafe for export from an instance.
     """
-    privateMetadata: JSONValue
+    privateMetadata: JSONValue!
     """
     Billing-related metadata.
     """
-    billingMetadata: TelemetryEventBillingMetadataInput
+    billingMetadata: TelemetryEventBillingMetadataInput!
 }
 
 """
