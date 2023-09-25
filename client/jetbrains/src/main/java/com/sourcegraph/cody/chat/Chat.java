@@ -8,7 +8,6 @@ import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams;
 import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.context.ContextFile;
 import com.sourcegraph.cody.context.ContextMessage;
-import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,14 +22,13 @@ public class Chat {
       @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
       @NotNull ChatMessage humanMessage,
       @NotNull String recipeId,
-      @NotNull UpdatableChat chat,
-      @NotNull CancellationToken cancellationToken)
+      @NotNull UpdatableChat chat)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
     client.onFinishedProcessing = chat::finishMessageProcessing;
     client.onChatUpdateMessageInProgress =
         (agentChatMessage) -> {
-          if (agentChatMessage.text == null || cancellationToken.isCancelled()) {
+          if (agentChatMessage.text == null) {
             return;
           }
 
