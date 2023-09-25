@@ -9,8 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -94,7 +94,7 @@ func (r *searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
+		exportPath, err := url.JoinPath(globals.ExternalURLString(), fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +105,7 @@ func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
 
 func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
+		exportPath, err := url.JoinPath(globals.ExternalURLString(), fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
