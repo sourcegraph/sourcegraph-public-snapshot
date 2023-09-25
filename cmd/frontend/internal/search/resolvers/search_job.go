@@ -53,7 +53,11 @@ func (r *searchJobResolver) Query() string {
 }
 
 func (r *searchJobResolver) State(ctx context.Context) string {
-	return r.Job.AggState.ToGraphQL()
+	// At job creation we don't set the AggState
+	if r.Job.AggState != "" {
+		return r.Job.AggState.ToGraphQL()
+	}
+	return r.Job.State.ToGraphQL()
 }
 
 func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
