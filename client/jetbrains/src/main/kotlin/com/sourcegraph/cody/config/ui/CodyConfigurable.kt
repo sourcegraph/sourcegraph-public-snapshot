@@ -48,6 +48,11 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
               .enabledIf(enableCodyCheckbox.selected.and(enableDebugCheckbox.selected))
               .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
         }
+        row {
+          checkBox("Accept non-trusted certificates")
+              .enabledIf(enableCodyCheckbox.selected)
+              .bindSelected(settingsModel::shouldAcceptNonTrustedCertificatesAutomatically)
+        }
       }
 
       group("Autocomplete") {
@@ -95,6 +100,8 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
         // note: this sets the same value for both light & dark mode, currently
         codyApplicationSettings.customAutocompleteColor?.let { JBColor(it, it) }
     settingsModel.blacklistedLanguageIds = codyApplicationSettings.blacklistedLanguageIds
+    settingsModel.shouldAcceptNonTrustedCertificatesAutomatically =
+        codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically
     dialogPanel.reset()
   }
 
@@ -122,6 +129,8 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
         settingsModel.isCustomAutocompleteColorEnabled
     codyApplicationSettings.customAutocompleteColor = settingsModel.customAutocompleteColor?.rgb
     codyApplicationSettings.blacklistedLanguageIds = settingsModel.blacklistedLanguageIds
+    codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically =
+        settingsModel.shouldAcceptNonTrustedCertificatesAutomatically
 
     publisher.afterAction(context)
   }
