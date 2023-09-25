@@ -33,7 +33,6 @@ import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.agent.protocol.CancelParams;
 import com.sourcegraph.cody.agent.protocol.RecipeInfo;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
@@ -55,12 +54,12 @@ import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -90,11 +89,11 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
+  private CancellationToken inProgressChat = new CancellationToken();
   private final JButton stopGeneratingButton =
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
   private final @NotNull JBPanelWithEmptyText recipesPanel;
   public final EmbeddingStatusView embeddingStatusView;
-  private final @NotNull AtomicReference<String> currentRecipeId = new AtomicReference<>();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
   private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
@@ -154,12 +153,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         new Dimension(Short.MAX_VALUE, stopGeneratingButton.getPreferredSize().height + 10));
     stopGeneratingButton.addActionListener(
         e -> {
-          CodyAgentServer server = CodyAgent.getServer(project);
-          String currentRecipeId = this.currentRecipeId.get();
-          if (server != null && currentRecipeId != null) {
-            server.cancelRequest(new CancelParams(currentRecipeId));
-            this.currentRecipeId.set(null);
-          }
+          inProgressChat.abort();
           stopGeneratingButton.setVisible(false);
           sendButton.setEnabled(true);
         });
@@ -475,7 +469,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void startMessageProcessing(@NotNull String recipeId) {
-    this.currentRecipeId.set(recipeId);
+    this.inProgressChat = new CancellationToken();
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -556,7 +550,8 @@ public class CodyToolWindowContent implements UpdatableChat {
                       CodyAgent.getInitializedServer(project),
                       humanMessage,
                       recipeId,
-                      this);
+                      this,
+                      this.inProgressChat);
                 } catch (Exception e) {
                   logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }

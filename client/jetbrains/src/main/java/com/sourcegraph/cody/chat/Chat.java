@@ -8,6 +8,7 @@ import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams;
 import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.context.ContextFile;
 import com.sourcegraph.cody.context.ContextMessage;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -22,7 +23,8 @@ public class Chat {
       @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
       @NotNull ChatMessage humanMessage,
       @NotNull String recipeId,
-      @NotNull UpdatableChat chat)
+      @NotNull UpdatableChat chat,
+      @NotNull CancellationToken token)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
     client.onFinishedProcessing = chat::finishMessageProcessing;
@@ -59,10 +61,12 @@ public class Chat {
         .thenAcceptAsync(
             server -> {
               try {
-                server.recipesExecute(
-                    new ExecuteRecipeParams()
-                        .setId(recipeId)
-                        .setHumanChatInput(humanMessage.getText()));
+                CompletableFuture<Void> recipesExecuteFuture =
+                    server.recipesExecute(
+                        new ExecuteRecipeParams()
+                            .setId(recipeId)
+                            .setHumanChatInput(humanMessage.getText()));
+                token.onCancellationRequested(() -> recipesExecuteFuture.cancel(true));
               } catch (Exception ignored) {
                 // Ignore bugs in the agent when executing recipes
               }
