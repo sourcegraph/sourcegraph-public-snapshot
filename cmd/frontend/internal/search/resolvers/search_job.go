@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -37,11 +36,6 @@ type searchJobResolver struct {
 	Job *types.ExhaustiveSearchJob
 	db  database.DB
 	svc *service.Service
-
-	// call initStats to access stats and statsErr
-	once     sync.Once
-	statsErr error
-	stats    *types.RepoRevJobStats
 }
 
 func (r *searchJobResolver) ID() graphql.ID {
@@ -102,24 +96,10 @@ func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	return nil, nil
 }
 
-// TODO: don't need init anymore
-func (r *searchJobResolver) initStats(ctx context.Context) (*types.RepoRevJobStats, error) {
-	r.once.Do(func() {
-		repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
-		if err != nil {
-			r.statsErr = err
-			return
-		}
-		r.stats = repoRevStats
-	})
-
-	return r.stats, r.statsErr
-}
-
 func (r *searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	stats, statsErr := r.initStats(ctx)
-	if statsErr != nil {
-		return nil, statsErr
+	repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
+	if err != nil {
+		return nil, err
 	}
-	return &searchJobStatsResolver{stats}, nil
+	return &searchJobStatsResolver{repoRevStats}, nil
 }
