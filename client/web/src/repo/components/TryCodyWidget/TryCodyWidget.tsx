@@ -85,6 +85,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                         context={context}
                         githubLabel="GitHub"
                         gitlabLabel="GitLab"
+                        googleLabel="Google"
                         withCenteredText={true}
                         onClick={logEvent}
                         ctaClassName={styles.authButton}

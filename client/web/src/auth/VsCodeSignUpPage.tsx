@@ -87,6 +87,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
+                googleLabel="Continue with Google"
                 onClick={logEvent}
             />
 

@@ -106,6 +106,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 context={context}
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
+                googleLabel="Continue with Google"
                 onClick={logEventAndSetFlags}
             />
 

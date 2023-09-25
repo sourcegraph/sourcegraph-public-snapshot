@@ -87,10 +87,10 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                         context={context}
                                         githubLabel="GitHub"
                                         gitlabLabel="Gitlab"
+                                        googleLabel="Google"
                                         withCenteredText={true}
                                         onClick={onClickCTAButton}
                                         ctaClassName={styles.authButton}
-                                        iconClassName={styles.buttonIcon}
                                     />
                                 </div>
                             </div>

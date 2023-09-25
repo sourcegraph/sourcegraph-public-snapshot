@@ -160,6 +160,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 context={context}
                                 githubLabel="GitHub"
                                 gitlabLabel="GitLab"
+                                googleLabel="Google"
                                 withCenteredText={true}
                                 onClick={onClickCTAButton}
                                 ctaClassName={styles.authButton}
