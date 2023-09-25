@@ -5,6 +5,7 @@ import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentManager
 import com.sourcegraph.cody.config.CodyApplicationSettings.Companion.getInstance
+import com.sourcegraph.cody.statusbar.CodyAutocompleteStatusService
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.GraphQlLogger
 
@@ -45,6 +46,8 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
               val codyToolWindowContent = CodyToolWindowContent.getInstance(project)
               codyToolWindowContent.refreshPanelsVisibility()
             }
+
+            CodyAutocompleteStatusService.resetApplication(project)
 
             // Log install events
             if (context.serverUrlChanged) {

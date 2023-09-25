@@ -3960,6 +3960,11 @@ type Repository implements Node & GenericSearchResultInterface {
     embeddingExists: Boolean!
 
     """
+    Returns true if command executed on the repo are recorded.
+    """
+    isRecordingEnabled: Boolean!
+
+    """
     Returns a list of all recorded commands for given repository.
     """
     recordedCommands(

@@ -27,6 +27,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/types",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/globals",
         "//internal/api",
         "//internal/batches/sources/azuredevops",
         "//internal/batches/sources/bitbucketcloud",
@@ -72,10 +73,10 @@ go_test(
     ],
     embed = [":types"],
     deps = [
+        "//cmd/frontend/globals",
         "//internal/batches/sources/azuredevops",
         "//internal/batches/sources/bitbucketcloud",
         "//internal/batches/sources/gerrit",
-        "//internal/conf",
         "//internal/database",
         "//internal/executor",
         "//internal/extsvc",
