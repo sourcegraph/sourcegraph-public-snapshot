@@ -14,6 +14,19 @@
 ### Security
 
 ## [3.3.0-alpha.1]
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.3.0-alpha.1]
 ### Highlights
 - New: setting to accept non-trusted SSL certificates
 - New: button to stop generation of a chat reply
