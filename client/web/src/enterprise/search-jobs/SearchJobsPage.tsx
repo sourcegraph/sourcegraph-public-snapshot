@@ -386,7 +386,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Tooltip>
             </span>
 
-            <Tooltip content={!job.logURL ? 'Results are not available yet' : ''}>
+            <Tooltip content={!job.URL ? 'Results are not available yet' : ''}>
                 <DownloadFileButton
                     fileUrl={job.URL ?? ''}
                     variant="secondary"
