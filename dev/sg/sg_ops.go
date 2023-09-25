@@ -127,7 +127,7 @@ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
 
 		tag, err := images.ParseMainBranchImageTag(input)
 		if err != nil {
-			return errors.Wrap(err, "unable to understand tag")
+			return errors.Wrap(err, "unable to parse tag")
 		}
 
 		selectProperty := cmd.String("property")
