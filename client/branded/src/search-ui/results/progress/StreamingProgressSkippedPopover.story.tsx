@@ -1,6 +1,7 @@
 import type { Meta, Story } from '@storybook/react'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
@@ -67,7 +68,14 @@ export const Popover: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
+            {() => (
+                <StreamingProgressSkippedPopover
+                    query=""
+                    progress={progress}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    onSearchAgain={() => {}}
+                />
+            )}
         </BrandedStory>
     )
 }
@@ -103,7 +111,14 @@ export const ShouldCloseAllInfo: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
+            {() => (
+                <StreamingProgressSkippedPopover
+                    query=""
+                    progress={progress}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    onSearchAgain={() => {}}
+                />
+            )}
         </BrandedStory>
     )
 }
@@ -131,7 +146,14 @@ export const ShouldOpenOneInfo: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
+            {() => (
+                <StreamingProgressSkippedPopover
+                    query=""
+                    progress={progress}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    onSearchAgain={() => {}}
+                />
+            )}
         </BrandedStory>
     )
 }

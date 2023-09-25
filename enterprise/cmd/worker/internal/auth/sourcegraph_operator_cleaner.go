@@ -70,26 +70,24 @@ type sourcegraphOperatorCleanHandler struct {
 	lifecycleDuration time.Duration
 }
 
-// Handle hard deletes expired Sourcegraph Operator user accounts based on the
-// configured lifecycle duration every minute. It skips users that have external
-// accounts connected other than service type "sourcegraph-operator".
+// Handle updates user accounts with Sourcegraph Operator ("sourcegraph-operator")
+// external accounts based on the configured lifecycle duration every minute such
+// that when the external account has exceeded the lifecycle duration:
+//
+// - if the account has no other external accounts, we delete it
+// - if the account has other external accounts, we make sure they are not a site admin
+// - if the account is a SOAP service account, we don't change it
+//
+// See test cases for details.
 func (h *sourcegraphOperatorCleanHandler) Handle(ctx context.Context) error {
-	// We must get external account ID, then query again for the data, since
-	// the UserExternalAccounts is the only way to easily access account data.
-	// We use MAX to make it look like an aggregated value. This is OK because
-	// this query only asks for users with exactly 1 external account so the value
-	// is the same regardless of the aggregation.
 	q := sqlf.Sprintf(`
-SELECT user_id, MAX(user_external_accounts.id)
+SELECT user_id
 FROM users
 JOIN user_external_accounts ON user_external_accounts.user_id = users.id
 WHERE
-	users.id IN ( -- Only users with a single external account and the service_type is "sourcegraph-operator"
-	    SELECT user_id FROM user_external_accounts WHERE service_type = %s
-	)
-AND users.created_at <= %s
+	user_external_accounts.service_type = %s
+	AND user_external_accounts.created_at <= %s
 GROUP BY user_id
-HAVING COUNT(*) = 1
 `,
 		auth.SourcegraphOperatorProviderType,
 		time.Now().Add(-1*h.lifecycleDuration),
@@ -100,24 +98,50 @@ HAVING COUNT(*) = 1
 	}
 	defer func() { rows.Close() }()
 
-	var userIDs []int32
+	var deleteUserIDs, demoteUserIDs, deleteExternalAccountIDs []int32
 	for rows.Next() {
-		var userID, soapID int32
-		if err := rows.Scan(&userID, &soapID); err != nil {
+		var userID int32
+		if err := rows.Scan(&userID); err != nil {
 			return err
 		}
 
-		soapAccount, err := h.db.UserExternalAccounts().Get(ctx, soapID)
+		// List external accounts for this user with a SOAP account.
+		accounts, err := h.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			UserID: userID,
+		})
 		if err != nil {
-			return err
-		}
-		data, err := sourcegraphoperator.GetAccountData(ctx, soapAccount.AccountData)
-		if err == nil && data.ServiceAccount {
-			continue // do not delete this user, it is a service account
+			return errors.Wrapf(err, "list external accounts for user %d", userID)
 		}
 
-		// delete this user
-		userIDs = append(userIDs, userID)
+		// Check if the account is a SOAP service account. If it is, we don't
+		// want to touch it.
+		var isServiceAccount bool
+		var soapExternalAccountID int32
+		for _, account := range accounts {
+			if account.ServiceType == auth.SourcegraphOperatorProviderType {
+				soapExternalAccountID = account.ID
+				data, err := sourcegraphoperator.GetAccountData(ctx, account.AccountData)
+				if err == nil && data.ServiceAccount {
+					isServiceAccount = true
+					break
+				}
+			}
+		}
+		if isServiceAccount {
+			continue
+		}
+
+		if len(accounts) > 1 {
+			// If the user has other external accounts, just expire their SOAP
+			// account and revoke their admin access. We only delete the external
+			// account in this case because in the other case, we delete the
+			// user entirely.
+			demoteUserIDs = append(demoteUserIDs, userID)
+			deleteExternalAccountIDs = append(deleteExternalAccountIDs, soapExternalAccountID)
+		} else {
+			// Otherwise, delete them.
+			deleteUserIDs = append(deleteUserIDs, userID)
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return err
@@ -130,9 +154,29 @@ HAVING COUNT(*) = 1
 			SourcegraphOperator: true,
 		},
 	)
-	err = h.db.Users().HardDeleteList(ctx, userIDs)
-	if err != nil && !errcode.IsNotFound(err) {
+
+	// Hard delete users with only the expired SOAP account
+	if err := h.db.Users().HardDeleteList(ctx, deleteUserIDs); err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "hard delete users")
 	}
+
+	// Demote users: remove their SOAP account, and make sure they are not a
+	// site admin
+	var demoteErrs error
+	for _, userID := range demoteUserIDs {
+		if err := h.db.Users().SetIsSiteAdmin(ctx, userID, false); err != nil && !errcode.IsNotFound(err) {
+			demoteErrs = errors.Append(demoteErrs, errors.Wrap(err, "revoke site admin"))
+		}
+	}
+	if demoteErrs != nil {
+		return demoteErrs
+	}
+	if err := h.db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+		IDs:         deleteExternalAccountIDs,
+		ServiceType: auth.SourcegraphOperatorProviderType,
+	}); err != nil && !errcode.IsNotFound(err) {
+		return errors.Wrap(err, "remove SOAP accounts")
+	}
+
 	return nil
 }

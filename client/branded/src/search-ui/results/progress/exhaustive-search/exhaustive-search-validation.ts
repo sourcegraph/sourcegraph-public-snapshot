@@ -2,7 +2,17 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Keyword, Pattern } from '@sourcegraph/shared/src/search/query/token'
 
+enum ValidationErrorType {
+    MULTIPLE_REV = 'multiple_rev',
+    INVALID_QUERY = 'invalid_query',
+    GENERIC_REGEXP = 'generic_regexp',
+    HAS_CONTENT_PREDICATE = 'has_content_predicate',
+    HAS_FILE_PREDICATE = 'has_file_predicate',
+    OR_OPERATOR = 'or_operator',
+}
+
 interface ValidationError {
+    type: ValidationErrorType
     reason: string
 }
 
@@ -12,6 +22,7 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
 
     if (tokens.type === 'error') {
         validationErrors.push({
+            type: ValidationErrorType.INVALID_QUERY,
             reason: `The current query is invalid, problem is at ${tokens.at} column, probably you mean ${tokens.expected}`,
         })
     }
@@ -26,7 +37,10 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
                 .length > 1
 
         if (hasMultipleRevFilters) {
-            validationErrors.push({ reason: 'Multiple rev operators are not compatible' })
+            validationErrors.push({
+                type: ValidationErrorType.MULTIPLE_REV,
+                reason: 'Multiple rev operators are not compatible',
+            })
         }
 
         const hasRegexpPattern = filters.some(
@@ -36,13 +50,17 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
         const hasGenericRegexpPattern = hasRegexpPattern && patterns.some(pattern => pattern.value === '.*')
 
         if (hasGenericRegexpPattern) {
-            validationErrors.push({ reason: 'Generic regexp match .* is not compatible' })
+            validationErrors.push({
+                type: ValidationErrorType.GENERIC_REGEXP,
+                reason: 'Generic regexp match .* is not compatible',
+            })
         }
 
         const repoHasContentFilter = filters.some(filter => filter.value?.value.startsWith('has.content('))
 
         if (repoHasContentFilter) {
             validationErrors.push({
+                type: ValidationErrorType.HAS_CONTENT_PREDICATE,
                 reason: 'repo.has.content predicate is not compatible',
             })
         }
@@ -51,6 +69,7 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
 
         if (repoHasFileFilter) {
             validationErrors.push({
+                type: ValidationErrorType.HAS_FILE_PREDICATE,
                 reason: 'repo.has.file predicate is not compatible',
             })
         }
@@ -59,6 +78,7 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
 
         if (hasOr) {
             validationErrors.push({
+                type: ValidationErrorType.OR_OPERATOR,
                 reason: 'Or operator is not compatible for exhaustive search',
             })
         }

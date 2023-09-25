@@ -243,6 +243,7 @@ type pingRequest struct {
 	SearchUsage                   json.RawMessage `json:"searchUsage,omitempty"`
 	ExtensionsUsage               json.RawMessage `json:"extensionsUsage,omitempty"`
 	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage,omitempty"`
+	SearchJobsUsage               json.RawMessage `json:"searchJobsUsage,omitempty"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry,omitempty"`
 	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage,omitempty"`
 	NotebooksUsage                json.RawMessage `json:"notebooksUsage,omitempty"`
@@ -364,6 +365,7 @@ type pingPayload struct {
 	DependencyVersions            json.RawMessage `json:"dependency_versions"`
 	ExtensionsUsage               json.RawMessage `json:"extensions_usage"`
 	CodeInsightsUsage             json.RawMessage `json:"code_insights_usage"`
+	SearchJobsUsage               json.RawMessage `json:"search_jobs_usage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"code_insights_critical_telemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"code_monitoring_usage"`
 	NotebooksUsage                json.RawMessage `json:"notebooks_usage"`
@@ -472,6 +474,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ExtensionsUsage:               pr.ExtensionsUsage,
 		CodeInsightsUsage:             pr.CodeInsightsUsage,
 		CodeInsightsCriticalTelemetry: pr.CodeInsightsCriticalTelemetry,
+		SearchJobsUsage:               pr.SearchJobsUsage,
 		CodeMonitoringUsage:           pr.CodeMonitoringUsage,
 		NotebooksUsage:                pr.NotebooksUsage,
 		CodeHostVersions:              pr.CodeHostVersions,

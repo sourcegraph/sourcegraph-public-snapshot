@@ -15,6 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -140,7 +141,7 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 
 func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 	if pc.ServiceProviderIssuer == "" {
-		externalURL := conf.Get().ExternalURL
+		externalURL := globals.ExternalURLString()
 		if externalURL == "" {
 			// An empty issuer will be detected as an error later.
 			return pc
@@ -148,7 +149,7 @@ func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 
 		// Derive default issuer from externalURL.
 		tmp := *pc
-		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().ExternalURL, "/") + path.Join(authPrefix, "metadata")
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(externalURL, "/") + path.Join(authPrefix, "metadata")
 		return &tmp
 	}
 	return pc

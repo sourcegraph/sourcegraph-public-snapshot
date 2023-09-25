@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "telemetrytest",
+    srcs = ["mocks.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/telemetry",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+    ],
+)

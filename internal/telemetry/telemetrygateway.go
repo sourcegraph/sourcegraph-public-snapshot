@@ -18,8 +18,14 @@ func newTelemetryGatewayEvent(
 	newUUID func() string,
 	feature eventFeature,
 	action eventAction,
-	parameters EventParameters,
+	parameters *EventParameters,
 ) *telemetrygatewayv1.Event {
+	// Assign zero value for ease of reference, and in the proto spec, parameters
+	// is not optional.
+	if parameters == nil {
+		parameters = &EventParameters{}
+	}
+
 	event := telemetrygatewayv1.NewEventWithDefaults(ctx, now, newUUID)
 	event.Feature = string(feature)
 	event.Action = string(action)
