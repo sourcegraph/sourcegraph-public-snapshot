@@ -332,6 +332,8 @@ func (m jsonMessage[T]) Scan(value any) error {
 	case nil:
 	case []byte:
 		return json.Unmarshal(value, m.inner)
+	case string:
+		return json.Unmarshal([]byte(value), m.inner)
 	default:
 		return errors.Errorf("value is not []byte: %T", value)
 	}
