@@ -53,10 +53,7 @@ func (r *searchJobResolver) Query() string {
 }
 
 func (r *searchJobResolver) State(ctx context.Context) string {
-	if r.Job.AggState != "" {
-		return r.Job.AggState.ToGraphQL()
-	}
-	return r.Job.State.ToGraphQL()
+	return r.Job.AggState.ToGraphQL()
 }
 
 func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
@@ -101,6 +98,7 @@ func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	return nil, nil
 }
 
+// TODO: don't need init anymore
 func (r *searchJobResolver) initStats(ctx context.Context) (*types.RepoRevJobStats, error) {
 	r.once.Do(func() {
 		repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)

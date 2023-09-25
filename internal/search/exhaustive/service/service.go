@@ -123,6 +123,7 @@ func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.E
 		return nil, err
 	}
 
+	// TODO (stefan) make GetExhaustiveSearchJob return the agg state for the tests
 	return tx.GetExhaustiveSearchJob(ctx, jobID)
 }
 

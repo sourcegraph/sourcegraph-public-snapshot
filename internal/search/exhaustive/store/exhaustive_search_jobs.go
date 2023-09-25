@@ -194,14 +194,20 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 // | agg_state  |
 // |------------|
 // | processing |
+//
+// We want the aggregate state to be returned by the db, so we can use db
+// filtering and pagination.
 const aggStateSubQuery = `
 		SELECT
 			CASE
+				WHEN canceled > 0 THEN 'canceled'
 				WHEN processing > 0 THEN 'processing'
 				WHEN queued > 0 THEN 'queued'
+				WHEN errored > 0 THEN 'processing'
 				WHEN failed > 0 THEN 'failed'
 				WHEN completed > 0 THEN 'completed'
-				ELSE ''
+			    -- This should never happen
+				ELSE 'queued'
 			END
 		FROM (
 -- | processing | queued | failed | completed |
@@ -212,7 +218,9 @@ const aggStateSubQuery = `
 				max( CASE WHEN state = 'failed' THEN count END) AS failed,
 				max( CASE WHEN state = 'processing' THEN count END) AS processing,
 				max( CASE WHEN state = 'completed' THEN count END) AS completed,
-				max( CASE WHEN state = 'queued' THEN count END) AS queued
+				max( CASE WHEN state = 'queued' THEN count END) AS queued,
+				max( CASE WHEN state = 'canceled' THEN count END) AS canceled,
+				max( CASE WHEN state = 'errored' THEN count END) AS errored
 			FROM (
 -- | state      | count |
 -- |------------|-------|
@@ -356,6 +364,7 @@ func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err er
 	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
 }
 
+// TODO (stefan): use this as subquery
 const getAggregateRepoRevState = `
 SELECT state, COUNT(*) as count
 FROM
