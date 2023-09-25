@@ -223,6 +223,39 @@ func TestConvertMatches(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("FormatAsMultilineMatches", func(t *testing.T) {
+		cases := []struct {
+			input  ChunkMatches
+			output string
+		}{
+			{
+				input: ChunkMatches{{
+					Content:      "line1\nline2\nline3",
+					ContentStart: Location{Line: 1},
+					Ranges: Ranges{
+						{
+							Start: Location{1, 1, 1},
+							End:   Location{12, 2, 5},
+						},
+						{
+							Start: Location{7, 2, 1},
+							End:   Location{13, 3, 1},
+						},
+					},
+				}},
+				output: "[{\"Line\":2,\"OffsetAndLength\":[1,12]}]",
+			},
+		}
+
+		for _, tc := range cases {
+			t.Run("", func(t *testing.T) {
+				s, err := tc.input.FormatAsMultilineMatches()
+				require.NoError(t, err)
+				require.Equal(t, tc.output, string(s))
+			})
+		}
+	})
 }
 
 func TestChunkMatches_Limit(t *testing.T) {

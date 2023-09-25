@@ -1,7 +1,9 @@
 package result
 
 import (
+	"encoding/json"
 	"fmt"
+	"math"
 	"net/url"
 	"path"
 	"strings"
@@ -271,6 +273,49 @@ func (hs ChunkMatches) AsLineMatches() []*LineMatch {
 		res = append(res, h.AsLineMatches()...)
 	}
 	return res
+}
+
+type LineRange struct {
+	// Relative to the beginning of the file. Starts at 1.
+	Line int
+	// Relative to the beginning of the line.
+	OffsetAndLength [2]int
+}
+
+// FormatAsMultilineMatches serializes ChunkMatches into a JSON of the format
+// "[{\"Line\":2,\"OffsetAndLength\":[1,12]}, ...]",
+//
+// Note that the conversion is not lossless, because we represent all ranges
+// within a Chunk by one multiline match that encompasses them all. However, it
+// is more human-readable and preserves the multiline character of ChunkMatches.
+func (hs ChunkMatches) FormatAsMultilineMatches() ([]byte, error) {
+	lineRange := make([]LineRange, 0, len(hs))
+	for _, h := range hs {
+		relRanges := h.Ranges.Sub(h.ContentStart)
+
+		lineStart := h.ContentStart.Line + 1
+		minOffset := math.MaxInt
+		maxOffset := 0
+
+		for _, rr := range relRanges {
+			if rr.Start.Offset < minOffset {
+				minOffset = rr.Start.Offset
+			}
+			if rr.End.Offset > maxOffset {
+				maxOffset = rr.End.Offset
+			}
+		}
+
+		lineRange = append(
+			lineRange,
+			LineRange{
+				Line:            lineStart,
+				OffsetAndLength: [2]int{minOffset, maxOffset - minOffset},
+			},
+		)
+	}
+
+	return json.Marshal(lineRange)
 }
 
 // FormatCSV returns a string representation of ChunkMatches which matches the

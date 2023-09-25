@@ -47,7 +47,7 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 			"Repository external URL",
 			"File path",
 			"File URL",
-			"Chunk matches [line [start end]]",
+			"Line ranges",
 		); err != nil {
 			return err
 		}
@@ -58,6 +58,11 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 
 	fileURL := *w.host
 	fileURL.Path = fm.File.URLAtCommit().Path
+
+	lr, err := fm.ChunkMatches.FormatAsMultilineMatches()
+	if err != nil {
+		return err
+	}
 
 	return w.w.WriteRow(
 		// Match type
@@ -78,8 +83,8 @@ func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
 		// File URL
 		fileURL.String(),
 
-		// Chunk matches
-		fm.ChunkMatches.FormatCSV(),
+		// Line ranges
+		string(lr),
 	)
 }
 
