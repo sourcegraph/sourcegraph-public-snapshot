@@ -190,13 +190,12 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 }
 
 // aggStateSubQuery takes the results from getAggregateStateTable and computes a
-// single, aggregate state of the job cascade. We use this sub-query to an
-// aggregate state to a search job that reflects the state of the entire search
-// job better than the worker state
+// single aggregate state that reflects the state of the entire search job
+// cascade better than the state of the top-level worker.
 //
 // The processing chain is as follows:
 //
-// Call getAggregateStateTable -> transpose table -> compute aggregate state
+// Execute getAggregateStateTable -> transpose table -> compute aggregate state
 //
 // # The result looks like this:
 //

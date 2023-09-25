@@ -280,8 +280,8 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	}
 }
 
-// TestStore_GetSearchJobNotFound tests that ListExhaustiveSearchJobs returns
-// the proper aggregated state.
+// TestStore_GetAggregateStatus tests that ListExhaustiveSearchJobs returns the
+// proper aggregated state.
 func TestStore_AggregateStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -324,7 +324,7 @@ func TestStore_AggregateStatus(t *testing.T) {
 			want: types.JobStateProcessing,
 		},
 		{
-			name: "processing, although some job are failed",
+			name: "processing, although some jobs failed",
 			c: stateCascade{
 				searchJob: types.JobStateCompleted,
 				repoJobs:  []types.JobState{types.JobStateCompleted},
@@ -345,7 +345,7 @@ func TestStore_AggregateStatus(t *testing.T) {
 			want: types.JobStateFailed,
 		},
 		{
-			name: "all jobs finished",
+			name: "all jobs finished successfully",
 			c: stateCascade{
 				searchJob:   types.JobStateCompleted,
 				repoJobs:    []types.JobState{types.JobStateCompleted},
