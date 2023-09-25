@@ -295,6 +295,11 @@ func (d Diff) Has(target Diff) bool {
 
 // Only checks that only the target Diff flag is set
 func (d Diff) Only(target Diff) bool {
+	// If no changes are detected, d will be zero and the bitwise &^ below
+	// will always evaluate to zero, even if the target bit is not set.
+	if d == 0 {
+		return false
+	}
 	// This line performs a bitwise AND between d and the inverted bits of target.
 	// It then compares the result to 0.
 	// This evaluates to true only if target is the only bit set in d.

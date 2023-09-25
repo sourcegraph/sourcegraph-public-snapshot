@@ -36,17 +36,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.1.8")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.1.9")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.1.8")
+	latestReleaseKubernetesBuild = newPingResponse("5.1.9")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.1.8")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.1.9")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -243,6 +243,7 @@ type pingRequest struct {
 	SearchUsage                   json.RawMessage `json:"searchUsage,omitempty"`
 	ExtensionsUsage               json.RawMessage `json:"extensionsUsage,omitempty"`
 	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage,omitempty"`
+	SearchJobsUsage               json.RawMessage `json:"searchJobsUsage,omitempty"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry,omitempty"`
 	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage,omitempty"`
 	NotebooksUsage                json.RawMessage `json:"notebooksUsage,omitempty"`
@@ -364,6 +365,7 @@ type pingPayload struct {
 	DependencyVersions            json.RawMessage `json:"dependency_versions"`
 	ExtensionsUsage               json.RawMessage `json:"extensions_usage"`
 	CodeInsightsUsage             json.RawMessage `json:"code_insights_usage"`
+	SearchJobsUsage               json.RawMessage `json:"search_jobs_usage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"code_insights_critical_telemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"code_monitoring_usage"`
 	NotebooksUsage                json.RawMessage `json:"notebooks_usage"`
@@ -472,6 +474,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ExtensionsUsage:               pr.ExtensionsUsage,
 		CodeInsightsUsage:             pr.CodeInsightsUsage,
 		CodeInsightsCriticalTelemetry: pr.CodeInsightsCriticalTelemetry,
+		SearchJobsUsage:               pr.SearchJobsUsage,
 		CodeMonitoringUsage:           pr.CodeMonitoringUsage,
 		NotebooksUsage:                pr.NotebooksUsage,
 		CodeHostVersions:              pr.CodeHostVersions,

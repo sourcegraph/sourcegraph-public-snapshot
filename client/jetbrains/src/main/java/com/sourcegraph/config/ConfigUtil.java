@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
   public static final String SERVICE_DISPLAY_NAME = "Sourcegraph Cody + Code Search";
-  public static final String CODY_DISPLAY_NAME = "Cody AI";
+  public static final String CODY_DISPLAY_NAME = "Cody";
   public static final String CODE_SEARCH_DISPLAY_NAME = "Code Search";
   public static final String SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph";
 
@@ -116,7 +116,7 @@ public class ConfigUtil {
     return CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled();
   }
 
-  public static Integer getCustomAutocompleteColor() {
+  public static @Nullable Integer getCustomAutocompleteColor() {
     return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
   }
 
@@ -142,5 +142,10 @@ public class ConfigUtil {
 
   public static List<String> getBlacklistedAutocompleteLanguageIds() {
     return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
+  }
+
+  public static boolean getShouldAcceptNonTrustedCertificatesAutomatically() {
+    return CodyApplicationSettings.getInstance()
+        .getShouldAcceptNonTrustedCertificatesAutomatically();
   }
 }

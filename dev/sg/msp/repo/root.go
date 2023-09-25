@@ -1,11 +1,12 @@
 package repo
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var once sync.Once

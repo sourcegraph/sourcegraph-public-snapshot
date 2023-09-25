@@ -50,16 +50,16 @@ class CachingCodyUserAvatarLoader : Disposable {
       url: String,
       maximumSize: Int
   ): Image? {
-    try {
+    return try {
       val image =
           requestExecutor.execute(indicator, SourcegraphApiRequests.CurrentUser.getAvatar(url))
-      return if (image.getWidth(null) <= maximumSize && image.getHeight(null) <= maximumSize) image
+      if (image.getWidth(null) <= maximumSize && image.getHeight(null) <= maximumSize) image
       else ImageLoader.scaleImage(image, maximumSize)
     } catch (e: ProcessCanceledException) {
-      return null
+      null
     } catch (e: Exception) {
       LOG.debug("Error loading image from $url", e)
-      return null
+      null
     }
   }
 

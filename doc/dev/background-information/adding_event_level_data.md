@@ -1,4 +1,6 @@
-# Adding, changing, and debugging user event data
+# DEPRECATED: Adding, changing, and debugging user event data
+
+> WARNING: **This process is deprecated.** To export Telemetry events from Sourcegraph instances, refer to the new [telemetry reference](./telemetry/index.md).
 
 This document outlines the process for adding or changing the raw user event data collected from Sourcegraph instances. This is limited to certain managed instances (cloud) where the customer has signed a corresponding data collection agreement.
 

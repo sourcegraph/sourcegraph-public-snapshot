@@ -17,6 +17,8 @@ data class CodyApplicationSettings(
     var isCustomAutocompleteColorEnabled: Boolean = false,
     var customAutocompleteColor: Int? = null,
     var blacklistedLanguageIds: List<String> = listOf(),
+    var isOnboardingGuidanceDismissed: Boolean = false,
+    var shouldAcceptNonTrustedCertificatesAutomatically: Boolean = false,
 ) : PersistentStateComponent<CodyApplicationSettings> {
   override fun getState(): CodyApplicationSettings = this
 
@@ -31,6 +33,9 @@ data class CodyApplicationSettings(
     this.isCustomAutocompleteColorEnabled = state.isCustomAutocompleteColorEnabled
     this.customAutocompleteColor = state.customAutocompleteColor
     this.blacklistedLanguageIds = state.blacklistedLanguageIds
+    this.isOnboardingGuidanceDismissed = state.isOnboardingGuidanceDismissed
+    this.shouldAcceptNonTrustedCertificatesAutomatically =
+        state.shouldAcceptNonTrustedCertificatesAutomatically
   }
 
   companion object {
