@@ -77,7 +77,7 @@ public class CodyAutocompleteManager {
             });
 
     // Cancel any running job
-    cancelCurrentJob();
+    cancelCurrentJob(editor.getProject());
 
     // Clear any existing inline elements
     disposeInlays(editor);
@@ -168,7 +168,7 @@ public class CodyAutocompleteManager {
       return;
     }
 
-    cancelCurrentJob();
+    cancelCurrentJob(project);
     CancellationToken cancellationToken = new CancellationToken();
     this.currentJob.set(cancellationToken);
 
@@ -210,7 +210,7 @@ public class CodyAutocompleteManager {
 
     // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
     // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
-    // correctly propagate the cancelation to the agent.
+    // correctly propagate the cancellation to the agent.
     cancellationToken.onCancellationRequested(() -> completions.cancel(true));
 
     return completions
@@ -226,9 +226,7 @@ public class CodyAutocompleteManager {
               }
               return null;
             })
-        .thenAccept(
-            unused ->
-                CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready));
+        .thenAccept(unused -> CodyAutocompleteStatusService.resetApplication(project));
   }
 
   private void processAutocompleteResult(
@@ -370,8 +368,8 @@ public class CodyAutocompleteManager {
     } else return item;
   }
 
-  private void cancelCurrentJob() {
+  private void cancelCurrentJob(Project project) {
     this.currentJob.get().abort();
-    CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
+    CodyAutocompleteStatusService.resetApplication(project);
   }
 }
