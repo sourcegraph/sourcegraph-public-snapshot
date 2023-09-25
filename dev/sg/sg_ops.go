@@ -76,7 +76,7 @@ var OpsUpdateImagesCommand = &cli.Command{
 			return flag.ErrHelp
 		}
 
-		return _opsUpdateImages(
+		return opsUpdateImages(
 			ctx.Context,
 			args[0],
 			ctx.String("registry"),
@@ -150,7 +150,7 @@ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
 	},
 }
 
-func _opsUpdateImages(
+func opsUpdateImages(
 	ctx context.Context,
 	path string,
 	registryType string,
