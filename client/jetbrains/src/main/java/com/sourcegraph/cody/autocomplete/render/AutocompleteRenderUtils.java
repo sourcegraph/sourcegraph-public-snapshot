@@ -4,6 +4,7 @@ import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.ui.JBColor;
 import com.sourcegraph.cody.autocomplete.InlayModelUtils;
 import java.awt.Color;
 import java.awt.Font;
@@ -37,7 +38,7 @@ public class AutocompleteRenderUtils {
 
   public static TextAttributes getCustomTextAttributes(
       @NotNull Editor editor, @NotNull Integer fontColor) {
-    Color color = new Color(fontColor);
+    JBColor color = new JBColor(fontColor, fontColor); // set light & dark mode colors explicitly
     TextAttributes attrs = getTextAttributesForEditor(editor).clone();
     attrs.setForegroundColor(color);
     return attrs;

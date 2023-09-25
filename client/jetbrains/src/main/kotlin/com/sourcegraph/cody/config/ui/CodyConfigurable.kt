@@ -5,6 +5,7 @@ import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.ColorPanel
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
@@ -15,7 +16,6 @@ import com.sourcegraph.cody.config.notification.CodySettingChangeContext
 import com.sourcegraph.cody.config.ui.lang.AutocompleteLanguageTable
 import com.sourcegraph.cody.config.ui.lang.AutocompleteLanguageTableWrapper
 import com.sourcegraph.config.ConfigUtil
-import java.awt.Color
 
 class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY_DISPLAY_NAME) {
   private lateinit var dialogPanel: DialogPanel
@@ -89,7 +89,8 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
     settingsModel.isCustomAutocompleteColorEnabled =
         codyApplicationSettings.isCustomAutocompleteColorEnabled
     settingsModel.customAutocompleteColor =
-        codyApplicationSettings.customAutocompleteColor?.let { Color(it) }
+        // note: this sets the same value for both light & dark mode, currently
+        codyApplicationSettings.customAutocompleteColor?.let { JBColor(it, it) }
     settingsModel.blacklistedLanguageIds = codyApplicationSettings.blacklistedLanguageIds
     dialogPanel.reset()
   }
