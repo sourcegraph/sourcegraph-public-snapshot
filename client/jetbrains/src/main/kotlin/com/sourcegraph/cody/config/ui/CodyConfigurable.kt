@@ -9,6 +9,7 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
+import com.intellij.ui.layout.and
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.SettingsModel
 import com.sourcegraph.cody.config.notification.CodySettingChangeActionNotifier
@@ -25,6 +26,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
   override fun createPanel(): DialogPanel {
     dialogPanel = panel {
       lateinit var enableCodyCheckbox: Cell<JBCheckBox>
+      lateinit var enableDebugCheckbox: Cell<JBCheckBox>
       group("Cody") {
         row {
           enableCodyCheckbox =
@@ -35,14 +37,15 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
                   .bindSelected(settingsModel::isCodyEnabled)
         }
         row {
-          checkBox("Enable debug")
-              .comment("Enables debug output visible in the idea.log")
-              .enabledIf(enableCodyCheckbox.selected)
-              .bindSelected(settingsModel::isCodyDebugEnabled)
+          enableDebugCheckbox =
+              checkBox("Enable debug")
+                  .comment("Enables debug output visible in the idea.log")
+                  .enabledIf(enableCodyCheckbox.selected)
+                  .bindSelected(settingsModel::isCodyDebugEnabled)
         }
         row {
           checkBox("Verbose debug")
-              .enabledIf(enableCodyCheckbox.selected)
+              .enabledIf(enableCodyCheckbox.selected.and(enableDebugCheckbox.selected))
               .bindSelected(settingsModel::isCodyVerboseDebugEnabled)
         }
       }
