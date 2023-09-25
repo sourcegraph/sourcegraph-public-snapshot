@@ -18,6 +18,7 @@ tasks:
             PGPASSWORD: postgres
             PGDATABASE: postgres
             PGSSLMODE: disable
+            DOCKER_CONFIG: /etc/gcp/docker.json
             REDIS_CACHE_ENDPOINT: ":6379"
             GIT_PAGER: ''
             DISPLAY: ":99"
