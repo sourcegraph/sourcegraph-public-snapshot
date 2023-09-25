@@ -93,11 +93,11 @@ input TelemetryEventParametersInput {
     can contain arbitrarily-shaped data that may accidentally contain sensitive
     or private contents.
     """
-    privateMetadata: JSONValue
+    privateMetadata: JSONValue!
     """
     Billing-related metadata.
     """
-    billingMetadata: TelemetryEventBillingMetadataInput
+    billingMetadata: TelemetryEventBillingMetadataInput!
 }
 
 """
