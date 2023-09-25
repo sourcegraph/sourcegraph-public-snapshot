@@ -95,6 +95,9 @@ function _run_server_image() {
 
   echo "--- Loading server image"
   echo "Loading $image_tarball in Docker"
+  echo "--- TESTING"
+  echo "$image_tarball"
+  echo "$(ls -al $image_tarball)"
   docker load --input "$image_tarball"
 
   echo "-- Starting $image_name"
