@@ -191,7 +191,7 @@ You can install from the VS Code extension marketplace. To do so:
 - Open Codespaces
 - Install Cody AI by Sourcegraph
 - Copy the URL in the browser, for example, `vscode://sourcegraph.cody-ai...`
-- Open the Command Pallet <kbd>⌘ Cmd/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
+- Open the Command Palette <kbd>⌘ Cmd/Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
 - Choose `Developer: Open URL` and paste the URL, then press <kbd>return</kbd>/<kbd>Enter</kbd>
 
 #### Editors supporting the Open VSX Registry
