@@ -60,6 +60,7 @@ import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -93,7 +94,8 @@ public class CodyToolWindowContent implements UpdatableChat {
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
   private final @NotNull JBPanelWithEmptyText recipesPanel;
   public final EmbeddingStatusView embeddingStatusView;
-  private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
+  private @NotNull AtomicReference<CancellationToken> cancellationToken =
+      new AtomicReference<>(new CancellationToken());
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
   private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
@@ -153,7 +155,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         new Dimension(Short.MAX_VALUE, stopGeneratingButton.getPreferredSize().height + 10));
     stopGeneratingButton.addActionListener(
         e -> {
-          cancellationToken.abort();
+          cancellationToken.get().abort();
           stopGeneratingButton.setVisible(false);
           sendButton.setEnabled(true);
         });
@@ -469,8 +471,8 @@ public class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void startMessageProcessing() {
-    cancellationToken.abort();
-    cancellationToken = new CancellationToken();
+    cancellationToken.get().abort();
+    cancellationToken.set(new CancellationToken());
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -495,7 +497,7 @@ public class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
-              cancellationToken.abort();
+              cancellationToken.get().abort();
               stopGeneratingButton.setVisible(false);
               sendButton.setEnabled(true);
               messagesPanel.removeAll();
@@ -553,7 +555,7 @@ public class CodyToolWindowContent implements UpdatableChat {
                       humanMessage,
                       recipeId,
                       this,
-                      cancellationToken);
+                      cancellationToken.get());
                 } catch (Exception e) {
                   logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }

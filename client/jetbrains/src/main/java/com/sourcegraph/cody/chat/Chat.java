@@ -27,6 +27,7 @@ public class Chat {
       @NotNull CancellationToken cancellationToken)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
+    client.onFinishedProcessing = chat::finishMessageProcessing;
     client.onChatUpdateMessageInProgress =
         (agentChatMessage) -> {
           if (agentChatMessage.text == null || cancellationToken.isCancelled()) {
@@ -70,9 +71,5 @@ public class Chat {
             },
             CodyAgent.executorService)
         .get();
-    // TODO we need to move this finishMessageProcessing to be executed when the whole message
-    // processing is finished to make "stop generating" work. Ideally we need a signal from agent
-    // that it finished processing the message so we can call this method.
-    chat.finishMessageProcessing();
   }
 }
