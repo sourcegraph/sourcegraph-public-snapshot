@@ -89,9 +89,9 @@ func TestFromSearchClient(t *testing.T) {
 		Query:        "content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
-		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
-content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,
-content,bar2,commitbar0,/bar2@commitbar0,,/bar2@commitbar0/-/blob/,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Line ranges
+content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,[]
+content,bar2,commitbar0,/bar2@commitbar0,,/bar2@commitbar0/-/blob/,[]
 `),
 	})
 
@@ -99,8 +99,8 @@ content,bar2,commitbar0,/bar2@commitbar0,,/bar2@commitbar0/-/blob/,
 		Query:        "repo:foo content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD}",
-		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
-content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Line ranges
+content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,[]
 `),
 	})
 
@@ -108,8 +108,8 @@ content,foo1,commitfoo0,/foo1@commitfoo0,,/foo1@commitfoo0/-/blob/,
 		Query:        "repo:foo rev:dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
-content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Line ranges
+content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,[]
 `),
 	})
 
@@ -117,9 +117,9 @@ content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
 		Query:        "repo:foo rev:*refs/heads/dev* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*}",
 		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
-content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
-content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Line ranges
+content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,[]
+content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,[]
 `),
 	})
 
@@ -127,8 +127,8 @@ content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,
 		Query:        "repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*:*!refs/heads/dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
-content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Line ranges
+content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,[]
 `),
 	})
 
@@ -145,8 +145,8 @@ content,foo1,commitfoo2,/foo1@commitfoo2,,/foo1@commitfoo2/-/blob/,
 		Query:        "repo:foo rev:dev1:missing content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Chunk matches [line [start end]]
-content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,
+		WantCSV: autogold.Expect(`Match type,Repository,Revision,Repository external URL,File path,File URL,Line ranges
+content,foo1,commitfoo1,/foo1@commitfoo1,,/foo1@commitfoo1/-/blob/,[]
 `),
 	})
 }
