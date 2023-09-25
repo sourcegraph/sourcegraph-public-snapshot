@@ -321,7 +321,7 @@ const SearchJob: FC<SearchJobProps> = props => {
             <span className={styles.jobQuery}>
                 {job.state !== SearchJobState.COMPLETED && (
                     <Text className="m-0 text-muted">
-                        {repoStats.completed} out of {repoStats.total} repositories
+                        {repoStats.completed} out of {repoStats.total} tasks
                     </Text>
                 )}
 
