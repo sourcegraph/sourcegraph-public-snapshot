@@ -170,7 +170,11 @@ export const RerunSearchJobModal: FC<SearchJobModalProps> = props => {
 export const CancelSearchJobModal: FC<SearchJobModalProps> = props => {
     const { searchJob, onDismiss } = props
 
-    const [cancelSearchJob, { loading, error }] = useMutation(CANCEL_SEARCH_JOB)
+    const [cancelSearchJob, { loading, error }] = useMutation(CANCEL_SEARCH_JOB, {
+        onCompleted: () => {
+            onDismiss()
+        },
+    })
 
     return (
         <Modal position="center" aria-label="Delete search job" onDismiss={onDismiss}>

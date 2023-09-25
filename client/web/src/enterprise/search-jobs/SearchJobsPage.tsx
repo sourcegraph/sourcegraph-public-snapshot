@@ -327,7 +327,7 @@ const SearchJob: FC<SearchJobProps> = props => {
             <span className={styles.jobQuery}>
                 {job.state !== SearchJobState.COMPLETED && (
                     <Text className="m-0 text-muted">
-                        {repoStats.completed} out of {repoStats.total} repositories
+                        {repoStats.completed} out of {repoStats.total} tasks
                     </Text>
                 )}
 
@@ -395,11 +395,12 @@ const SearchJob: FC<SearchJobProps> = props => {
                 </Tooltip>
             </span>
 
-            {job.URL && (
+            <Tooltip content={!job.URL ? 'Results are not available yet' : ''}>
                 <DownloadFileButton
-                    fileUrl={job.URL}
+                    fileUrl={job.URL ?? ''}
                     variant="secondary"
                     debounceTime={1000}
+                    disabled={job.URL === null}
                     className={styles.jobDownload}
                     onClick={() => {
                         telemetryService.log('SearchJobsResultDownloadClick', {}, {})
@@ -408,7 +409,7 @@ const SearchJob: FC<SearchJobProps> = props => {
                     <Icon svgPath={mdiDownload} aria-hidden={true} />
                     Download
                 </DownloadFileButton>
-            )}
+            </Tooltip>
         </li>
     )
 }
