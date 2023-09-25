@@ -6,6 +6,7 @@ import (
 
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/opencontainers/go-digest"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -89,5 +90,17 @@ type cacheKey struct {
 type repositoryCache map[cacheKey]*Repository
 
 func IsSourcegraph(r *Repository) bool {
-	return strings.Contains(r.org, "sourcegraph")
+	// If the container org doesn't contain Sourcegraph, we don't already
+	// know it's not ours.
+	if !strings.Contains(r.org, "sourcegraph") {
+		return false
+	}
+
+	// Check our internal images list
+	for _, ourImages := range images.SourcegraphDockerImages {
+		if strings.HasPrefix(r.name, ourImages) {
+			return true
+		}
+	}
+	return false
 }
