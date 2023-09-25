@@ -448,6 +448,10 @@ func TestHandleSignUp(t *testing.T) {
 		db.AuthzFunc.SetDefaultReturn(authz)
 		db.EventLogsFunc.SetDefaultReturn(eventLogs)
 
+		gss := dbmocks.NewMockGlobalStateStore()
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+		db.GlobalStateFunc.SetDefaultReturn(gss)
+
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
