@@ -11,6 +11,7 @@ import type { ExecutableExtension } from '../api/extension/activation'
 import type { Scalars } from '../graphql-operations'
 import type { Settings, SettingsCascadeOrError } from '../settings/settings'
 import type { TelemetryService } from '../telemetry/telemetryService'
+import type { TelemetryServiceV2 } from '../telemetry/telemetryServiceV2'
 import type { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
@@ -182,6 +183,12 @@ export interface PlatformContext {
      * Optional because it's currently only used in the web app platform.
      */
     telemetryService?: TelemetryService
+
+    /**
+     * A telemetry service v2 implementation to record telemetry events.
+     * Optional because it can be disabled via config.
+     */
+    telemetryServiceV2?: TelemetryServiceV2
 
     /**
      * If this is a function that returns a Subscribable of executable extensions,
