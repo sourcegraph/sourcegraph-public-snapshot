@@ -1,0 +1,2 @@
+ALTER TABLE users
+	ADD COLUMN IF NOT EXISTS site_admin boolean DEFAULT false NOT NULL;

@@ -1,0 +1,2 @@
+name: remove site_admin column on users table
+parents: [1694806099]
