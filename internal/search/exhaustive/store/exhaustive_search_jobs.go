@@ -189,7 +189,16 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 	return job, nil
 }
 
-// aggStateSubQuery returns a table of the form
+// aggStateSubQuery takes the results from getAggregateStateTable and computes a
+// single, aggregate state of the job cascade. We use this sub-query to an
+// aggregate state to a search job that reflects the state of the entire search
+// job better than the worker state
+//
+// The processing chain is as follows:
+//
+// Call getAggregateStateTable -> transpose table -> compute aggregate state
+//
+// # The result looks like this:
 //
 // | agg_state  |
 // |------------|
@@ -199,6 +208,7 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 // filtering and pagination.
 const aggStateSubQuery = `
 		SELECT
+		    -- Compute aggregate state
 			CASE
 				WHEN canceled > 0 THEN 'canceled'
 				WHEN processing > 0 THEN 'processing'
@@ -222,31 +232,8 @@ const aggStateSubQuery = `
 				max( CASE WHEN state = 'canceled' THEN count END) AS canceled,
 				max( CASE WHEN state = 'errored' THEN count END) AS errored
 			FROM (
--- | state      | count |
--- |------------|-------|
--- | processing | 2     |
--- | queued     | 3     |
--- | failed     | 1     |
--- | completed  | 8     |
-				SELECT
-					state,
-					count(*) AS count
-				FROM ((
-						SELECT state
-						FROM exhaustive_search_jobs ej
-						WHERE ej.id = exhaustive_search_jobs.id)
-					UNION ALL (
-						SELECT state
-						FROM exhaustive_search_repo_jobs
-						WHERE search_job_id = exhaustive_search_jobs.id)
-					UNION ALL (
-						SELECT rrj.state
-						FROM exhaustive_search_repo_revision_jobs rrj
-						JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
-						WHERE rj.search_job_id = exhaustive_search_jobs.id)
-					 ) AS sub1
-				GROUP BY
-					state) AS state_histogram) AS transposed_state_histogram
+				-- getAggregateStateTable
+				%s) AS state_histogram) AS transposed_state_histogram
 `
 
 const getExhaustiveSearchJobQueryFmtStr = `
@@ -327,10 +314,17 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 	q := sqlf.Sprintf(
 		listExhaustiveSearchJobsQueryFmtStr,
 		sqlf.Join(exhaustiveSearchJobColumns, ", "),
-		sqlf.Sprintf(aggStateSubQuery),
+		sqlf.Sprintf(
+			aggStateSubQuery,
+			sqlf.Sprintf(
+				getAggregateStateTable,
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+			),
+		),
 		whereClause,
 	)
-
 	if pagination != nil {
 		q = pagination.AppendOrderToQuery(q)
 		q = pagination.AppendLimitToQuery(q)
@@ -364,20 +358,31 @@ func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err er
 	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
 }
 
-// TODO (stefan): use this as subquery
-const getAggregateRepoRevState = `
+// | state      | count |
+// |------------|-------|
+// | processing | 2     |
+// | queued     | 3     |
+// | failed     | 1     |
+// | completed  | 8     |
+const getAggregateStateTable = `
 SELECT state, COUNT(*) as count
 FROM
   (
-    SELECT state FROM exhaustive_search_jobs WHERE id = %s
+		(SELECT state
+		 -- we need the alias to avoid conflicts with embedding queries.
+		 FROM exhaustive_search_jobs sj
+		 WHERE sj.id = %s)
     UNION ALL
-    SELECT state FROM exhaustive_search_repo_jobs WHERE search_job_id = %s
+		(SELECT state
+		 FROM exhaustive_search_repo_jobs rj
+		 WHERE rj.search_job_id = %s)
     UNION ALL
-    SELECT rrj.state FROM exhaustive_search_repo_revision_jobs rrj
-    JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
-    WHERE rj.search_job_id = %s
+		(SELECT rrj.state
+		 FROM exhaustive_search_repo_revision_jobs rrj
+		JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
+		WHERE rj.search_job_id = %s)
   ) AS sub
-GROUP BY state;
+GROUP BY state
 `
 
 func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[string]int, err error) {
@@ -392,7 +397,7 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 		return nil, err
 	}
 
-	q := sqlf.Sprintf(getAggregateRepoRevState, id, id, id)
+	q := sqlf.Sprintf(getAggregateStateTable, id, id, id)
 
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
