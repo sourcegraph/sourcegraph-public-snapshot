@@ -2,17 +2,33 @@
 
 ## [Unreleased]
 
-### Added
+### Highlights
 
-### Changed
+### Merged PRs
 
-### Deprecated
+## [3.3.0]
 
-### Removed
+### Highlights
 
-### Fixed
+- New: setting to accept non-trusted SSL certificates
+- New: button to stop generation of a chat reply
+- New: Cody icon in the status bar to indicate you're not logged in
 
-### Security
+### Merged PRs
+
+- Total [6 PRs](https://github.com/sourcegraph/sourcegraph/milestone/234?closed=1) merged since last release
+- JetBrains: add the client value to telemetry events,
+  by [@chwarwick](https://github.com/chwarwick) ([#57015](https://github.com/sourcegraph/sourcegraph/pull/57015))
+- JetBrains: show icon & notification when user is not logged in,
+  by [@Strum355](https://github.com/Strum355) ([#57006](https://github.com/sourcegraph/sourcegraph/pull/57006))
+- JetBrains: Cody: Only enable the verbose debug setting if regular debug is also enabled,
+  by [@Gedochao](https://github.com/Gedochao) ([#57000](https://github.com/sourcegraph/sourcegraph/pull/57000))
+- JetBrains: Cody: Add a setting for accepting non-trusted certificates automatically,
+  by [@Gedochao](https://github.com/Gedochao) ([#56999](https://github.com/sourcegraph/sourcegraph/pull/56999))
+- JetBrains: add "Stop" button to cancel pending chat message,
+  by [@szymonprz](https://github.com/szymonprz) ([#56998](https://github.com/sourcegraph/sourcegraph/pull/56998))
+- JetBrains: Cody: Improve autocomplete custom color setting,
+  by [@Gedochao](https://github.com/Gedochao) ([#56997](https://github.com/sourcegraph/sourcegraph/pull/56997))
 
 ## [3.2.0]
 
