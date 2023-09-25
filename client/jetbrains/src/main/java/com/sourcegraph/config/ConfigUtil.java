@@ -116,7 +116,7 @@ public class ConfigUtil {
     return CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled();
   }
 
-  public static Integer getCustomAutocompleteColor() {
+  public static @Nullable Integer getCustomAutocompleteColor() {
     return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
   }
 
