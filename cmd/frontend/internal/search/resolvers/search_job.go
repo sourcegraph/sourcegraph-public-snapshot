@@ -47,7 +47,7 @@ func (r *searchJobResolver) Query() string {
 }
 
 func (r *searchJobResolver) State(ctx context.Context) string {
-	// At job creation we don't set the AggState
+	// We don't set the AggState during job creation
 	if r.Job.AggState != "" {
 		return r.Job.AggState.ToGraphQL()
 	}
