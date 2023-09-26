@@ -72,3 +72,29 @@ func (r *schemaResolver) SpongeLog(ctx context.Context, args *SpongeLogArgs) (*S
 	}
 	return &SpongeLogResolver{log: log}, nil
 }
+
+type UpdateSpongeLogArgs struct {
+	UUID        string
+	Log         string
+	Interpreter *string
+}
+
+func (r *schemaResolver) UpdateSpongeLog(ctx context.Context, args UpdateSpongeLogArgs) (*SpongeLogResolver, error) {
+	id, err := uuid.Parse(args.UUID)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid uuid")
+	}
+	var interpreter string
+	if args.Interpreter != nil {
+		interpreter = *args.Interpreter
+	}
+	log := database.SpongeLog{
+		ID:          id,
+		Text:        args.Log,
+		Interpreter: interpreter,
+	}
+	if err := r.db.SpongeLogs().Save(ctx, log); err != nil {
+		return nil, err
+	}
+	return &SpongeLogResolver{log: log}, nil
+}

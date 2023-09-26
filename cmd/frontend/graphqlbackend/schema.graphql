@@ -10787,3 +10787,10 @@ extend type Query {
     """
     spongeLog(uuid: String!): SpongeLog
 }
+
+extend type Mutation {
+    """
+    Update or create a sponge log
+    """
+    updateSpongeLog(uuid: String!, log: String!, interpreter: String): SpongeLog!
+}
