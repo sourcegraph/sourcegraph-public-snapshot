@@ -181,7 +181,11 @@ func AnonymousUIDMiddleware(next http.Handler) http.Handler {
 				anonymousUID = headerAnonymousUID
 			}
 
-			ctx := WithActor(req.Context(), FromAnonymousUser(anonymousUID))
+			// If we found an anonymous UID, use that as the actor context
+			ctx := req.Context()
+			if anonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+			}
 			next.ServeHTTP(rw, req.WithContext(ctx))
 			return
 		}
