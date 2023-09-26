@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/log"
 	"time"
 
 	"github.com/lib/pq"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"

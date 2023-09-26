@@ -99,13 +99,13 @@ internal class CodyTokenCredentialsUi(
 
   override fun createExecutor() = factory.create(tokenTextField.text)
 
-  override fun acquireLoginAndToken(
+  override fun acquireDetailsAndToken(
       server: SourcegraphServerPath,
       executor: SourcegraphApiRequestExecutor,
       indicator: ProgressIndicator
-  ): Pair<String, String> {
-    val login = acquireLogin(server, executor, indicator, isAccountUnique, fixedLogin)
-    return login to tokenTextField.text
+  ): Pair<CodyAccountDetails, String> {
+    val details = acquireDetails(server, executor, indicator, isAccountUnique, fixedLogin)
+    return details to tokenTextField.text
   }
 
   override fun handleAcquireError(error: Throwable): ValidationInfo =
@@ -125,13 +125,13 @@ internal class CodyTokenCredentialsUi(
 
   companion object {
 
-    fun acquireLogin(
+    fun acquireDetails(
         server: SourcegraphServerPath,
         executor: SourcegraphApiRequestExecutor,
         indicator: ProgressIndicator,
         isAccountUnique: UniqueLoginPredicate,
         fixedLogin: String?
-    ): String {
+    ): CodyAccountDetails {
       val accountDetails =
           SourcegraphSecurityUtil.loadCurrentUserDetails(executor, indicator, server)
 
@@ -140,7 +140,7 @@ internal class CodyTokenCredentialsUi(
           throw SourcegraphAuthenticationException("Token should match username \"$fixedLogin\"")
       if (!isAccountUnique(login, server)) throw LoginNotUniqueException(login)
 
-      return login
+      return accountDetails
     }
 
     fun handleError(error: Throwable): ValidationInfo =

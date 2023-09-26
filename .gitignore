@@ -2,7 +2,7 @@
 .tmp/
 
 # Bazel
-bazel-*
+/bazel-*
 .bazelrc-nix
 
 # Vim

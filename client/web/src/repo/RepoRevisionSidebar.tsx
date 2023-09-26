@@ -54,6 +54,8 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
+    const [enduserOnboardingEnabled] = useFeatureFlag('end-user-onboarding', false)
+    const showOnboardingTour = enduserOnboardingEnabled && !!props.authenticatedUser && !props.isSourcegraphDotCom
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -98,12 +100,9 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                     ariaLabel="File sidebar"
                 >
                     <div className="d-flex flex-column h-100 w-100">
-                        <GettingStartedTour
-                            className="mr-3"
-                            telemetryService={props.telemetryService}
-                            isAuthenticated={!!props.authenticatedUser}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
+                        {showOnboardingTour && (
+                            <GettingStartedTour className="mr-3" telemetryService={props.telemetryService} />
+                        )}
                         <Tabs
                             className="w-100 test-repo-revision-sidebar h-25 d-flex flex-column flex-grow-1"
                             index={persistedTabIndex}

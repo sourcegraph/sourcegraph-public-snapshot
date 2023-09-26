@@ -121,7 +121,7 @@ class SettingsMigration : Activity {
       id: String = UUID.randomUUID().toString(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(CodyAccount.create(it.name, server, id), accessToken)
+      addAccount(CodyAccount.create(it.name, it.displayName, server, id), accessToken)
     }
   }
 
@@ -134,7 +134,7 @@ class SettingsMigration : Activity {
       id: String = Account.generateId(),
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val codyAccount = CodyAccount.create(it.name, server, id)
+      val codyAccount = CodyAccount.create(it.name, it.displayName, server, id)
       addAccount(codyAccount, accessToken)
       if (CodyAuthenticationManager.getInstance().getActiveAccount(project) == null) {
         CodyAuthenticationManager.getInstance().setActiveAccount(project, codyAccount)
@@ -156,8 +156,8 @@ class SettingsMigration : Activity {
                   requestExecutorFactory.create(accessToken), progressIndicator, server)
             }
           }
-          .successOnEdt(progressIndicator.modalityState) {
-            it.fold(onSuccess) {
+          .successOnEdt(progressIndicator.modalityState) { accountDetailsResult ->
+            accountDetailsResult.fold(onSuccess) {
               LOG.warn("Unable to load user details for '${server.url}' account", it)
             }
           }

@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import com.sourcegraph.cody.vscode.InlineAutocompleteItem;
 import java.awt.*;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,10 +30,14 @@ public abstract class CodyAutocompleteElementRenderer implements EditorCustomEle
       @Nullable AutocompleteRendererType type) {
     this.text = text;
     this.completionItem = completionItem;
+    Supplier<TextAttributes> textAttributesFallback =
+        () -> AutocompleteRenderUtils.getTextAttributesForEditor(editor);
     this.themeAttributes =
         isCustomAutocompleteColorEnabled()
-            ? AutocompleteRenderUtils.getCustomTextAttributes(editor, getCustomAutocompleteColor())
-            : AutocompleteRenderUtils.getTextAttributesForEditor(editor);
+            ? Optional.ofNullable(getCustomAutocompleteColor())
+                .map(c -> AutocompleteRenderUtils.getCustomTextAttributes(editor, c))
+                .orElseGet(textAttributesFallback)
+            : textAttributesFallback.get();
     this.editor = editor;
     this.type = type;
   }

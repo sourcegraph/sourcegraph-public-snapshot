@@ -47,7 +47,7 @@ export const enterpriseRoutes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <AppSetup telemetryService={props.telemetryService} />}
-                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+                condition={({ isCodyApp }) => isCodyApp}
             />
         ),
     },
@@ -80,7 +80,12 @@ export const enterpriseRoutes: RouteObject[] = [
         path: EnterprisePageRoutes.SearchJobs,
         element: (
             <LegacyRoute
-                render={props => <SearchJob isAdmin={props.authenticatedUser?.siteAdmin ?? false} />}
+                render={props => (
+                    <SearchJob
+                        isAdmin={props.authenticatedUser?.siteAdmin ?? false}
+                        telemetryService={props.telemetryService}
+                    />
+                )}
                 condition={isSearchJobsEnabled}
             />
         ),
@@ -132,12 +137,7 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.AppAuthCallback,
-        element: (
-            <LegacyRoute
-                render={() => <AppAuthCallbackPage />}
-                condition={({ isSourcegraphApp }) => isSourcegraphApp}
-            />
-        ),
+        element: <LegacyRoute render={() => <AppAuthCallbackPage />} condition={({ isCodyApp }) => isCodyApp} />,
     },
     ...routes,
 ]

@@ -77,7 +77,7 @@
 
 <p class="subtitle">Learn how to use Cody and its features with the VS Code editor.</p>
 
-The Cody AI extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code sugsgestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
+The Cody extension by Sourcegraph enhances your coding experience in VS Code by providing intelligent code sugsgestions, context-aware completions, and advanced code analysis. This guide will walk you through the steps to install and set up the Cody within your VS Code environment.
 
 <ul class="limg">
   <li>
@@ -129,10 +129,10 @@ Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll 
 
 ## Verifying the installation
 
-Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody AI extension has been successfully installed and is working as expected:
+Once connected, click the Cody icon from the sidebar again, and a panel will open. To verify that the Cody extension has been successfully installed and is working as expected:
 
 - Open a file in a supported programming language like JavaScript, Python, Go, etc.
-- As you start typing, Cody AI should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
+- As you start typing, Cody should begin providing intelligent suggestions and context-aware completions based on your coding patterns and the context of your code
 
 ## Commands
 

@@ -12,6 +12,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentManager;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.AutocompleteExecuteParams;
 import com.sourcegraph.cody.autocomplete.render.*;
@@ -77,7 +78,7 @@ public class CodyAutocompleteManager {
             });
 
     // Cancel any running job
-    cancelCurrentJob();
+    cancelCurrentJob(editor.getProject());
 
     // Clear any existing inline elements
     disposeInlays(editor);
@@ -168,7 +169,7 @@ public class CodyAutocompleteManager {
       return;
     }
 
-    cancelCurrentJob();
+    cancelCurrentJob(project);
     CancellationToken cancellationToken = new CancellationToken();
     this.currentJob.set(cancellationToken);
 
@@ -186,6 +187,9 @@ public class CodyAutocompleteManager {
       @NotNull TextDocument textDocument,
       @NotNull InlineCompletionTriggerKind triggerKind,
       @NotNull CancellationToken cancellationToken) {
+    if (triggerKind.equals(InlineCompletionTriggerKind.INVOKE)) {
+      CodyAgentManager.tryRestartingAgentIfNotRunning(project);
+    }
     CodyAgentServer server = CodyAgent.getServer(project);
     boolean isAgentAutocomplete = server != null;
     if (!isAgentAutocomplete) {
@@ -210,7 +214,7 @@ public class CodyAutocompleteManager {
 
     // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon as
     // we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does not
-    // correctly propagate the cancelation to the agent.
+    // correctly propagate the cancellation to the agent.
     cancellationToken.onCancellationRequested(() -> completions.cancel(true));
 
     return completions
@@ -226,9 +230,7 @@ public class CodyAutocompleteManager {
               }
               return null;
             })
-        .thenAccept(
-            unused ->
-                CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready));
+        .thenAccept(unused -> CodyAutocompleteStatusService.resetApplication(project));
   }
 
   private void processAutocompleteResult(
@@ -370,8 +372,8 @@ public class CodyAutocompleteManager {
     } else return item;
   }
 
-  private void cancelCurrentJob() {
+  private void cancelCurrentJob(Project project) {
     this.currentJob.get().abort();
-    CodyAutocompleteStatusService.notifyApplication(CodyAutocompleteStatus.Ready);
+    CodyAutocompleteStatusService.resetApplication(project);
   }
 }

@@ -17,7 +17,7 @@ import javax.swing.JPanel
 import javax.swing.border.EmptyBorder
 
 class EmbeddingStatusView(private val project: Project) : JPanel() {
-  private val embeddingStatusContent: JButton
+  private val embeddingStatusContent: JBLabel
   private val codebaseSelector: JButton
   private val openedFileContent: JBLabel
   private var embeddingStatus: EmbeddingStatus
@@ -25,7 +25,7 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
   init {
     setLayout(FlowLayout(FlowLayout.LEFT))
     val innerPanel = Box.createHorizontalBox()
-    embeddingStatusContent = JButton()
+    embeddingStatusContent = JBLabel()
     codebaseSelector = JButton(EditCodebaseContextAction(project))
 
     openedFileContent = JBLabel()
@@ -59,8 +59,8 @@ class EmbeddingStatusView(private val project: Project) : JPanel() {
     } else {
       setEmbeddingStatus(RepositoryMissingEmbeddingStatus(repoName))
       CodyAgent.getInitializedServer(project)
-          .thenCompose { server: CodyAgentServer ->
-            server.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
+          .thenCompose { server: CodyAgentServer? ->
+            server?.getRepoIdIfEmbeddingExists(GetRepoID(repoName))
           }
           .thenAccept { id: String? ->
             if (id != null) {

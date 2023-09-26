@@ -55,7 +55,7 @@ const injectedValuesConfig = {
     repoHeaderActionButtons: enterpriseRepoHeaderActionButtons,
     repoSettingsAreaRoutes: enterpriseRepoSettingsAreaRoutes,
     repoSettingsSidebarGroups: enterpriseRepoSettingsSidebarGroups,
-    routes: windowContextConfig.isSourcegraphApp ? APP_ROUTES : enterpriseRoutes,
+    routes: windowContextConfig.isCodyApp ? APP_ROUTES : enterpriseRoutes,
 
     /**
      * Per feature injections

@@ -83,7 +83,11 @@ func TestExhaustiveSearch(t *testing.T) {
 		},
 	}
 
-	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore)
+	newSearcherFactory := func(_ *observation.Context, _ database.DB) service.NewSearcher {
+		return service.NewSearcherFake()
+	}
+
+	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore, newSearcherFactory)
 	require.NoError(err)
 	for _, routine := range routines {
 		go routine.Start()
@@ -124,8 +128,8 @@ func TestExhaustiveSearch(t *testing.T) {
 		stats, err := svc.GetAggregateRepoRevState(userCtx, job.ID)
 		require.NoError(err)
 		require.Equal(&types.RepoRevJobStats{
-			Total:      3,
-			Completed:  3,
+			Total:      6,
+			Completed:  6, // 1 search job + 2 repo jobs + 3 repo rev jobs
 			Failed:     0,
 			InProgress: 0,
 		}, stats)

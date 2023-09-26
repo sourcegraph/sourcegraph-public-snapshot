@@ -2,7 +2,6 @@ package com.sourcegraph.cody.auth.ui
 
 import com.intellij.collaboration.messages.CollaborationToolsBundle
 import com.intellij.ui.components.labels.LinkLabel
-import com.intellij.ui.components.labels.LinkListener
 import com.intellij.util.IconUtil
 import com.intellij.util.ui.GridBag
 import com.intellij.util.ui.JBUI
@@ -109,7 +108,7 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     }
     reloginLink.apply {
       isVisible = getError(account) != null && needReLogin(account)
-      setListener(LinkListener { _, _ -> editAccount(list, account) }, null)
+      setListener({ _, _ -> editAccount(list, account) }, null)
     }
     return this
   }

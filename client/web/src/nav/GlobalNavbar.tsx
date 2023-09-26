@@ -31,6 +31,7 @@ import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
+import { OnboardingChecklist } from '../onboarding'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
@@ -61,7 +62,7 @@ export interface GlobalNavbarProps
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     showSearchBox: boolean
     routes: RouteObject[]
 
@@ -125,7 +126,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     branding,
     isSourcegraphDotCom,
-    isSourcegraphApp,
+    isCodyApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     sentinelEnabled,
@@ -148,16 +149,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp && !isSourcegraphDotCom
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp && !isSourcegraphDotCom
-    const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
-    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
+    const showCodeMonitoring = codeMonitoringEnabled && !isCodyApp && !isSourcegraphDotCom
+    const showSearchNotebook = notebooksEnabled && !isCodyApp && !isSourcegraphDotCom
+    const isLicensed = !!window.context?.licenseInfo || isCodyApp // Assume licensed when running as a native app
+    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isCodyApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
+    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
-    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isSourcegraphApp
+    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isCodyApp
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -173,7 +175,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    const codeInsights = codeInsightsEnabled && !isSourcegraphApp && !isSourcegraphDotCom
+    const codeInsights = codeInsightsEnabled && !isCodyApp && !isSourcegraphDotCom
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
@@ -208,7 +210,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             <NavBar
                 ref={navbarReference}
                 logo={
-                    !isSourcegraphApp && (
+                    !isCodyApp && (
                         <BrandLogo
                             branding={branding}
                             isLightTheme={isLightTheme}
@@ -219,7 +221,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 }
             >
                 <NavGroup>
-                    {!isSourcegraphApp &&
+                    {!isCodyApp &&
                         (searchNavBarItems.length > 0 ? (
                             <NavDropdown
                                 toggleItem={{
@@ -243,7 +245,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         ))}
                     <NavItem icon={CodyLogo}>
                         <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
-                            Cody AI
+                            Cody
                         </NavLink>
                     </NavItem>
                     {showSearchNotebook && (
@@ -278,7 +280,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {isSourcegraphApp && (
+                    {isCodyApp && (
                         <NavDropdown
                             routeMatch="something-that-never-matches"
                             toggleItem={{
@@ -311,7 +313,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {isSourcegraphApp && <UpdateGlobalNav />}
+                    {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <NavAction>
@@ -325,10 +327,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
-                        <NavAction>
-                            <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
-                        </NavAction>
+                    {props.authenticatedUser?.siteAdmin && !isCodyApp && (
+                        <>
+                            {isAdminOnboardingEnabled && (
+                                <NavAction>
+                                    <OnboardingChecklist />
+                                </NavAction>
+                            )}
+                            <NavAction>
+                                <StatusMessagesNavItem isCodyApp={isCodyApp} />
+                            </NavAction>
+                        </>
                     )}
                     {!props.authenticatedUser ? (
                         <>
@@ -361,7 +370,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 {...props}
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                isSourcegraphApp={isSourcegraphApp}
+                                isCodyApp={isCodyApp}
                                 showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
