@@ -143,4 +143,9 @@ public class ConfigUtil {
   public static List<String> getBlacklistedAutocompleteLanguageIds() {
     return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
   }
+
+  public static boolean getShouldAcceptNonTrustedCertificatesAutomatically() {
+    return CodyApplicationSettings.getInstance()
+        .getShouldAcceptNonTrustedCertificatesAutomatically();
+  }
 }

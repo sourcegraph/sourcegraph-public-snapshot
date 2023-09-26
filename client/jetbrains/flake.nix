@@ -15,9 +15,10 @@
         libX11
         libXrender
         libXi
-        freetype.out
+        freetype
         fontconfig.lib
-        zlib.out
+        zlib
+        libsecret
       ]);
       gradle-wrapped = pkgs.writeShellScriptBin "gradle" ''
         export LD_LIBRARY_PATH=${libraries}

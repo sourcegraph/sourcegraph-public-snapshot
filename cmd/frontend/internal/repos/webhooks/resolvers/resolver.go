@@ -10,10 +10,10 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -264,7 +264,7 @@ func (r *webhookResolver) UUID() string {
 }
 
 func (r *webhookResolver) URL() (string, error) {
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externalURL, err := url.Parse(globals.ExternalURLString())
 	if err != nil {
 		return "", errors.Wrap(err, "could not parse site config external URL")
 	}
