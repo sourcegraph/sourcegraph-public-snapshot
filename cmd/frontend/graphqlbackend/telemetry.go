@@ -3,6 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/graph-gophers/graphql-go"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 // TelemetryRootResolver provides TelemetryResolver via field 'telemetry' as
@@ -12,8 +16,28 @@ type TelemetryRootResolver struct{ Resolver TelemetryResolver }
 func (t *TelemetryRootResolver) Telemetry() TelemetryResolver { return t.Resolver }
 
 type TelemetryResolver interface {
+	// Queries
+	ExportedEvents(context.Context, *ExportedEventsArgs) (ExportedEventsConnectionResolver, error)
+
 	// Mutations
-	RecordEvents(ctx context.Context, args *RecordEventsArgs) (*EmptyResponse, error)
+	RecordEvents(context.Context, *RecordEventsArgs) (*EmptyResponse, error)
+}
+
+type ExportedEventsArgs struct {
+	First int32
+	After *string
+}
+
+type ExportedEventResolver interface {
+	ID() graphql.ID
+	ExportedAt() *graphql.Time
+	Payload() json.RawMessage
+}
+
+type ExportedEventsConnectionResolver interface {
+	Nodes() []ExportedEventResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type RecordEventArgs struct{ Event TelemetryEventInput }

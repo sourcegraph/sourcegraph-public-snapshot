@@ -20,12 +20,19 @@ type Resolver struct {
 	teestore *teestore.Store
 }
 
+var _ graphqlbackend.TelemetryResolver = &Resolver{}
+
 // New returns a new Resolver whose store uses the given database
 func New(logger log.Logger, db database.DB) graphqlbackend.TelemetryResolver {
-	return &Resolver{logger: logger, teestore: teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs())}
+	return &Resolver{
+		logger:   logger,
+		teestore: teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()),
+	}
 }
 
-var _ graphqlbackend.TelemetryResolver = &Resolver{}
+func (r *Resolver) ExportedEvents(ctx context.Context, args *graphqlbackend.ExportedEventsArgs) (graphqlbackend.ExportedEventsConnectionResolver, error) {
+	return &ExportedEventsConnectionResolver{}, nil
+}
 
 func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.RecordEventsArgs) (*graphqlbackend.EmptyResponse, error) {
 	if args == nil || len(args.Events) == 0 {
