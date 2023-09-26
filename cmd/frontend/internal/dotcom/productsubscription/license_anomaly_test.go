@@ -93,6 +93,7 @@ func TestCheckAnomalies(t *testing.T) {
 			Dotcom: &schema.Dotcom{
 				SlackLicenseAnomallyWebhook: "https://slack.com/webhook",
 			},
+			ExternalURL: "https://sourcegraph.acme.com",
 		},
 	})
 

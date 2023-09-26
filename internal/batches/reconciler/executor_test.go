@@ -1215,6 +1215,8 @@ func TestDecorateChangesetBody(t *testing.T) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})
 
+	mockExternalURL(t, "https://sourcegraph.test")
+
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 			return &btypes.BatchChange{ID: 1234, Name: "reconciler-test-batch-change"}, nil
