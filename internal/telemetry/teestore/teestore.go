@@ -76,10 +76,15 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 			// GetParameters.Metadata
 			PublicArgument: func() json.RawMessage {
 				md := e.GetParameters().GetMetadata()
-				if len(md) == 0 {
-					return nil
+				mdPayload := make(map[string]any, len(md))
+				for k, v := range md {
+					mdPayload[k] = v
 				}
-				data, err := json.Marshal(md)
+				// Attach a simple indicator to denote if this event will
+				// be exported.
+				mdPayload["telemetry.event.exportable"] = true
+
+				data, err := json.Marshal(mdPayload)
 				if err != nil {
 					data, _ = json.Marshal(map[string]string{"marshal.error": err.Error()})
 				}
@@ -95,7 +100,7 @@ func toEventLogs(now func() time.Time, telemetryEvents []*telemetrygatewayv1.Eve
 
 				// Attach a simple indicator to denote if this metadata will
 				// be exported.
-				md["privateMetadata.export"] = sensitiveMetadataAllowlist.IsAllowed(e)
+				md["telemetry.privateMetadata.exportable"] = sensitiveMetadataAllowlist.IsAllowed(e)
 
 				data, err := json.Marshal(md)
 				if err != nil {
