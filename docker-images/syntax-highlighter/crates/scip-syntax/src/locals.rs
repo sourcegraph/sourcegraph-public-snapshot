@@ -458,6 +458,19 @@ mod test {
     }
 
     #[test]
+    fn test_can_do_scala() -> Result<()> {
+        let mut config = crate::languages::get_local_configuration(&BundledParser::Scala).unwrap();
+        let source_code = include_str!("../testdata/locals.scala");
+        let doc = parse_file_for_lang(&mut config, source_code)?;
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+
+    #[test]
     fn test_can_do_nested_locals() -> Result<()> {
         let mut config = crate::languages::get_local_configuration(&BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");

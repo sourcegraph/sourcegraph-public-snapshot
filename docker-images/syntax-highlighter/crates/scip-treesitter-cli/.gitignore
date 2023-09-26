@@ -1,0 +1,5 @@
+.metals
+.bsp
+.scala-build
+.bloop
+*.scip

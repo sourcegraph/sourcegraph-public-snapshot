@@ -96,3 +96,57 @@ INFO: Successfully applied 4 migrations to schema "PUBLIC", now at version v4 (e
 2023.09.11 11:41:58 INFO  Cancelling compilation on scala-cli server[0m
 2023.09.11 11:41:58 INFO  Cancelling compilation on scala-cli server[0m
 2023.09.11 11:41:58 INFO  Running BSP server List(/Users/antonsviridov/.tools/scala-cli, bsp, --json-options, /Users/antonsviridov/projects/sourcegraph/sourcegraph/.scala-build/ide-options-v2.json, /Users/antonsviridov/projects/sourcegraph/sourcegraph)[0m
+2023.09.26 10:59:24 INFO  Started: Metals version 1.0.1+22-acf9aec2-SNAPSHOT in folders '/Users/antonsviridov/projects/sourcegraph/sourcegraph' for client Neovim 0.10.0-dev+g9cadbf1d3.[0m
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.internal.license.VersionPrinter printVersionOnly
+INFO: Flyway Community Edition 9.22.0 by Redgate
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.internal.license.VersionPrinter printVersion
+INFO: See release notes here: https://rd.gt/416ObMi
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.internal.license.VersionPrinter printVersion
+INFO: 
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.FlywayExecutor execute
+INFO: Database: jdbc:h2:file:/Users/antonsviridov/projects/sourcegraph/sourcegraph/.metals/metals (H2 2.1)
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.internal.command.DbValidate validate
+INFO: Successfully validated 4 migrations (execution time 00:00.008s)
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.internal.command.DbMigrate migrateGroup
+INFO: Current version of schema "PUBLIC": 4
+Sept 26, 2023 10:59:24 AM org.flywaydb.core.internal.command.DbMigrate logSummary
+INFO: Schema "PUBLIC" is up to date. No migration necessary.
+2023.09.26 10:59:24 INFO  time: initialize in 0.29s[0m
+2023.09.26 10:59:28 INFO  no build target found for /Users/antonsviridov/projects/sourcegraph/sourcegraph/docker-images/syntax-highlighter/crates/scip-syntax/testdata/globals.scala. Using presentation compiler with project's scala-library version: 3.3.1[0m
+2023.09.26 10:59:28 INFO  Attempting to connect to the build server...[0m
+2023.09.26 10:59:28 INFO  Running BSP server List(/Users/antonsviridov/.tools/scala-cli, bsp, --json-options, /Users/antonsviridov/projects/sourcegraph/sourcegraph/.scala-build/ide-options-v2.json, /Users/antonsviridov/projects/sourcegraph/sourcegraph)[0m
+2023.09.26 10:59:28 INFO  tracing is disabled for protocol BSP, to enable tracing of incoming and outgoing JSON messages create an empty file at /Users/antonsviridov/projects/sourcegraph/sourcegraph/.metals/bsp.trace.json or /Users/antonsviridov/Library/Caches/org.scalameta.metals/bsp.trace.json[0m
+2023.09.26 10:59:28 WARN  No build session currently active to reload.[0m
+2023.09.26 10:59:34 INFO  BSP server: Checking https://repo1.maven.org/maven2/org/scala-lang/scala-library/[0m
+2023.09.26 10:59:34 INFO  BSP server: Checked https://repo1.maven.org/maven2/org/scala-lang/scala-library/[0m
+2023.09.26 10:59:34 INFO  BSP server: Checking https://repo1.maven.org/maven2/org/scala-lang/scala-library/maven-metadata.xml[0m
+2023.09.26 10:59:34 INFO  BSP server: Checked https://repo1.maven.org/maven2/org/scala-lang/scala-library/maven-metadata.xml[0m
+2023.09.26 10:59:34 INFO  BSP server: Checking https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/[0m
+2023.09.26 10:59:34 INFO  BSP server: Checked https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/[0m
+2023.09.26 10:59:34 INFO  BSP server: Downloading https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/[0m
+2023.09.26 10:59:34 INFO  BSP server: Downloaded https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/[0m
+2023.09.26 10:59:34 INFO  BSP server: Checking https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/maven-metadata.xml[0m
+2023.09.26 10:59:34 INFO  BSP server: Checked https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/maven-metadata.xml[0m
+2023.09.26 10:59:34 INFO  BSP server: Downloading https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/maven-metadata.xml[0m
+2023.09.26 10:59:34 INFO  BSP server: Downloaded https://repo1.maven.org/maven2/org/scala-lang/scala3-library_3/maven-metadata.xml[0m
+2023.09.26 10:59:34 INFO  BSP server: [error] ./docker-images/syntax-highlighter/crates/scip-treesitter-cli/analyse.scala:2:15[0m
+2023.09.26 10:59:34 INFO  BSP server: [error] Got Scala dependency com.lihaoyi::pprint::0.8.1, but no Scala version is provided[0m
+2023.09.26 10:59:34 INFO  BSP server: [error] //> using dep com.lihaoyi::pprint::0.8.1[0m
+2023.09.26 10:59:34 INFO  BSP server: [error]               ^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+2023.09.26 10:59:34 INFO  BSP server: [error] ./docker-images/syntax-highlighter/crates/scip-treesitter-cli/analyse.scala:2:15[0m
+2023.09.26 10:59:34 INFO  BSP server: [error] Got Scala dependency com.lihaoyi::pprint::0.8.1, but no Scala version is provided[0m
+2023.09.26 10:59:34 INFO  BSP server: [error] //> using dep com.lihaoyi::pprint::0.8.1[0m
+2023.09.26 10:59:34 INFO  BSP server: [error]               ^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+2023.09.26 10:59:35 INFO  time: Connected to build server in 6.7s[0m
+2023.09.26 10:59:35 INFO  Connected to Build server: scala-cli v1.0.5-SNAPSHOT[0m
+2023.09.26 10:59:37 INFO  time: indexed workspace in 2.03s[0m
+2023.09.26 10:59:38 INFO  time: compiled sourcegraph_bd2c96d2de-test in 0.31s[0m
+2023.09.26 10:59:38 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m
+2023.09.26 10:59:50 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m
+2023.09.26 10:59:59 WARN  Could not find semantic tokens for: file:///Users/antonsviridov/projects/sourcegraph/sourcegraph/docker-images/syntax-highlighter/crates/scip-syntax/testdata/locals.scala[0m
+2023.09.26 10:59:59 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m
+2023.09.26 10:59:59 WARN  Could not find semantic tokens for: file:///Users/antonsviridov/projects/sourcegraph/sourcegraph/docker-images/syntax-highlighter/crates/scip-syntax/testdata/locals.scala[0m
+2023.09.26 11:00:01 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m
+2023.09.26 11:46:26 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m
+2023.09.26 11:46:56 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m
+2023.09.26 11:51:48 INFO  time: compiled sourcegraph_bd2c96d2de-test in 1ms[0m

@@ -1,0 +1,23 @@
+---
+source: crates/scip-syntax/src/locals.rs
+expression: dumped
+---
+  case class Ya(i: Int)
+  
+  case class Yes(a: Int):
+      val Bla = Ya(a.max(25))
+//        ^^^ definition local 3
+      def test(y: String) =
+//        ^^^^ definition local 4
+//             ^ definition local 5
+          Bla.toString() + y
+//        ^^^ reference local 3
+//                         ^ reference local 5
+  
+  @main def hello =
+//          ^^^^^ definition local 1
+      val x = Yes(25)
+//        ^ definition local 2
+      println(x.a)
+//            ^ reference local 2
+
