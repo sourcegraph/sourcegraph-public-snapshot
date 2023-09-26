@@ -519,6 +519,7 @@ go_test(
         "//internal/search/streaming",
         "//internal/settings",
         "//internal/src-prometheus",
+        "//internal/telemetry/telemetrytest",
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
