@@ -147,9 +147,7 @@ Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll 
 
 ## Embeddings
 
-For **free** users, installing the JetBrains extension prompts installing the Cody app for better responses with embeddings. Enterprise users are guided to contact their admin for embeddings.
-
-You no longer need to log in again on the Cody app. Select the repositories during the app setup, and JetBrains gains context of those embeddings for a streamlined experience.
+For free users, embeddings are supported for the open source repos on Sourcegraph.com. Enterprise users are guided to contact their admin for a more customized embeddings experience.
 
 ## Verifying the installation
 
