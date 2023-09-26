@@ -5,11 +5,18 @@ set -euf -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 REPO_DIR=$(pwd)
 
+GCP_PROJECT="sourcegraph-ci"
+GCS_BUCKET="package-repository"
+TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
+IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+
 # shellcheck disable=SC2001
 BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
-IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+if [[ "$IS_MAIN" != "true" ]]; then
+  BRANCH_PATH="branches/$BRANCH_PATH"
+fi
 
 tmpdir=$(mktemp -d -t wolfi-bin.XXXXXXXX)
 builddir=$(mktemp -d -t wolfi-build.XXXXXXXX)
@@ -53,6 +60,18 @@ if [ ! -f "wolfi-images/${name}.yaml" ]; then
   exit 222
 fi
 
+# If this is a branch, check if branch-specific package repo exists on GCS
+branch_repo_exists="false"
+if [[ "$IS_MAIN" != "true" ]]; then
+  dest_path="gs://$GCS_BUCKET/$BRANCH_PATH/$TARGET_ARCH/"
+  if gsutil -q -u "$GCP_PROJECT" stat "${dest_path}APKINDEX.tar.gz"; then
+    echo "A branch-specific package repo exists for this branch at ${dest_path}"
+    branch_repo_exists="true"
+  else
+    echo "No branch-specific package repo exists for this branch, not updating apko configs"
+  fi
+fi
+
 tag=${2-latest}
 
 echo "Setting up build dir..."
@@ -66,7 +85,7 @@ export SOURCE_DATE_EPOCH
 # On branches, if we modify a package then we'd like that modified version to be included in any base images built.
 # This is a bit hacky, but we do this by modifying the base image configs and passing the branch-specific repo to apko.
 add_custom_repo_cmd=()
-if [[ "$IS_MAIN" != "true" ]]; then
+if [[ "$IS_MAIN" != "true" && "$branch_repo_exists" == "true" ]]; then
   add_custom_repo_cmd=("--repository-append" "@branch https://packages.sgdev.org/branches/$BRANCH_PATH" "--keyring-append" "https://packages.sgdev.org/sourcegraph-melange-dev.rsa.pub")
   echo "Adding custom repo command: ${add_custom_repo_cmd[*]}"
 
