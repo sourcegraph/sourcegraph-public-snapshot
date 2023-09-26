@@ -403,6 +403,8 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 			hms = zoektFileMatchToMultilineMatches(&file)
 		}
 
+		// unique string for testing: ef21b9ad
+
 		pathMatches := zoektFileMatchToPathMatchRanges(&file, pathRegexps)
 
 		for _, inputRev := range inputRevs {
