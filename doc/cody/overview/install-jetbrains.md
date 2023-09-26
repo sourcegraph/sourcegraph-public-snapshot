@@ -135,7 +135,7 @@ After a successful installation, Cody's icon appears in the side bar. When you c
 
 ### For Sourcegraph enterprise users
 
-Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). From here, generate a new access token.
+Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`). From here, generate a new access token.
 
 Then, you select the option to `Use an enterprise instance` and you will paste your access token and instance URL address in to the Cody extension.
 
