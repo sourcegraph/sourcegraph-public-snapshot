@@ -5,11 +5,13 @@ import (
 	_ "embed"
 	"fmt"
 	"net/url"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
+<<<<<<< HEAD
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+=======
+>>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -154,6 +156,7 @@ func getCommitURL(externalURL *url.URL, repoName, oid, utmSource string) string 
 	return sourcegraphURL(externalURL, fmt.Sprintf("%s/-/commit/%s", repoName, oid), "", utmSource)
 }
 
+<<<<<<< HEAD
 var (
 	externalURLOnce  sync.Once
 	externalURLValue *url.URL
@@ -172,6 +175,8 @@ func getExternalURL() (*url.URL, error) {
 	return externalURLValue, externalURLError
 }
 
+=======
+>>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string {
 	// Construct URL to the search query.
 	u := externalURL.ResolveReference(&url.URL{Path: path})

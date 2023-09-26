@@ -27,7 +27,10 @@ func TestBatchChange_URL(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockExternalURL(t, "https://sourcegraph.test")
+<<<<<<< HEAD
 
+=======
+>>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 		url, err := bc.URL(
 			ctx,
 			"foo",
