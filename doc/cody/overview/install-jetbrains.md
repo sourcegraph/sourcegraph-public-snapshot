@@ -173,7 +173,7 @@ The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts c
 
 You can "enable/disable" the autocomplete feature and customize your language preferences in the footer. Autocomplete suggestions can be styled with customized colors, and you can reject them at any time with the **Escape** key.
 
-By default, the autocomplete feature is disabled for read-only files but is compatible with [IdeaVim](https://plugins.jetbrains.com/plugin/164-ideavim).
+You can manually trigger autocomplete suggestions by pressing `Option+\` (for macOS) or `Alt+\` (for Windows) and its also compatible with [IdeaVim](https://plugins.jetbrains.com/plugin/164-ideavim).
 
 ## Enable code graph context for context-aware answers (Optional)
 
