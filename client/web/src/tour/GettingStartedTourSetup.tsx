@@ -130,10 +130,13 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
                 </H2>
                 <div className={styles.wrapper}>
                     {children}
-                    {label && <Text className={`mt-3 ${styles.text}`}>{label}</Text>}
+                    {label && <Text className="mt-3 text-muted">{label}</Text>}
                 </div>
                 <div className={styles.container}>
-                    <div className={styles.step}>{`${step} of ${totalSteps}`}</div>
+                    <div className="text-muted">{`${step} of ${totalSteps}`}</div>
+                    <Button variant="link" onClick={() => setConfig({ skipped: true })}>
+                        Skip
+                    </Button>
                     <LoaderButton
                         type="submit"
                         variant="merged"
@@ -143,9 +146,6 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
                         loading={loading}
                         label={step === totalSteps ? 'Done' : 'Next'}
                     />
-                    <Button variant="link" onClick={() => setConfig({ skipped: true })}>
-                        Skip
-                    </Button>
                 </div>
             </div>
         </Form>
@@ -312,8 +312,13 @@ const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSel
         if (message) {
             setError(message)
         } else {
-            onSelect(language)
-            onHandleNext?.()
+            const languageLower = language.toLowerCase()
+            if (!suggestions.some(suggestion => suggestion.toLowerCase() === languageLower)) {
+                setError(`Unknown language '${language}'. Please select one from the suggested languages.`)
+            } else {
+                onSelect(language)
+                onHandleNext?.()
+            }
         }
     }
 
