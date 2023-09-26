@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -170,29 +169,26 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 		Revs: []string{repoRev.Revision},
 	})
 
-	if err := w.WriteHeader("repo_id", "repo_name", "revision", "commit", "path"); err != nil {
-		return err
-	}
-
-	repoID := strconv.Itoa(int(repoRev.Repository))
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var (
-		mu          sync.Mutex // serialize writes to w
-		writeRowErr error      // capture if w.WriteRow fails
-	)
+	var mu sync.Mutex     // serialize writes to w
+	var writeRowErr error // capture if w.Write fails
+	matchWriter, err := newMatchCSVWriter(w)
+	if err != nil {
+		return err
+	}
 
 	// TODO currently ignoring returned Alert
 	_, err = job.Run(ctx, s.clients, streaming.StreamFunc(func(se streaming.SearchEvent) {
+		// TODO fail if se.Stats indicate missing backends or other things
+		// which may indicate we are might miss data.
+
 		mu.Lock()
 		defer mu.Unlock()
 
 		for _, match := range se.Results {
-			// TODO actually write useful CSV
-			key := match.Key()
-			err := w.WriteRow(repoID, string(key.Repo), repoRev.Revision, string(key.Commit), key.Path)
+			err := matchWriter.Write(match)
 			if err != nil {
 				cancel()
 				writeRowErr = err

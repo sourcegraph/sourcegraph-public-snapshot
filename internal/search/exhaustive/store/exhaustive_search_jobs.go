@@ -355,7 +355,7 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 const getJobLogsFmtStr = `
 SELECT
 rjj.id,
-rj.repo_id,
+r.name,
 rjj.revision,
 rjj.state,
 rjj.failure_message,
@@ -363,6 +363,7 @@ rjj.started_at,
 rjj.finished_at
 FROM exhaustive_search_repo_revision_jobs rjj
 JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
+JOIN repo r ON r.id = rj.repo_id
 %s
 `
 
@@ -409,7 +410,7 @@ func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) 
 		job := types.SearchJobLog{}
 		if err := rows.Scan(
 			&job.ID,
-			&job.RepoID,
+			&job.RepoName,
 			&job.Revision,
 			&job.State,
 			&dbutil.NullString{S: &job.FailureMessage},
