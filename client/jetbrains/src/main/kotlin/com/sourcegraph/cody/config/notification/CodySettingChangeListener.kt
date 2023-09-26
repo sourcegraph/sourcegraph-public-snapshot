@@ -76,6 +76,10 @@ class CodySettingChangeListener(project: Project) : ChangeListener(project) {
             if (languageIdsToClear.isNotEmpty())
                 CodyAutocompleteManager.getInstance()
                     .clearAutocompleteSuggestionsForLanguageIds(languageIdsToClear)
+
+            if (context.oldShouldAcceptNonTrustedCertificatesAutomatically !=
+                context.newShouldAcceptNonTrustedCertificatesAutomatically)
+                CodyAgentManager.restartAgent(project)
           }
         })
   }
