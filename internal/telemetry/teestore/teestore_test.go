@@ -38,7 +38,9 @@ func TestToEventLogs(t *testing.T) {
     "UserID": 0,
     "AnonymousUserID": "",
     "Argument": null,
-    "PublicArgument": null,
+    "PublicArgument": {
+      "telemetry.event.exportable": true
+    },
     "Source": "BACKEND",
     "Version": "",
     "Timestamp": "2022-11-03T02:00:00Z",
@@ -66,7 +68,9 @@ func TestToEventLogs(t *testing.T) {
     "UserID": 0,
     "AnonymousUserID": "",
     "Argument": null,
-    "PublicArgument": null,
+    "PublicArgument": {
+      "telemetry.event.exportable": true
+    },
     "Source": "BACKEND",
     "Version": "",
     "Timestamp": "2022-11-03T02:00:00Z",
@@ -126,10 +130,11 @@ func TestToEventLogs(t *testing.T) {
     "AnonymousUserID": "anonymous",
     "Argument": {
       "private": "sensitive-data",
-      "privateMetadata.export": false
+      "telemetry.privateMetadata.exportable": false
     },
     "PublicArgument": {
-      "public": 2
+      "public": 2,
+      "telemetry.event.exportable": true
     },
     "Source": "VSCODE",
     "Version": "dev",
