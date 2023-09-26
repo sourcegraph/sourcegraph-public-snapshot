@@ -63,18 +63,15 @@ func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger,
 		return err
 	}
 
-	repoRevSpecs, err := q.RepositoryRevSpecs(ctx)
-	if err != nil {
-		return err
-	}
-
 	tx, err := h.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, repoRevSpec := range repoRevSpecs {
+	it := q.RepositoryRevSpecs(ctx)
+	for it.Next() {
+		repoRevSpec := it.Current()
 		_, err := tx.CreateExhaustiveSearchRepoJob(ctx, types.ExhaustiveSearchRepoJob{
 			RepoID:      repoRevSpec.Repository,
 			RefSpec:     repoRevSpec.RevisionSpecifiers.String(),
@@ -85,5 +82,5 @@ func (h *exhaustiveSearchHandler) Handle(ctx context.Context, logger log.Logger,
 		}
 	}
 
-	return nil
+	return it.Err()
 }
