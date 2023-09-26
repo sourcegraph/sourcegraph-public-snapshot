@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -330,6 +329,11 @@ func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, c
 		return err
 	}
 
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return err
+	}
+
 	return txemail.Send(ctx, "user_account_update", txemail.Message{
 		To:       []string{email},
 		Template: updateAccountEmailTemplate,
@@ -342,7 +346,7 @@ func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, c
 			Email:    email,
 			Change:   change,
 			Username: usr.Username,
-			Host:     globals.ExternalURL().Host,
+			Host:     externalURL.Host,
 		},
 	})
 }
@@ -371,6 +375,11 @@ func (e *userEmails) SendUserEmailOnAccessTokenChange(ctx context.Context, id in
 		return err
 	}
 
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return err
+	}
+
 	var tmpl txtypes.Templates
 	if deleted {
 		tmpl = accessTokenDeletedEmailTemplate
@@ -389,7 +398,7 @@ func (e *userEmails) SendUserEmailOnAccessTokenChange(ctx context.Context, id in
 			Email:     email,
 			TokenName: tokenName,
 			Username:  usr.Username,
-			Host:      globals.ExternalURL().Host,
+			Host:      externalURL.Host,
 		},
 	})
 }
@@ -522,6 +531,12 @@ func SendUserEmailVerificationEmail(ctx context.Context, username, email, code s
 	q.Set("code", code)
 	q.Set("email", email)
 	verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
+
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return err
+	}
+
 	return txemail.Send(ctx, "user_email_verification", txemail.Message{
 		To:       []string{email},
 		Template: verifyEmailTemplates,
@@ -531,11 +546,11 @@ func SendUserEmailVerificationEmail(ctx context.Context, username, email, code s
 			Host     string
 		}{
 			Username: username,
-			URL: globals.ExternalURL().ResolveReference(&url.URL{
+			URL: externalURL.ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
 			}).String(),
-			Host: globals.ExternalURL().Host,
+			Host: externalURL.Host,
 		},
 	})
 }

@@ -14,13 +14,13 @@ import (
 	"github.com/inconshreveable/log15"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -280,7 +280,12 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
-	return globals.ExternalURL().ResolveReference(&url.URL{
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return ""
+	}
+
+	return externalURL.ResolveReference(&url.URL{
 		Path:     path.Join(r.Repository().URL(), "-/raw/", r.Path()),
 		RawQuery: "format=zip",
 	}).String()

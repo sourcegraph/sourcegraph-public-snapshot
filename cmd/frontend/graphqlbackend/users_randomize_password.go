@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -27,7 +26,13 @@ func (r *randomizeUserPasswordResult) ResetPasswordURL() *string {
 	if r.resetURL == nil {
 		return nil
 	}
-	urlStr := globals.ExternalURL().ResolveReference(r.resetURL).String()
+
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return nil
+	}
+
+	urlStr := externalURL.ResolveReference(r.resetURL).String()
 	return &urlStr
 }
 

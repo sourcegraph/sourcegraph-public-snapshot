@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -68,6 +68,14 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 		}
 
 		urlSignUp, _ := url.Parse("/sign-up?invitedBy=" + invitedBy.Username)
+
+		externalURL, err := url.Parse(conf.Get().ExternalURL)
+		if err != nil {
+			log15.Warn("email invites: failed parse external url", "error", err)
+			invitedEmailsLimiter.Delete(args.Email) // allow attempting to invite this email again without waiting 24h
+			return
+		}
+
 		if err := txemail.Send(ctx, "user_invite", txemail.Message{
 			To:       []string{args.Email},
 			Template: emailTemplateEmailInvitation,
@@ -76,7 +84,7 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 				URL      string
 			}{
 				FromName: invitedBy.Username,
-				URL:      globals.ExternalURL().ResolveReference(urlSignUp).String(),
+				URL:      externalURL.ResolveReference(urlSignUp).String(),
 			},
 		}); err != nil {
 			log15.Warn("email invites: failed to send email", "error", err)

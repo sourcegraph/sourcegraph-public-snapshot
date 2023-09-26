@@ -3,10 +3,12 @@ package conf
 import (
 	"encoding/hex"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -26,7 +28,19 @@ func init() {
 		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
 	}
 
+	ContributeValidator(validateExternalURLConfig)
 	confdefaults.Default = defaultConfigForDeployment()
+}
+
+func validateExternalURLConfig(cfg conftypes.SiteConfigQuerier) (problems Problems) {
+	if val := cfg.SiteConfig().ExternalURL; val != "" {
+		var err error
+		if _, err = url.Parse(val); err != nil {
+			log15.Error("site config externalURL", "value", val, "error", err)
+			problems = append(problems, NewSiteProblem("Could not parse `externalURL`."))
+		}
+	}
+	return problems
 }
 
 func defaultConfigForDeployment() conftypes.RawUnified {

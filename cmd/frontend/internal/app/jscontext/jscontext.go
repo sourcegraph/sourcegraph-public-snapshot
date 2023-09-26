@@ -5,6 +5,7 @@ package jscontext
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strings"
 
@@ -232,8 +233,16 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	ctx := req.Context()
 	a := sgactor.FromContext(ctx)
 
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		externalURL = &url.URL{
+			Scheme: "http",
+			Host:   "example.com",
+		}
+	}
+
 	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
+	headers["x-sourcegraph-client"] = externalURL.String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
 	// Propagate Cache-Control no-cache and max-age=0 directives
@@ -324,7 +333,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:         globals.ExternalURL().String(),
+		ExternalURL:         externalURL.String(),
 		XHRHeaders:          headers,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),

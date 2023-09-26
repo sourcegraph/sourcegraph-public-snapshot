@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -41,6 +41,13 @@ func ResetPasswordURL(ctx context.Context, db database.DB, logger log.Logger, us
 		return nil, errors.Wrap(err, msg)
 	}
 
-	ru := globals.ExternalURL().ResolveReference(resetURL).String()
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		msg := "failed to parse External URL"
+		logger.Error(msg, log.Error(err))
+		return nil, errors.Wrap(err, msg)
+	}
+
+	ru := externalURL.ResolveReference(resetURL).String()
 	return &ru, nil
 }

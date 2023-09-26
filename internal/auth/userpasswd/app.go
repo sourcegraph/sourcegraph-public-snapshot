@@ -12,9 +12,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/apptoken"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -166,7 +166,7 @@ func generatePassword() (string, error) {
 }
 
 func appSignInURL() string {
-	externalURL := globals.ExternalURL().String()
+	externalURL := conf.Get().ExternalURL
 	u, err := url.Parse(externalURL)
 	if err != nil {
 		return externalURL
