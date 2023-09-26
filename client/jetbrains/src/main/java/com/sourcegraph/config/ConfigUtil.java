@@ -116,7 +116,7 @@ public class ConfigUtil {
     return CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled();
   }
 
-  public static Integer getCustomAutocompleteColor() {
+  public static @Nullable Integer getCustomAutocompleteColor() {
     return CodyApplicationSettings.getInstance().getCustomAutocompleteColor();
   }
 
@@ -142,5 +142,10 @@ public class ConfigUtil {
 
   public static List<String> getBlacklistedAutocompleteLanguageIds() {
     return CodyApplicationSettings.getInstance().getBlacklistedLanguageIds();
+  }
+
+  public static boolean getShouldAcceptNonTrustedCertificatesAutomatically() {
+    return CodyApplicationSettings.getInstance()
+        .getShouldAcceptNonTrustedCertificatesAutomatically();
   }
 }

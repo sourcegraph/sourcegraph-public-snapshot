@@ -71,6 +71,7 @@ describe('RepoSettingsLogsPage', () => {
                 data: {
                     node: {
                         __typename: 'Repository',
+                        isRecordingEnabled: true,
                         recordedCommands: {
                             nodes: [
                                 {
@@ -133,6 +134,49 @@ describe('RepoSettingsLogsPage', () => {
                 data: {
                     node: {
                         __typename: 'Repository',
+                        isRecordingEnabled: true,
+                        recordedCommands: {
+                            nodes: [],
+                            totalCount: 0,
+                            pageInfo: {
+                                hasNextPage: false,
+                            },
+                        },
+                    },
+                },
+            },
+        }
+
+        const cmp = render(
+            <BrowserRouter>
+                <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
+                    <RepoSettingsLogsPage repo={mockRepo} />
+                </MockedTestProvider>
+            </BrowserRouter>
+        )
+        await waitFor(() => {
+            expect(screen.queryByRole('img', { name: /loading/i })).not.toBeInTheDocument()
+        })
+
+        expect(cmp.asFragment()).toMatchSnapshot()
+    })
+
+    test('should render a waring when recording is disabled', async () => {
+        const mockRecordedCommandsQuery: MockedResponse<RepositoryRecordedCommandsResult> = {
+            delay: 0,
+            request: {
+                query: getDocumentNode(REPOSITORY_RECORDED_COMMANDS_QUERY),
+                variables: {
+                    id: repositoryID,
+                    offset: 0,
+                    limit: REPOSITORY_RECORDED_COMMANDS_LIMIT,
+                },
+            },
+            result: {
+                data: {
+                    node: {
+                        __typename: 'Repository',
+                        isRecordingEnabled: false,
                         recordedCommands: {
                             nodes: [],
                             totalCount: 0,

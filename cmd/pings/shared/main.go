@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -79,7 +80,7 @@ func newServerHandler(logger log.Logger, config *Config) (http.Handler, error) {
 	}
 	r.Path("/-/healthz").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		secret := strings.TrimPrefix(strings.ToLower(r.Header.Get("Authorization")), "bearer ")
-		if secret != config.DiagnosticsSecret {
+		if subtle.ConstantTimeCompare([]byte(secret), []byte(config.DiagnosticsSecret)) == 0 {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

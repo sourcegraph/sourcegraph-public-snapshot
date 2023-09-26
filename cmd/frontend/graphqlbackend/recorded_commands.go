@@ -122,3 +122,19 @@ func (r *recordedCommandResolver) Output() string {
 func (r *recordedCommandResolver) IsSuccess() bool {
 	return r.command.IsSuccess
 }
+
+func (r *RepositoryResolver) IsRecordingEnabled() bool {
+	recordingConf := conf.Get().SiteConfig().GitRecorder
+	if recordingConf != nil && len(recordingConf.Repos) > 0 {
+		if recordingConf.Repos[0] == "*" {
+			return true
+		}
+
+		for _, repo := range recordingConf.Repos {
+			if strings.EqualFold(repo, r.Name()) {
+				return true
+			}
+		}
+	}
+	return false
+}
