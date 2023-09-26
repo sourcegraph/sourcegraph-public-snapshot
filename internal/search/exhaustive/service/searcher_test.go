@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 func TestBackendFake(t *testing.T) {
@@ -314,7 +315,7 @@ func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher,
 	assert.NoError(err)
 
 	// Test RepositoryRevSpecs
-	refSpecs, err := searcher.RepositoryRevSpecs(ctx)
+	refSpecs, err := iterator.Collect(searcher.RepositoryRevSpecs(ctx))
 	assert.NoError(err)
 	assert.Equal(tc.WantRefSpecs, joinStringer(refSpecs))
 
