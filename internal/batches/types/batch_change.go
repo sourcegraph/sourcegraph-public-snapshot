@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,7 +67,7 @@ func (c *BatchChange) State() BatchChangeState {
 
 func (c *BatchChange) URL(ctx context.Context, namespaceName string) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!
-	extURL, err := url.Parse(conf.Get().ExternalURL)
+	extURL, err := url.Parse(globals.ExternalURLString())
 	if err != nil {
 		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
 	}

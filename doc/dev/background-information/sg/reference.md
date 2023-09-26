@@ -1641,23 +1641,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-### sg ops update-images
-
-Updates images in given directory to latest published image.
-
-Updates images in given directory to latest published image.
-Ex: in deploy-sourcegraph-cloud, run `sg ops update-images base/.`
-
-Arguments: `<dir>`
-
-Flags:
-
-* `--cr-password="<value>"`: `password` or access token for the container registry
-* `--cr-username="<value>"`: `username` for the container registry
-* `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
-* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
-
 ### sg ops inspect-tag
 
 Inspect main branch tag details from a image or tag.
@@ -1677,6 +1660,22 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--property, -p="<value>"`: only output a specific `property` (one of: 'build', 'date', 'commit')
+
+### sg ops update-images
+
+Update images across a sourcegraph/deploy-sourcegraph/* manifests.
+
+Arguments: `<dir>`
+
+Flags:
+
+* `--docker-password, --cr-password="<value>"`: dockerhub password
+* `--docker-username, --cr-username="<value>"`: dockerhub username
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
+* `--registry="<value>"`: Sets the registry we want images to update to, public or internal. (default: public)
+* `--skip, --skip-images="<value>"`: List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'
 
 ## sg page
 
