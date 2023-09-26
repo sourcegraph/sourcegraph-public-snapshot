@@ -120,7 +120,9 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
             codyApplicationSettings.customAutocompleteColor,
             settingsModel.customAutocompleteColor?.rgb,
             codyApplicationSettings.blacklistedLanguageIds,
-            settingsModel.blacklistedLanguageIds)
+            settingsModel.blacklistedLanguageIds,
+            codyApplicationSettings.shouldAcceptNonTrustedCertificatesAutomatically,
+            settingsModel.shouldAcceptNonTrustedCertificatesAutomatically)
     codyApplicationSettings.isCodyEnabled = settingsModel.isCodyEnabled
     codyApplicationSettings.isCodyAutocompleteEnabled = settingsModel.isCodyAutocompleteEnabled
     codyApplicationSettings.isCodyDebugEnabled = settingsModel.isCodyDebugEnabled

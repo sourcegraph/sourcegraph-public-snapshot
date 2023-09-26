@@ -61,16 +61,6 @@ func ExternalURL() *url.URL {
 	return externalURL.Load().(*url.URL)
 }
 
-// ExternalURLString returns the fully-resolved, externally accessible frontend URL string or empty string if default is set.
-func ExternalURLString() string {
-	url := externalURL.Load().(*url.URL)
-	if url.Host == "example.com" {
-		return ""
-	}
-
-	return url.String()
-}
-
 // SetExternalURL sets the fully-resolved, externally accessible frontend URL.
 func SetExternalURL(u *url.URL) {
 	externalURL.Store(u)

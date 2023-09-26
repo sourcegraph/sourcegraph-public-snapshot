@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -89,13 +88,12 @@ func TestCheckAnomalies(t *testing.T) {
 	siteID := "02a5a9e6-b45e-4e1a-b2a0-f812620e6dff"
 	licenseID := "22e0cc8e-57ad-4dd9-be54-0f94d6e9964d"
 
-	globals.SetExternalURL(&url.URL{Scheme: "https", Host: "sourcegraph.acme.com"})
-
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			Dotcom: &schema.Dotcom{
 				SlackLicenseAnomallyWebhook: "https://slack.com/webhook",
 			},
+			ExternalURL: "https://sourcegraph.acme.com",
 		},
 	})
 

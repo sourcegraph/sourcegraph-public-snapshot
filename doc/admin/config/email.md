@@ -25,6 +25,8 @@ To verify their email address, the user can do one of the following:
 
 Users with emails [created by the site admin](../auth/index.md#creating-builtin-authentication-users) through the `/site-admin/users/new` UI will have the same behaviour as the above. Users created directly through GraphQL or the `src` CLI assume that the email provided is verified.
 
+> Note: For SSO (Single Sign-On) enabled instances, it is important to remove the basic authentication method from the `auth.providers` list to prevent users from receiving password reset links. This is because users do not need passwords to log in to SSO-enabled instances. Prior to disabling the basic authentication method, please ensure that there is at least one administrator account capable of signing in via SSO. This is essential because once basic authentication is disabled, the username/password combination used to create the initial admin account will no longer be functional.
+
 ## Configuring Sourcegraph to send email via Amazon AWS / SES
 
 To use Amazon SES with Sourcegraph, first [follow these steps to create an SES account for Sourcegraph](https://docs.aws.amazon.com/ses/latest/dg/send-email-smtp-software-package.html).
