@@ -1,4 +1,13 @@
-import { type FC, useState, type PropsWithChildren, useRef, type ChangeEvent, useLayoutEffect, useEffect } from 'react'
+import {
+    type FC,
+    useState,
+    type PropsWithChildren,
+    useRef,
+    type ChangeEvent,
+    useLayoutEffect,
+    useEffect,
+    FormEvent,
+} from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { useDebounce } from 'use-debounce'
@@ -27,6 +36,8 @@ import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVa
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
 
 import styles from './GettingStartedTourSetup.module.scss'
+
+const DIALOG_TITLE_ID = 'onboarding-setup-title'
 
 interface GettingStartedTourSetupProps {
     user: AuthenticatedUser
@@ -82,8 +93,7 @@ export const GettingStartedTourSetup: FC<GettingStartedTourSetupProps> = ({ user
             className={styles.modal}
             containerClassName={styles.modalContainer}
             onDismiss={() => {}}
-            position="center"
-            aria-label="User onboarding questionaire"
+            aria-labelledby={DIALOG_TITLE_ID}
         >
             {steps[step](step)}
         </Modal>
@@ -107,29 +117,37 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
     children,
 }): JSX.Element => {
     const [, setConfig] = useTemporarySetting('onboarding.userconfig')
+    const onSubmit = (event: FormEvent) => {
+        event.preventDefault()
+        onHandleNext?.()
+    }
     return (
-        <div className={styles.fade}>
-            <H2 className={styles.title}>{title}</H2>
-            <div className={styles.wrapper}>
-                {children}
-                {label && <Text className={`mt-3 ${styles.text}`}>{label}</Text>}
+        <form onSubmit={onSubmit}>
+            <div className={styles.fade}>
+                <H2 id={DIALOG_TITLE_ID} className={styles.title}>
+                    {title}
+                </H2>
+                <div className={styles.wrapper}>
+                    {children}
+                    {label && <Text className={`mt-3 ${styles.text}`}>{label}</Text>}
+                </div>
+                <div className={styles.container}>
+                    <div className={styles.step}>{`${step} of ${totalSteps}`}</div>
+                    <LoaderButton
+                        type="submit"
+                        variant="merged"
+                        className={styles.button}
+                        disabled={!onHandleNext}
+                        alwaysShowLabel={true}
+                        loading={loading}
+                        label={step === totalSteps ? 'Done' : 'Next'}
+                    />
+                    <Button variant="link" onClick={() => setConfig({ skipped: true })}>
+                        Skip
+                    </Button>
+                </div>
             </div>
-            <div className={styles.container}>
-                <div className={styles.step}>{`${step} of ${totalSteps}`}</div>
-                <LoaderButton
-                    variant="merged"
-                    className={styles.button}
-                    disabled={!onHandleNext}
-                    onClick={onHandleNext}
-                    alwaysShowLabel={true}
-                    loading={loading}
-                    label={step === totalSteps ? 'Done' : 'Next'}
-                />
-                <Button variant="link" onClick={() => setConfig({ skipped: true })}>
-                    Skip
-                </Button>
-            </div>
-        </div>
+        </form>
     )
 }
 
@@ -211,7 +229,7 @@ const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect }
         >
             <Combobox aria-label="Choose a repo" openOnFocus={true} hidden={false} onSelect={setValue}>
                 <ComboboxInput
-                    autoFocus={false}
+                    autoFocus={true}
                     spellCheck={false}
                     placeholder="Enter repository name"
                     onInput={handleSearchTermChange}
@@ -266,6 +284,7 @@ const EmailModal: FC<EmailModalProps> = ({ step, onHandleNext, onSelect, user })
                 type="email"
                 title="Enter your commit email address"
                 placeholder="Enter an email address"
+                autoFocus={true}
                 required={true}
                 value={email}
                 onInput={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)}
@@ -311,7 +330,7 @@ const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSel
                 onSelect={setLanguage}
             >
                 <ComboboxInput
-                    autoFocus={false}
+                    autoFocus={true}
                     spellCheck={false}
                     placeholder="Enter language name"
                     onInput={(event: ChangeEvent<HTMLInputElement>) => setLanguage(event.target.value)}
