@@ -11,10 +11,12 @@
 
 .table td {
     position: relative;
+    vertical-align: top;
+    border-top: 2px dotted red;
 }
 
 .table thead tr > th {
-    background: #ccc;
+    //background: #ccc;
     position: sticky;
     z-index: 2;
     top: 0;
@@ -27,7 +29,7 @@
 }
 
 .table tbody tr > :first-child {
-    background: #ddd;
+    //background: #ddd;
     position: sticky;
     z-index: 1;
     left: 0;

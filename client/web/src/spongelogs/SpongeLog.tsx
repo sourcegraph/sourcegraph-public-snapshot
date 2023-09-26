@@ -72,12 +72,13 @@ const Completions: React.FunctionComponent<{ completions: any }> = ({ completion
 
         for (const [code, entries] of Object.entries(inputData)) {
             const row: Row = {
-                code: renderMarkdown(code),
+                code: renderMarkdown('```\n' + code + '\n```'),
                 bgColor: '#f7f7f7',
             }
 
-            for (const { completions, snapshotFileName, elapsed } of entries as any[]) {
-                const columnKey = snapshotFileName
+            // For now assume just one entry
+            for (const { completions, elapsed } of entries as any[]) {
+                const columnKey = 'Completions'
 
                 extraColumns.add(columnKey)
 
