@@ -21,12 +21,7 @@ interface TourWrapperProps
 
 const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
     const showOnboardingSetup = useShowOnboardingSetup()
-    const [config, setConfig] = useTemporarySetting('onboarding.userconfig')
-
-    // FIXME: Remove this after review
-    useEffect(() => {
-        // setConfig({ skipped: false })
-    }, [])
+    const [config] = useTemporarySetting('onboarding.userconfig')
 
     const { loading, error, data } = useOnboardingTasks()
     if (loading || error || !data) {

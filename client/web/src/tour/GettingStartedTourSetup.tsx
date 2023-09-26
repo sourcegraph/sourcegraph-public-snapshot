@@ -232,6 +232,8 @@ const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect }
                 <ComboboxInput
                     autoFocus={true}
                     spellCheck={false}
+                    autocomplete={true}
+                    autoComplete="off"
                     placeholder="Enter repository name"
                     onInput={handleSearchTermChange}
                     onFocus={() => setError('')}
@@ -338,6 +340,8 @@ const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSel
                 <ComboboxInput
                     autoFocus={true}
                     spellCheck={false}
+                    autocomplete={true}
+                    autoComplete="off"
                     placeholder="Enter language name"
                     onInput={(event: ChangeEvent<HTMLInputElement>) => setLanguage(event.target.value)}
                     onFocus={() => setError('')}

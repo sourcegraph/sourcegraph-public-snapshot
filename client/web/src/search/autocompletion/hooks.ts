@@ -26,6 +26,11 @@ export function useRepositoryCompletionSource(searchTerm: string): { suggestions
         let isCurrent = true
         setLoading(true)
 
+        if (!searchTerm.trim()) {
+            setSuggestions([])
+            return
+        }
+
         const result = repoCache.query(searchTerm, suggestions => suggestions.map(suggestion => suggestion.item.name))
         setSuggestions(result.result)
 
@@ -47,8 +52,6 @@ export function useRepositoryCompletionSource(searchTerm: string): { suggestions
     return { suggestions, loading }
 }
 
-const defaultLanguages: string[] = ['Java', 'Python', 'C++', 'C#', 'JavaScript', 'PHP', 'Ruby']
-
 const languageFzf = new Fzf(ALL_LANGUAGES, {
     fuzzy: false,
 })
@@ -56,7 +59,7 @@ const languageFzf = new Fzf(ALL_LANGUAGES, {
 export function useLanguageCompletionSource(searchTerm: string): { suggestions: string[] } {
     return useMemo(() => {
         if (!searchTerm.trim()) {
-            return { suggestions: defaultLanguages }
+            return { suggestions: [] }
         }
         return { suggestions: languageFzf.find(searchTerm).map(match => match.item) }
     }, [searchTerm])
