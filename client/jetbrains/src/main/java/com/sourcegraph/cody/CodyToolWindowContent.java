@@ -328,6 +328,7 @@ public class CodyToolWindowContent implements UpdatableChat {
           e -> {
             CodyApplicationSettings.getInstance().setOnboardingGuidanceDismissed(true);
             updateVisibilityOfContentPanels();
+            refreshRecipes();
           });
       if (displayName != null) {
         if (codyOnboardingGuidancePanel != null
