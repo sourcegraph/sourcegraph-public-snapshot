@@ -1216,12 +1216,12 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sou
 
 ## frontend: email_delivery_failures
 
-<p class="subtitle">email delivery failures over 30 minutes</p>
+<p class="subtitle">email delivery failure rate over 30 minutes</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 0%+ email delivery failures over 30 minutes
-- <span class="badge badge-critical">critical</span> frontend: 10%+ email delivery failures over 30 minutes
+- <span class="badge badge-warning">warning</span> frontend: 0%+ email delivery failure rate over 30 minutes
+- <span class="badge badge-critical">critical</span> frontend: 10%+ email delivery failure rate over 30 minutes
 
 **Next steps**
 

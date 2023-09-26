@@ -5126,7 +5126,7 @@ Query: `sum(increase(zoekt_final_aggregate_size_count{reason="timer_expired"}[1d
 
 #### frontend: email_delivery_failures
 
-<p class="subtitle">Email delivery failures over 30 minutes</p>
+<p class="subtitle">Email delivery failure rate over 30 minutes</p>
 
 Refer to the [alerts reference](./alerts.md#frontend-email-delivery-failures) for 2 alerts related to this panel.
 

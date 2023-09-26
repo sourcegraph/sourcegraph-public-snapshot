@@ -786,7 +786,7 @@ func Frontend() *monitoring.Dashboard {
 				Rows: []monitoring.Row{{
 					{
 						Name:        "email_delivery_failures",
-						Description: "email delivery failures over 30 minutes",
+						Description: "email delivery failure rate over 30 minutes",
 						Query:       `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`,
 						Panel: monitoring.Panel().
 							LegendFormat("failures").
