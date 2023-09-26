@@ -22,6 +22,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
+import { LoaderButton } from '../components/LoaderButton'
 import type { UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables } from '../graphql-operations'
 import { useLanguageCompletionSource, useRepositoryCompletionSource } from '../search/autocompletion/hooks'
 
@@ -93,6 +94,7 @@ interface ModalInnerProps {
     title: string
     step: [number, number]
     label?: string
+    loading?: boolean
     onHandleNext?: () => void
 }
 
@@ -101,6 +103,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
     title,
     step: [step, totalSteps],
     onHandleNext,
+    loading,
     children,
 }): JSX.Element => {
     const [, setConfig] = useTemporarySetting('onboarding.userconfig')
@@ -113,9 +116,15 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
             </div>
             <div className={styles.container}>
                 <div className={styles.step}>{`${step} of ${totalSteps}`}</div>
-                <Button variant="merged" className={styles.button} disabled={!onHandleNext} onClick={onHandleNext}>
-                    {step === totalSteps ? 'Done' : 'Next'}
-                </Button>
+                <LoaderButton
+                    variant="merged"
+                    className={styles.button}
+                    disabled={!onHandleNext}
+                    onClick={onHandleNext}
+                    alwaysShowLabel={true}
+                    loading={loading}
+                    label={step === totalSteps ? 'Done' : 'Next'}
+                />
                 <Button variant="link" onClick={() => setConfig({ skipped: true })}>
                     Skip
                 </Button>
@@ -197,11 +206,12 @@ const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect }
             title="Before we start, what repository do you work in most?"
             label="Example: react-website or  host domain/organization/repository-name"
             step={step}
-            onHandleNext={value.trim() && !isValidating ? validateRepo : undefined}
+            onHandleNext={value.trim() && !isValidating && !error ? validateRepo : undefined}
+            loading={isValidating}
         >
             <Combobox aria-label="Choose a repo" openOnFocus={true} hidden={false} onSelect={setValue}>
                 <ComboboxInput
-                    autoFocus={true}
+                    autoFocus={false}
                     spellCheck={false}
                     placeholder="Enter repository name"
                     onInput={handleSearchTermChange}
@@ -301,7 +311,7 @@ const LanguageModal: FC<LanguageModalProps> = ({ step, onHandleNext, repo, onSel
                 onSelect={setLanguage}
             >
                 <ComboboxInput
-                    autoFocus={true}
+                    autoFocus={false}
                     spellCheck={false}
                     placeholder="Enter language name"
                     onInput={(event: ChangeEvent<HTMLInputElement>) => setLanguage(event.target.value)}

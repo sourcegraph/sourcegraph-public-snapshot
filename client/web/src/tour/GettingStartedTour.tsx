@@ -25,7 +25,7 @@ const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
 
     // FIXME: Remove this after review
     useEffect(() => {
-        // setConfig({skipped: false})
+        // setConfig({ skipped: false })
     }, [])
 
     const { loading, error, data } = useOnboardingTasks()
