@@ -146,7 +146,7 @@ Cody is now fully enabled on your self-hosted Sourcegraph enterprise instance!
 
 ### Configure the VS Code extension
 
-With Cody enabled on your Sourcegraph instance, any user can configure and use the [Cody VS Code extension](./../overview/install-vscode). This does not require admin privilege. However,
+With Cody enabled on your Sourcegraph instance, any user can configure and use the [Cody VS Code extension](./../overview/install-vscode.md). This does not require admin privilege. However,
 
 - If you currently installed a previous version of Cody, uninstall it and reload VS Code before proceeding to the next steps
 - Search for "Cody AI” in your VS Code extension marketplace, and install it again
