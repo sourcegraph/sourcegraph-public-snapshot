@@ -1292,7 +1292,15 @@ SELECT u.id,
        u.avatar_url,
        u.created_at,
        u.updated_at,
-       u.site_admin,
+       EXISTS(
+			SELECT 1
+			FROM user_roles
+			JOIN roles ON user_roles.role_id = roles.id
+			WHERE
+				user_roles.user_id = users.id
+			AND
+				roles.name = 'SITE_ADMINISTRATOR'
+		) AS site_admin,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
        u.tos_accepted,
@@ -1341,7 +1349,15 @@ SELECT u.id,
        u.created_at,
        u.updated_at,
 	   u.deleted_at,
-       u.site_admin,
+       EXISTS(
+			SELECT 1
+			FROM user_roles
+			JOIN roles ON user_roles.role_id = roles.id
+			WHERE
+				user_roles.user_id = users.id
+			AND
+				roles.name = 'SITE_ADMINISTRATOR'
+		) AS site_admin,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
        u.tos_accepted,

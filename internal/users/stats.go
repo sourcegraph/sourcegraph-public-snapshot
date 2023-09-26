@@ -151,7 +151,15 @@ var (
 			users.created_at,
 			stats.user_last_active_at AS last_active_at,
 			users.deleted_at,
-			users.site_admin,
+			EXISTS(
+				SELECT 1
+				FROM user_roles
+				JOIN roles ON user_roles.role_id = roles.id
+				WHERE
+					user_roles.user_id = users.id
+				AND
+					roles.name = 'SITE_ADMINISTRATOR'
+			) AS site_admin,,
             (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id=users.id AND service_type = 'scim') >= 1 AS scim_controlled,
 			COALESCE(stats.user_events_count, 0) AS events_count
 		FROM users

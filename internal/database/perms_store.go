@@ -2133,7 +2133,15 @@ SELECT
 	users.avatar_url,
 	users.created_at,
 	users.updated_at,
-	users.site_admin,
+	EXISTS(
+		SELECT 1
+		FROM user_roles
+		JOIN roles ON user_roles.role_id = roles.id
+		WHERE
+			user_roles.user_id = users.id
+		AND
+			roles.name = 'SITE_ADMINISTRATOR'
+	) AS site_admin,
 	users.passwd IS NOT NULL,
 	users.invalidated_sessions_at,
 	users.tos_accepted,
