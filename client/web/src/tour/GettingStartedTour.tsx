@@ -23,6 +23,7 @@ const TourWrapper: FC<TourWrapperProps> = ({ authenticatedUser, ...props }) => {
     const showOnboardingSetup = useShowOnboardingSetup()
     const [config, setConfig] = useTemporarySetting('onboarding.userconfig')
 
+    // FIXME: Remove this after review
     useEffect(() => {
         // setConfig({skipped: false})
     }, [])

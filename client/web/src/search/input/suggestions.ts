@@ -3,7 +3,7 @@ import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '
 import { byLengthAsc, extendedMatch, Fzf, type FzfOptions, type FzfResultItem } from 'fzf'
 
 // This module implements suggestions for the experimental search input
- 
+
 import {
     type Group,
     type Option,

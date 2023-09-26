@@ -17,7 +17,7 @@ export function useShowOnboardingTour({
 
 // If a user has made less than this number of queries we will show them
 // the tour setup questions.
-const MIN_QUERIES = 50
+const MIN_QUERIES = 50 // FIXME: Change to 5 after review
 
 export function useShowOnboardingSetup(): boolean {
     // The user onboarding setup is only shown if the user hasn't

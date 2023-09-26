@@ -157,11 +157,10 @@ const RepositoryModal: FC<ModalContentProps> = ({ step, onHandleNext, onSelect }
         }
 
         setIsValidating(true)
-        const result = await client
-            .query<UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables>({
-                query: getDocumentNode(REPO_QUERY),
-                variables: { name: value },
-            })
+        const result = await client.query<UserOnboardingRepoValidationResult, UserOnboardingRepoValidationVariables>({
+            query: getDocumentNode(REPO_QUERY),
+            variables: { name: value },
+        })
         // Only proceed if the value hasn't changed in the meantime
         if (value === repo) {
             if (result.error) {
