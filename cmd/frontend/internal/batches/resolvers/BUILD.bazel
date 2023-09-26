@@ -40,7 +40,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
@@ -128,7 +127,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/backend",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/internal/auth/githubappauth",

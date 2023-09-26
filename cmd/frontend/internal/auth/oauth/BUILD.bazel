@@ -15,7 +15,6 @@ go_library(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
-        "//cmd/frontend/globals",
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/conf",

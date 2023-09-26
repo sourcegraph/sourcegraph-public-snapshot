@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/cronexpr"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -36,7 +35,6 @@ func validateExternalURLConfig(cfg conftypes.SiteConfigQuerier) (problems Proble
 	if val := cfg.SiteConfig().ExternalURL; val != "" {
 		var err error
 		if _, err = url.Parse(val); err != nil {
-			log15.Error("site config externalURL", "value", val, "error", err)
 			problems = append(problems, NewSiteProblem("Could not parse `externalURL`."))
 		}
 	}

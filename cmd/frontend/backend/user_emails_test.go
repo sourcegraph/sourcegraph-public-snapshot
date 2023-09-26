@@ -139,6 +139,13 @@ func TestCheckEmailAbuse(t *testing.T) {
 }
 
 func TestSendUserEmailVerificationEmail(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
+
 	var sent *txemail.Message
 	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
 		sent = &message
@@ -176,6 +183,13 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		return nil
 	}
 	defer func() { txemail.MockSend = nil }()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
@@ -224,6 +238,13 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 		return nil
 	}
 	defer func() { txemail.MockSend = nil }()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)

@@ -31,5 +31,9 @@ go_test(
     name = "middleware_test",
     timeout = "short",
     srcs = ["goimportpath_test.go"],
-    deps = [":middleware"],
+    deps = [
+        ":middleware",
+        "//internal/conf",
+        "//schema",
+    ],
 )

@@ -12,8 +12,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestHandleSetPasswordEmail(t *testing.T) {
@@ -21,6 +23,13 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 
 	defer func() { backend.MockMakePasswordResetURL = nil }()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
 		query := url.Values{}

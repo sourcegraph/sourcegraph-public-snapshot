@@ -120,7 +120,12 @@ func (s *lockoutStore) GenerateUnlockAccountURL(userID int32) (string, string, e
 	effectiveTTL := effectiveUnlockTTL(ttl)
 	expiryTime := time.Now().Add(time.Second * time.Duration(effectiveTTL))
 
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	u := conf.Get().ExternalURL
+	if u == "" {
+		u = "http://example.com"
+	}
+
+	externalURL, err := url.Parse(u)
 	if err != nil {
 		return "", "", err
 	}
