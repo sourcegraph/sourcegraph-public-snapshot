@@ -15,7 +15,7 @@ import (
 
 // search-jobs_<job-id>_2020-07-01_150405
 func filename(jobID int) string {
-	return fmt.Sprintf("search-jobs_%d_%s.csv", jobID, time.Now().Format("2006-01-02_150405"))
+	return fmt.Sprintf("search-jobs_%d_%s", jobID, time.Now().Format("2006-01-02_150405"))
 }
 
 func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
