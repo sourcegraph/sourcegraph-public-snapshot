@@ -227,7 +227,7 @@ The `sg.nvim` extension also supports pre-built reusable prompts for Cody called
 - `:CodyRestart`: Restarts Cody and Sourcegraph
 - `:CodyTask {task_description}`: Instructs Cody to perform a task on a selected text
 - `:CodyTaskAccept`: Accepts the current `CodyTask`
-- `:CodyTaskNext`: Cycles to the next `CodTask`
+- `:CodyTaskNext`: Cycles to the next `CodyTask`
 - `:CodyTaskPrev`: Cycles to the previous `CodyTask`
 - `:CodyTaskView`: Opens the last active `CodyTask`
 - `:CodyToggle`: Toggle to the current Cody Chat window
