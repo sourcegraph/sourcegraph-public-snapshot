@@ -6,7 +6,7 @@ import {
     type ChangeEvent,
     useLayoutEffect,
     useEffect,
-    FormEvent,
+    type FormEvent,
 } from 'react'
 
 import { useApolloClient } from '@apollo/client'
@@ -28,6 +28,7 @@ import {
     ComboboxOption,
     type TetherInstanceAPI,
     Flipping,
+    Form,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
@@ -117,12 +118,12 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
     children,
 }): JSX.Element => {
     const [, setConfig] = useTemporarySetting('onboarding.userconfig')
-    const onSubmit = (event: FormEvent) => {
+    const onSubmit = (event: FormEvent): void => {
         event.preventDefault()
         onHandleNext?.()
     }
     return (
-        <form onSubmit={onSubmit}>
+        <Form onSubmit={onSubmit}>
             <div className={styles.fade}>
                 <H2 id={DIALOG_TITLE_ID} className={styles.title}>
                     {title}
@@ -147,7 +148,7 @@ const ModalInner: FC<PropsWithChildren<ModalInnerProps>> = ({
                     </Button>
                 </div>
             </div>
-        </form>
+        </Form>
     )
 }
 
