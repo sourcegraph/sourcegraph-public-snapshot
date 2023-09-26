@@ -14,7 +14,7 @@ export type TourProps = TelemetryProps & {
     id: string
     tasks: TourTaskType[]
     extraTask?: TourTaskType
-    userInfo: UserOnboardingConfig['userinfo']
+    userInfo?: UserOnboardingConfig['userinfo']
     defaultSnippets: Record<string, string[]>
 } & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
 
@@ -128,7 +128,7 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         return (
             <TourContext.Provider value={{ onStepClick, onRestart, userInfo, isQuerySuccessful }}>
-                <TourContent {...props} onClose={onClose} tasks={extendedTasks} />
+                <TourContent {...props} onClose={onClose} tasks={finalTasks} />
                 <TourAgent tasks={finalTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
             </TourContext.Provider>
         )
