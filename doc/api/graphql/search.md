@@ -6,7 +6,9 @@ This page adds some additional depth and context to Sourcegraph's search GraphQL
 
 Sourcegraph does not support pagination for search results when using the GraphQL search API due to the dynamic nature of search queries. The order of results may vary each time you run a search, making traditional pagination unreliable.
 
-Instead, we recommend using the [stream search API](../stream_api/index.md) for scenarios where you need to run a long query and receive continuous results. This enables you to execute long-running queries.
+Instead, we recommend using the [stream search API](../stream_api/index.md) for scenarios where you need to run a long query and receive continuous results. This enables you to execute long-running queries. 
+
+Note that there is currently no limitation on the GraphQL API, however heavy or continuous usage may affect the speed and function of your Sourcegraph instance.
 
 ## `src` CLI usage (easier than GraphQL)
 
