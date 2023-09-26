@@ -39,9 +39,5 @@ const (
 // 🚨 SECURITY: Use with care, as variable strings can accidentally contain data
 // sensitive to standalone Sourcegraph instances.
 func Action(parts ...string) eventAction {
-	var ss []string
-	for _, v := range parts {
-		ss = append(ss, string(v))
-	}
-	return eventAction(strings.Join(ss, "."))
+	return eventAction(strings.Join(parts, "."))
 }
