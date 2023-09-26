@@ -242,6 +242,7 @@ Create your own key with Anthropic [here](https://console.anthropic.com/account/
     "provider": "anthropic",
     "chatModel": "claude-2", // Or any other model you would like to use
     "fastChatModel": "claude-instant-1", // Or any other model you would like to use
+    "completionModel": "claude-instant-1", // Or any other model you would like to use
     "accessToken": "<key>"
   }
 }
@@ -259,6 +260,7 @@ Create your own key with OpenAI [here](https://beta.openai.com/account/api-keys)
     "provider": "openai",
     "chatModel": "gpt-4", // Or any other model you would like to use
     "fastChatModel": "gpt-35-turbo", // Or any other model you would like to use
+    "completionModel": "gpt-35-turbo", // Or any other model you would like to use
     "accessToken": "<key>"
   }
 }
@@ -284,6 +286,7 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
     "provider": "azure-openai",
     "chatModel": "<deployment name of the model>",
     "fastChatModel": "<deployment name of the model>",
+    "completionModel": "<deployment name of the model>",
     "endpoint": "<endpoint>",
     "accessToken": "<key>"
   }
@@ -322,61 +325,3 @@ For the access token, you can either:
 - Set it to `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>:<SESSION_TOKEN>` if a session token is also required
 
 Similarly, you can also [use a third-party LLM provider directly for embeddings](./../explanations/code_graph_context.md#using-a-third-party-embeddings-provider-directly).
-
-## Using a different provider for Cody Chat and Autocomplete
-
->NOTE: Support for separate providers for chat and autocomplete is only available with Sourcegraph v5.2. Previous versions use the same provider for both.
-
-First, make sure that Cody is enabled on your Sourcegraph instance. Here are a few examples showcasing different chat and autocomplete providers that differ from the default configuration.
-
-### Using the default Chat provider but AWS Bedrock for Autocomplete
-
-```json
-{
-  // [...]
-  "cody.enabled": true,
-  "autocomplete": {
-    "provider": "aws-bedrock",
-    "model": "anthropic.claude-instant-v1",
-    "endpoint": "<AWS-Region>", // For example: us-west-2.
-    "accessToken": "<See below>"
-  }
-}
-```
-
-### Using OpenAI for Chat and the default configuration for Autocomplete
-
-```json
-{
-  // [...]
-  "cody.enabled": true,
-  "completions": {
-    "provider": "openai",
-    "chatModel": "gpt-4", // Or any other model you would like to use
-    "fastChatModel": "gpt-35-turbo", // Or any other model you would like to use
-    "accessToken": "<key>"
-  }
-}
-```
-
-### Using OpenAI for Chat and Azure for Autocomplete
-
-```json
-{
-  // [...]
-  "cody.enabled": true,
-  "completions": {
-    "provider": "openai",
-    "chatModel": "gpt-4", // Or any other model you would like to use
-    "fastChatModel": "gpt-35-turbo", // Or any other model you would like to use
-    "completionModel": "gpt-35-turbo", // Or any other model you would like to use
-    "accessToken": "<key>"
-  },
-  "autocomplete": {
-    "provider": "azure-openai",
-    "model": "<deployment name of the model>",
-    "endpoint": "<endpoint>",
-    "accessToken": "<key>"
-  }
-}
-```
