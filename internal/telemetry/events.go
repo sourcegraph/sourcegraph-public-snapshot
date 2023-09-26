@@ -33,7 +33,7 @@ const (
 )
 
 // Action is an escape hatch for constructing eventAction from variable strings.
-// where possible, perfer to use a constant string or a predefined action constant
+// where possible, prefer to use a constant string or a predefined action constant
 // in the internal/telemetry package instead.
 //
 // 🚨 SECURITY: Use with care, as variable strings can accidentally contain data
