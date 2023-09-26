@@ -63,12 +63,12 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	r.Get(router.UI).Handler(ui.Router())
 
 	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
-	events := telemetryrecorder.NewBestEffort(logger, db)
+	eventRecorder := telemetryrecorder.New(db)
 
-	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
+	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db, eventRecorder)))
 	r.Get(router.RequestAccess).Handler(trace.Route(accessrequest.HandleRequestAccess(logger, db)))
-	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
-	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore, events)))
+	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db, eventRecorder)))
+	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore, eventRecorder)))
 	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(logger, db)))
 	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(logger, db, lockoutStore)))
 	r.Get(router.UnlockUserAccount).Handler(trace.Route(userpasswd.HandleUnlockUserAccount(logger, db, lockoutStore)))

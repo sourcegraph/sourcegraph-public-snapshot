@@ -146,9 +146,7 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	if testing.Verbose() {
 		logger = logtest.Scoped(t)
 	}
-	events := telemetry.NewBestEffortEventRecorder(logger,
-		telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
-	h := HandleSignIn(logger, db, lockout, events)
+	h := HandleSignIn(logger, db, lockout, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 	// Normal authentication fail before lockout
 	{
@@ -357,7 +355,8 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db)
+		events := telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore())
+		h := HandleSignUp(logger, db, events)
 
 		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
@@ -390,7 +389,7 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db)
+		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
@@ -457,7 +456,7 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db)
+		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		body := strings.NewReader(`{
 			"email": "test@test.com",
@@ -487,7 +486,7 @@ func TestHandleSiteInit(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSiteInit(logger, db)
+		h := HandleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
 		require.NoError(t, err)
@@ -533,7 +532,7 @@ func TestHandleSiteInit(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSiteInit(logger, db)
+		h := HandleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
 		body := strings.NewReader(`{
 			"email": "test@test.com",
