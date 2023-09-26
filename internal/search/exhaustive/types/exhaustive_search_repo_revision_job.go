@@ -31,7 +31,7 @@ func (j *ExhaustiveSearchRepoRevisionJob) RecordUID() string {
 
 type SearchJobLog struct {
 	ID       int64
-	RepoID   api.RepoID
+	RepoName api.RepoName
 	Revision string
 
 	State          JobState
