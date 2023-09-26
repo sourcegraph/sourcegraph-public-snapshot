@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
@@ -251,7 +250,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	// early. We do not write ANY Access-Control-Allow-* CORS headers, which triggers the browsers
 	// default (and strict) behavior of not allowing cross-origin requests.
 	//
-	// We could instead parse the domain from globals.ExternalURL().String() and use that in the response,
+	// We could instead parse the domain from conf.Get().ExternalURL and use that in the response,
 	// to make things more explicit, but it would add more logic here to think about and you would
 	// also want to think about whether or not `OPTIONS` requests should be handled and if the other
 	// headers (-Credentials, -Methods, -Headers, etc.) should be sent back in such a situation.
@@ -351,7 +350,7 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
 	}
 
-	if externalURL := strings.TrimSuffix(globals.ExternalURLString(), "/"); externalURL != "" && requestOrigin == externalURL {
+	if externalURL := strings.TrimSuffix(conf.Get().ExternalURL, "/"); externalURL != "" && requestOrigin == externalURL {
 		isCORSAllowedRequest = true
 	}
 

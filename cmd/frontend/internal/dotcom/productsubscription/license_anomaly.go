@@ -12,7 +12,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -163,7 +162,7 @@ func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db datab
 
 	logger.Warn("license check call time anomaly detected", log.String("licenseID", license.ID), log.Int64("time diff seconds", timeDiff))
 
-	externalURL, err := url.Parse(globals.ExternalURLString())
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		logger.Error("parsing external URL from site config", log.Error(err))
 	}
