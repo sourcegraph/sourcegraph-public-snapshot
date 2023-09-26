@@ -49,6 +49,8 @@ enum Commands {
     Compare {
         candidate: String,
         groundTruth: String,
+        #[arg(short, long)]
+        tp: bool,
     },
 }
 
@@ -95,6 +97,7 @@ pub fn main() {
         Commands::Compare {
             candidate,
             groundTruth,
+            tp,
         } => {
             type Occ = (Location, String);
             let canddate_occs = index_occurrences(&read_from_file(&candidate));
@@ -105,10 +108,9 @@ pub fn main() {
             let mut false_negatives: Vec<Occ> = Vec::new();
 
             for (rng, occ) in ground_truth_occs.clone() {
-                if canddate_occs.contains_key(&rng) {
-                    true_positives.push((rng, occ));
-                } else {
-                    false_negatives.push((rng, occ));
+                match canddate_occs.get(&rng) {
+                    None => false_negatives.push((rng, occ)),
+                    Some(c) => true_positives.push((rng, c.to_string())),
                 }
             }
 
@@ -131,7 +133,12 @@ pub fn main() {
             println!("{}", "Precision = 'out of all found symbol occurrences, how many are also found by compiler?'".italic());
             println!("{}", "Recall = 'how close are we to finding the full set of occurrences as reported by the compiler?'".italic());
             println!("");
-            println!("{}", "False negatives:".red());
+
+            println!(
+                "{}: {}",
+                "False negatives".red(),
+                false_negatives.len().to_string().bold()
+            );
             println!(
                 "{}",
                 "How many actual occurrences we DIDN'T find compared to compiler?".italic()
@@ -146,7 +153,11 @@ pub fn main() {
             }
 
             println!("");
-            println!("{}", "False positives:".red());
+            println!(
+                "{}: {}",
+                "False positives".red(),
+                false_positives.len().to_string().bold()
+            );
             println!(
                 "{}",
                 "How many extra occurrences we reported compared to compiler?".italic()
@@ -158,6 +169,32 @@ pub fn main() {
                     "{file}: L{} C{} -- {occ}",
                     rng.rng.start_line, rng.rng.start_col
                 );
+            }
+            if *tp {
+                println!("");
+                println!(
+                    "{}: {}",
+                    "True positives".green(),
+                    true_positives.len().to_string().bold()
+                );
+
+                for (rng, occ) in &true_positives {
+                    let file = &rng.file;
+                    let header =
+                        format!("{file}: L{} C{} -- ", rng.rng.start_line, rng.rng.start_col);
+                    let spacing = " ".repeat(header.len());
+
+                    println!(
+                        "{} {} ({})",
+                        header.yellow(),
+                        occ,
+                        ground_truth_occs.get(&rng).unwrap().bold()
+                    );
+                    // println!(
+                    //     "{file}: L{} C{} -- {occ}",
+                    //     rng.rng.start_line, rng.rng.start_col
+                    // );
+                }
             }
         }
         Commands::Index {
