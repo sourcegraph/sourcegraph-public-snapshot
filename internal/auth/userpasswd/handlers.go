@@ -56,7 +56,7 @@ type unlockUserAccountInfo struct {
 }
 
 // HandleSignUp handles submission of the user signup form.
-func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
+func HandleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder) http.HandlerFunc {
 	logger = logger.Scoped("HandleSignUp", "sign up request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
@@ -66,18 +66,18 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}
-		handleSignUp(logger, db, w, r, false)
+		handleSignUp(logger, db, eventRecorder, w, r, false)
 	}
 }
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func HandleSiteInit(logger log.Logger, db database.DB) http.HandlerFunc {
+func HandleSiteInit(logger log.Logger, db database.DB, events *telemetry.EventRecorder) http.HandlerFunc {
 	logger = logger.Scoped("HandleSiteInit", "initial size initialization request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 		// allow signups after those conditions become true, so we don't need to check the builtin auth
 		// provider's allowSignup in site config.
-		handleSignUp(logger, db, w, r, true)
+		handleSignUp(logger, db, events, w, r, true)
 	}
 }
 
@@ -108,7 +108,8 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder,
+	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -135,6 +136,15 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
+	// New event - we record legacy event manually for now, hence teestore.WithoutV1
+	// TODO: Remove in 5.3
+	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
+	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Metadata: telemetry.EventMetadata{
+			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
+		},
+	})
+	// Legacy event
 	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
@@ -282,8 +292,9 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 //
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
-func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, events *telemetry.BestEffortEventRecorder) http.HandlerFunc {
+func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorder *telemetry.EventRecorder) http.HandlerFunc {
 	logger = logger.Scoped("HandleSignin", "sign in request handler")
+	events := telemetry.NewBestEffortEventRecorder(logger, recorder)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
