@@ -24,11 +24,10 @@
         <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectSettings"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.notification.AccountSettingChangeListener"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.notification.CodySettingChangeListener"/>
-        <projectService serviceImplementation="com.sourcegraph.cody.config.AccountsHostProjectHolder"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyAuthenticationManager"/>
-        <httpRequestHandler implementation="com.sourcegraph.cody.SaveAccessTokenHttpService"/>
+        <httpRequestHandler implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
 
         <projectConfigurable
             parentId="tools"
@@ -52,7 +51,7 @@
             nonDefaultProject="false"
         />
 
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersisentAccounts"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectActiveAccountHolder"/>
@@ -173,11 +172,6 @@
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
         </action>
 
-        <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
-                text="Refresh"
-                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
-        </action>
-
         <action
             id="cody.downloadAndInstallCodyAction"
             class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
@@ -221,7 +215,6 @@
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
-            <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
         <group id="CodyEditorActions" popup="true" text="Cody"
@@ -252,8 +245,8 @@
         </group>
 
         <group id="Cody.Accounts.AddAccount">
-            <action id="Cody.Accounts.AddCodyAccountWithToken" text="Log In to Sourcegraph"
-                    class="com.sourcegraph.cody.config.AddCodyAccountWithTokenAction"/>
+            <action id="Cody.Accounts.LogInToSourcegraphAction" text="Log In to Sourcegraph"
+                    class="com.sourcegraph.cody.config.LogInToSourcegraphAction"/>
             <action id="Cody.Accounts.AddCodyEnterpriseAccount"
                     text="Log In with Token to Sourcegraph Enterprise"
                     class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"/>

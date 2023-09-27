@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.config
 
 import com.intellij.openapi.project.Project
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.config.ConfigUtil
 
@@ -18,6 +19,7 @@ class CodyPersistentAccountsHost(private val project: Project?) : CodyAccountsHo
       // Notify Cody Agent about config changes.
       CodyAgent.getServer(project)
           ?.configurationDidChange(ConfigUtil.getAgentConfiguration(project))
+      CodyToolWindowContent.getInstance(project).refreshPanelsVisibility()
     }
   }
 
