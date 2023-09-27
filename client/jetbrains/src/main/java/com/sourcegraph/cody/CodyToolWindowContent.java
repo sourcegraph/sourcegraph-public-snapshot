@@ -44,7 +44,6 @@ import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
-import com.sourcegraph.cody.config.AccountType;
 import com.sourcegraph.cody.config.AccountsHostProjectHolder;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
@@ -52,7 +51,6 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager;
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
-import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
@@ -345,19 +343,9 @@ public class CodyToolWindowContent implements UpdatableChat {
       isChatVisible = false;
       return;
     }
-    if (LocalAppManager.isPlatformSupported()
-        && codyAuthenticationManager.getActiveAccountType(project) == AccountType.LOCAL_APP) {
-      if (!LocalAppManager.isLocalAppRunning()) {
-        allContentLayout.show(allContentPanel, "appNotRunningPanel");
-        isChatVisible = false;
-      } else {
-        allContentLayout.show(allContentPanel, "tabbedPane");
-        isChatVisible = true;
-      }
-    } else {
-      allContentLayout.show(allContentPanel, "tabbedPane");
-      isChatVisible = true;
-    }
+
+    allContentLayout.show(allContentPanel, "tabbedPane");
+    isChatVisible = true;
   }
 
   @NotNull
