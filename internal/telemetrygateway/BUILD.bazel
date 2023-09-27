@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -10,6 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
+        "//internal/database",
         "//internal/env",
         "//internal/grpc/chunk",
         "//internal/grpc/defaults",
@@ -20,5 +22,21 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "telemetrygateway_test",
+    srcs = ["identifier_test.go"],
+    embed = [":telemetrygateway"],
+    deps = [
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//schema",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//encoding/protojson",
     ],
 )
