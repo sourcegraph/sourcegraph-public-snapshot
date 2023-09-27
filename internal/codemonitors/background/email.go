@@ -8,10 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go/relay"
 
-<<<<<<< HEAD
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-=======
->>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
