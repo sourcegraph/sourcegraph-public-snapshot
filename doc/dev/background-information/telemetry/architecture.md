@@ -8,7 +8,7 @@ This page outlines the architecture and components involved in Sourcegraph's new
 
 In the [lifecycle of an event](./index.md#event-lifecycle), events are first [stored](#storing-events) then [exported](#exporting-events) to [Telemetry Gateway](#telemetry-gateway).
 
-See [testing events](#testing-events) for a summary of how to observe your events during development.
+See [testing events](./index.md#testing-events) for a summary of how to observe your events during development.
 
 ## Storing events
 
@@ -20,6 +20,8 @@ Once [recorded](./index.md#recording-events), telemetry events are stored in two
 
 The "tee" store, including the translation from Telemetry Gateway event schema to the `event_logs` table, is implemented in [`internal/telemetry/teestore`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/teestore).
 
+Note that before events are stored into `telemetry_events_export_queue`, [sensitive attributes are stripped](./index.md#sensitive-attributes) - this means that the contents of `telemetry_events_export_queue` are exactly what gets exported from an instance.
+
 ## Exporting events
 
 The [`telemetrygatewayexporter`](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/worker/internal/telemetrygatewayexporter/telemetrygatewayexporter.go) running in the worker service spawns a set of background jobs that handle:
@@ -29,8 +31,6 @@ The [`telemetrygatewayexporter`](https://github.com/sourcegraph/sourcegraph/blob
 3. Exporting batches of not-yet-exported entries in the `telemetry_events_export_queue` to the Telemetry Gateway service
 
 When exporting events, we explicitly only mark an event as successfully exported when the Telemetry Gateway returns a response with a particular event's generated ID. This ensures we always export events at least once.
-
-Note that before export, [sensitive attributes are stripped](./index.md#sensitive-attributes) as the queued events are being retrieved from the database.
 
 ## Telemetry Gateway
 

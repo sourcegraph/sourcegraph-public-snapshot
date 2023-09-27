@@ -17,9 +17,10 @@ All usages of old telemetry mechanisms should be migrated to the new framework.
 - [Recording events](#recording-events)
   - [Backend services](#backend-services)
   - [Clients](#clients)
-- [Exporting events](#exporting-events)
-  - [Sensitive attributes](#sensitive-attributes)
+- [Exported events](#exported-events)
   - [Exported event schema](#exported-event-schema)
+  - [Sensitive attributes](#sensitive-attributes)
+- [Testing events](#testing-events)
 - [Enabling telemetry export](#enabling-telemetry-export)
 
 ## Why a new framework and APIs?
@@ -88,14 +89,6 @@ Clients should use [`@sourcegraph/telemetry`](https://github.com/sourcegraph/tel
 
 See [telemetry export architecture](./architecture.md) for more details on how exporting events works.
 
-### Sensitive attributes
-
-There are two core attributes in events that are considered potentially sensitive, and thus not exported from individual Sourcegraph instances:
-
-- `parameters.privateMetadata`: this fields allows the recording of arbitrarily shaped metadata, as opposed to the integer values supported in `parameters.metadata`. Due to the risk of sensitive data and PII exposure, we do not export this field by default
-  - Certain events may be allowlisted to have this field exported - this is defined in [`internal/telemetry/sensitiviemetadataallowlist`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/sensitivemetadataallowlist/sensitiviemetadataallowlist.go). Adding events to this list requires review and approval from Legal.
-- `marketingTracking`: this field tracks a lot of properties around URLs visited and marketing tracking that may contain sensitive data. This is only exported from the [Sourcegraph.com](https://sourcegraph.com/search) instance.
-
 ### Exported event schema
 
 The full event schema is intentionally a significant superset from the shape of the [event-recording APIs](#recording-events).
@@ -121,17 +114,25 @@ The full event schema that ends up getting exported is defined in [`telemetrygat
 > NOTE: In the Sourcegraph application, the new events being exported using `internal/telemetry` are sometimes loosely referred to as "V2", as it supersedes the existing mechanisms of writing directly to the `event_logs` database table.
 > The *Telemetry Gateway* schema, however, is `telemetrygateway/v1`, as it is the first iteration of the service's API.
 
+### Sensitive attributes
+
+There are two core attributes in events that are considered potentially sensitive, and thus not exported from individual Sourcegraph instances:
+
+- `parameters.privateMetadata`: this fields allows the recording of arbitrarily shaped metadata, as opposed to the integer values supported in `parameters.metadata`. Due to the risk of sensitive data and PII exposure, we do not export this field by default
+  - Certain events may be allowlisted to have this field exported - this is defined in [`internal/telemetry/sensitiviemetadataallowlist`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/telemetry/sensitivemetadataallowlist/sensitiviemetadataallowlist.go). Adding events to this list requires review and approval from Legal.
+- `marketingTracking`: this field tracks a lot of properties around URLs visited and marketing tracking that may contain sensitive data. This is only exported from the [Sourcegraph.com](https://sourcegraph.com/search) instance.
+
+
 ## Testing events
 
 In summary, when adding your events in the new telemetry framework, you can verify events are being recorded by:
 
 1. [Checking your events stored directly in `event_logs`](./architecture.md#storing-events) after recording.
 2. Observing the raw payloads that the Telemetry Gateway ends up publishing in logs when [running Telemetry Gateway locally](../../how-to/telemetry_gateway.md).
-
-Note that the internal queue table, 
+   1. Note that the internal queue table only stores events until they are exported, and events are stored in raw Protobuf wire format - see [storing events](./architecture.md#storing-events).
 
 In integration and unit tests, you can also provide a mocked [telemetry recording](#recording-events) implementation to assert that various events are recorded as expected.
-For example, in the backend, you can use package `internal/telemetry/telemetrytest`:
+For example, in the backend, you can use package `internal/telemetry/telemetrytest`, which provides a variety of testing utilities:
 
 ```go
 import (
