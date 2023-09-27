@@ -92,7 +92,7 @@ extend type Query {
     TEMPORARY: creates a new embedding job for all completed embeddings
     jobs so that they will be moved from blobstore to qdrant
     """
-    migrateToQdrant(): EmptyResponse!
+    migrateToQdrant: EmptyResponse!
 }
 
 extend type Mutation {
