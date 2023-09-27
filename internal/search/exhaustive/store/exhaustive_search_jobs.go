@@ -189,6 +189,52 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 	return job, nil
 }
 
+// aggStateSubQuery takes the results from getAggregateStateTable and computes a
+// single aggregate state that reflects the state of the entire search job
+// cascade better than the state of the top-level worker.
+//
+// The processing chain is as follows:
+//
+// Execute getAggregateStateTable -> transpose table -> compute aggregate state
+//
+// # The result looks like this:
+//
+// | agg_state  |
+// |------------|
+// | processing |
+//
+// We want the aggregate state to be returned by the db, so we can use db
+// filtering and pagination.
+const aggStateSubQuery = `
+		SELECT
+		    -- Compute aggregate state
+			CASE
+				WHEN canceled > 0 THEN 'canceled'
+				WHEN processing > 0 THEN 'processing'
+				WHEN queued > 0 THEN 'queued'
+				WHEN errored > 0 THEN 'processing'
+				WHEN failed > 0 THEN 'failed'
+				WHEN completed > 0 THEN 'completed'
+			    -- This should never happen
+				ELSE 'queued'
+			END
+		FROM (
+-- | processing | queued | failed | completed |
+-- |------------|--------|--------|-----------|
+-- | 2          | 3      | 1      | 8         |
+			SELECT
+			    -- transpose the table
+				max( CASE WHEN state = 'failed' THEN count END) AS failed,
+				max( CASE WHEN state = 'processing' THEN count END) AS processing,
+				max( CASE WHEN state = 'completed' THEN count END) AS completed,
+				max( CASE WHEN state = 'queued' THEN count END) AS queued,
+				max( CASE WHEN state = 'canceled' THEN count END) AS canceled,
+				max( CASE WHEN state = 'errored' THEN count END) AS errored
+			FROM (
+				-- getAggregateStateTable
+				%s) AS state_histogram) AS transposed_state_histogram
+`
+
 const getExhaustiveSearchJobQueryFmtStr = `
 SELECT %s FROM exhaustive_search_jobs
 WHERE (%s)
@@ -228,7 +274,7 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 		for i, state := range args.States {
 			states[i] = sqlf.Sprintf("%s", strings.ToLower(state))
 		}
-		conds = append(conds, sqlf.Sprintf("state in (%s)", sqlf.Join(states, ",")))
+		conds = append(conds, sqlf.Sprintf("agg_state in (%s)", sqlf.Join(states, ",")))
 	}
 
 	// 🚨 SECURITY: Site admins see any job and may filter based on args.UserIDs.
@@ -267,19 +313,27 @@ func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jo
 	q := sqlf.Sprintf(
 		listExhaustiveSearchJobsQueryFmtStr,
 		sqlf.Join(exhaustiveSearchJobColumns, ", "),
+		sqlf.Sprintf(
+			aggStateSubQuery,
+			sqlf.Sprintf(
+				getAggregateStateTable,
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				sqlf.Sprintf("exhaustive_search_jobs.id"),
+			),
+		),
 		whereClause,
 	)
-
 	if pagination != nil {
 		q = pagination.AppendOrderToQuery(q)
 		q = pagination.AppendLimitToQuery(q)
 	}
 
-	return scanExhaustiveSearchJobs(s.Store.Query(ctx, q))
+	return scanExhaustiveSearchJobsList(s.Store.Query(ctx, q))
 }
 
 const listExhaustiveSearchJobsQueryFmtStr = `
-SELECT %s FROM exhaustive_search_jobs
+SELECT * FROM (SELECT %s, (%s) as agg_state FROM exhaustive_search_jobs) as outer_query
 %s -- whereClause
 `
 
@@ -303,19 +357,31 @@ func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err er
 	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
 }
 
-const getAggregateRepoRevState = `
+// | state      | count |
+// |------------|-------|
+// | processing | 2     |
+// | queued     | 3     |
+// | failed     | 1     |
+// | completed  | 8     |
+const getAggregateStateTable = `
 SELECT state, COUNT(*) as count
 FROM
   (
-    SELECT state FROM exhaustive_search_jobs WHERE id = %s
+		(SELECT state
+		 -- we need the alias to avoid conflicts with embedding queries.
+		 FROM exhaustive_search_jobs sj
+		 WHERE sj.id = %s)
     UNION ALL
-    SELECT state FROM exhaustive_search_repo_jobs WHERE search_job_id = %s
+		(SELECT state
+		 FROM exhaustive_search_repo_jobs rj
+		 WHERE rj.search_job_id = %s)
     UNION ALL
-    SELECT rrj.state FROM exhaustive_search_repo_revision_jobs rrj
-    JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
-    WHERE rj.search_job_id = %s
+		(SELECT rrj.state
+		 FROM exhaustive_search_repo_revision_jobs rrj
+		JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
+		WHERE rj.search_job_id = %s)
   ) AS sub
-GROUP BY state;
+GROUP BY state
 `
 
 func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[string]int, err error) {
@@ -330,7 +396,7 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 		return nil, err
 	}
 
-	q := sqlf.Sprintf(getAggregateRepoRevState, id, id, id)
+	q := sqlf.Sprintf(getAggregateStateTable, id, id, id)
 
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
@@ -425,13 +491,12 @@ func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) 
 	return jobs, nil
 }
 
-func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
-	var job types.ExhaustiveSearchJob
+func defaultScanTargets(job *types.ExhaustiveSearchJob) []any {
 	// required field for the sync worker, but
 	// the value is thrown out here
 	var executionLogs *[]any
 
-	return &job, sc.Scan(
+	return []any{
 		&job.ID,
 		&job.InitiatorID,
 		&job.State,
@@ -447,7 +512,26 @@ func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, err
 		&job.Cancel,
 		&job.CreatedAt,
 		&job.UpdatedAt,
+	}
+}
+
+func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
+	var job types.ExhaustiveSearchJob
+
+	return &job, sc.Scan(
+		defaultScanTargets(&job)...,
 	)
 }
 
-var scanExhaustiveSearchJobs = basestore.NewSliceScanner(scanExhaustiveSearchJob)
+func scanExhaustiveSearchJobList(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
+	var job types.ExhaustiveSearchJob
+
+	return &job, sc.Scan(
+		append(
+			defaultScanTargets(&job),
+			&job.AggState,
+		)...,
+	)
+}
+
+var scanExhaustiveSearchJobsList = basestore.NewSliceScanner(scanExhaustiveSearchJobList)
