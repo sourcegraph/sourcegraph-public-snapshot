@@ -59,18 +59,15 @@ class CodyAgent(private val project: Project) : Disposable {
       startListeningToAgent()
       executorService.submit {
         try {
-          val server = client.server
-          if (server == null) {
-            return@submit
-          }
+          val server = client.server ?: return@submit
           val info =
               server
                   .initialize(
-                      ClientInfo()
-                          .setName("JetBrains")
-                          .setVersion(ConfigUtil.getPluginVersion())
-                          .setWorkspaceRootPath(ConfigUtil.getWorkspaceRoot(project))
-                          .setExtensionConfiguration(ConfigUtil.getAgentConfiguration(project)))
+                      ClientInfo(
+                          name = "JetBrains",
+                          version = ConfigUtil.getPluginVersion(),
+                          workspaceRootPath = ConfigUtil.getWorkspaceRoot(project),
+                          extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
                   .get()
           logger.info("connected to Cody agent " + info.name)
           server.initialized()

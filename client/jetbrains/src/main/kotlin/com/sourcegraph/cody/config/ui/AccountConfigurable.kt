@@ -53,7 +53,7 @@ class AccountConfigurable(val project: Project) :
               .applyToComponent { this.preferredSize = Dimension(Int.MAX_VALUE, 200) }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
-                  if (CodyAccountsHost.KEY.`is`(key)) accountsModel else null
+                  if (CodyAccountsHost.DATA_KEY.`is`(key)) accountsModel else null
                 }
               }
         }

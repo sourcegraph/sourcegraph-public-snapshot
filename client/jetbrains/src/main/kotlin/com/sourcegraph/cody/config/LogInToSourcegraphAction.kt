@@ -1,35 +1,31 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.ide.BrowserUtil
+import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
+import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
-import com.sourcegraph.config.ConfigUtil
 import java.awt.Component
+import javax.swing.Action
 import javax.swing.JComponent
-import org.jetbrains.builtInWebServer.BuiltInServerOptions
 
-class AddCodyAccountWithTokenAction : BaseAddAccountWithTokenAction() {
+class LogInToSourcegraphAction : BaseAddAccountWithTokenAction() {
   override val defaultServer: String
     get() = SourcegraphServerPath.DEFAULT_HOST
 
   override fun actionPerformed(e: AnActionEvent) {
-    val accountsHost = e.getData(CodyAccountsHost.KEY)!!
-    val project = e.project ?: return
-    AccountsHostProjectHolder.getInstance(project).accountsHost = accountsHost
-    val port =
-        ApplicationManager.getApplication()
-            .getService(BuiltInServerOptions::class.java)
-            .getEffectiveBuiltInServerPort()
-    BrowserUtil.browse(
-        ConfigUtil.DOTCOM_URL +
-            "user/settings/tokens/new/callback" +
-            "?requestFrom=JETBRAINS" +
-            "&port=" +
-            port)
+    val accountsHost = getCodyAccountsHost(e) ?: return
+    val dialog =
+        CodyAuthLoginDialog(
+            e.project,
+            e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT),
+            accountsHost::isAccountUnique)
+    dialog.setServer(defaultServer)
+    if (dialog.showAndGet()) {
+      accountsHost.addAccount(dialog.server, dialog.login, dialog.displayName, dialog.token)
+    }
   }
 }
 
@@ -38,7 +34,7 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
     get() = ""
 
   override fun actionPerformed(e: AnActionEvent) {
-    val accountsHost = e.getData(CodyAccountsHost.KEY)!!
+    val accountsHost = getCodyAccountsHost(e) ?: return
     val dialog =
         newAddAccountDialog(
             e.project,
@@ -56,8 +52,13 @@ abstract class BaseAddAccountWithTokenAction : DumbAwareAction() {
   abstract val defaultServer: String
 
   override fun update(e: AnActionEvent) {
-    e.presentation.isEnabledAndVisible = e.getData(CodyAccountsHost.KEY) != null
+    val codyAccountsHost = getCodyAccountsHost(e)
+    e.presentation.isEnabledAndVisible = codyAccountsHost != null
   }
+
+  protected fun getCodyAccountsHost(e: AnActionEvent) =
+      (e.getData(CodyAccountsHost.DATA_KEY)
+          ?: DataManager.getInstance().loadFromDataContext(e.dataContext, CodyAccountsHost.KEY))
 }
 
 private fun newAddAccountDialog(
@@ -96,4 +97,29 @@ internal class SourcegraphTokenLoginDialog(
   }
 
   override fun createCenterPanel(): JComponent = loginPanel
+}
+
+internal class CodyAuthLoginDialog(
+    project: Project?,
+    parent: Component?,
+    isAccountUnique: UniqueLoginPredicate
+) :
+    BaseLoginDialog(
+        project, parent, SourcegraphApiRequestExecutor.Factory.getInstance(), isAccountUnique) {
+
+  init {
+    title = "Login to Sourcegraph"
+    loginPanel.setAuthUI()
+    init()
+  }
+
+  override fun createActions(): Array<Action> = arrayOf(cancelAction)
+
+  override fun show() {
+    doOKAction()
+    super.show()
+  }
+
+  override fun createCenterPanel(): JComponent =
+      JBUI.Panels.simplePanel(loginPanel).withPreferredWidth(200)
 }
