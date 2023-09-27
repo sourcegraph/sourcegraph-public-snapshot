@@ -229,6 +229,7 @@ Instead of [Sourcegraph Cody Gateway](./../explanations/cody_gateway.md), you ca
 - Anthropic
 - OpenAI
 - Azure OpenAI (Experimental)
+- AWS Bedrock (Experimental)
 
 ### Anthropic
 
