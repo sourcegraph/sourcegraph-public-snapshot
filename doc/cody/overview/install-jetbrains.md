@@ -135,7 +135,7 @@ After a successful installation, Cody's icon appears in the sidebar. Click it, a
 
 Cody fully understands your codebase context based on the project opened in your workspace. However, at any point, you can override the automatic “codebase detection” by clicking on the repo name below the Cody chat and then adding the Git URL.
 
-![override-codebase-context](https://storage.googleapis.com/sourcegraph-assets/Docs/override-context.png)
+![override-codebase-context](https://storage.googleapis.com/sourcegraph-assets/Docs/override-code-context.png)
 
 ### For Sourcegraph enterprise users
 
@@ -173,9 +173,11 @@ The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts c
 
 ## Autocomplete
 
-You can "enable/disable" the autocomplete feature and customize your language preferences in the footer. Autocomplete suggestions can be styled with customized colors, and you can reject them at any time with the **Escape** key.
+Autocomplete suggestions appear as inlay suggestions. Press `Option+\` (for macOS) or `Alt+\` (for Windows) to manually trigger the autocomplete. Press `tab` to accept a suggestion and `Escape` to reject it.
 
-You can manually trigger autocomplete suggestions by pressing `Option+\` (for macOS) or `Alt+\` (for Windows) and its also compatible with [IdeaVim](https://plugins.jetbrains.com/plugin/164-ideavim).
+Autocomplete is triggered by default. You can disable the automatic trigger optionally through the Cody icon in the status bar or from the Cody Settings.
+
+In addition, autocomplete suggestions use the same color as inline parameter hints according to your configured theme. You can optionally customize this color from the Cody settings.
 
 ## Enable code graph context for context-aware answers (Optional)
 
