@@ -8,10 +8,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-<<<<<<< HEAD
-=======
-
->>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 
 	"github.com/google/uuid"
