@@ -5,9 +5,9 @@ import (
 
 	qdrant "github.com/qdrant/go-client/qdrant"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, modelDims uint64) error {
@@ -16,7 +16,7 @@ func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, mo
 	name := CollectionName(modelID)
 	realName := name + ".default"
 
-	err := ensureCollectionWithConfig(ctx, db.collectionsClient, realName, modelDims, conf.Get().Embeddings.Qdrant)
+	err := ensureCollectionWithConfig(ctx, db.collectionsClient, realName, modelDims, conf.GetEmbeddingsConfig(conf.Get().SiteConfiguration).Qdrant)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, mo
 	return nil
 }
 
-func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, conf *schema.Qdrant) error {
+func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, qc conftypes.QdrantConfig) error {
 	resp, err := cc.List(ctx, &qdrant.ListCollectionsRequest{})
 	if err != nil {
 		return err
@@ -52,12 +52,12 @@ func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient
 
 	for _, collection := range resp.GetCollections() {
 		if collection.GetName() == name {
-			_, err = cc.Update(ctx, updateCollectionParams(name, conf))
+			_, err = cc.Update(ctx, updateCollectionParams(name, qc))
 			return err
 		}
 	}
 
-	_, err = cc.Create(ctx, createCollectionParams(name, dims, conf))
+	_, err = cc.Create(ctx, createCollectionParams(name, dims, qc))
 	return err
 }
 

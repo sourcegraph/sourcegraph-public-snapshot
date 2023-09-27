@@ -970,6 +970,37 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
+	computedQdrantConfig := conftypes.QdrantConfig{}
+	if embeddingsConfig.Qdrant != nil {
+		// Default values should match the documented defaults in site.schema.json.
+		qc := embeddingsConfig.Qdrant
+		computedQdrantConfig.Enabled = qc.Enabled
+
+		if qc.Hnsw != nil {
+			computedQdrantConfig.QdrantHNSWConfig = conftypes.QdrantHNSWConfig{
+				EfConstruct:       toUint64(qc.Hnsw.EfConstruct),
+				FullScanThreshold: toUint64(qc.Hnsw.FullScanThreshold),
+				M:                 toUint64(qc.Hnsw.M),
+				PayloadM:          toUint64(qc.Hnsw.PayloadM),
+				OnDisk:            pointers.Deref(qc.Hnsw.OnDisk, true),
+			}
+		}
+
+		if qc.Optimizers != nil {
+			computedQdrantConfig.QdrantOptimizersConfig = conftypes.QdrantOptimizersConfig{
+				IndexingThreshold: uint64(pointers.Deref(qc.Optimizers.IndexingThreshold, 0)),
+				MemmapThreshold:   uint64(pointers.Deref(qc.Optimizers.MemmapThreshold, 100)),
+			}
+		}
+
+		if qc.Quantization != nil {
+			computedQdrantConfig.QdrantQuantizationConfig = conftypes.QdrantQuantizationConfig{
+				Enabled:  pointers.Deref(qc.Quantization.Enabled, true),
+				Quantile: float32(pointers.Deref(qc.Quantization.Quantile, 0.98)),
+			}
+		}
+	}
+
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -983,6 +1014,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
 		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
+		Qdrant:                     computedQdrantConfig,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
@@ -992,6 +1024,14 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	}
 
 	return computedConfig
+}
+
+func toUint64(input *int) *uint64 {
+	if input == nil {
+		return nil
+	}
+	u := uint64(*input)
+	return &u
 }
 
 func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteConfiguration) string {

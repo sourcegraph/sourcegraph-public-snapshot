@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"google.golang.org/grpc"
 )
 
@@ -19,56 +19,57 @@ import (
 //
 // If Qdrant is disabled, it will instead return the provided default VectorDB.
 func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error) {
+	type connAndErr struct {
+		conn *grpc.ClientConn
+		err  error
+	}
 	var (
 		oldAddr string
-		err     error
-		ptr     atomic.Pointer[grpc.ClientConn]
+		ptr     atomic.Pointer[connAndErr]
 	)
 
 	conf.Watch(func() {
 		c := conf.Get()
-		if c.Embeddings == nil || c.Embeddings.Qdrant == nil || !c.Embeddings.Qdrant.Enabled {
+		qc := conf.GetEmbeddingsConfig(c.SiteConfiguration).Qdrant
+		if !qc.Enabled {
 			// Embeddings is disabled. Clear any errors and close any previous connection.
-			err = nil
-			oldConn := ptr.Swap(nil)
-			if oldConn != nil {
-				oldConn.Close()
+			old := ptr.Swap(&connAndErr{nil, nil})
+			if old.conn != nil {
+				old.conn.Close()
 			}
 			return
 		}
 		if newAddr := c.ServiceConnections().Qdrant; newAddr != oldAddr {
 			// The address has changed or this is running for the first time.
 			// Attempt to open dial Qdrant.
-			newConn, dialErr := defaults.Dial(newAddr, logger)
+			newConn, newErr := defaults.Dial(newAddr, logger)
 			oldAddr = newAddr
-			err = dialErr
-			oldConn := ptr.Swap(newConn)
-			if oldConn != nil {
-				oldConn.Close()
+			old := ptr.Swap(&connAndErr{newConn, newErr})
+			if old.conn != nil {
+				old.conn.Close()
 			}
 		}
 	})
 
 	return func() (VectorDB, error) {
-		if err != nil {
-			return nil, err
+		curr := ptr.Load()
+		if curr.err != nil {
+			return nil, curr.err
 		}
-
-		conn := ptr.Load()
-		if conn == nil {
+		if curr.conn == nil {
 			return def, nil
 		}
 
-		return NewQdrantDBFromConn(conn), nil
+		return NewQdrantDBFromConn(curr.conn), nil
 	}
 }
 
-func createCollectionParams(name string, dims uint64, conf *schema.Qdrant) *qdrant.CreateCollection {
+func createCollectionParams(name string, dims uint64, qc conftypes.QdrantConfig) *qdrant.CreateCollection {
 	return &qdrant.CreateCollection{
 		CollectionName:         name,
-		HnswConfig:             getHnswConfigDiff(conf),
-		OptimizersConfig:       getOptimizersConfigDiff(conf),
-		QuantizationConfig:     getQuantizationConfig(conf),
+		HnswConfig:             getHnswConfigDiff(qc.QdrantHNSWConfig),
+		OptimizersConfig:       getOptimizersConfigDiff(qc.QdrantOptimizersConfig),
+		QuantizationConfig:     getQuantizationConfig(qc.QdrantQuantizationConfig),
 		OnDiskPayload:          pointers.Ptr(true),
 		VectorsConfig:          getVectorsConfig(dims),
 		ShardNumber:            nil, // default
@@ -79,12 +80,12 @@ func createCollectionParams(name string, dims uint64, conf *schema.Qdrant) *qdra
 	}
 }
 
-func updateCollectionParams(name string, conf *schema.Qdrant) *qdrant.UpdateCollection {
+func updateCollectionParams(name string, qc conftypes.QdrantConfig) *qdrant.UpdateCollection {
 	return &qdrant.UpdateCollection{
 		CollectionName:     name,
-		HnswConfig:         getHnswConfigDiff(conf),
-		OptimizersConfig:   getOptimizersConfigDiff(conf),
-		QuantizationConfig: getQuantizationConfigDiff(conf),
+		HnswConfig:         getHnswConfigDiff(qc.QdrantHNSWConfig),
+		OptimizersConfig:   getOptimizersConfigDiff(qc.QdrantOptimizersConfig),
+		QuantizationConfig: getQuantizationConfigDiff(qc.QdrantQuantizationConfig),
 		Params:             nil, // do not update collection params
 		// Do not update vectors config.
 		// TODO(camdencheek): consider making OnDisk configurable
@@ -106,40 +107,30 @@ func getVectorsConfig(dims uint64) *qdrant.VectorsConfig {
 	}
 }
 
-func getHnswConfigDiff(conf *schema.Qdrant) *qdrant.HnswConfigDiff {
-	c := pointers.Deref(conf, schema.Qdrant{})
-	overrides := pointers.Deref(c.Hnsw, schema.Hnsw{})
-
-	// Default values should match the documented defaults in site.schema.json.
+func getHnswConfigDiff(qhc conftypes.QdrantHNSWConfig) *qdrant.HnswConfigDiff {
 	return &qdrant.HnswConfigDiff{
-		M:                  toUint64(overrides.M),
-		PayloadM:           toUint64(overrides.PayloadM),
-		EfConstruct:        toUint64(overrides.EfConstruct),
-		FullScanThreshold:  toUint64(overrides.FullScanThreshold),
-		OnDisk:             pointers.Ptr(pointers.Deref(overrides.OnDisk, true)),
+		M:                  qhc.M,
+		PayloadM:           qhc.PayloadM,
+		EfConstruct:        qhc.EfConstruct,
+		FullScanThreshold:  qhc.FullScanThreshold,
+		OnDisk:             &qhc.OnDisk,
 		MaxIndexingThreads: nil, // default
 	}
 }
 
-func getOptimizersConfigDiff(conf *schema.Qdrant) *qdrant.OptimizersConfigDiff {
-	c := pointers.Deref(conf, schema.Qdrant{})
-	overrides := pointers.Deref(c.Optimizers, schema.Optimizers{})
-
+func getOptimizersConfigDiff(qoc conftypes.QdrantOptimizersConfig) *qdrant.OptimizersConfigDiff {
 	// Default values should match the documented defaults in site.schema.json.
 	return &qdrant.OptimizersConfigDiff{
-		IndexingThreshold:      getUint64(overrides.IndexingThreshold, 0),
-		MemmapThreshold:        getUint64(overrides.MemmapThreshold, 100),
+		IndexingThreshold:      &qoc.IndexingThreshold,
+		MemmapThreshold:        &qoc.MemmapThreshold,
 		DefaultSegmentNumber:   nil,
 		VacuumMinVectorNumber:  nil,
 		MaxOptimizationThreads: nil,
 	}
 }
 
-func getQuantizationConfigDiff(conf *schema.Qdrant) *qdrant.QuantizationConfigDiff {
-	c := pointers.Deref(conf, schema.Qdrant{})
-	overrides := pointers.Deref(c.Quantization, schema.Quantization{})
-
-	if !pointers.Deref(overrides.Enabled, true) {
+func getQuantizationConfigDiff(qqc conftypes.QdrantQuantizationConfig) *qdrant.QuantizationConfigDiff {
+	if !qqc.Enabled {
 		return &qdrant.QuantizationConfigDiff{
 			Quantization: &qdrant.QuantizationConfigDiff_Disabled{},
 		}
@@ -149,51 +140,24 @@ func getQuantizationConfigDiff(conf *schema.Qdrant) *qdrant.QuantizationConfigDi
 		Quantization: &qdrant.QuantizationConfigDiff_Scalar{
 			Scalar: &qdrant.ScalarQuantization{
 				Type:      qdrant.QuantizationType_Int8,
-				Quantile:  getFloat32(overrides.Quantile, 0.98),
+				Quantile:  &qqc.Quantile,
 				AlwaysRam: pointers.Ptr(false),
 			},
 		},
 	}
 }
 
-func getQuantizationConfig(conf *schema.Qdrant) *qdrant.QuantizationConfig {
-	c := pointers.Deref(conf, schema.Qdrant{})
-	overrides := pointers.Deref(c.Quantization, schema.Quantization{})
-
-	if !pointers.Deref(overrides.Enabled, true) {
+func getQuantizationConfig(qqc conftypes.QdrantQuantizationConfig) *qdrant.QuantizationConfig {
+	if !qqc.Enabled {
 		return nil
 	}
 	return &qdrant.QuantizationConfig{
 		Quantization: &qdrant.QuantizationConfig_Scalar{
 			Scalar: &qdrant.ScalarQuantization{
 				Type:      qdrant.QuantizationType_Int8,
-				Quantile:  getFloat32(overrides.Quantile, 0.95),
+				Quantile:  &qqc.Quantile,
 				AlwaysRam: pointers.Ptr(false),
 			},
 		},
 	}
-}
-
-func toUint64(input *int) *uint64 {
-	if input == nil {
-		return nil
-	}
-	u := uint64(*input)
-	return &u
-}
-
-func getUint64(input *int, def uint64) *uint64 {
-	if input != nil {
-		u := uint64(*input)
-		return &u
-	}
-	return &def
-}
-
-func getFloat32(input *float64, def float32) *float32 {
-	if input != nil {
-		f := float32(*input)
-		return &f
-	}
-	return &def
 }
