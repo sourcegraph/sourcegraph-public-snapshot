@@ -27,6 +27,7 @@ import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import type { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../tour/hooks'
 
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
@@ -54,8 +55,10 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
-    const [enduserOnboardingEnabled] = useFeatureFlag('end-user-onboarding', false)
-    const showOnboardingTour = enduserOnboardingEnabled && !!props.authenticatedUser && !props.isSourcegraphDotCom
+    const showOnboardingTour = useShowOnboardingTour({
+        authenticatedUser: props.authenticatedUser,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
+    })
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -101,7 +104,11 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                 >
                     <div className="d-flex flex-column h-100 w-100">
                         {showOnboardingTour && (
-                            <GettingStartedTour className="mr-3" telemetryService={props.telemetryService} />
+                            <GettingStartedTour
+                                className="mr-3"
+                                telemetryService={props.telemetryService}
+                                authenticatedUser={props.authenticatedUser}
+                            />
                         )}
                         <Tabs
                             className="w-100 test-repo-revision-sidebar h-25 d-flex flex-column flex-grow-1"

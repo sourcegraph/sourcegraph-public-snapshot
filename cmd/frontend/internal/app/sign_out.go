@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 )
 
@@ -39,7 +40,11 @@ func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
 	recorder := telemetryrecorder.NewBestEffort(logger, db)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		// In this code, we still use legacy events (usagestats.LogBackendEvent),
+		// so do not tee events automatically.
+		// TODO: We should remove this in 5.3 entirely
+		ctx := teestore.WithoutV1(r.Context())
+
 		recordSecurityEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
 
 		// Invalidate all user sessions first
@@ -99,4 +104,17 @@ func recordSecurityEvent(r *http.Request, db database.DB, name database.Security
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
+	// context.
+	logEvent := &database.Event{
+		Name:            string(name),
+		URL:             r.URL.Host,
+		UserID:          uint32(a.UID),
+		AnonymousUserID: "backend",
+		Argument:        marshalled,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+	_ = db.EventLogs().Insert(ctx, logEvent)
 }

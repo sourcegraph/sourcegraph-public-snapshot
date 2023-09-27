@@ -5126,7 +5126,7 @@ Query: `sum(increase(zoekt_final_aggregate_size_count{reason="timer_expired"}[1d
 
 #### frontend: email_delivery_failures
 
-<p class="subtitle">Email delivery failures every 30 minutes</p>
+<p class="subtitle">Email delivery failure rate over 30 minutes</p>
 
 Refer to the [alerts reference](./alerts.md#frontend-email-delivery-failures) for 2 alerts related to this panel.
 
@@ -5137,7 +5137,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_email_send{success="false"}[30m]))`
+Query: `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`
 
 </details>
 

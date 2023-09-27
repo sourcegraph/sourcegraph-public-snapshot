@@ -1,30 +1,31 @@
 import { useContext, useEffect, useMemo, useState } from 'react'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+
 import { defaultSnippets } from '../../data'
 
 import { TourContext } from './context'
+import { QueryPlaceholder, containsPlaceholder, isNotNullOrUndefined } from './utils'
 
 export function useDynamicQuery(template: string, snippets?: string[] | Record<string, string[]>): string {
     const [query, setQuery] = useState<string>('')
 
-    const hasSnippet = hasSnippetPlaceholder(template)
-    const { userConfig, isQuerySuccessful } = useContext(TourContext)
-    const { userorg, userrepo, userlang } = userConfig ?? {}
+    const hasSnippet = containsPlaceholder(template, QueryPlaceholder.Snippet)
+    const { userInfo, isQuerySuccessful } = useContext(TourContext)
+    const { repo = '', language = '', email = '' } = userInfo ?? {}
 
     const baseQuery = useMemo(
         () =>
-            userorg && userrepo && userlang
-                ? buildQuery(template, {
-                      [QueryPlaceholder.Org]: userorg,
-                      [QueryPlaceholder.Repo]: userrepo,
-                      [QueryPlaceholder.Lang]: userlang,
-                  })
-                : null,
-        [userorg, userrepo, userlang, template]
+            buildQuery(template, {
+                [QueryPlaceholder.Repo]: displayRepoName(repo),
+                [QueryPlaceholder.Lang]: language,
+                [QueryPlaceholder.Email]: email,
+            }),
+        [repo, language, email, template]
     )
 
     useEffect(() => {
-        if (baseQuery && hasSnippet) {
+        if (hasSnippet) {
             // We have multiple snippets available:
             // - Specific snippets defined in the step (snippets prop)
             // - Language specific default snippets
@@ -36,38 +37,27 @@ export function useDynamicQuery(template: string, snippets?: string[] | Record<s
                 snippets
                     ? Array.isArray(snippets)
                         ? snippets
-                        : userlang
-                        ? getLanguageSnippets(snippets, userlang)
+                        : language
+                        ? getLanguageSnippets(snippets, language)
                         : null
                     : null,
                 // Default language snippets
-                userlang ? getLanguageSnippets(defaultSnippets, userlang) : null,
+                language ? getLanguageSnippets(defaultSnippets, language) : null,
                 // Default generic snippets
                 defaultSnippets['*'],
-            ].filter((snippets): snippets is string[] => snippets !== null)
+            ].filter(isNotNullOrUndefined)
 
             findQueryFromQueue(baseQuery, snippetsQueue, isQuerySuccessful).then(setQuery, () =>
                 // fall back to using an empty snippets in the query
                 setQuery(buildQuery(baseQuery, { [QueryPlaceholder.Snippet]: '' }))
             )
-        } else if (baseQuery) {
+        } else {
             // fall back to using an empty snippets in the query
             setQuery(buildQuery(baseQuery, { [QueryPlaceholder.Snippet]: '' }))
         }
-    }, [baseQuery, hasSnippet, snippets, userlang, isQuerySuccessful])
+    }, [baseQuery, hasSnippet, snippets, language, isQuerySuccessful])
 
     return query
-}
-
-enum QueryPlaceholder {
-    Snippet = '$$snippet',
-    Org = '$$userorg',
-    Repo = '$$userrepo',
-    Lang = '$$userlang',
-}
-
-function hasSnippetPlaceholder(queryTemplate: string): boolean {
-    return queryTemplate.includes(QueryPlaceholder.Snippet)
 }
 
 /**

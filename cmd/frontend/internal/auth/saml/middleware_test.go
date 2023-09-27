@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -172,11 +171,11 @@ func TestMiddleware(t *testing.T) {
 	defer idpHTTPServer.Close()
 
 	defer licensing.TestingSkipFeatureChecks()()
-	globals.SetExternalURL(&url.URL{Scheme: "http", Host: "anotherexample.com"})
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{},
+			ExternalURL:          "http://example.com",
 		},
 	})
 	defer conf.Mock(nil)
@@ -202,7 +201,7 @@ func TestMiddleware(t *testing.T) {
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
 	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == "saml" && op.ExternalAccount.ServiceID == idpServer.IDP.MetadataURL.String() && op.ExternalAccount.ClientID == "http://anotherexample.com/.auth/saml/metadata" && op.ExternalAccount.AccountID == mockedExternalID {
+		if op.ExternalAccount.ServiceType == "saml" && op.ExternalAccount.ServiceID == idpServer.IDP.MetadataURL.String() && op.ExternalAccount.ClientID == "http://example.com/.auth/saml/metadata" && op.ExternalAccount.AccountID == mockedExternalID {
 			return mockedUserID, "", nil
 		}
 		return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
@@ -371,12 +370,11 @@ func TestMiddleware(t *testing.T) {
 		reqParams := url.Values{}
 		reqParams.Set("SAMLResponse", samlResponse)
 		reqParams.Set("RelayState", idpAuthnReq.RelayState)
-		globals.SetExternalURL(&url.URL{Scheme: "http", Host: "anotherexample.com"})
-		resp := doRequest("POST", "http://anotherexample.com/.auth/saml/acs", "", authnCookies, false, reqParams)
+		resp := doRequest("POST", "http://example.com/.auth/saml/acs", "", authnCookies, false, reqParams)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want1, want2 := resp.Header.Get("Location"), "http://anotherexample.com/", "/"; got != want1 && got != want2 {
+		if got, want1, want2 := resp.Header.Get("Location"), "http://example.com/", "/"; got != want1 && got != want2 {
 			t.Errorf("got redirect location %v, want %v or %v", got, want1, want2)
 		}
 

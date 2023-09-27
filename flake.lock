@@ -33,7 +33,7 @@
         "type": "indirect"
       }
     },
-    "nixpkgs-bins": {
+    "nixpkgs-stable": {
       "locked": {
         "lastModified": 1682268651,
         "narHash": "sha256-2eZriMhnD24Pmb8ideZWZDiXaAVe6LzJrHQiNPck+Lk=",
@@ -53,7 +53,7 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-bins": "nixpkgs-bins"
+        "nixpkgs-stable": "nixpkgs-stable"
       }
     },
     "systems": {

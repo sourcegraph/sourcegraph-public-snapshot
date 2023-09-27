@@ -15,6 +15,7 @@ import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { GettingStartedTour } from '../../../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -64,9 +65,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const defaultSimpleSearchToggle = true
     const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
-    const [enduserOnboardingEnabled] = useFeatureFlag('end-user-onboarding', false)
 
-    const showOnboardingTour = enduserOnboardingEnabled && !!authenticatedUser && !isSourcegraphDotCom
+    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
     const showCodyCTA = !showOnboardingTour
 
     return (
@@ -119,11 +119,12 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             queryState={queryState}
                             setQueryState={setQueryState}
                         />
-                        {showOnboardingTour && (
+                        {authenticatedUser && showOnboardingTour && (
                             <GettingStartedTour
                                 className="mt-5"
                                 telemetryService={telemetryService}
                                 variant="horizontal"
+                                authenticatedUser={authenticatedUser}
                             />
                         )}
                         {showCodyCTA ? (
