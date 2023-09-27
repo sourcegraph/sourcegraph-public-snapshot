@@ -46,7 +46,7 @@ class CodyAuthCredentialsUi(
   override fun Panel.centerPanel() {
     row {
       val progressLabel =
-          JBLabel("Logging in...").apply {
+          JBLabel("Logging in, check your browser").apply {
             icon = AnimatedIcon.Default()
             foreground = getInactiveTextColor()
           }
