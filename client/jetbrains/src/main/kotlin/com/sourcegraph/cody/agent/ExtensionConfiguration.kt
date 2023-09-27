@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.agent
 
-data class ExtensionConfiguration
-internal constructor(
+data class ExtensionConfiguration(
     var serverEndpoint: String,
     var proxy: String? = null,
     var accessToken: String,

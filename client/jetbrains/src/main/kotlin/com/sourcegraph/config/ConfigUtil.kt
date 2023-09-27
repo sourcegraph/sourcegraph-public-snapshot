@@ -56,13 +56,12 @@ object ConfigUtil {
   @JvmStatic
   fun getConfigAsJson(project: Project): JsonObject {
     val (instanceUrl, accessToken, customRequestHeaders) = ServerAuthLoader.loadServerAuth(project)
-    val (_, _, _, _, _, _, anonymousUserId) = CodyApplicationSettings.getInstance()
     return JsonObject().apply {
       addProperty("instanceURL", instanceUrl)
       addProperty("accessToken", accessToken)
       addProperty("customRequestHeadersAsString", customRequestHeaders)
       addProperty("pluginVersion", getPluginVersion())
-      addProperty("anonymousUserId", anonymousUserId)
+      addProperty("anonymousUserId", CodyApplicationSettings.getInstance().anonymousUserId)
     }
   }
 
