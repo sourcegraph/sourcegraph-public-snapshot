@@ -97,7 +97,7 @@
 
 </style>
 
-# Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Experimental</span>
+# Install Cody for JetBrains <span class="badge badge-experimental" style="margin-left: 0.5rem; vertical-align:middle;">Beta</span>
 
 <p class="subtitle">Learn how to use Cody and its features with the JetBrains IntelliJ editor.</p>
 
@@ -131,7 +131,11 @@ Alternatively, you can also [Download and install the extension from the Jetbrai
 
 ## Connect the extension to Sourcegraph
 
-After a successful installation, Cody's icon appears in the side bar. When you click it, you're asked to configure and add your Sourcegraph Access Token that helps you connect to a Sourcegraph instance (either an enterprise instance or Sourcegraph.com).
+After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
+
+Cody fully understands your codebase context based on the project opened in your workspace. However, at any point, you can override the automatic “codebase detection” by clicking on the repo name below the Cody chat and then adding the Git URL.
+
+![override-codebase-context](https://storage.googleapis.com/sourcegraph-assets/Docs/override-code-context.png)
 
 ### For Sourcegraph enterprise users
 
@@ -142,6 +146,10 @@ Then, you select the option to `Use an enterprise instance` and you will paste y
 ### For Sourcegraph.com users
 
 Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll be taken to Sourcegraph.com, which will authenticate your extension.
+
+## Embeddings
+
+For free users, embeddings are supported for the open source repos on Sourcegraph.com. Enterprise users are guided to contact their admin for a more customized embeddings experience.
 
 ## Verifying the installation
 
@@ -162,6 +170,14 @@ The Cody JetBrains IntelliJ extension also supports pre-built reusable prompts c
 - Summarize recent code changes
 - Detect code smells
 - Generate release notes
+
+## Autocomplete
+
+Autocomplete suggestions appear as inlay suggestions. Press `Option+\` (for macOS) or `Alt+\` (for Windows) to manually trigger the autocomplete. Press `tab` to accept a suggestion and `Escape` to reject it.
+
+Autocomplete is triggered by default. You can disable the automatic trigger optionally through the Cody icon in the status bar or from the Cody Settings.
+
+In addition, autocomplete suggestions use the same color as inline parameter hints according to your configured theme. You can optionally customize this color from the Cody settings.
 
 ## Enable code graph context for context-aware answers (Optional)
 
