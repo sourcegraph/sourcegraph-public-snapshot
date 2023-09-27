@@ -90,7 +90,7 @@ func TestFromSearchClient(t *testing.T) {
 		Query:        "content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
 bar2,commitbar0,,1,/bar2@commitbar0/-/blob/?L2
 `),
@@ -100,7 +100,7 @@ bar2,commitbar0,,1,/bar2@commitbar0/-/blob/?L2
 		Query:        "repo:foo content",
 		WantRefSpecs: "RepositoryRevSpec{1@HEAD}",
 		WantRepoRevs: "RepositoryRevision{1@HEAD}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
 `),
 	})
@@ -109,7 +109,7 @@ foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
 		Query:        "repo:foo rev:dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 `),
 	})
@@ -118,7 +118,7 @@ foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 		Query:        "repo:foo rev:*refs/heads/dev* content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*}",
 		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 `),
@@ -128,7 +128,7 @@ foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 		Query:        "repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
 		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*:*!refs/heads/dev1}",
 		WantRepoRevs: "RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 `),
 	})
@@ -146,7 +146,7 @@ foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 		Query:        "repo:foo rev:dev1:missing content",
 		WantRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
 		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WantCSV: autogold.Expect(`repository,revision,file_path,match_count,first_match_url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 `),
 	})
