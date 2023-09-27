@@ -36,7 +36,7 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
-import { useNavbarQueryState } from '../stores'
+import { toggleDevSettingsDialog, useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName, EventLocation } from '../util/constants'
 
@@ -297,6 +297,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
+                    {process.env.NODE_ENV === 'development' && <NavAction><Button variant='link' onClick={() => toggleDevSettingsDialog(true)}>Developer Settings</Button></NavAction>}
                     {isCodyApp && <UpdateGlobalNav />}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
