@@ -67,9 +67,10 @@ func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *ht
 		// effort.
 		//
 		// We log a warning if the error is ErrTaken, since this can happen from time to time.
-		// Otherwise we log an error.
+		// Otherwise we log an error. It means that we didn't get the global lock in the permitted
+		// number of tries. Instead of blocking indefinitely, we let the request pass.
 		if errors.HasType(err, &redsync.ErrTaken{}) {
-			logger.Warn("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+			logger.Warn("could not acquire mutex to talk to GitHub.com in time, trying to make request concurrently")
 		} else {
 			logger.Error("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
 		}
@@ -86,7 +87,7 @@ func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *ht
 	if didGetLock {
 		if _, err := lock.UnlockContext(context.Background()); err != nil {
 			metricFailedUnlockRequestsGauge.Inc()
-			logger.Error("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+			logger.Warn("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
 		}
 	}
 
