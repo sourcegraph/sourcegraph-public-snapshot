@@ -583,10 +583,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 	invalidURL := "https://invalid.com/%+o"
 	webhookID := int32(1)
 	webhookIDMarshaled := marshalWebhookID(webhookID)
-<<<<<<< HEAD
-=======
 
->>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 	conf.Mock(
 		&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -644,10 +641,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 			},
 		},
 	)
-<<<<<<< HEAD
-=======
-
->>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
+	
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "error if external URL invalid",
 		Context:        ctx,
